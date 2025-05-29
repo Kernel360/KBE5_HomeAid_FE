@@ -10,6 +10,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route
+          path="/"
+          element={
+            <div className="text-3xl text-blue-500">Tailwind 테스트</div>
+          }
+        />
+
         <Route path="/customer/board" element={<CustomerBoardList />} />
         <Route path="/customer/board/write" element={<CustomerBoardWrite />} />
         <Route path="/customer/board/:id" element={<CustomerBoardDetail />} />
