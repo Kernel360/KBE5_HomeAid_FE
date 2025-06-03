@@ -1,0 +1,127 @@
+.manager-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.booking-number {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Styles for status badges */
+.status-badge {
+  padding: 3px 6px; /* Smaller padding */
+  border-radius: 4px;
+  font-size: 11px; /* Smaller font size */
+  font-weight: bold;
+}
+
+.status-pending {
+  background-color: #fff3e0; /* Light orange */
+  color: #f57c00; /* Darker orange */
+}
+
+.status-match-completed {
+  background-color: #e3f2fd; /* Light blue */
+  color: #2196f3; /* Darker blue */
+}
+
+.status-service-completed {
+  background-color: #e8f5e9; /* Light green */
+  color: #4caf50; /* Darker green */
+}
+
+.card-details {
+  margin-bottom: 15px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.detail-label {
+  color: #666;
+  flex-basis: 35%; /* Adjusted basis */
+  flex-shrink: 0;
+}
+
+.detail-value {
+  color: #333;
+  flex-basis: 65%; /* Adjusted basis */
+  text-align: right;
+}
+
+/* Styles for price to match image color */
+.detail-value.price {
+  color: #ff7e00; /* Orange color for price */
+  font-weight: bold;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end; /* Align actions to the right */
+  align-items: center;
+  gap: 10px;
+}
+
+.action-button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.action-button.primary {
+  background-color: #ff7e00; /* Orange accent color */
+  color: white;
+}
+
+/* Styles for action icons */
+.action-icons {
+  display: flex;
+  gap: 5px; /* Space between icons */
+  align-items: center;
+}
+
+.action-icons .icon-button {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 5px; /* Smaller padding for icons */
+  cursor: pointer;
+  color: #666; /* Icon color */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icons .icon-button i {
+  font-size: 14px; /* Smaller icon size */
+}
+
+/* Specific colors for view and edit icons if needed */
+.action-icons .view-icon {
+  /* color: #3498db; Blue color */
+}
+
+.action-icons .edit-icon {
+  /* color: #2ecc71; Green color */
+}
