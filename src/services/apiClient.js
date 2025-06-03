@@ -1,8 +1,9 @@
+// 예시: src/services/apiClient.js
 import axios from 'axios';
 
-const apiClient = axios.create({
-  baseURL: 'http://localhost:8080', // 백엔드 주소
-  withCredentials: false, // 세션/쿠키 필요 시
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080', // 8080=Spring 기본 포트
+  withCredentials: true,
 });
 
-export default apiClient;
+export default api;
