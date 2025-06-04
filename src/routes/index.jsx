@@ -12,9 +12,8 @@ import { publicRoutes } from './public';
 import MatchingSystemPage from '../features/admin/pages/MatchingSystemPage';
 import MatchingSystemActionPage from '../features/admin/pages/MatchingSystemActionPage';
 import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
-// import ManagerDetailApproval from '../features/manager/pages/ManagerDetailApproval';
 import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
-import AdminManagerApproval from '../features/admin/pages/adminManagerapproval';
+import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
 
 export const AppRoutes = () => {
   const commonRoutes = [

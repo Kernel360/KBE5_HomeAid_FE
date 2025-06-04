@@ -4,6 +4,7 @@ import AdminDashboardPage from '../pages/AdminDashboardPage';
 import AdminUserManagement from '../pages/AdminUserManagement';
 import MatchingSystemPage from '../pages/MatchingSystemPage';
 import MatchingSystemActionPage from '../pages/MatchingSystemActionPage';
+import AdminManagerApproval from '../pages/AdminManagerApproval';
 
 const AdminRoutes = () => {
   return (
