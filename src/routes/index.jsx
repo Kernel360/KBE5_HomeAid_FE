@@ -14,11 +14,14 @@ import MatchingSystemActionPage from '../features/admin/pages/MatchingSystemActi
 import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
 import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
 import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
+import MainPage from "../customer/MainPage.jsx";
+import More from "../customer/More.jsx";
+import Reservation from "../customer/Rerservation.jsx";
 
 export const AppRoutes = () => {
   const commonRoutes = [
     { path: '/auth/*', element: <AuthRoutes /> },
-    { path: '/', element: <Landing /> },
+    { path: '/', element: <MainPage /> },
     { path: '/admin', element: <Navigate to="/admin/users" replace /> },
     { path: '/admin/users', element: <AdminUserManagement /> },
     { path: '/admin/matchingsystem', element: <MatchingSystemPage /> },
@@ -28,16 +31,19 @@ export const AppRoutes = () => {
     },
     { path: '/admin/managers', element: <MatchingManagerList /> },
     { path: '/admin/manager-approval', element: <AdminManagerApproval /> },
-    {
-      path: '/admin/manager-approval/:managerId',
-      element: <ManagerDetailApproval />,
-    },
+    // {
+    //   path: '/admin/manager-approval/:managerId',
+    //   element: <ManagerDetailApproval />,
+    // },
     { path: '/404', element: <NotFound /> },
     { path: '/about', element: <About /> },
     { path: '/contact', element: <Contact /> },
     { path: '/policy', element: <Policy /> },
     { path: '/terms', element: <Terms /> },
     { path: '*', element: <Navigate to="/404" /> },
+    { path: '/more', element: <More />},
+    { path: '/reservation', element: <Reservation />},
+
   ];
 
   const routes = useRoutes([
