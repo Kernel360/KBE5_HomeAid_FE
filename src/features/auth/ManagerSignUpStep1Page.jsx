@@ -5,23 +5,86 @@ import { Calendar, Eye, EyeOff } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { ko } from 'date-fns/locale';
+import { format } from 'date-fns'; // 날짜 형식을 변환하기 위해 임포트
 import './styles/datepicker.css'; // 새로 생성한 CSS 파일 임포트
+import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
+
+// Step 1 유효성 검사 헬퍼 함수 (매니저)
+const validateManagerStep1Data = ({ name, phoneNumber, email, dateOfBirth, gender, password, confirmPassword, businessNumber }) => {
+  if (!name || !phoneNumber || !email || !dateOfBirth || !gender || !password || !confirmPassword || !businessNumber) {
+    return '모든 필수 정보를 입력해주세요.';
+  }
+  if (password !== confirmPassword) {
+    return '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
+  }
+  // 간단한 이메일 형식 검사
+  const emailRegex = /^[^\s@]+@[^\s@]+\\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return '유효한 이메일 주소를 입력해주세요.';
+  }
+
+  // 날짜가 유효하게 포맷 가능한지 확인 (null이 아닌지만 체크)
+  if (!dateOfBirth) {
+    return '유효한 생년월일을 입력해주세요.';
+  }
+
+  // TODO: 휴대폰 번호, 사업자 등록 번호 등 형식 유효성 검사 추가
+
+  return null; // 유효성 검사 통과
+};
 
 const ManagerSignUpStep1Page = () => {
   const [name, setName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [gender, setGender] = useState(''); // 'male' 또는 'female'
   const [dateOfBirth, setDateOfBirth] = useState(null); // null로 초기화
+  const [email, setEmail] = useState(''); // 이메일 상태 추가
+  const [businessNumber, setBusinessNumber] = useState(''); // 사업자 등록 번호 상태 추가
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState(''); // 에러 메시지 상태 추가
   const navigate = useNavigate();
   const datePickerRef = useRef(null); // DatePicker ref 생성
 
+  // Zustand 스토어에서 데이터 업데이트 함수 가져오기
+  const { setManagerSignUpData } = useSignUpStore();
+
   const handleNext = () => {
-    // TODO: 입력값 유효성 검사 및 데이터 처리 로직 추가
-    console.log('매니저 회원가입 1단계 데이터:', { name, phoneNumber, gender, dateOfBirth, password, confirmPassword });
+    setError(''); // 이전 에러 초기화
+
+    // 헬퍼 함수를 사용하여 유효성 검사
+    const validationError = validateManagerStep1Data({
+      name,
+      phoneNumber,
+      email,
+      dateOfBirth,
+      gender,
+      password,
+      confirmPassword,
+      businessNumber,
+    });
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    // 유효성 검사 통과 후 데이터 포맷 및 스토어 저장
+    const formattedDateOfBirth = format(dateOfBirth, 'yyyy-MM-dd'); // dateOfBirth는 null이 아님이 보장됨
+
+    setManagerSignUpData({
+      name,
+      phone: phoneNumber,
+      gender,
+      birth: formattedDateOfBirth,
+      email: email,
+      businessNumber: businessNumber,
+      password: password,
+    });
+
+    console.log('매니저 회원가입 1단계 데이터 스토어에 저장됨');
     // 다음 단계로 이동 (예: '/auth/signup/manager/step2')
     navigate('/auth/signup/manager/step2');
   };
@@ -70,6 +133,20 @@ const ManagerSignUpStep1Page = () => {
               placeholder="홍길동"
               value={name}
               onChange={e => setName(e.target.value)}
+              required
+              style={{ width: 'calc(100% - 26px)', padding: '13px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '16px', color: '#333' }}
+            />
+          </div>
+
+          {/* 이메일 Input - 새로 추가 */}
+          <div style={{ marginBottom: '20px' }}>
+            <label htmlFor="email" style={{ display: 'block', fontSize: '14px', color: '#4B5563', fontWeight: '500', marginBottom: '8px' }}>이메일</label>
+            <input
+              id="email"
+              type="email" // 이메일 형식 유효성 검사를 위해 type="email" 사용
+              placeholder="email@example.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               required
               style={{ width: 'calc(100% - 26px)', padding: '13px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '16px', color: '#333' }}
             />
@@ -143,6 +220,20 @@ const ManagerSignUpStep1Page = () => {
             </div>
           </div>
 
+          {/* 사업자 등록 번호 Input - 새로 추가 (매니저 고유 필드) */}
+          <div style={{ marginBottom: '20px' }}>
+            <label htmlFor="businessNumber" style={{ display: 'block', fontSize: '14px', color: '#4B5563', fontWeight: '500', marginBottom: '8px' }}>사업자 등록 번호</label>
+            <input
+              id="businessNumber"
+              type="text"
+              placeholder="사업자 등록 번호를 입력해 주세요."
+              value={businessNumber}
+              onChange={e => setBusinessNumber(e.target.value)}
+              required
+              style={{ width: 'calc(100% - 26px)', padding: '13px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '16px', color: '#333' }}
+            />
+          </div>
+
           {/* 비밀번호 Input */}
           <div style={{ marginBottom: '20px' }}>
             <label htmlFor="password" style={{ display: 'block', fontSize: '14px', color: '#4B5563', fontWeight: '500', marginBottom: '8px' }}>비밀번호</label>
@@ -165,7 +256,6 @@ const ManagerSignUpStep1Page = () => {
                 {showPassword ? <EyeOff size={20} color="#888" /> : <Eye size={20} color="#888" />} {/* lucide-react 아이콘 사용 예시 */}
               </button>
             </div>
-
           </div>
 
           {/* 비밀번호 확인 Input */}
@@ -191,6 +281,9 @@ const ManagerSignUpStep1Page = () => {
               </button>
             </div>
           </div>
+
+          {/* 에러 메시지 표시 */}
+          {error && <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: '16px', textAlign: 'center' }}>{error}</div>}
 
           {/* Navigation Buttons */}
           <div style={{ display: 'flex', gap: '8px' }}>
