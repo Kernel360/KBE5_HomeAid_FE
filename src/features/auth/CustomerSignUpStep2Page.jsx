@@ -13,8 +13,8 @@ const CustomerSignUpStep2Page = () => {
   const handleSignup = () => {
     // TODO: Implement address data validation and submission logic
     console.log('고객 회원가입 2단계 데이터:', { addressNickname, addressSearch, addressDetail, isDefaultAddress });
-    // TODO: Navigate to the next step or completion page
-    // navigate('/auth/signup/customer/step3'); // Or completion page
+    // 다음 단계 또는 완료 페이지로 이동
+    navigate('/auth/signup/customer/completion'); // 완료 페이지 경로로 이동
   };
 
   const handleMapCheck = () => {
