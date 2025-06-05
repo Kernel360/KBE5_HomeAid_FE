@@ -1,5 +1,8 @@
-import { BrowserRouter } from 'react-router-dom';
-import { AppRoutes } from './routes';
+import React from 'react';
+// Remove BrowserRouter import as it's already in main.jsx
+// import { BrowserRouter } from 'react-router-dom';
+import { MatchingRequestStatusProvider } from './contexts/MatchingRequestStatusContext';
+import { AppRoutes } from './routes/AppRoutes';
 
 function App() {
   return (

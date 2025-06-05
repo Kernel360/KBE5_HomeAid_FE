@@ -22,6 +22,7 @@ import UserServiceOption from '../features/reservation/components/UserServiceOpt
 import UserServiceSubOption from '../features/reservation/components/UserServiceSubOption';
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
 import UserServiceRequest from '../features/reservation/components/UserServiceRequest';
+import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
 
 export const AppRoutes = () => {
   const commonRoutes = [
@@ -64,6 +65,10 @@ export const AppRoutes = () => {
       path: '/user/service-request',
       element: <UserServiceRequest />,
     },
+    // {
+    //   path: '/admin/manager-approval/:managerId',
+    //   element: <ManagerDetailApproval />,
+    // }, // ManagerDetailApproval 파일이 존재하지 않아 주석 처리
     { path: '/404', element: <NotFound /> },
     { path: '/about', element: <About /> },
     { path: '/contact', element: <Contact /> },
@@ -78,5 +83,5 @@ export const AppRoutes = () => {
     ...commonRoutes,
   ]);
 
-  return routes;
+  return <>{routes}</>;
 };
