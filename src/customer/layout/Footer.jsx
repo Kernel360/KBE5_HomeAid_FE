@@ -1,4 +1,4 @@
-import {Home, MoreHorizontal, Search, Heart, Users} from "lucide-react";
+import { Home, MoreHorizontal, Search, Heart, Users } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -16,11 +16,11 @@ const FooterItem = ({ icon: Icon, label, isActive, onClick, url }) => {
 
     const handleClick = () => {
         onClick(label);
-        navigate(`/${url}`);
+        navigate(url);
     };
 
     return (
-        <div 
+        <div
             className={`
                 flex flex-col items-center py-2 px-3 rounded-lg cursor-pointer
                 transition-all duration-150 ease-in-out
@@ -33,13 +33,13 @@ const FooterItem = ({ icon: Icon, label, isActive, onClick, url }) => {
             onMouseLeave={handleMouseUp}
             onClick={handleClick}
         >
-            <Icon 
+            <Icon
                 className={`
                     w-6 h-6 mb-1 transition-colors duration-150
                     ${isActive ? 'text-gray-900' : 'text-gray-500'}
-                `} 
+                `}
             />
-            <span 
+            <span
                 className={`
                     text-xs transition-colors duration-150
                     ${isActive ? 'text-gray-900 font-medium' : 'text-gray-500'}
@@ -55,11 +55,11 @@ const Footer = () => {
     const [activeTab, setActiveTab] = useState('홈');
 
     const footerItems = [
-        { icon: Home, label: '홈' , url: 'home'},
+        { icon: Home, label: '홈', url: '/' },
         { icon: Search, label: '실시간 검색' },
         { icon: Heart, label: '이벤트' },
-        { icon: Users, label: '이용 내역' , url: 'history' },
-        { icon: MoreHorizontal, label: '더보기' , url: 'more' }
+        { icon: Users, label: '이용 내역', url: '/history' },
+        { icon: MoreHorizontal, label: '더보기', url: '/mypage' }
     ];
 
     const handleTabClick = (tabName) => {

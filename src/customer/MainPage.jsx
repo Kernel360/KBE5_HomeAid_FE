@@ -1,6 +1,4 @@
-import React from 'react';
 import { Home, CreditCard, Users } from 'lucide-react';
-import Footer from "./Footer.jsx";
 import {useNavigate} from "react-router-dom";
 
 
@@ -15,12 +13,7 @@ const MainPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             {/* 헤더 - 로고 영역 */}
-            <header className="bg-white px-6 py-4">
-                <div className="flex items-center">
-                    <span className="text-2xl font-bold text-blue-600">ant</span>
-                    <span className="text-2xl font-bold text-gray-800">work</span>
-                </div>
-            </header>
+            
 
             {/* 메인 컨텐츠 */}
             <main className="px-6 py-6">
@@ -120,9 +113,6 @@ const MainPage = () => {
                     </div>
                 </div>
             </main>
-
-            {/* Footer 컴포넌트 */}
-            <Footer />
         </div>
     );
 };

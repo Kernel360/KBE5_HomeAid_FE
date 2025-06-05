@@ -1,5 +1,7 @@
+import { ArrowLeft, User } from "lucide-react";
+
 // 내 정보 수정 페이지
-const ProfileEditPage = ({ onBack }) => {
+const MyProfile = ({ onBack }) => {
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             <header className="bg-white px-6 py-4 border-b border-gray-200 flex items-center">
@@ -8,7 +10,7 @@ const ProfileEditPage = ({ onBack }) => {
                 </button>
                 <h1 className="text-xl font-bold text-gray-900">내 정보 수정</h1>
             </header>
-
+            
             <main className="px-6 py-6">
                 {/* 프로필 사진 */}
                 <div className="text-center mb-8">
@@ -22,26 +24,26 @@ const ProfileEditPage = ({ onBack }) => {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">이름</label>
-                        <input
-                            type="text"
+                        <input 
+                            type="text" 
                             placeholder="홍길동"
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
-
+                    
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
-                        <input
-                            type="email"
+                        <input 
+                            type="email" 
                             placeholder="hong@example.com"
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
-
+                    
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
-                        <input
-                            type="tel"
+                        <input 
+                            type="tel" 
                             placeholder="010-1234-5678"
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
@@ -50,8 +52,8 @@ const ProfileEditPage = ({ onBack }) => {
 
                 {/* 버튼 그룹 */}
                 <div className="flex gap-3 mt-8">
-                    <button
-                        onClick={onBack}
+                    <button 
+                        onClick={() => setCurrentView('main')}
                         className="flex-1 py-3 px-6 border border-gray-300 rounded-xl text-gray-700 font-medium"
                     >
                         취소
@@ -70,3 +72,5 @@ const ProfileEditPage = ({ onBack }) => {
         </div>
     );
 };
+
+export default MyProfile;

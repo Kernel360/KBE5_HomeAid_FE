@@ -1,4 +1,4 @@
-import { useRoutes, Navigate } from 'react-router-dom';
+import { useRoutes, Navigate, Routes, Route } from 'react-router-dom';
 import { AuthRoutes } from '../features/auth/routes';
 import { Landing } from '../features/misc/routes';
 import { NotFound } from '../lib/not-found';
@@ -15,34 +15,51 @@ import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
 import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
 import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
 import MainPage from "../customer/MainPage.jsx";
-import More from "../customer/More.jsx";
 import Reservation from "../customer/Rerservation.jsx";
+import MyPage from "../customer/mypage/pages/Mypage.jsx";
+import CustomerLayout from '../customer/layout/CustomerLayout.jsx';
 
 export const AppRoutes = () => {
   const commonRoutes = [
-    { path: '/auth/*', element: <AuthRoutes /> },
-    { path: '/', element: <MainPage /> },
-    { path: '/admin', element: <Navigate to="/admin/users" replace /> },
-    { path: '/admin/users', element: <AdminUserManagement /> },
-    { path: '/admin/matchingsystem', element: <MatchingSystemPage /> },
     {
-      path: '/admin/matchingsystem/:managerId',
-      element: <MatchingSystemActionPage />,
+      path: '/',
+      element: <CustomerLayout />,
+      children: [
+        {
+          index: true,
+          element: <MainPage />,
+        },
+        {
+          path: 'mypage',
+          element: <MyPage />,
+        }
+
+        // 필요 시 다른 고객 전용 라우트도 여기에 추가
+      ],
     },
-    { path: '/admin/managers', element: <MatchingManagerList /> },
-    { path: '/admin/manager-approval', element: <AdminManagerApproval /> },
+    // { path: '/auth/*', element: <AuthRoutes /> },
+    // { path: '/', index: <MainPage /> },
+    // { path: '/admin', element: <Navigate to="/admin/users" replace /> },
+    // { path: '/admin/users', element: <AdminUserManagement /> },
+    // { path: '/admin/matchingsystem', element: <MatchingSystemPage /> },
     // {
-    //   path: '/admin/manager-approval/:managerId',
-    //   element: <ManagerDetailApproval />,
+    //   path: '/admin/matchingsystem/:managerId',
+    //   element: <MatchingSystemActionPage />,
     // },
-    { path: '/404', element: <NotFound /> },
-    { path: '/about', element: <About /> },
-    { path: '/contact', element: <Contact /> },
-    { path: '/policy', element: <Policy /> },
-    { path: '/terms', element: <Terms /> },
-    { path: '*', element: <Navigate to="/404" /> },
-    { path: '/more', element: <More />},
-    { path: '/reservation', element: <Reservation />},
+    // { path: '/admin/managers', element: <MatchingManagerList /> },
+    // { path: '/admin/manager-approval', element: <AdminManagerApproval /> },
+    // // {
+    // //   path: '/admin/manager-approval/:managerId',
+    // //   element: <ManagerDetailApproval />,
+    // // },
+    // { path: '/404', element: <NotFound /> },
+    // { path: '/about', element: <About /> },
+    // { path: '/contact', element: <Contact /> },
+    // { path: '/policy', element: <Policy /> },
+    // { path: '/terms', element: <Terms /> },
+    // { path: '*', element: <Navigate to="/404" /> },
+    // { path: '/more', element: <MyPage />},
+    // { path: '/reservation', element: <Reservation />},
 
   ];
 
