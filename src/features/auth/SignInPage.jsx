@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // npm install react-icons lucide-react --save
 import { Eye, EyeOff } from 'lucide-react'; // lucide-react 사용 예시
+import { authService } from '../../services/authService';
 
 const SignInPage = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -15,21 +16,14 @@ const SignInPage = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    // 실제 API 호출 로직은 여기에 구현 (휴대폰 번호와 비밀번호 전송)
+    
     try {
-      const res = await fetch('/api/v1/user/auth/signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber, password }), // 휴대폰 번호와 비밀번호 전송
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || '로그인 실패');
-      // 성공 시 처리 (예: 토큰 저장, 페이지 이동 등)
+      const data = await authService.signIn(phoneNumber, password);
       console.log('로그인 성공!', data);
-      alert('로그인 성공!'); // 임시 알림
-      // navigate('/dashboard'); // 로그인 후 이동할 경로
+      alert('로그인 성공!');
+      // navigate('/dashboard');
     } catch (err) {
-      setError(err.message || '로그인 중 오류가 발생했습니다.');
+      setError(err.response?.data?.message || err.message || '로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
