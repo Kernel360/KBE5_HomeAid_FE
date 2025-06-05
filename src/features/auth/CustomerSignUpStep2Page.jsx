@@ -10,7 +10,7 @@ const CustomerSignUpStep2Page = () => {
 
   const navigate = useNavigate();
 
-  const handleSignup = () => {
+  const handleNext = () => {
     // TODO: Implement address data validation and submission logic
     console.log('고객 회원가입 2단계 데이터:', { addressNickname, addressSearch, addressDetail, isDefaultAddress });
     // 다음 단계 또는 완료 페이지로 이동
@@ -122,7 +122,7 @@ const CustomerSignUpStep2Page = () => {
           {/* 회원가입 Button */}
           <button
             type="button"
-            onClick={handleSignup}
+            onClick={handleNext}
             style={{
               width: '100%',
               background: '#247cff',

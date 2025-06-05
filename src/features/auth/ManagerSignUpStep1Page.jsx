@@ -23,7 +23,7 @@ const ManagerSignUpStep1Page = () => {
     // TODO: 입력값 유효성 검사 및 데이터 처리 로직 추가
     console.log('매니저 회원가입 1단계 데이터:', { name, phoneNumber, gender, dateOfBirth, password, confirmPassword });
     // 다음 단계로 이동 (예: '/auth/signup/manager/step2')
-    // navigate('/auth/signup/manager/step2');
+    navigate('/auth/signup/manager/step2');
   };
 
   const handlePrevious = () => {
@@ -51,23 +51,8 @@ const ManagerSignUpStep1Page = () => {
         {/* Step Indicator - Step 1 of 3 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', padding: '0 2px' }}>
           <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#247cff', borderRadius: '2px' }}></div>
-          <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#ddd', borderRadius: '2px', marginRight: '2px' }}></div>
+          <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#247cff', borderRadius: '2px', marginRight: '2px' }}></div>
           <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#ddd', borderRadius: '2px' }}></div>
-        </div>
-
-        {/* Document Upload Section */}
-        <div style={{ marginBottom: '32px' }}>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#222', marginBottom: '8px' }}>서류 업로드</div>
-          <div style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}>본인 인증을 위한 서류를 업로드해주세요 (예: 신분증, 경력증명서).</div>
-          <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '20px', backgroundColor: '#F9FAFB', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '120px' }}>
-            {/* Placeholder for Upload Icon */}
-            <div style={{ width: '40px', height: '40px', backgroundColor: '#D1D5DB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-               {/* Replace with actual upload icon */}
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-            </div>
-            <div style={{ fontSize: '14px', color: '#6B7280' }}>pdf 파일로 제출</div>
-            {/* TODO: Add actual file input and upload logic here */}
-          </div>
         </div>
 
         {/* Section Title */}
