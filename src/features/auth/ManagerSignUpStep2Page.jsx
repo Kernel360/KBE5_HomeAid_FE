@@ -6,13 +6,18 @@ import { Calendar, Eye, EyeOff, Upload } from 'lucide-react'; // Upload 아이�
 
 const ManagerSignUpStep2Page = () => {
   const [experience, setExperience] = useState('');
-  // TODO: Add state for document upload
+  const [selectedFile, setSelectedFile] = useState(null); // 파일 상태 추가
 
   const navigate = useNavigate();
 
+  const handleFileChange = (event) => {
+    // 파일 선택 시 호출될 함수
+    setSelectedFile(event.target.files[0]);
+  };
+
   const handleSignUp = () => {
-    // TODO: 입력값 유효성 검사 및 데이터 처리, 회원가입 완료 로직 추가
-    console.log('매니저 회원가입 2단계 데이터:', { experience });
+    // TODO: 입력값 유효성 검사 및 데이터 처리, 파일 업로드, 회원가입 완료 로직 추가
+    console.log('매니저 회원가입 2단계 데이터:', { experience, selectedFile });
     // 회원가입 완료 페이지로 이동 (예: '/auth/signup/manager/completion')
     navigate('/auth/signup/manager/completion');
   };
@@ -58,14 +63,26 @@ const ManagerSignUpStep2Page = () => {
         <div style={{ marginBottom: '32px' }}>
           <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#222', marginBottom: '8px' }}>서류 업로드</div>
           <div style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}>본인 인증을 위한 서류를 업로드해주세요 (예: 신분증, 경력증명서).</div>
-          <div style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '20px', backgroundColor: '#F9FAFB', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '120px' }}>
-            {/* Placeholder for Upload Icon */}
-            <div style={{ width: '40px', height: '40px', backgroundColor: '#D1D5DB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-               <Upload size={24} color="#6B7280" /> {/* lucide-react Upload 아이콘 사용 */}
-            </div>
-            <div style={{ fontSize: '14px', color: '#6B7280' }}>pdf 파일로 제출</div>
-            {/* TODO: Add actual file input and upload logic here */}
-          </div>
+          {/* 파일 입력 및 드래그앤드롭 영역 */}
+          <label htmlFor="document-upload" style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '20px', backgroundColor: '#F9FAFB', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '120px', cursor: 'pointer' }}>
+            <input
+              id="document-upload"
+              type="file"
+              onChange={handleFileChange}
+              style={{ display: 'none' }} // 기본 파일 입력 숨김
+            />
+            {selectedFile ? (
+              <div style={{ fontSize: '16px', color: '#333', fontWeight: '500' }}>{selectedFile.name}</div>
+            ) : (
+              <>
+                {/* Placeholder for Upload Icon */}
+                <div style={{ width: '40px', height: '40px', backgroundColor: '#D1D5DB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                   <Upload size={24} color="#6B7280" /> {/* lucide-react Upload 아이콘 사용 */}
+                </div>
+                <div style={{ fontSize: '14px', color: '#6B7280' }}>pdf 파일로 제출</div>
+              </>
+            )}
+          </label>
         </div>
 
         {/* Navigation Buttons */}
