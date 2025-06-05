@@ -22,8 +22,8 @@ const CustomerSignUpStep1Page = () => {
   const handleNext = () => {
     // TODO: 입력값 유효성 검사 및 데이터 처리 로직 추가
     console.log('고객 회원가입 1단계 데이터:', { name, phoneNumber, gender, dateOfBirth, password, confirmPassword });
-    // 다음 단계로 이동 (예: '/auth/signup/customer/step2')
-    // navigate('/auth/signup/customer/step2');
+    // 다음 단계로 이동
+    navigate('/auth/signup/customer/step2');
   };
 
   const handlePrevious = () => {
@@ -44,8 +44,8 @@ const CustomerSignUpStep1Page = () => {
 
         {/* Header */}
         <div style={{ marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#222', marginBottom: '8px' }}>수요자 정보 등록</h2>
-          <div style={{ fontSize: '15px', color: '#888' }}>수요자 계정을 등록해주세요</div>
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#222', marginBottom: '8px' }}>회원 정보 등록</h2>
+          <div style={{ fontSize: '15px', color: '#888' }}>회원 정보를 입력해주세요</div>
         </div>
 
         {/* Step Indicator - Step 1 of 3 */}
