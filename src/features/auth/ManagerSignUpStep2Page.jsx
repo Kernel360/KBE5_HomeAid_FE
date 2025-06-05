@@ -14,7 +14,7 @@ const ManagerSignUpStep2Page = () => {
     // TODO: 입력값 유효성 검사 및 데이터 처리, 회원가입 완료 로직 추가
     console.log('매니저 회원가입 2단계 데이터:', { experience });
     // 회원가입 완료 페이지로 이동 (예: '/auth/signup/manager/completion')
-    // navigate('/auth/signup/manager/completion');
+    navigate('/auth/signup/manager/completion');
   };
 
   const handlePrevious = () => {
