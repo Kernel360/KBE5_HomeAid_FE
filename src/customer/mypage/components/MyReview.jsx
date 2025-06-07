@@ -7,10 +7,7 @@ const MyReview = ({ onBack })  => {
     const myReviewResponse = apiService.review.getByUserId(2);
     const [myReviews, setMyReviews] = useState([]);
 
-      useEffect(() => {
-        console.log("🔍 MyReview useEffect 실행됨");
-        
-        const fetchReviews = async () => {
+    const fetchReviews = async () => {
             try {
                 const response = await myReviewResponse;
                 console.log("리뷰 데이터 가져오기 성공:", response.data.data.content);
@@ -19,6 +16,11 @@ const MyReview = ({ onBack })  => {
                 console.error("리뷰 데이터 가져오기 실패:", error);
             }
         };
+
+      useEffect(() => {
+        console.log("🔍 MyReview useEffect 실행됨");
+        
+        
 
         fetchReviews();
     }, []);

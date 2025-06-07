@@ -104,7 +104,7 @@ const AddressRegister = ({ onBack, onSave }) => {
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        className="w-full bg-blue-600 text-white py-4 rounded-xl font-medium"
+                        className="w-full bg-blue-600 text-blue py-4 rounded-xl font-medium"
                     >
                         주소 저장하기
                     </button>

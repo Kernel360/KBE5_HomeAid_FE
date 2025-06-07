@@ -8,7 +8,7 @@ const apiClient = axios.create({
     },
     withCredentials: true
 });
-const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoidXNlcjJAdXNlci5jb20iLCJyb2xlIjoiUk9MRV9DVVNUT01FUiIsImlhdCI6MTc0OTEwODYzMiwiZXhwIjoxNzQ5MTEyMjMyfQ.AtFOcA56Vt1Tce_p5msUemMRTAE1EQtnqncASHYcNFI';
+const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoibWFuYWdlcjFAZXhhbXBsZS5jb20iLCJyb2xlIjoiUk9MRV9NQU5BR0VSIiwiaWF0IjoxNzQ5MjgzNjA3LCJleHAiOjE3NDkyODcyMDd9.H81p9WvitIdg8ZOyqQU8M0rjHgTp_Dv1ZWN7i5BHbzI';
 // 요청 인터셉터 (토큰 자동 추가 등)
 apiClient.interceptors.request.use(
     (config) => {
@@ -124,6 +124,22 @@ export const apiService = {
         create: (data) => api.post('/reviews', data),
         update: (id, data) => api.put(`/reviews/${id}`, data),
         delete: (id) => api.delete(`/reviews/${id}`)
+    },
+
+    board: {
+        getAll: () => api.get('/board'),
+        getById: (id) => api.get(`/board/${id}`),
+        create: (data) => api.post('/board', data),
+        update: (id, data) => api.put(`/board/${id}`, data),
+        delete: (id) => api.delete(`/board/${id}`)
+    },
+
+    serviceOption: {
+        getAll: () => api.get('/admin/service-option'),
+        getById: (id) => api.get(`/service-option/${id}`),
+        create: (data) => api.post('/manager/profile', data),
+        update: (id, data) => api.put(`/service-option/${id}`, data),
+        delete: (id) => api.delete(`/service-option/${id}`)
     }
 };
 

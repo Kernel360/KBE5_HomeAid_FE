@@ -18,6 +18,11 @@ import MainPage from "../customer/MainPage.jsx";
 import Reservation from "../customer/Rerservation.jsx";
 import MyPage from "../customer/mypage/pages/Mypage.jsx";
 import CustomerLayout from '../customer/layout/CustomerLayout.jsx';
+import ServiceRegistration from '../manager/features/additionalInfoForm/pages/ServiceRegistration.jsx';
+import ScheduleSetup from '../manager/features/additionalInfoForm/components/ScheduleSetup.jsx';
+import ProfileCompletion from '../manager/features/additionalInfoForm/components/ProfileCompletion.jsx';
+import ManagerLayout from '../layouts/ManagerLayout.jsx';
+import ManagerMypage from '../manager/features/mypage/pages/ManagerMypage.jsx';
 
 export const AppRoutes = () => {
   const commonRoutes = [
@@ -37,6 +42,24 @@ export const AppRoutes = () => {
         // 필요 시 다른 고객 전용 라우트도 여기에 추가
       ],
     },
+    {
+      path: '/manager/',
+      element: <ManagerLayout />,
+      children: [
+        {
+          index: true,
+          element: <MainPage />,
+        },
+        {
+          path: 'mypage',
+          element: <ManagerMypage />,
+        },
+        {
+          path: 'additional-info', // 별도 경로로 분리
+          element: <ServiceRegistration />
+        }
+      ]
+    }
     // { path: '/auth/*', element: <AuthRoutes /> },
     // { path: '/', index: <MainPage /> },
     // { path: '/admin', element: <Navigate to="/admin/users" replace /> },
