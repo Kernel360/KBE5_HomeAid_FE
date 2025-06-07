@@ -6,6 +6,7 @@ import { About } from '../features/misc/routes';
 import { Contact } from '../features/misc/routes';
 import { Policy } from '../features/misc/routes';
 import { Terms } from '../features/misc/routes';
+import HomePage from '../features/main/HomePage';  // 현재 파일 이름에 맞게 수정
 
 import { protectedRoutes } from './protected';
 import { publicRoutes } from './public';
@@ -23,9 +24,11 @@ import UserServiceSubOption from '../features/reservation/components/UserService
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
 import UserServiceRequest from '../features/reservation/components/UserServiceRequest';
 import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
+// import ManagerDetailApproval from '../features/manager/pages/ManagerDetailApproval'; // 파일이 존재하지 않아 주석 처리
 
 export const AppRoutes = () => {
   const commonRoutes = [
+    { path: '/', element: <HomePage /> },
     { path: '/auth/*', element: <AuthRoutes /> },
     { path: '/', element: <Landing /> },
     { path: '/admin', element: <Navigate to="/admin/users" replace /> },
@@ -68,7 +71,7 @@ export const AppRoutes = () => {
     // {
     //   path: '/admin/manager-approval/:managerId',
     //   element: <ManagerDetailApproval />,
-    // },
+    // }, // ManagerDetailApproval 파일이 존재하지 않아 주석 처리
     { path: '/404', element: <NotFound /> },
     { path: '/about', element: <About /> },
     { path: '/contact', element: <Contact /> },

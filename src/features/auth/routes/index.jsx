@@ -22,7 +22,7 @@ export const AuthRoutes = () => {
       <Route path="/signup/manager/step1" element={<ManagerSignUpStep1Page />} />
       <Route path="/signup/manager/step2" element={<ManagerSignUpStep2Page />} />
       <Route path="/signup/manager/completion" element={<ManagerSignUpCompletionPage />} />
-      <Route path="*" element={<SignInPage />} />
+      {/* <Route path="*" element={<SignInPage />} /> */}
     </Routes>
   );
 };

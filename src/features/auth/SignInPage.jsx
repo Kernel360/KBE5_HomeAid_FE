@@ -5,7 +5,7 @@ import { Eye, EyeOff } from 'lucide-react'; // lucide-react 사용 예시
 import { authService } from '../../services/authService';
 
 const SignInPage = () => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phone, setphone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -18,7 +18,8 @@ const SignInPage = () => {
     setError('');
     
     try {
-      const data = await authService.signIn(phoneNumber, password);
+      console.log(phone);
+      const data = await authService.signIn(phone, password);
       console.log('로그인 성공!', data);
       alert('로그인 성공!');
       // navigate('/dashboard');
@@ -58,15 +59,15 @@ const SignInPage = () => {
         <form onSubmit={handleSubmit} style={{ width: '100%' }}>
           {/* Phone Number Input */}
           <div style={{ marginBottom: '24px' }}>
-            <label htmlFor="phoneNumber" style={{ display: 'block', fontSize: '14px', color: '#333', fontWeight: 'bold', marginBottom: '8px' }}>
+            <label htmlFor="phone" style={{ display: 'block', fontSize: '14px', color: '#333', fontWeight: 'bold', marginBottom: '8px' }}>
               휴대폰 번호
             </label>
             <input
-              id="phoneNumber"
+              id="phone"
               type="text"
               placeholder="휴대폰 번호를 입력해 주세요."
-              value={phoneNumber}
-              onChange={e => setPhoneNumber(e.target.value)}
+              value={phone}
+              onChange={e => setphone(e.target.value)}
               required
               style={{ width: 'calc(100% - 26px)', padding: '13px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '16px' }}
             />

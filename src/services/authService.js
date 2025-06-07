@@ -4,16 +4,27 @@ import api from './apiClient';
 
 export const authService = {
   // 로그인
-  signIn: async (phoneNumber, password) => {
+  signIn: async (phone, password) => {
     try {
       const response = await api.post('/api/v1/user/auth/signin', {
-        phoneNumber,
+        phone,
         password,
       });
-      return response.data; // axios는 응답 데이터를 data 속성에 담아줍니다.
+
+      // AT 저장 시엔 필요할 듯
+      // // Authorization 헤더에서 토큰 추출
+      // const token = response.headers['authorization'];
+      // if (token) {
+      //   // 토큰을 localStorage나 다른 저장소에 저장
+      //   localStorage.setItem('token', token);
+      //   // axios 기본 헤더에 토큰 설정
+      //   api.defaults.headers.common['Authorization'] = token;
+      // }
+      
+      return response.data;
     } catch (error) {
       console.error('로그인 API 오류:', error);
-      throw error; // 오류 처리는 호출하는 쪽에서 할 수 있도록 다시 throw
+      throw error;
     }
   },
 
@@ -59,3 +70,17 @@ export const authService = {
     }
   },
 }; 
+
+// apiClient.js에 추가
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // 토큰이 만료되었거나 유효하지 않은 경우
+      localStorage.removeItem('token');
+      // 로그인 페이지로 리다이렉트
+      window.location.href = '/auth/signin';
+    }
+    return Promise.reject(error);
+  }
+); 
