@@ -1,0 +1,404 @@
+/* Page wrapper for footer positioning */
+.manager-matching-page {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+  background-color: #f3f4f6; /* bg-gray-100 배경색 */
+}
+
+/* Header가 추가된 페이지의 콘텐츠 래퍼 */
+.page-content-wrapper {
+  min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
+  padding: 16px;
+  padding-top: 0; /* Header 바로 아래부터 시작 */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Header 스타일 조정 */
+.manager-matching-page header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background-color: white;
+  /* border-bottom: 1px solid #e5e7eb; */
+}
+
+.manager-matching-page .footer-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  z-index: 1000;
+  background-color: white;
+  border-top: 1px solid #e9ecef;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 부드러운 스크롤 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Clean styles for manager matching request */
+.manager-matching-request-container {
+  width: 100%;
+  max-width: 480px;
+  background-color: white;
+  /* border-radius: 8px;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05); */
+  padding: 24px 20px;
+  padding-bottom: 120px; /* Footer 높이 + 여유 공간 (84px + 36px) */
+  font-family: sans-serif;
+  box-sizing: border-box;
+  min-height: calc(
+    100vh - 172px
+  ); /* Header(56px) + Footer(84px) + 패딩(32px) */
+  position: relative;
+  z-index: 1; /* Footer보다 낮은 z-index */
+  margin: 0 auto; /* 추가 중앙 정렬 보장 */
+  overflow-y: auto;
+}
+
+.page-title {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.status-badge-container {
+  margin-bottom: 16px;
+}
+
+.status-badge {
+  background-color: #e9ecef;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.details-section,
+.customer-request-section,
+.location-section {
+  background-color: white;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.details-section .detail-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.details-section .detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.details-section .label {
+  font-weight: normal;
+  color: #555;
+  flex-shrink: 0;
+  margin-right: 16px;
+}
+
+.details-section .value {
+  text-align: right;
+  color: #333;
+  word-break: break-word;
+  flex-grow: 1;
+}
+
+.details-section .estimated-earnings .value {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.customer-request-section .section-title {
+  margin-top: 0;
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.customer-request-section .request-box {
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.customer-request-section .request-box p {
+  margin: 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.location-section {
+  text-align: center;
+  cursor: pointer;
+}
+
+.location-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  color: #888;
+}
+
+.location-placeholder i {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.location-placeholder span {
+  font-size: 15px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.action-buttons button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 17px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.accept-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.accept-button:active {
+  background-color: #0056b3;
+}
+
+.reject-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.reject-button:active {
+  background-color: #c82333;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 350px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.modal-content textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 15px;
+  resize: vertical;
+  box-sizing: border-box;
+  min-height: 100px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.modal-actions button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: auto;
+}
+
+.modal-actions .cancel-button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.modal-actions .cancel-button:active {
+  background-color: #5a6268;
+}
+
+.modal-actions .save-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.modal-actions .save-button:active {
+  background-color: #0056b3;
+}
+
+.modal-actions .save-button:disabled {
+  background-color: #a0c7ff;
+  cursor: not-allowed;
+}
+
+.modal-actions .confirm-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.modal-actions .confirm-button:active {
+  background-color: #218838;
+}
+
+/* Mobile Styles */
+@media (max-width: 576px) {
+  .page-content-wrapper {
+    padding: 12px;
+    padding-top: 0;
+    min-height: calc(100vh - 56px);
+  }
+
+  .manager-matching-request-container {
+    padding: 20px 16px;
+    padding-bottom: 110px; /* 모바일에서 Footer 높이 + 여유 공간 */
+    min-height: calc(
+      100vh - 156px
+    ); /* Header(56px) + Footer(76px) + 패딩(24px) */
+  }
+
+  .page-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .status-badge-container {
+    margin-bottom: 12px;
+  }
+
+  .status-badge {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  .details-section,
+  .customer-request-section,
+  .location-section {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .details-section .detail-item,
+  .customer-request-section .request-box p,
+  .location-placeholder span {
+    font-size: 14px;
+  }
+
+  .details-section .detail-item {
+    margin-bottom: 6px;
+  }
+
+  .details-section .label {
+    margin-right: 10px;
+  }
+
+  .action-buttons {
+    gap: 10px;
+  }
+
+  .action-buttons button {
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  .location-placeholder {
+    height: 120px;
+  }
+
+  .location-placeholder i {
+    font-size: 30px;
+  }
+
+  .modal-content {
+    padding: 15px;
+    width: 95%;
+  }
+
+  .modal-content h3 {
+    font-size: 16px;
+  }
+
+  .modal-content textarea {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .modal-actions button {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}
+
+/* 매우 작은 화면 대응 */
+@media (max-width: 360px) {
+  .page-content-wrapper {
+    padding: 8px;
+    padding-top: 0;
+  }
+
+  .manager-matching-request-container {
+    min-height: calc(
+      100vh - 140px
+    ); /* Header(56px) + Footer(76px) + 패딩(8px) */
+  }
+}
