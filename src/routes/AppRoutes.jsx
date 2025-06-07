@@ -14,7 +14,8 @@ import MatchingSystemActionPage from '../features/admin/pages/MatchingSystemActi
 import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
 import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
 import AdminManagerApproval from '../features/admin/pages/adminManagerapproval';
-import ManagerDetailApproval from '../features/manager/pages/ManagerDetailApproval';
+// import ManagerDetailApproval from '../features/manager/pages/ManagerDetailApproval';
+import ManagerDetailApproval from '../features/admin/pages/adminManagerapproval';
 
 import ManagerServiceCheckIn from '../features/matching/pages/ManagerServiceCheckIn';
 import ManagerMatchingRequest from '../features/matching/pages/ManagerMatchingRequest';
