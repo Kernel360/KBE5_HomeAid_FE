@@ -1,0 +1,442 @@
+/* Page wrapper for footer positioning */
+.user-service-sub-page {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+  background-color: #f3f4f6; /* bg-gray-100 배경색 */
+}
+
+/* Header가 추가된 페이지의 콘텐츠 래퍼 */
+.page-content-wrapper {
+  min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
+  padding: 16px;
+  padding-top: 0; /* Header 바로 아래부터 시작 */
+  display: block; /* flex에서 block으로 변경 */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Header 스타일 조정 */
+.user-service-sub-page header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  max-width: 480px;
+  margin-left: calc(50% - 240px);
+  background-color: white;
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.user-service-sub-page .footer-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 480px;
+  margin-left: calc(50% - 240px); /* 중앙 정렬 대신 고정 위치 */
+  z-index: 1000;
+  background-color: white;
+  border-top: 1px solid #e9ecef;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 부드러운 스크롤 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Clean styles for user service sub option */
+.user-service-sub-container {
+  width: 100%;
+  max-width: 480px;
+  background-color: white;
+  padding: 24px 20px;
+  padding-bottom: 120px; /* Footer 높이 + 여유 공간 (84px + 36px) */
+  font-family: sans-serif;
+  box-sizing: border-box;
+  min-height: calc(
+    100vh - 172px
+  ); /* Header(56px) + Footer(84px) + 패딩(32px) */
+  position: relative;
+  z-index: 1; /* Footer보다 낮은 z-index */
+  margin-left: calc(50% - 240px); /* 중앙 정렬 대신 고정 위치 */
+}
+
+/* 인사말 섹션 */
+.greeting-section {
+  margin-top: 20px; /* 상단 여백 통일 */
+  margin-bottom: 50px;
+  text-align: left;
+}
+
+.greeting-text {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+/* 서비스 선택 메시지 섹션 */
+.service-message-section {
+  margin-bottom: 60px;
+  text-align: left;
+}
+
+.service-message {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px 0;
+}
+
+.sub-message {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+/* 하위 서비스 옵션 섹션 */
+.sub-service-options {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 40px;
+  padding: 0 10px;
+}
+
+.sub-service-option {
+  width: 120px;
+  height: 120px;
+  border: 2px solid #e0e0e0;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sub-service-option:hover {
+  border-color: #4285f4;
+  background-color: #f8f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sub-service-option.selected {
+  border-color: #4285f4;
+  background-color: #e3f2fd;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.sub-service-option.empty {
+  border: 2px dashed #ddd;
+  cursor: default;
+}
+
+.sub-service-option.empty:hover {
+  border-color: #ddd;
+  background-color: white;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 화장실 아이콘 */
+.toilet-icon {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toilet-bowl {
+  width: 40px;
+  height: 50px;
+  border: 3px solid #333;
+  border-radius: 20px 20px 25px 25px;
+  background-color: white;
+  position: relative;
+}
+
+.toilet-bowl::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 25px;
+  height: 15px;
+  border: 2px solid #333;
+  border-radius: 50%;
+  background-color: #f0f8ff;
+}
+
+.sparkles {
+  position: absolute;
+  top: -5px;
+  right: -10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sparkles span {
+  font-size: 12px;
+  animation: sparkle 1.5s infinite;
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* 건물 아이콘 */
+.building-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.building-body {
+  width: 50px;
+  height: 60px;
+  background-color: #f0f0f0;
+  border: 3px solid #333;
+  border-radius: 4px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.building-windows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+.window {
+  width: 12px;
+  height: 12px;
+  background-color: #333;
+  border-radius: 2px;
+}
+
+.building-door {
+  width: 16px;
+  height: 20px;
+  background-color: #8b4513;
+  border-radius: 2px;
+}
+
+/* 기본 서비스 섹션 */
+.basic-service-section {
+  background-color: #f5f5f5;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 50px; /* UserServiceOption의 service-options와 동일 */
+  overflow: hidden; /* 박스 밖으로 나가는 내용 방지 */
+}
+
+.service-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.service-icon-small {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* 아이콘 크기 고정 */
+}
+
+.clock-icon {
+  font-size: 20px;
+}
+
+.service-title {
+  flex: 1; /* 나머지 공간 사용 */
+}
+
+.service-title h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.service-duration {
+  font-size: 14px;
+  color: #666;
+}
+
+.service-checklist {
+  margin-bottom: 15px;
+}
+
+.checklist-item {
+  margin-bottom: 12px;
+  width: 100%; /* 전체 너비 사용 */
+}
+
+.checklist-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 서비스 체크박스 스타일 */
+.service-checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 15px;
+  color: #333;
+  line-height: 1.5;
+  position: relative;
+  padding-left: 30px;
+  width: 100%;
+  min-height: 24px; /* 최소 높이 보장 */
+  box-sizing: border-box; /* padding 포함한 크기 계산 */
+}
+
+.service-checkbox-label input[type='checkbox'] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.service-checkmark {
+  position: absolute;
+  left: 0;
+  top: 3px; /* 텍스트와 수직 정렬 조정 */
+  height: 18px;
+  width: 18px;
+  background-color: white;
+  border: 2px solid #ddd;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  flex-shrink: 0; /* 체크박스 크기 고정 */
+}
+
+.service-checkbox-label input:checked ~ .service-checkmark {
+  background-color: #4285f4;
+  border-color: #4285f4;
+}
+
+.service-checkmark:after {
+  content: '';
+  position: absolute;
+  display: none;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.service-checkbox-label input:checked ~ .service-checkmark:after {
+  display: block;
+}
+
+.service-name {
+  flex: 1;
+  margin-right: 10px;
+  word-break: keep-all; /* 한글 단어 단위로 줄바꿈 */
+  line-height: 1.4;
+}
+
+.service-price {
+  font-size: 14px;
+  color: #4285f4;
+  font-weight: 500;
+  white-space: nowrap; /* 가격은 한 줄로 유지 */
+  flex-shrink: 0; /* 가격 텍스트 크기 고정 */
+}
+
+.service-note {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.service-note span {
+  font-size: 14px;
+  color: #999;
+}
+
+/* 예약 버튼 섹션 */
+.reservation-section {
+  padding: 0 20px;
+  margin-bottom: 40px; /* UserServiceOption의 reservation-section과 동일 */
+}
+
+.reservation-button {
+  width: 100%;
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.reservation-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+.reservation-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.reservation-button:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 모바일 반응형 - 작은 화면에서는 중앙 정렬로 복귀 */
+@media (max-width: 768px) {
+  .user-service-sub-page header {
+    margin: 0 auto;
+  }
+
+  .user-service-sub-page .footer-container {
+    margin: 0 auto;
+  }
+
+  .user-service-sub-container {
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 576px) {
+}
