@@ -14,8 +14,6 @@ import MatchingSystemPage from '../features/admin/pages/MatchingSystemPage';
 import MatchingSystemActionPage from '../features/admin/pages/MatchingSystemActionPage';
 import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
 import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
-// import AdminManagerApproval from '../features/admin/pages/adminManagerapproval';
-// import ManagerDetailApproval from '../features/manager/pages/ManagerDetailApproval';
 
 import ManagerServiceCheckIn from '../features/matching/pages/ManagerServiceCheckIn';
 import ManagerMatchingRequest from '../features/matching/pages/ManagerMatchingRequest';
@@ -23,11 +21,13 @@ import UserServiceOption from '../features/reservation/components/UserServiceOpt
 import UserServiceSubOption from '../features/reservation/components/UserServiceSubOption';
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
 import UserServiceRequest from '../features/reservation/components/UserServiceRequest';
-// import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
 
 export const AppRoutes = () => {
   const commonRoutes = [
     { path: '/', element: <HomePage /> },
+
+export const AppRoutes = () => {
+  const commonRoutes = [
     { path: '/auth/*', element: <AuthRoutes /> },
     { path: '/', element: <Landing /> },
     { path: '/admin', element: <Navigate to="/admin/users" replace /> },
@@ -38,11 +38,13 @@ export const AppRoutes = () => {
       element: <MatchingSystemActionPage />,
     },
     { path: '/admin/managers', element: <MatchingManagerList /> },
-    // { path: '/admin/manager-approval', element: <AdminManagerApproval /> },
-    // {
-    //   path: '/admin/manager-approval/:managerId',
-    //   element: <ManagerDetailApproval />,
-    // },
+
+    { path: '/admin/manager-approval', element: <AdminManagerApproval /> },
+    {
+      path: '/admin/manager-approval/:managerId',
+      element: <ManagerDetailApproval />,
+    },
+
     {
       path: '/matching/service-checkin',
       element: <ManagerServiceCheckIn />,
@@ -67,10 +69,7 @@ export const AppRoutes = () => {
       path: '/user/service-request',
       element: <UserServiceRequest />,
     },
-    // {
-    //   path: '/admin/manager-approval/:managerId',
-    //   element: <ManagerDetailApproval />,
-    // }, // ManagerDetailApproval 파일이 존재하지 않아 주석 처리
+    
     { path: '/404', element: <NotFound /> },
     { path: '/about', element: <About /> },
     { path: '/contact', element: <Contact /> },
@@ -87,3 +86,4 @@ export const AppRoutes = () => {
 
   return <>{routes}</>;
 };
+
