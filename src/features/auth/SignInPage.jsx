@@ -21,9 +21,11 @@ const SignInPage = () => {
       console.log(phone);
       const data = await authService.signIn(phone, password);
       console.log('로그인 성공!', data);
-      alert('로그인 성공!');
-      // navigate('/dashboard');
+      
+      navigate('/user/service-option', { replace: true });
+      
     } catch (err) {
+      console.error('로그인 에러:', err);
       setError(err.response?.data?.message || err.message || '로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
