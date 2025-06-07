@@ -5,7 +5,7 @@ import { Calendar, Eye, EyeOff } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { ko } from 'date-fns/locale';
-import { format } from 'date-fns'; // 날짜 형식을 변환하기 위해 임포트
+import { format, isValid } from 'date-fns'; // 날짜 형식을 변환하기 위해 임포트
 import './styles/datepicker.css'; // 새로 생성한 CSS 파일 임포트
 import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
 
@@ -23,8 +23,8 @@ const validateCustomerStep1Data = ({ name, phoneNumber, email, dateOfBirth, gend
       return '유효한 이메일 주소를 입력해주세요.';
   }
 
-  // 날짜가 유효하게 포맷 가능한지 확인 (null이 아닌지만 체크)
-  if (!dateOfBirth) {
+  // dateOfBirth는 Date 객체 또는 null일 수 있으므로, null이 아니고 유효한 Date 객체인지 확인
+  if (!dateOfBirth || !isValid(dateOfBirth)) {
       return '유효한 생년월일을 입력해주세요.';
   }
 
