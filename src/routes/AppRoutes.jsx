@@ -6,6 +6,7 @@ import { About } from '../features/misc/routes';
 import { Contact } from '../features/misc/routes';
 import { Policy } from '../features/misc/routes';
 import { Terms } from '../features/misc/routes';
+import HomePage from '../features/main/HomePage';  // 현재 파일 이름에 맞게 수정
 
 import { protectedRoutes } from './protected';
 import { publicRoutes } from './public';
@@ -13,9 +14,6 @@ import MatchingSystemPage from '../features/admin/pages/MatchingSystemPage';
 import MatchingSystemActionPage from '../features/admin/pages/MatchingSystemActionPage';
 import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
 import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
-import AdminManagerApproval from '../features/admin/pages/adminManagerapproval';
-// import ManagerDetailApproval from '../features/manager/pages/ManagerDetailApproval';
-import ManagerDetailApproval from '../features/admin/pages/adminManagerapproval';
 
 import ManagerServiceCheckIn from '../features/matching/pages/ManagerServiceCheckIn';
 import ManagerMatchingRequest from '../features/matching/pages/ManagerMatchingRequest';
@@ -23,6 +21,10 @@ import UserServiceOption from '../features/reservation/components/UserServiceOpt
 import UserServiceSubOption from '../features/reservation/components/UserServiceSubOption';
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
 import UserServiceRequest from '../features/reservation/components/UserServiceRequest';
+
+export const AppRoutes = () => {
+  const commonRoutes = [
+    { path: '/', element: <HomePage /> },
 
 export const AppRoutes = () => {
   const commonRoutes = [
@@ -36,11 +38,13 @@ export const AppRoutes = () => {
       element: <MatchingSystemActionPage />,
     },
     { path: '/admin/managers', element: <MatchingManagerList /> },
+
     { path: '/admin/manager-approval', element: <AdminManagerApproval /> },
     {
       path: '/admin/manager-approval/:managerId',
       element: <ManagerDetailApproval />,
     },
+
     {
       path: '/matching/service-checkin',
       element: <ManagerServiceCheckIn />,
@@ -65,6 +69,7 @@ export const AppRoutes = () => {
       path: '/user/service-request',
       element: <UserServiceRequest />,
     },
+    
     { path: '/404', element: <NotFound /> },
     { path: '/about', element: <About /> },
     { path: '/contact', element: <Contact /> },
@@ -79,5 +84,6 @@ export const AppRoutes = () => {
     ...commonRoutes,
   ]);
 
-  return routes;
+  return <>{routes}</>;
 };
+
