@@ -1,13 +1,66 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './AdminDashboardPage.css';
 
 function AdminDashboardPage() {
   const navigate = useNavigate();
 
-  const handleMatchingManagementClick = () => {
-    navigate('/admin/matchingsystem');
-  };
+  // 실시간 현황 state
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeManagers: 0,
+    todayReservations: 0,
+    pendingApprovals: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // 현황 데이터 API 연동
+  useEffect(() => {
+    axios
+      .get('/api/v1/admin/dashboard-stats')
+      .then((res) => {
+        // 방어: data가 undefined면 기존 stats(초기값)를 유지
+        if (res.data && res.data.data) {
+          setStats(res.data.data);
+        } else {
+          setStats({
+            totalUsers: 0,
+            activeManagers: 0,
+            todayReservations: 0,
+            pendingApprovals: 0,
+          });
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('현황 데이터를 불러올 수 없습니다.');
+        setLoading(false);
+      });
+  }, []);
+
+  const handleMatchingManagementClick = () => navigate('/admin/matchingsystem');
+  const handleManagerSettlementClick = () =>
+    navigate('/admin/manager-settlement');
+
+  if (loading) return <div>로딩 중...</div>;
+  if (error) return <div>{error}</div>;
+
+  // import React from 'react';
+  // import { useNavigate } from 'react-router-dom';
+  // import './AdminDashboardPage.css';
+
+  // function AdminDashboardPage() {
+  //   const navigate = useNavigate();
+
+  //   const handleMatchingManagementClick = () => {
+  //     navigate('/admin/matchingsystem');
+  //   };
+
+  //   const handleManagerSettlementClick = () => {
+  //     navigate('/admin/manager-settlement');
+  //   };
 
   return (
     <div className="admin-dashboard-container">
@@ -87,21 +140,25 @@ function AdminDashboardPage() {
           <p className="section-title">실시간 현황</p>
           <div className="status-cards-row">
             <div className="status-card users">
-              <p>1,247</p>
+              {/* <p>1,247</p> */}
+              <p>{stats.totalUsers.toLocaleString()}</p>
               <p>총 사용자</p>
             </div>
             <div className="status-card managers">
-              <p>89</p>
+              {/* <p>89</p> */}
+              <p>{stats.activeManagers.toLocaleString()}</p>
               <p>활성 매니저</p>
             </div>
           </div>
           <div className="status-cards-row">
             <div className="status-card reservations">
-              <p>156</p>
+              {/* <p>156</p> */}
+              <p>{stats.todayReservations.toLocaleString()}</p>
               <p>오늘 예약</p>
             </div>
             <div className="status-card pending">
-              <p>23</p>
+              {/* <p>23</p> */}
+              <p>{stats.pendingApprovals.toLocaleString()}</p>
               <p>승인 대기</p>
             </div>
           </div>
@@ -196,7 +253,7 @@ function AdminDashboardPage() {
                   />
                 </svg>
               </div>
-              <p>매니저 승인</p>
+              <p>매니저 관리</p>
             </div>
           </div>
           <div className="quick-action-buttons-row">
@@ -254,7 +311,10 @@ function AdminDashboardPage() {
               </div>
               <p>매칭 관리</p>
             </div>
-            <div className="quick-action-button">
+            <div
+              className="quick-action-button"
+              onClick={() => navigate('/admin/analytics')}
+            >
               <div className="quick-action-button-icon analytics-bg">
                 <svg
                   width={24}
@@ -296,7 +356,117 @@ function AdminDashboardPage() {
                   />
                 </svg>
               </div>
-              <p>통계 분석</p>
+              <p>통계</p>
+            </div>
+          </div>
+          <div className="quick-action-buttons-row">
+            <div
+              className="quick-action-button"
+              onClick={handleManagerSettlementClick}
+            >
+              <div className="quick-action-button-icon settlement-bg">
+                <svg
+                  width={24}
+                  height={25}
+                  viewBox="0 0 24 25"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-6 h-6"
+                  preserveAspectRatio="none"
+                >
+                  <path d="M24 24.5H0V0.5H24V24.5Z" stroke="#10B981" />
+                  <path
+                    d="M12 2.5V6.5"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M12 18.5V22.5"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M4.93 4.93L7.76 7.76"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M16.24 16.24L19.07 19.07"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M2 12.5H6"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M18 12.5H22"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M4.93 19.07L7.76 16.24"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M16.24 7.76L19.07 4.93"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <p>매니저 정산</p>
+            </div>
+            <div
+              className="quick-action-button"
+              onClick={() => navigate('/admin/mypage')}
+            >
+              <div className="quick-action-button-icon mypage-bg">
+                <svg
+                  width={24}
+                  height={25}
+                  viewBox="0 0 24 25"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-6 h-6"
+                  preserveAspectRatio="none"
+                >
+                  <path d="M24 24.5H0V0.5H24V24.5Z" stroke="#6366F1" />
+                  <path
+                    d="M12 12.5C14.2091 12.5 16 10.7091 16 8.5C16 6.29086 14.2091 4.5 12 4.5C9.79086 4.5 8 6.29086 8 8.5C8 10.7091 9.79086 12.5 12 12.5Z"
+                    stroke="#6366F1"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M20 21.5C20 18.1863 16.4183 15.5 12 15.5C7.58172 15.5 4 18.1863 4 21.5"
+                    stroke="#6366F1"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <p>마이페이지</p>
             </div>
           </div>
         </div>
