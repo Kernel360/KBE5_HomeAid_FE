@@ -68,7 +68,7 @@ export const AppRoutes = () => {
     // {
     //   path: '/admin/manager-approval/:managerId',
     //   element: <ManagerDetailApproval />,
-    // }, // ManagerDetailApproval 파일이 존재하지 않아 주석 처리
+    // },
     { path: '/404', element: <NotFound /> },
     { path: '/about', element: <About /> },
     { path: '/contact', element: <Contact /> },
