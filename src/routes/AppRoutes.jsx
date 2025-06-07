@@ -14,7 +14,6 @@ import MatchingSystemActionPage from '../features/admin/pages/MatchingSystemActi
 import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
 import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
 import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
-// import ManagerDetailApproval from '../features/manager/pages/ManagerDetailApproval'; // 파일이 존재하지 않아 주석 처리
 
 export const AppRoutes = () => {
   const commonRoutes = [
@@ -32,7 +31,7 @@ export const AppRoutes = () => {
     // {
     //   path: '/admin/manager-approval/:managerId',
     //   element: <ManagerDetailApproval />,
-    // }, // ManagerDetailApproval 파일이 존재하지 않아 주석 처리
+    // },
     { path: '/404', element: <NotFound /> },
     { path: '/about', element: <About /> },
     { path: '/contact', element: <Contact /> },
