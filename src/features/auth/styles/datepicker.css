@@ -1,0 +1,116 @@
+/* src/features/auth/styles/datepicker.css */
+
+/* Customize these styles to match your project design */
+
+/* Overall date picker container */
+.react-datepicker-wrapper {
+  /* Add styles for the wrapper around the input if needed */
+}
+
+.react-datepicker {
+  border: 1px solid #e0e0e0; /* 예시: 테두리 색상 변경 (이미지에서 약한 테두리) */
+  border-radius: 8px; /* 예시: 모서리 둥글게 */
+  font-family: 'Arial, sans-serif'; /* 예시: 폰트 유지 또는 변경 */
+  overflow: hidden; /* 모서리 둥글게 적용 시 필요 */
+  padding: 8px; /* 예시: 전체 패딩을 줄여 사이즈 축소 */
+}
+
+/* Header (Month and Year) */
+.react-datepicker__header {
+  background-color: #fff; /* 예시: 헤더 배경색 (흰색) */
+  color: #333; /* 예시: 헤더 텍스트 색상 (어두운 색) */
+  border-bottom: 1px solid #e0e0e0; /* 예시: 헤더 하단 테두리 */
+  padding-top: 8px; /* 상단 패딩 */
+}
+
+.react-datepicker__current-month {
+  font-size: 16px; /* 월/년 글자 크기 */
+  font-weight: bold;
+}
+
+.react-datepicker__navigation {
+  top: 12px; /* 네비게이션 화살표 위치 조정 */
+  line-height: 1.7;
+  border: none;
+}
+
+.react-datepicker__navigation--previous {
+  left: 12px;
+}
+
+.react-datepicker__navigation--next {
+  right: 12px;
+}
+
+/* Day of the week */
+.react-datepicker__day-names {
+  margin-bottom: 4px; /* 요일과 날짜 사이 간격 */
+}
+
+.react-datepicker__day-name {
+  color: #555; /* 예시: 요일 텍스트 색상 */
+  font-size: 11px; /* 요일 글자 크기 줄임 */
+  margin: 0 2px; /* 요일 간 간격 줄임 */
+}
+
+/* Days */
+.react-datepicker__month {
+  margin: 0.5rem 0.8rem; /* 달력 전체 좌우 패딩 줄임 */
+}
+
+.react-datepicker__day,
+.react-datepicker__time-name {
+  color: #333; /* 예시: 날짜 텍스트 색상 */
+  width: 1.8rem; /* 날짜 셀 크기 줄임 */
+  line-height: 1.8rem; /* 날짜 셀 크기 줄임 */
+  height: 1.8rem; /* 날짜 셀 크기 줄임 */
+  margin: 1px; /* 날짜 셀 간 간격 줄임 */
+  border-radius: 50%; /* 날짜 원형으로 표시 */
+}
+
+/* Days from previous/next month */
+.react-datepicker__day--outside-month {
+  color: #ccc; /* 예시: 이전/다음 달 날짜 색상 (흐리게) */
+}
+
+/* Selected day */
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+  background-color: #247cff; /* 예시: 선택된 날짜 배경색 (파란색) */
+  color: white; /* 예시: 선택된 날짜 텍스트 색상 (흰색) */
+}
+
+/* Hover day */
+.react-datepicker__day:not(.react-datepicker__day--selected):not(.react-datepicker__day--disabled):hover {
+  background-color: #f0f0f0; /* 예시: 호버 시 배경색 */
+}
+
+/* Today */
+.react-datepicker__day--today {
+  font-weight: bold; /* 예시: 오늘 날짜 폰트 */
+  color: #247cff; /* 예시: 오늘 날짜 색상 */
+  background-color: #e0e0e0; /* 예시: 오늘 날짜 배경색 (이미지 참고) */
+  border-radius: 50%;
+}
+
+/* Weekends */
+.react-datepicker__day--weekend {
+  color: #555; /* 예시: 주말 색상 (이미지 참고) */
+}
+
+/* Today link */
+.react-datepicker__today-button {
+  background: none; /* 버튼 기본 스타일 제거 */
+  border: none;
+  color: #247cff; /* 예시: 오늘 버튼 색상 */
+  font-weight: bold;
+  cursor: pointer;
+  padding: 8px;
+}
+
+/* Clear link */
+.react-datepicker__close-icon::before,
+.react-datepicker__close-icon::after {
+  /* 삭제 버튼 스타일 조정 필요 시 */
+} 

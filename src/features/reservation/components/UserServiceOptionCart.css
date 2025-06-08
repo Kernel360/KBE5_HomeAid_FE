@@ -1,0 +1,305 @@
+/* Page wrapper for footer positioning */
+.user-service-cart-page {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+  background-color: #f3f4f6; /* bg-gray-100 배경색 */
+}
+
+/* Header가 추가된 페이지의 콘텐츠 래퍼 */
+.page-content-wrapper {
+  min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
+  padding: 16px;
+  padding-top: 0; /* Header 바로 아래부터 시작 */
+  display: block; /* flex에서 block으로 변경 */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Header 스타일 조정 */
+.user-service-cart-page header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  max-width: 480px;
+  margin-left: calc(50% - 240px);
+  background-color: white;
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.user-service-cart-page .footer-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 480px;
+  margin-left: calc(50% - 240px); /* 중앙 정렬 대신 고정 위치 */
+  z-index: 1000;
+  background-color: white;
+  border-top: 1px solid #e9ecef;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 부드러운 스크롤 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Clean styles for user service cart */
+.user-service-cart-container {
+  width: 100%;
+  max-width: 480px;
+  background-color: white;
+  padding: 24px 20px;
+  padding-bottom: 120px; /* Footer 높이 + 여유 공간 (84px + 36px) */
+  font-family: sans-serif;
+  box-sizing: border-box;
+  min-height: calc(
+    100vh - 172px
+  ); /* Header(56px) + Footer(84px) + 패딩(32px) */
+  position: relative;
+  z-index: 1; /* Footer보다 낮은 z-index */
+  margin-left: calc(50% - 240px); /* 중앙 정렬 대신 고정 위치 */
+}
+
+/* 제목 섹션 */
+.title-section {
+  margin-top: 20px;
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+/* 설명 섹션 */
+.description-section {
+  /* margin-top: 20px; */
+  margin-bottom: 60px;
+  text-align: left;
+}
+
+.description-text {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* 결제 정보 섹션 */
+.payment-info-section {
+  margin-bottom: 40px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 20px 0;
+}
+
+.price-list {
+  margin-bottom: 20px;
+}
+
+.price-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.price-item:last-child {
+  border-bottom: none;
+}
+
+.item-name {
+  font-size: 15px;
+  color: #333;
+}
+
+.item-price {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+}
+
+.total-amount {
+  border-top: 2px solid #e0e0e0;
+  padding-top: 16px;
+  margin-top: 16px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.total-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* 약관 동의 섹션 */
+.agreements-section {
+  margin-bottom: 50px;
+}
+
+.agreement-item {
+  margin-bottom: 16px;
+}
+
+.agreement-item.all-agreement {
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 20px;
+}
+
+.agreement-item.marketing-agreement {
+  margin-bottom: 24px;
+}
+
+.agreement-label {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+  position: relative;
+  padding-left: 30px;
+  gap: 8px;
+}
+
+.agreement-label input[type='checkbox'] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  height: 18px;
+  width: 18px;
+  background-color: white;
+  border: 2px solid #ddd;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.agreement-label input:checked ~ .checkmark {
+  background-color: #4285f4;
+  border-color: #4285f4;
+}
+
+.checkmark:after {
+  content: '';
+  position: absolute;
+  display: none;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.agreement-label input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.view-button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0;
+}
+
+.view-button:hover {
+  color: #4285f4;
+}
+
+.marketing-description {
+  font-size: 12px;
+  color: #999;
+  margin: 8px 0 0 30px;
+  line-height: 1.4;
+}
+
+/* 서비스 요청 버튼 섹션 */
+.service-request-section {
+  padding: 0 20px;
+  margin-bottom: 40px;
+}
+
+.service-request-button {
+  width: 100%;
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.service-request-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+.service-request-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.service-request-button:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 모바일 반응형 - 작은 화면에서는 중앙 정렬로 복귀 */
+@media (max-width: 768px) {
+  .user-service-cart-page header {
+    margin: 0 auto;
+  }
+
+  .user-service-cart-page .footer-container {
+    margin: 0 auto;
+  }
+
+  .user-service-cart-container {
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 576px) {
+}
