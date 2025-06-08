@@ -1,6 +1,5 @@
 import { User, ChevronRight } from "lucide-react";
 import { useState } from 'react';
-import ServiceRegistration from "../../additionalInfoForm/pages/ServiceRegistration";
 import { useNavigate } from "react-router-dom";
 
 export default function ManagerMypage() {

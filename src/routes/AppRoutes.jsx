@@ -21,16 +21,12 @@ import UserServiceOption from '../features/reservation/components/UserServiceOpt
 import UserServiceSubOption from '../features/reservation/components/UserServiceSubOption';
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
 import UserServiceRequest from '../features/reservation/components/UserServiceRequest';
-import CustomerLayout from '../customer/layout/CustomerLayout';
-import MainPage from '../customer/MainPage';
-import MyPage from '../customer/mypage/pages/Mypage';
-import ManagerLayout from '../layouts/ManagerLayout';
-import ManagerMypage from '../manager/features/mypage/pages/ManagerMypage';
-import ServiceRegistration from '../manager/features/additionalInfoForm/pages/ServiceRegistration';
-
-// export const AppRoutes = () => {
-//   const commonRoutes = [
-//     { path: '/', element: <HomePage /> },
+import ServiceRegistration from '../features/additional-info/pages';
+import CustomerLayout from '../layouts/CustomerLayout';
+import MainPage from '../features/main/MainPage'; 
+import Mypage from '../features/mypage/customer/pages/Mypage';
+import ManagerLayout from '../features/mypage/manager/ManagerMypage';
+import ManagerMypage from '../features/mypage/manager/ManagerMypage';
 
 export const AppRoutes = () => {
   const commonRoutes = [
@@ -45,7 +41,7 @@ export const AppRoutes = () => {
         },
         {
           path: 'mypage',
-          element: <MyPage />,
+          element: <Mypage />
         }
 
         // 필요 시 다른 고객 전용 라우트도 여기에 추가

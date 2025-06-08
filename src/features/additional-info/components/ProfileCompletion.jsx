@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Camera } from 'lucide-react';
-import { apiService } from '../../../../store/api';
+import { apiService } from '../../../store/api';
 
 const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
   const [previewImage, setPreviewImage] = useState(null);
