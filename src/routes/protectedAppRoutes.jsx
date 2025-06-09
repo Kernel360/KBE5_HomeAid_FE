@@ -10,7 +10,7 @@ import UserServiceSubOption from '../features/reservation/components/UserService
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
 import UserServiceRequest from '../features/reservation/components/UserServiceRequest';
 
-// 보호된 라우트 정의
+// 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
   // 관리자(ADMIN) 권한이 필요한 라우트
   {

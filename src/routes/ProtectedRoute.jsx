@@ -1,7 +1,7 @@
 import { useAuthStore } from '../stores/authStore';
 import { Navigate, useLocation } from 'react-router-dom';
-import { roleRoutes } from '../routes/roleRoutes';
 
+//React 컴포넌트 - "문지기" 역할
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
