@@ -43,7 +43,7 @@ export const AppRoutes = () => {
   // 권한에 따른 리다이렉션 처리
   const getRedirectPath = () => {
     if (!user) return '/auth/login';
-    
+
     const role = user.role;
     switch (role) {
       case 'ROLE_CUSTOMER':
@@ -58,13 +58,13 @@ export const AppRoutes = () => {
   };
 
   const routes = useRoutes([
-    { 
-      path: '/', 
-      element: user ? <Navigate to={getRedirectPath()} /> : <MainPage /> 
+    {
+      path: '/',
+      element: user ? <Navigate to={getRedirectPath()} /> : <MainPage />
     },
-    { 
-      path: '/main', 
-      element: user ? <Navigate to={getRedirectPath()} /> : <MainPage /> 
+    {
+      path: '/main',
+      element: user ? <Navigate to={getRedirectPath()} /> : <MainPage />
     },
     ...routesWithProtection,
     ...commonRoutes,

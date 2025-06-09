@@ -17,12 +17,12 @@ const ServiceRegistration = () => {
       latitude: null,
       longitude: null,
       // Step 2 (이동된 데이터)
-      area: '서울시 강남구',
-      availableDays: ['월'],
-      workingHours: { startTime: '09:00', endTime: '18:00' },
+      area: '',
+      availableDays: [1],
+      startTime: '09:00',
+      endTime: '18:00',
       // Step 3
       profileImage: null,
-      introduction: '',
       specialties: '',
   });
 
@@ -93,7 +93,7 @@ const ServiceRegistration = () => {
         {/* Form Content */}
         <div className="p-6 space-y-6">
           {/* 경력 사항 */}
-          <div>
+          {/* <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">경력 사항</h2>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <textarea
@@ -103,7 +103,7 @@ const ServiceRegistration = () => {
                 className="w-full h-20 bg-transparent border-none outline-none resize-none text-sm text-gray-700 placeholder-gray-500"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* 제공 가능한 서비스 */}
           <div>
