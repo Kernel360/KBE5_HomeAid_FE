@@ -31,7 +31,8 @@ const SignInPage = () => {
         // TODO: 백엔드 응답의 다른 필요한 사용자 정보도 여기에 추가하세요.
       };
       useAuthStore.getState().setUser(user);
-
+      console.log('SignInPage - User after login:', user);
+      
       // 역할에 따른 페이지 이동
       if (user.role === 'ROLE_CUSTOMER') {
         navigate('/user/service-option', { replace: true });

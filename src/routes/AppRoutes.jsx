@@ -7,7 +7,6 @@ import { About } from '../features/misc/routes';
 import { Contact } from '../features/misc/routes';
 import { Policy } from '../features/misc/routes';
 import { Terms } from '../features/misc/routes';
-import HomePage from '../features/main/HomePage';
 
 import { publicRoutes } from './public';
 import ProtectedRoute from './ProtectedRoute';
@@ -15,8 +14,8 @@ import { protectedAppRoutes } from './protectedAppRoutes.jsx';
 
 export const AppRoutes = () => {
   const commonRoutes = [
-    { path: '/auth/*', element: <AuthRoutes /> },
     { path: '/', element: <Landing /> },
+    { path: '/auth/*', element: <AuthRoutes /> },
     { path: '/404', element: <NotFound /> },
     { path: '/about', element: <About /> },
     { path: '/contact', element: <Contact /> },
@@ -33,6 +32,9 @@ export const AppRoutes = () => {
         {route.element}
       </ProtectedRoute>
     ),
+    children: route.children ? route.children.map(child => ({
+      path: child.path, element: child.element, index: child.index
+    })) : undefined,
   }));
 
   const routes = useRoutes([
