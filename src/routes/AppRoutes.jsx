@@ -21,15 +21,50 @@ import UserServiceOption from '../features/reservation/components/UserServiceOpt
 import UserServiceSubOption from '../features/reservation/components/UserServiceSubOption';
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
 import UserServiceRequest from '../features/reservation/components/UserServiceRequest';
-
-export const AppRoutes = () => {
-  const commonRoutes = [
-    { path: '/', element: <HomePage /> },
+import ServiceRegistration from '../features/additional-info/pages';
+import CustomerLayout from '../layouts/CustomerLayout';
+import MainPage from '../features/main/MainPage'; 
+import Mypage from '../features/mypage/customer/pages/Mypage';
+import ManagerLayout from '../features/mypage/manager/ManagerMypage';
+import ManagerMypage from '../features/mypage/manager/ManagerMypage';
 
 export const AppRoutes = () => {
   const commonRoutes = [
     { path: '/auth/*', element: <AuthRoutes /> },
-    { path: '/', element: <Landing /> },
+    {
+      path: '/',
+      element: <CustomerLayout />,
+      children: [
+        {
+          index: true,
+          element: <MainPage />,
+        },
+        {
+          path: 'mypage',
+          element: <Mypage />
+        }
+
+        // 필요 시 다른 고객 전용 라우트도 여기에 추가
+      ],
+    },
+    {
+      path: '/manager/',
+      element: <ManagerLayout />,
+      children: [
+        {
+          index: true,
+          element: <MainPage />, //매니저 메인페이지 따로 만들거나 해야함함
+        },
+        {
+          path: 'mypage',
+          element: <ManagerMypage />,
+        },
+        {
+          path: 'additional-info', // 별도 경로로 분리
+          element: <ServiceRegistration />
+        }
+      ]
+    },
     { path: '/admin', element: <Navigate to="/admin/users" replace /> },
     { path: '/admin/users', element: <AdminUserManagement /> },
     { path: '/admin/matchingsystem', element: <MatchingSystemPage /> },
@@ -39,11 +74,11 @@ export const AppRoutes = () => {
     },
     { path: '/admin/managers', element: <MatchingManagerList /> },
 
-    { path: '/admin/manager-approval', element: <AdminManagerApproval /> },
-    {
-      path: '/admin/manager-approval/:managerId',
-      element: <ManagerDetailApproval />,
-    },
+    // { path: '/admin/manager-approval', element: <AdminManagerApproval /> },
+    // {
+    //   path: '/admin/manager-approval/:managerId',
+    //   element: <ManagerDetailApproval />,
+    // },
 
     {
       path: '/matching/service-checkin',
