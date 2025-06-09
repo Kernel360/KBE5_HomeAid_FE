@@ -1,31 +1,74 @@
 import React from 'react';
 import { MapPin } from 'lucide-react';
+import LocationPicker from './LocationPicker';
 
 const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
+  // 요일 매핑 (표시용 -> 서버용)
+  const dayMapping = {
+    '월': 1,
+    '화': 2,
+    '수': 3,
+    '목': 4,
+    '금': 5,
+    '토': 6,
+    '일': 7
+  };
+  
+  // 서버용 -> 표시용 매핑
+  const reverseDayMapping = {
+    1: '월',
+    2: '화',
+    3: '수',
+    4: '목',
+    5: '금',
+    6: '토',
+    7: '일'
+  };
+  
   const days = ['월', '화', '수', '목', '금', '토', '일'];
 
   const handleDaySelect = (day) => {
+    const dayNumber = dayMapping[day]; // 한글 요일을 숫자로 변환
     setAllFormData(prev => ({
       ...prev,
-      availableDays: prev.availableDays?.includes(day)
-        ? prev.availableDays.filter(d => d !== day)
-        : [...(prev.availableDays || []), day]
+      availableDays: prev.availableDays?.includes(dayNumber)
+        ? prev.availableDays.filter(d => d !== dayNumber)
+        : [...(prev.availableDays || []), dayNumber]
+    }));
+  };
+
+  // 위치 선택 핸들러
+  const handleLocationSelect = (locationData) => {
+    setAllFormData(prev => ({
+      ...prev,
+      area: locationData.address,
+      latitude: locationData.latitude || prev.latitude,
+      longitude: locationData.longitude || prev.longitude
     }));
   };
 
   const handleTimeChange = (field, value) => {
     setAllFormData(prev => ({
       ...prev,
-      workingHours: {
-        ...prev.workingHours,
-        [field]: value
-      }
+      [field]: value
     }));
   };
 
   // 현재 선택된 요일과 시간 (allFormData에서 가져오기)
   const availableDays = allFormData.availableDays || [];
-  const workingHours = allFormData.workingHours || { startTTimeTime: '09:00', endTimeTime: '18:00' };
+  const startTime = allFormData.startTime || '09:00';
+  const endTime = allFormData.endTime || '18:00';
+  
+  // 서버에서 오는 숫자 데이터를 표시용 한글로 변환
+  const getDisplayDays = () => {
+    return availableDays.map(dayNum => reverseDayMapping[dayNum]).filter(Boolean);
+  };
+  
+  // 단일 요일이 선택되었는지 확인 (한글 요일로 확인)
+  const isDaySelected = (day) => {
+    const dayNumber = dayMapping[day];
+    return availableDays.includes(dayNumber);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -48,16 +91,10 @@ const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
           {/* 활동 지역 */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">활동 지역</h2>
-            <div className="flex items-center p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <MapPin className="w-5 h-5 text-gray-400 mr-3" />
-              <input
-                type="text"
-                value={allFormData.area || ''}
-                onChange={(e) => setAllFormData(prev => ({ ...prev, area: e.target.value }))}
-                className="flex-1 bg-transparent border-none outline-none text-sm text-gray-700"
-                placeholder="활동 지역을 입력하세요"
-              />
-            </div>
+            <LocationPicker 
+              onLocationSelect={handleLocationSelect}
+              currentAddress={allFormData.area}
+            />
           </div>
 
           {/* 요일 선택 */}
@@ -69,7 +106,7 @@ const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
                   key={day}
                   onClick={() => handleDaySelect(day)}
                   className={`w-12 h-12 rounded-full text-sm font-medium transition-colors ${
-                    availableDays.includes(day)
+                    isDaySelected(day)
                       ? 'bg-blue-600 text-blue-400 hover:bg-blue-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
@@ -88,7 +125,7 @@ const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
                 <label className="block text-sm text-gray-600 mb-2">시작 시간</label>
                 <input
                   type="time"
-                  value={workingHours.startTime}
+                  value={startTime}
                   onChange={(e) => handleTimeChange('startTime', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -98,7 +135,7 @@ const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
                 <label className="block text-sm text-gray-600 mb-2">종료 시간</label>
                 <input
                   type="time"
-                  value={workingHours.endTime}
+                  value={endTime}
                   onChange={(e) => handleTimeChange('endTime', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -111,9 +148,9 @@ const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
             <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
               <h4 className="text-sm font-medium text-blue-800 mb-2">선택된 근무 일정</h4>
               <p className="text-sm text-blue-700">
-                <span className="font-medium">{availableDays.join(', ')}요일</span>
+                <span className="font-medium">{getDisplayDays().join(', ')}요일</span>
                 <br />
-                <span>{workingHours.startTime} - {workingHours.endTime}</span>
+                <span>{startTime} - {endTime}</span>
               </p>
             </div>
           )}

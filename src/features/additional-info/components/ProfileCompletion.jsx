@@ -26,6 +26,8 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
 
   const handleInputChange = (field, value) => {
     setAllFormData(prev => ({ ...prev, [field]: value })); // ✅ allFormData 업데이트
+    console.log(`입력 변경: ${field} = ${value}`); // ✅ 입력 변경 로그
+    console.log('현재 전체 데이터:', allFormData); // ✅ 현재 전체 데이터 출력
   };
 
   const handleSubmit = () => {
@@ -96,26 +98,26 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
           </div>
 
           {/* Introduction */}
-          <div>
+          {/* <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">자기소개</h2>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <textarea
-                value={allFormData.introduction || '안녕하세요, 청소 전문가입니다.\n꼼꼼하고 깔끔한 청소로 고객님의 공간을\n쾌적하게 만들어 드리겠습니다.'} // ✅ allFormData 사용
+                value={allFormData.introduction} // ✅ allFormData 사용
                 onChange={(e) => handleInputChange('introduction', e.target.value)}
                 placeholder="자기소개를 입력해주세요"
                 rows={6}
                 className="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-700 placeholder-gray-500 leading-relaxed"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Specialties */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">특기 사항</h2>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <textarea
-                value={allFormData.specialties || '찌든 때 제거, 욕실 청소, 주방 기름때 제거 전문'} // ✅ allFormData 사용
-                onChange={(e) => handleInputChange('specialties', e.target.value)}
+                value={allFormData.specialties} // ✅ allFormData 사용
+                onChange={(e) => handleInputChange('experience', e.target.value)}
                 placeholder="특기나 전문 분야를 입력해주세요"
                 rows={3}
                 className="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-700 placeholder-gray-500"

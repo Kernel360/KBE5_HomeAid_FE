@@ -25,7 +25,7 @@ import ServiceRegistration from '../features/additional-info/pages';
 import CustomerLayout from '../layouts/CustomerLayout';
 import MainPage from '../features/main/MainPage'; 
 import Mypage from '../features/mypage/customer/pages/Mypage';
-import ManagerLayout from '../features/mypage/manager/ManagerMypage';
+import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
 
 export const AppRoutes = () => {
@@ -48,7 +48,7 @@ export const AppRoutes = () => {
       ],
     },
     {
-      path: '/manager/',
+      path: '/manager',
       element: <ManagerLayout />,
       children: [
         {
