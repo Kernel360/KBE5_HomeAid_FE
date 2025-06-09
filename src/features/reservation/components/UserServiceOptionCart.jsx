@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserServiceOptionCart.css';
+import '../styles/common.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
+import { useCartData, usePaymentData } from '../hooks/useLocalStorage';
+import { PRICING } from '../constants/serviceData';
 
 const UserServiceOptionCart = () => {
   const navigate = useNavigate();
@@ -14,30 +17,8 @@ const UserServiceOptionCart = () => {
     marketing: false,
   });
 
-  const [cartData, setCartData] = useState({
-    basePrice: { name: '기본 요금', price: 80000 },
-    selectedServices: [],
-    subOptionType: null,
-  });
-
-  useEffect(() => {
-    // localStorage에서 장바구니 데이터 불러오기
-    const savedCartData = localStorage.getItem('cartData');
-    if (savedCartData) {
-      const parsedData = JSON.parse(savedCartData);
-      setCartData(parsedData);
-    }
-  }, []);
-
-  // 총 금액 계산
-  const calculateTotal = () => {
-    const basePrice = cartData.basePrice.price;
-    const servicesTotal = cartData.selectedServices.reduce(
-      (sum, service) => sum + service.price,
-      0
-    );
-    return basePrice + servicesTotal;
-  };
+  const { cartData, getTotalAmount } = useCartData();
+  const { updatePaymentData } = usePaymentData();
 
   const handleAllAgreement = (checked) => {
     setAgreements({
@@ -83,11 +64,11 @@ const UserServiceOptionCart = () => {
           manager: '김청소 매니저',
         },
         priceList: priceList,
-        totalAmount: calculateTotal(),
+        totalAmount: getTotalAmount(),
       };
 
       // 결제 데이터를 localStorage에 저장
-      localStorage.setItem('paymentData', JSON.stringify(paymentData));
+      updatePaymentData(paymentData);
 
       // 서비스 요청 페이지로 이동
       navigate('/user/service-request');
@@ -95,10 +76,10 @@ const UserServiceOptionCart = () => {
   };
 
   return (
-    <div className="user-service-cart-page">
+    <div className="reservation-page">
       <Header />
       <div className="page-content-wrapper">
-        <div className="user-service-cart-container">
+        <div className="reservation-container">
           {/* 제목 섹션 */}
           <div className="title-section">
             <h1 className="page-title">장바구니</h1>
@@ -139,7 +120,7 @@ const UserServiceOptionCart = () => {
               <div className="total-row">
                 <span className="total-label">총 결제 금액</span>
                 <span className="total-price">
-                  {calculateTotal().toLocaleString()}원
+                  {getTotalAmount().toLocaleString()}원
                 </span>
               </div>
             </div>
@@ -148,19 +129,19 @@ const UserServiceOptionCart = () => {
           {/* 약관 동의 섹션 */}
           <div className="agreements-section">
             <div className="agreement-item all-agreement">
-              <label className="agreement-label">
+              <label className="custom-checkbox-label agreement-label">
                 <input
                   type="checkbox"
                   checked={agreements.all}
                   onChange={(e) => handleAllAgreement(e.target.checked)}
                 />
-                <span className="checkmark"></span>
+                <span className="custom-checkmark checkmark"></span>
                 약관 전체 동의
               </label>
             </div>
 
             <div className="agreement-item">
-              <label className="agreement-label">
+              <label className="custom-checkbox-label agreement-label">
                 <input
                   type="checkbox"
                   checked={agreements.age}
@@ -168,13 +149,13 @@ const UserServiceOptionCart = () => {
                     handleIndividualAgreement('age', e.target.checked)
                   }
                 />
-                <span className="checkmark"></span>
+                <span className="custom-checkmark checkmark"></span>
                 (필수) 본인은 만 14세 이상입니다
               </label>
             </div>
 
             <div className="agreement-item">
-              <label className="agreement-label">
+              <label className="custom-checkbox-label agreement-label">
                 <input
                   type="checkbox"
                   checked={agreements.terms}
@@ -182,14 +163,14 @@ const UserServiceOptionCart = () => {
                     handleIndividualAgreement('terms', e.target.checked)
                   }
                 />
-                <span className="checkmark"></span>
+                <span className="custom-checkmark checkmark"></span>
                 (필수) 서비스 이용약관 동의
                 <button className="view-button">보기</button>
               </label>
             </div>
 
             <div className="agreement-item">
-              <label className="agreement-label">
+              <label className="custom-checkbox-label agreement-label">
                 <input
                   type="checkbox"
                   checked={agreements.privacy}
@@ -197,14 +178,14 @@ const UserServiceOptionCart = () => {
                     handleIndividualAgreement('privacy', e.target.checked)
                   }
                 />
-                <span className="checkmark"></span>
+                <span className="custom-checkmark checkmark"></span>
                 (필수) 개인정보 수집 및 이용 동의
                 <button className="view-button">보기</button>
               </label>
             </div>
 
             <div className="agreement-item marketing-agreement">
-              <label className="agreement-label">
+              <label className="custom-checkbox-label agreement-label">
                 <input
                   type="checkbox"
                   checked={agreements.marketing}
@@ -212,7 +193,7 @@ const UserServiceOptionCart = () => {
                     handleIndividualAgreement('marketing', e.target.checked)
                   }
                 />
-                <span className="checkmark"></span>
+                <span className="custom-checkmark checkmark"></span>
                 (선택) 광고성 정보 수신 전체동의
               </label>
               <p className="marketing-description">
@@ -225,7 +206,7 @@ const UserServiceOptionCart = () => {
           {/* 서비스 요청 버튼 섹션 */}
           <div className="service-request-section">
             <button
-              className="service-request-button"
+              className="primary-button service-request-button"
               onClick={handleServiceRequest}
               disabled={!canSubmit}
             >

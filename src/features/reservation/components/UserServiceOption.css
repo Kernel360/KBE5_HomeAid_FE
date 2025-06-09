@@ -10,7 +10,7 @@
 .page-content-wrapper {
   min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
   padding: 16px;
-  padding-top: 76px; /* Header 높이 + 여백 (56px + 20px) */
+  padding-top: 76px; /* Header 높이(56px) + 여백(20px) */
   display: block; /* flex에서 block으로 변경 */
   width: 100%;
   box-sizing: border-box;
@@ -29,6 +29,37 @@
   display: flex;
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0 16px;
+}
+
+/* 헤더 내부 버튼 스타일 강화 */
+.user-service-page header button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.user-service-page header button:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 헤더 화살표 아이콘 스타일 강화 */
+.user-service-page header button svg {
+  width: 24px !important;
+  height: 24px !important;
+  color: #000000 !important;
+  stroke: #000000 !important;
+  stroke-width: 2 !important;
+  display: block !important;
 }
 
 .user-service-page .footer-container {
@@ -55,7 +86,7 @@ html {
   width: 100%;
   max-width: 480px;
   background-color: white;
-  padding: 24px 20px;
+  padding: 0 20px; /* 상단 패딩 제거 */
   padding-bottom: 120px; /* Footer 높이 + 여유 공간 (84px + 36px) */
   font-family: sans-serif;
   box-sizing: border-box;
@@ -69,9 +100,10 @@ html {
 
 /* 인사말 섹션 */
 .greeting-section {
-  margin-top: 20px; /* 상단 여백 통일 */
+  margin-top: 0; /* 상단 여백 제거 */
   margin-bottom: 50px;
   text-align: left;
+  padding-top: 24px; /* 약간의 내부 패딩만 */
 }
 
 .greeting-text {

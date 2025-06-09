@@ -1,8 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserServiceOption.css';
+import '../styles/common.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
+import {
+  USER_INFO,
+  SERVICE_DESCRIPTIONS,
+  SERVICE_TYPES,
+} from '../constants/serviceData';
 import clean1 from '../../../assets/images/clean1.png';
 import housework2 from '../../../assets/images/housework2.png';
 import cook3 from '../../../assets/images/cook3.png';
@@ -12,7 +18,7 @@ const UserServiceOption = () => {
 
   const handleServiceClick = (serviceType) => {
     console.log(`${serviceType} 서비스 선택됨`);
-    if (serviceType === '청소') {
+    if (serviceType === SERVICE_TYPES.CLEANING) {
       navigate('/user/service-sub-option');
     }
     // TODO: 다른 서비스 타입에 대한 로직 구현
@@ -29,13 +35,13 @@ const UserServiceOption = () => {
   };
 
   return (
-    <div className="user-service-page">
+    <div className="reservation-page">
       <Header />
       <div className="page-content-wrapper">
-        <div className="user-service-option-container">
+        <div className="reservation-container">
           {/* 인사말 섹션 */}
           <div className="greeting-section">
-            <h1 className="greeting-text">양증진 님 반가워요.</h1>
+            <h1 className="greeting-text">{USER_INFO.greeting}</h1>
           </div>
 
           {/* 로고 섹션 */}
@@ -51,22 +57,24 @@ const UserServiceOption = () => {
 
           {/* 질문 섹션 */}
           <div className="question-section">
-            <h2 className="question-text">지금, 어떤 도움이 필요하신가요?</h2>
+            <h2 className="question-text">
+              {SERVICE_DESCRIPTIONS.MAIN_QUESTION}
+            </h2>
           </div>
 
           {/* 서비스 옵션 섹션 */}
           <div className="service-options">
             <div
-              className="service-option"
-              onClick={() => handleServiceClick('청소')}
+              className="service-card service-option"
+              onClick={() => handleServiceClick(SERVICE_TYPES.CLEANING)}
             >
               <div className="service-icon">
                 <img src={clean1} alt="청소 서비스" className="service-image" />
               </div>
             </div>
             <div
-              className="service-option"
-              onClick={() => handleServiceClick('인테리어')}
+              className="service-card service-option"
+              onClick={() => handleServiceClick(SERVICE_TYPES.INTERIOR)}
             >
               <div className="service-icon">
                 <img
@@ -77,8 +85,8 @@ const UserServiceOption = () => {
               </div>
             </div>
             <div
-              className="service-option"
-              onClick={() => handleServiceClick('요리')}
+              className="service-card service-option"
+              onClick={() => handleServiceClick(SERVICE_TYPES.COOKING)}
             >
               <div className="service-icon">
                 <img src={cook3} alt="요리 서비스" className="service-image" />
@@ -89,7 +97,7 @@ const UserServiceOption = () => {
           {/* 예약 버튼 섹션 */}
           <div className="reservation-section">
             <button
-              className="reservation-button"
+              className="reservation-button special-button"
               onClick={handleReservationClick}
             >
               <div className="reservation-button-text">

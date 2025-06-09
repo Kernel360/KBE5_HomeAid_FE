@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserServiceRequest.css';
+import '../styles/common.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
+import { usePaymentData } from '../hooks/useLocalStorage';
+import { DEFAULT_PAYMENT_DATA } from '../constants/serviceData';
 
 const UserServiceRequest = () => {
   const navigate = useNavigate();
@@ -16,6 +19,8 @@ const UserServiceRequest = () => {
     main: '서울시 강남구 테헤란로 123',
     detail: '삼성아파트 101동 1001호',
   });
+
+  const { paymentData, updateServiceInfo } = usePaymentData();
 
   const handleServiceTypeChange = (type) => {
     setServiceType(type);
@@ -36,42 +41,46 @@ const UserServiceRequest = () => {
   const handleServiceSubmit = () => {
     console.log('결제하기 버튼 클릭');
 
-    // localStorage에서 저장된 결제 데이터 가져오기
-    const savedPaymentData = localStorage.getItem('paymentData');
+    if (paymentData) {
+      // localStorage에서 저장된 결제 데이터가 있는 경우
+      const updatedServiceInfo = {
+        dateTime: `${selectedDate} ${selectedTime}`,
+        serviceType:
+          serviceType === '정기청소'
+            ? '정기 청소'
+            : paymentData.serviceInfo.serviceType,
+      };
 
-    if (savedPaymentData) {
-      const paymentData = JSON.parse(savedPaymentData);
-
-      // 현재 선택된 날짜와 시간으로 업데이트
-      paymentData.serviceInfo.dateTime = `${selectedDate} ${selectedTime}`;
-      paymentData.serviceInfo.serviceType =
-        serviceType === '정기청소'
-          ? '정기 청소'
-          : paymentData.serviceInfo.serviceType;
+      updateServiceInfo(updatedServiceInfo);
 
       // 결제 페이지로 이동
-      navigate('/user/payment', { state: { paymentData } });
+      navigate('/user/payment', {
+        state: {
+          paymentData: {
+            ...paymentData,
+            serviceInfo: {
+              ...paymentData.serviceInfo,
+              ...updatedServiceInfo,
+            },
+          },
+        },
+      });
     } else {
       // 기본 결제 정보 데이터 구성 (장바구니를 거치지 않은 경우)
-      const paymentData = {
+      const defaultPayment = {
+        ...DEFAULT_PAYMENT_DATA,
         serviceInfo: {
+          ...DEFAULT_PAYMENT_DATA.serviceInfo,
           dateTime: `${selectedDate} ${selectedTime}`,
           serviceType:
-            serviceType === '정기청소' ? '정기 청소' : '일회성 청소 (1인)',
-          manager: '김청소 매니저',
+            serviceType === '정기청소'
+              ? '정기 청소'
+              : DEFAULT_PAYMENT_DATA.serviceInfo.serviceType,
         },
-        priceList: [
-          { name: '기본 요금', price: 80000 },
-          { name: '찬대 물기기', price: 10000 },
-          { name: '찬장 먼지 제거', price: 20000 },
-          { name: '일반 배출', price: 20000 },
-          { name: '음식물 배출', price: 25000 },
-        ],
-        totalAmount: 155000,
       };
 
       // 결제 페이지로 이동
-      navigate('/user/payment', { state: { paymentData } });
+      navigate('/user/payment', { state: { paymentData: defaultPayment } });
     }
   };
 
@@ -85,10 +94,10 @@ const UserServiceRequest = () => {
   }
 
   return (
-    <div className="user-service-request-page">
+    <div className="reservation-page">
       <Header />
       <div className="page-content-wrapper">
-        <div className="user-service-request-container">
+        <div className="reservation-container">
           {/* 서비스 요청 제목 */}
           <div className="title-section">
             <h1 className="page-title">서비스 요청</h1>
@@ -182,7 +191,10 @@ const UserServiceRequest = () => {
 
           {/* 서비스 요청 버튼 */}
           <div className="submit-section">
-            <button className="submit-btn" onClick={handleServiceSubmit}>
+            <button
+              className="primary-button submit-btn"
+              onClick={handleServiceSubmit}
+            >
               결제하기
             </button>
           </div>
