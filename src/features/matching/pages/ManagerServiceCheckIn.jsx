@@ -6,7 +6,10 @@ import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
 import useMatchingStore from '../../../stores/matchingStore';
 import { useServiceCheckIn } from '../hooks/useManagerAPI';
-import { NOTIFICATION_MESSAGES } from '../constants/matchingData';
+import {
+  NOTIFICATION_MESSAGES,
+  MATCHING_STATUS,
+} from '../constants/matchingData';
 
 // TODO: 파일 업로드 기능 추가 시 필요한 import
 // import React, { useState, useEffect } from 'react';
@@ -24,6 +27,9 @@ const ManagerServiceCheckIn = () => {
     toggleCheckOutModal,
     getCurrentStatus,
     getButtonStates,
+    performCheckIn,
+    performCheckOut,
+    setMatchingRequest,
   } = useMatchingStore();
 
   // API 훅 사용
@@ -31,8 +37,8 @@ const ManagerServiceCheckIn = () => {
     loading,
     error,
     getServiceDetails,
-    performCheckIn,
-    performCheckOut,
+    performCheckIn: apiPerformCheckIn,
+    performCheckOut: apiPerformCheckOut,
     // TODO: 파일 업로드 기능 구현 시 사용
     // uploadServiceFile,
   } = useServiceCheckIn();
@@ -44,9 +50,43 @@ const ManagerServiceCheckIn = () => {
 
   // 컴포넌트 마운트 시 서비스 상세 정보 로드
   useEffect(() => {
-    const serviceId = 1; // TODO: URL 파라미터에서 실제 ID 가져오기
-    getServiceDetails(serviceId).catch(console.error);
-  }, [getServiceDetails]);
+    if (matchingRequest.matchingId) {
+      loadServiceDetails(matchingRequest.matchingId);
+    } else {
+      // 더미 데이터로 초기화 (개발용)
+      setMatchingRequest({
+        matchingId: 1001,
+        customerName: '김고객',
+        serviceType: '대청소',
+        reservedDate: '2023-06-15',
+        reservedTime: '14:00',
+        estimatedDuration: 3,
+        address: '서울시 강남구 테헤란로 123',
+        customerRequest:
+          '주방 기름때 제거에 신경써주세요. 욕실 곰팡이도 깔끔하게 청소 부탁드립니다.',
+        status: MATCHING_STATUS.CONFIRMED,
+      });
+    }
+  }, [matchingRequest.matchingId, setMatchingRequest]);
+
+  const loadServiceDetails = async (matchingId) => {
+    try {
+      const data = await getServiceDetails(matchingId);
+      setMatchingRequest({
+        matchingId: data.matchingId,
+        customerName: '김고객', // 더미 데이터
+        serviceType: data.serviceType,
+        reservedDate: data.reservedDate,
+        reservedTime: data.reservedTime,
+        estimatedDuration: data.estimatedDuration,
+        address: '서울시 강남구 테헤란로 123', // 더미 데이터
+        customerRequest: data.customerRequest,
+        status: MATCHING_STATUS.CONFIRMED,
+      });
+    } catch (error) {
+      console.error('서비스 상세 정보 로드 실패:', error);
+    }
+  };
 
   // TODO: 매칭내역 확인 기능 - 현재 주석처리
   /*
@@ -65,8 +105,8 @@ const ManagerServiceCheckIn = () => {
 
   const confirmCheckIn = async () => {
     try {
-      const serviceId = 1; // TODO: 실제 서비스 ID 사용
-      await performCheckIn(serviceId);
+      await apiPerformCheckIn(matchingRequest.matchingId);
+      performCheckIn(); // zustand store 업데이트
       alert(NOTIFICATION_MESSAGES.SERVICE.CHECKIN_SUCCESS);
       toggleCheckInModal();
     } catch (error) {
@@ -77,8 +117,8 @@ const ManagerServiceCheckIn = () => {
 
   const confirmCheckOut = async () => {
     try {
-      const serviceId = 1; // TODO: 실제 서비스 ID 사용
-      await performCheckOut(serviceId);
+      await apiPerformCheckOut(matchingRequest.matchingId);
+      performCheckOut(); // zustand store 업데이트
       alert(NOTIFICATION_MESSAGES.SERVICE.CHECKOUT_SUCCESS);
       toggleCheckOutModal();
     } catch (error) {
@@ -202,6 +242,10 @@ const ManagerServiceCheckIn = () => {
 
             <div className="details-card">
               <div className="detail-item">
+                <span className="label">매칭 ID</span>
+                <span className="value">#{matchingRequest.matchingId}</span>
+              </div>
+              <div className="detail-item">
                 <span className="label">고객명</span>
                 <span className="value">{matchingRequest.customerName}</span>
               </div>
@@ -211,7 +255,15 @@ const ManagerServiceCheckIn = () => {
               </div>
               <div className="detail-item">
                 <span className="label">날짜 및 시간</span>
-                <span className="value">{matchingRequest.dateTime}</span>
+                <span className="value">
+                  {matchingRequest.reservedDate} {matchingRequest.reservedTime}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="label">예상 소요시간</span>
+                <span className="value">
+                  {matchingRequest.estimatedDuration}시간
+                </span>
               </div>
               <div className="detail-item">
                 <span className="label">주소</span>
@@ -226,17 +278,21 @@ const ManagerServiceCheckIn = () => {
                 <div className="status-item">
                   <div className="status-icon">
                     <span
-                      className={`icon ${serviceProgress.checkInStatus === '완료' ? 'completed' : 'pending'}`}
+                      className={`icon ${serviceProgress.checkInStatus === 'COMPLETED' ? 'completed' : 'pending'}`}
                     >
-                      {serviceProgress.checkInStatus === '완료' ? '✓' : '○'}
+                      {serviceProgress.checkInStatus === 'COMPLETED'
+                        ? '✓'
+                        : '○'}
                     </span>
                   </div>
                   <div className="status-details">
                     <span className="status-label">체크인</span>
                     <span
-                      className={`status-value ${serviceProgress.checkInStatus === '완료' ? 'completed' : 'pending'}`}
+                      className={`status-value ${serviceProgress.checkInStatus === 'COMPLETED' ? 'completed' : 'pending'}`}
                     >
-                      {serviceProgress.checkInStatus}
+                      {serviceProgress.checkInStatus === 'COMPLETED'
+                        ? '완료'
+                        : '대기 중'}
                     </span>
                     {serviceProgress.checkInTime && (
                       <span className="status-time">
@@ -257,17 +313,21 @@ const ManagerServiceCheckIn = () => {
                 <div className="status-item">
                   <div className="status-icon">
                     <span
-                      className={`icon ${serviceProgress.checkOutStatus === '완료' ? 'completed' : 'pending'}`}
+                      className={`icon ${serviceProgress.checkOutStatus === 'COMPLETED' ? 'completed' : 'pending'}`}
                     >
-                      {serviceProgress.checkOutStatus === '완료' ? '✓' : '○'}
+                      {serviceProgress.checkOutStatus === 'COMPLETED'
+                        ? '✓'
+                        : '○'}
                     </span>
                   </div>
                   <div className="status-details">
                     <span className="status-label">체크아웃</span>
                     <span
-                      className={`status-value ${serviceProgress.checkOutStatus === '완료' ? 'completed' : 'pending'}`}
+                      className={`status-value ${serviceProgress.checkOutStatus === 'COMPLETED' ? 'completed' : 'pending'}`}
                     >
-                      {serviceProgress.checkOutStatus}
+                      {serviceProgress.checkOutStatus === 'COMPLETED'
+                        ? '완료'
+                        : '대기 중'}
                     </span>
                     {serviceProgress.checkOutTime && (
                       <span className="status-time">

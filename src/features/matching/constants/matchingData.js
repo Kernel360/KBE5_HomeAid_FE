@@ -1,25 +1,58 @@
-// 매칭 요청 상태
+// 매칭 상태 상수
 export const MATCHING_STATUS = {
-  NEW_REQUEST: '신규 요청',
-  ACCEPTED: '수락됨',
-  REJECTED: '거절됨',
-  IN_PROGRESS: '진행 중',
-  COMPLETED: '완료',
-  CANCELLED: '취소됨',
+  // 매니저 응답 대기
+  PENDING_MANAGER_RESPONSE: 'PENDING_MANAGER_RESPONSE',
+  // 고객 응답 대기 (매니저가 승인 후)
+  PENDING_CUSTOMER_RESPONSE: 'PENDING_CUSTOMER_RESPONSE',
+  // 최종 매칭 완료 (매니저, 고객 모두 승인)
+  CONFIRMED: 'CONFIRMED',
+  // 매니저가 거절
+  REJECTED_BY_MANAGER: 'REJECTED_BY_MANAGER',
+  // 고객이 거절
+  REJECTED_BY_CUSTOMER: 'REJECTED_BY_CUSTOMER',
 };
 
-// 서비스 진행 상태
+// 매니저 액션
+export const MANAGER_ACTION = {
+  ACCEPT: 'ACCEPT',
+  REJECT: 'REJECT',
+};
+
+// 고객 액션
+export const CUSTOMER_ACTION = {
+  CONFIRM: 'CONFIRM',
+  REJECT: 'REJECT',
+};
+
+// 서비스 상태
 export const SERVICE_STATUS = {
-  WAITING_CHECKIN: '체크인 필요',
-  IN_PROGRESS: '서비스 진행 중',
-  COMPLETED: '서비스 완료',
-  CANCELLED: '취소됨',
+  NOT_STARTED: 'NOT_STARTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
 };
 
-// 체크인/아웃 상태
+// 체크인 상태
 export const CHECKIN_STATUS = {
-  PENDING: '미완료',
-  COMPLETED: '완료',
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+};
+
+// 매칭 상태별 한글 표시명
+export const MATCHING_STATUS_LABELS = {
+  [MATCHING_STATUS.PENDING_MANAGER_RESPONSE]: '매칭 대기',
+  [MATCHING_STATUS.PENDING_CUSTOMER_RESPONSE]: '고객 응답 대기',
+  [MATCHING_STATUS.CONFIRMED]: '매칭 완료',
+  [MATCHING_STATUS.REJECTED_BY_MANAGER]: '매니저 거절',
+  [MATCHING_STATUS.REJECTED_BY_CUSTOMER]: '고객 거절',
+};
+
+// 매칭 상태별 색상
+export const MATCHING_STATUS_COLORS = {
+  [MATCHING_STATUS.PENDING_MANAGER_RESPONSE]: 'waiting',
+  [MATCHING_STATUS.PENDING_CUSTOMER_RESPONSE]: 'pending',
+  [MATCHING_STATUS.CONFIRMED]: 'matched',
+  [MATCHING_STATUS.REJECTED_BY_MANAGER]: 'rejected',
+  [MATCHING_STATUS.REJECTED_BY_CUSTOMER]: 'rejected',
 };
 
 // 서비스 유형
@@ -101,64 +134,56 @@ export const SERVICE_AREAS = {
 // 알림 메시지
 export const NOTIFICATION_MESSAGES = {
   MATCHING: {
-    ACCEPT_SUCCESS: '매칭 요청이 수락되었습니다.',
-    ACCEPT_ERROR: '매칭 요청 수락에 실패했습니다.',
-    REJECT_SUCCESS: '매칭 요청이 거절되었습니다.',
-    REJECT_ERROR: '매칭 요청 거절에 실패했습니다.',
+    ACCEPT_SUCCESS: '매칭 요청을 수락했습니다.',
+    ACCEPT_ERROR: '매칭 수락 중 오류가 발생했습니다.',
+    REJECT_SUCCESS: '매칭 요청을 거절했습니다.',
+    REJECT_ERROR: '매칭 거절 중 오류가 발생했습니다.',
     REJECT_REASON_REQUIRED: '거절 사유를 입력해주세요.',
+    LOAD_ERROR: '매칭 정보를 불러올 수 없습니다.',
   },
   SERVICE: {
     CHECKIN_SUCCESS: '체크인이 완료되었습니다.',
-    CHECKIN_ERROR: '체크인에 실패했습니다.',
+    CHECKIN_ERROR: '체크인 중 오류가 발생했습니다.',
     CHECKOUT_SUCCESS: '체크아웃이 완료되었습니다.',
-    CHECKOUT_ERROR: '체크아웃에 실패했습니다.',
-    FILE_UPLOAD_SUCCESS: '파일 업로드 및 체크아웃이 완료되었습니다.',
-    FILE_UPLOAD_ERROR: '파일 업로드에 실패했습니다.',
+    CHECKOUT_ERROR: '체크아웃 중 오류가 발생했습니다.',
     FILE_REQUIRED: '파일을 선택해주세요.',
+    FILE_UPLOAD_SUCCESS: '파일 업로드가 완료되었습니다.',
+    FILE_UPLOAD_ERROR: '파일 업로드 중 오류가 발생했습니다.',
   },
   GENERAL: {
-    LOADING: '처리 중입니다...',
+    LOADING: '로딩 중...',
     NETWORK_ERROR: '네트워크 오류가 발생했습니다.',
-    UNKNOWN_ERROR: '알 수 없는 오류가 발생했습니다.',
+    UNEXPECTED_ERROR: '예상치 못한 오류가 발생했습니다.',
   },
 };
 
-// API 엔드포인트 (실제 구현 시 사용)
+// API 엔드포인트
 export const API_ENDPOINTS = {
-  MATCHING: {
-    GET_REQUEST: (id) => `/api/v1/manager/matching-request/${id}`,
-    ACCEPT_REQUEST: (id) => `/api/v1/manager/matching-request/${id}/accept`,
-    REJECT_REQUEST: (id) => `/api/v1/manager/matching-request/${id}/reject`,
-  },
-  SERVICE: {
-    GET_DETAILS: (id) => `/api/v1/manager/service/${id}`,
-    CHECKIN: (id) => `/api/v1/manager/service/${id}/checkin`,
-    CHECKOUT: (id) => `/api/v1/manager/service/${id}/checkout`,
-    UPLOAD_FILE: (id) => `/api/v1/manager/service/${id}/upload`,
-  },
+  // 매니저 매칭 응답
+  MANAGER_RESPONSE: (matchingId) =>
+    `/manager/matchings/${matchingId}/to-customer`,
+  // 고객 매칭 응답
+  CUSTOMER_RESPONSE: (matchingId) =>
+    `/customer/matchings/${matchingId}/to-manager`,
+  // 매칭 상세 조회
+  MATCHING_DETAIL: (matchingId) => `/matchings/${matchingId}`,
+  // 매니저 매칭 목록
+  MANAGER_MATCHING_LIST: '/manager/matchings',
+  // 서비스 체크인/아웃
+  SERVICE_CHECKIN: (matchingId) => `/manager/services/${matchingId}/checkin`,
+  SERVICE_CHECKOUT: (matchingId) => `/manager/services/${matchingId}/checkout`,
 };
 
 // 더미 데이터 (개발용)
-export const DUMMY_DATA = {
-  MATCHING_REQUEST: {
-    id: 1,
-    status: MATCHING_STATUS.NEW_REQUEST,
-    serviceType: SERVICE_TYPES.DEEP_CLEANING,
-    dateTime: '2024-01-15 14:00',
-    estimatedTime: ESTIMATED_DURATION.MEDIUM,
-    address: '서울시 강남구 테헤란로 123',
-    estimatedEarnings: 60000,
-    customerRequest:
-      '주방 기름때 제거에 신경써주세요. 욕실 곰팡이도 꼼꼼하게 청소 부탁드립니다.',
-    customerName: '김고객',
-  },
-  SERVICE_DETAILS: {
-    id: 1,
-    customerName: '김고객',
-    serviceType: SERVICE_TYPES.DEEP_CLEANING,
-    dateTime: '2024-01-15 14:00',
-    address: '서울시 강남구 테헤란로 123',
-    checkInStatus: CHECKIN_STATUS.PENDING,
-    checkOutStatus: CHECKIN_STATUS.PENDING,
-  },
+export const DUMMY_MATCHING_DATA = {
+  matchingId: 1001,
+  serviceType: '대청소',
+  reservedDate: '2023-06-15',
+  reservedTime: '14:00',
+  estimatedDuration: 3,
+  latitude: 37.498095,
+  longitude: 127.02761,
+  customerRequest:
+    '주방 기름때 제거에 신경써주세요. 욕실 곰팡이도 깔끔하게 청소 부탁드립니다.',
+  status: MATCHING_STATUS.PENDING_MANAGER_RESPONSE,
 };

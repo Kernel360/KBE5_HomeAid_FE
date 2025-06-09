@@ -13,6 +13,7 @@ import UserPaymentComplete from './features/payment/pages/UserPaymentComplete';
 // Manager components
 import ManagerMatchingRequest from './features/matching/pages/ManagerMatchingRequest';
 import ManagerServiceCheckIn from './features/matching/pages/ManagerServiceCheckIn';
+import ManagerMatchingList from './features/matching/pages/ManagerMatchingList';
 
 import './App.css';
 
@@ -42,6 +43,7 @@ function App() {
           />
 
           {/* Manager routes */}
+          <Route path="/matching/list" element={<ManagerMatchingList />} />
           <Route
             path="/matching/matching-request"
             element={<ManagerMatchingRequest />}

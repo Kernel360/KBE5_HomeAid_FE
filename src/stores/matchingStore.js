@@ -1,93 +1,138 @@
 import { create } from 'zustand';
+import {
+  MATCHING_STATUS,
+  SERVICE_STATUS,
+  CHECKIN_STATUS,
+  MATCHING_STATUS_LABELS,
+  MANAGER_ACTION,
+  CUSTOMER_ACTION,
+} from '../features/matching/constants/matchingData';
 
 const useMatchingStore = create((set, get) => ({
-  // 매칭 요청 데이터
+  // 매칭 요청 정보
   matchingRequest: {
-    id: null,
-    status: '신규 요청',
+    matchingId: null,
     serviceType: '',
-    dateTime: '',
-    estimatedTime: '',
-    address: '',
-    estimatedEarnings: 0,
+    reservedDate: '',
+    reservedTime: '',
+    estimatedDuration: 0,
+    latitude: null,
+    longitude: null,
     customerRequest: '',
     customerName: '',
-    isAccepted: false,
+    address: '',
+    status: MATCHING_STATUS.PENDING_MANAGER_RESPONSE,
+    managerMemo: '',
+    customerMemo: '',
   },
 
   // 서비스 진행 상태
   serviceProgress: {
-    checkInStatus: '미완료',
-    checkOutStatus: '미완료',
+    status: SERVICE_STATUS.NOT_STARTED,
+    checkInStatus: CHECKIN_STATUS.PENDING,
+    checkOutStatus: CHECKIN_STATUS.PENDING,
     checkInTime: null,
     checkOutTime: null,
   },
 
   // UI 상태
   uiState: {
-    isLoading: false,
-    showAcceptModal: false,
-    showRejectModal: false,
     showCheckInModal: false,
     showCheckOutModal: false,
-    rejectReason: '',
+    showRejectModal: false,
+    isLoading: false,
   },
 
-  // 매칭 요청 데이터 설정
+  // 액션: 매칭 요청 정보 설정
   setMatchingRequest: (requestData) =>
     set((state) => ({
-      matchingRequest: { ...state.matchingRequest, ...requestData },
+      matchingRequest: {
+        ...state.matchingRequest,
+        ...requestData,
+      },
     })),
 
-  // 서비스 진행 상태 업데이트
-  setServiceProgress: (progressData) =>
+  // 액션: 매칭 상태 업데이트
+  updateMatchingStatus: (status, memo = '') =>
     set((state) => ({
-      serviceProgress: { ...state.serviceProgress, ...progressData },
+      matchingRequest: {
+        ...state.matchingRequest,
+        status,
+        ...(status === MATCHING_STATUS.REJECTED_BY_MANAGER && {
+          managerMemo: memo,
+        }),
+        ...(status === MATCHING_STATUS.REJECTED_BY_CUSTOMER && {
+          customerMemo: memo,
+        }),
+      },
     })),
 
-  // 체크인 완료
-  completeCheckIn: () =>
+  // 액션: 매니저 응답 처리
+  respondAsManager: (action, memo = '') =>
+    set((state) => {
+      const newStatus =
+        action === MANAGER_ACTION.ACCEPT
+          ? MATCHING_STATUS.PENDING_CUSTOMER_RESPONSE
+          : MATCHING_STATUS.REJECTED_BY_MANAGER;
+
+      return {
+        matchingRequest: {
+          ...state.matchingRequest,
+          status: newStatus,
+          managerMemo: memo,
+        },
+      };
+    }),
+
+  // 액션: 고객 응답 처리 (시뮬레이션용)
+  respondAsCustomer: (action, memo = '') =>
+    set((state) => {
+      const newStatus =
+        action === CUSTOMER_ACTION.CONFIRM
+          ? MATCHING_STATUS.CONFIRMED
+          : MATCHING_STATUS.REJECTED_BY_CUSTOMER;
+
+      return {
+        matchingRequest: {
+          ...state.matchingRequest,
+          status: newStatus,
+          customerMemo: memo,
+        },
+      };
+    }),
+
+  // 액션: 서비스 진행 상태 업데이트
+  updateServiceProgress: (progressData) =>
     set((state) => ({
       serviceProgress: {
         ...state.serviceProgress,
-        checkInStatus: '완료',
+        ...progressData,
+      },
+    })),
+
+  // 액션: 체크인 처리
+  performCheckIn: () =>
+    set((state) => ({
+      serviceProgress: {
+        ...state.serviceProgress,
+        checkInStatus: CHECKIN_STATUS.COMPLETED,
         checkInTime: new Date().toISOString(),
+        status: SERVICE_STATUS.IN_PROGRESS,
       },
     })),
 
-  // 체크아웃 완료
-  completeCheckOut: () =>
+  // 액션: 체크아웃 처리
+  performCheckOut: () =>
     set((state) => ({
       serviceProgress: {
         ...state.serviceProgress,
-        checkOutStatus: '완료',
+        checkOutStatus: CHECKIN_STATUS.COMPLETED,
         checkOutTime: new Date().toISOString(),
+        status: SERVICE_STATUS.COMPLETED,
       },
     })),
 
-  // UI 상태 관리
-  setUIState: (uiData) =>
-    set((state) => ({
-      uiState: { ...state.uiState, ...uiData },
-    })),
-
-  // 모달 토글 함수들
-  toggleAcceptModal: () =>
-    set((state) => ({
-      uiState: {
-        ...state.uiState,
-        showAcceptModal: !state.uiState.showAcceptModal,
-      },
-    })),
-
-  toggleRejectModal: () =>
-    set((state) => ({
-      uiState: {
-        ...state.uiState,
-        showRejectModal: !state.uiState.showRejectModal,
-      },
-    })),
-
+  // UI 상태 토글
   toggleCheckInModal: () =>
     set((state) => ({
       uiState: {
@@ -104,107 +149,84 @@ const useMatchingStore = create((set, get) => ({
       },
     })),
 
-  // 거절 사유 설정
-  setRejectReason: (reason) =>
+  toggleRejectModal: () =>
     set((state) => ({
-      uiState: { ...state.uiState, rejectReason: reason },
-    })),
-
-  // 로딩 상태 설정
-  setLoading: (loading) =>
-    set((state) => ({
-      uiState: { ...state.uiState, isLoading: loading },
-    })),
-
-  // 매칭 수락 처리
-  acceptMatching: () =>
-    set((state) => ({
-      matchingRequest: {
-        ...state.matchingRequest,
-        isAccepted: true,
-        status: '수락됨',
+      uiState: {
+        ...state.uiState,
+        showRejectModal: !state.uiState.showRejectModal,
       },
     })),
 
-  // 매칭 거절 처리
-  rejectMatching: (reason) =>
+  setLoading: (isLoading) =>
     set((state) => ({
-      matchingRequest: {
-        ...state.matchingRequest,
-        isAccepted: false,
-        status: '거절됨',
-        rejectReason: reason,
+      uiState: {
+        ...state.uiState,
+        isLoading,
       },
     })),
 
-  // 상태 초기화
-  resetMatchingData: () =>
+  // 헬퍼: 현재 상태 가져오기
+  getCurrentStatus: () => {
+    const { matchingRequest } = get();
+    return MATCHING_STATUS_LABELS[matchingRequest.status] || '알 수 없음';
+  },
+
+  // 헬퍼: 버튼 활성화 상태 계산
+  getButtonStates: () => {
+    const { matchingRequest, serviceProgress } = get();
+
+    const isMatchingConfirmed =
+      matchingRequest.status === MATCHING_STATUS.CONFIRMED;
+    const isCheckInCompleted =
+      serviceProgress.checkInStatus === CHECKIN_STATUS.COMPLETED;
+    const isCheckOutCompleted =
+      serviceProgress.checkOutStatus === CHECKIN_STATUS.COMPLETED;
+
+    return {
+      isCheckInButtonEnabled: isMatchingConfirmed && !isCheckInCompleted,
+      isCheckOutButtonEnabled:
+        isMatchingConfirmed && isCheckInCompleted && !isCheckOutCompleted,
+    };
+  },
+
+  // 헬퍼: 매칭 응답 가능 여부
+  canRespondToMatching: () => {
+    const { matchingRequest } = get();
+    return matchingRequest.status === MATCHING_STATUS.PENDING_MANAGER_RESPONSE;
+  },
+
+  // 스토어 초기화
+  resetStore: () =>
     set({
       matchingRequest: {
-        id: null,
-        status: '신규 요청',
+        matchingId: null,
         serviceType: '',
-        dateTime: '',
-        estimatedTime: '',
-        address: '',
-        estimatedEarnings: 0,
+        reservedDate: '',
+        reservedTime: '',
+        estimatedDuration: 0,
+        latitude: null,
+        longitude: null,
         customerRequest: '',
         customerName: '',
-        isAccepted: false,
+        address: '',
+        status: MATCHING_STATUS.PENDING_MANAGER_RESPONSE,
+        managerMemo: '',
+        customerMemo: '',
       },
       serviceProgress: {
-        checkInStatus: '미완료',
-        checkOutStatus: '미완료',
+        status: SERVICE_STATUS.NOT_STARTED,
+        checkInStatus: CHECKIN_STATUS.PENDING,
+        checkOutStatus: CHECKIN_STATUS.PENDING,
         checkInTime: null,
         checkOutTime: null,
       },
       uiState: {
-        isLoading: false,
-        showAcceptModal: false,
-        showRejectModal: false,
         showCheckInModal: false,
         showCheckOutModal: false,
-        rejectReason: '',
+        showRejectModal: false,
+        isLoading: false,
       },
     }),
-
-  // 서비스 상태 계산 함수들
-  isCheckInComplete: () => {
-    const { serviceProgress } = get();
-    return serviceProgress.checkInStatus === '완료';
-  },
-
-  isCheckOutComplete: () => {
-    const { serviceProgress } = get();
-    return serviceProgress.checkOutStatus === '완료';
-  },
-
-  getCurrentStatus: () => {
-    const state = get();
-    const isCheckInComplete = state.isCheckInComplete();
-    const isCheckOutComplete = state.isCheckOutComplete();
-
-    if (isCheckOutComplete) return '서비스 완료';
-    if (isCheckInComplete) return '서비스 진행 중';
-    return '체크인 필요';
-  },
-
-  // 버튼 활성화 상태 계산
-  getButtonStates: () => {
-    const state = get();
-    const isMatchingAccepted = state.matchingRequest.isAccepted;
-    const isCheckInComplete = state.isCheckInComplete();
-    const isCheckOutComplete = state.isCheckOutComplete();
-
-    return {
-      // 매칭이 수락되어야만 체크인 버튼 활성화
-      isCheckInButtonEnabled:
-        isMatchingAccepted && !isCheckInComplete && !isCheckOutComplete,
-      // 체크인 완료되어야만 체크아웃 버튼 활성화
-      isCheckOutButtonEnabled:
-        isMatchingAccepted && isCheckInComplete && !isCheckOutComplete,
-    };
-  },
 }));
 
 export default useMatchingStore;

@@ -211,6 +211,12 @@
   color: #f57c00;
 }
 
+/* 새로운 상태 추가 */
+.status-badge.pending {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
 .item-content {
   display: flex;
   justify-content: space-between;
@@ -502,6 +508,12 @@
   font-weight: 600;
 }
 
+/* 새로운 상태 추가 */
+.detail-value.status-pending {
+  color: #7b1fa2;
+  font-weight: 600;
+}
+
 .modal-footer {
   display: flex;
   gap: 12px;
@@ -595,4 +607,32 @@
     padding: 10px 12px;
     font-size: 13px;
   }
+}
+
+/* 로딩 및 에러 상태 */
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+}
+
+.error-state {
+  color: #d32f2f;
+}
+
+.retry-button {
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #4285f4;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background-color: #3367d6;
 }
