@@ -1,95 +1,382 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserServiceRequest.css';
 import '../styles/common.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
 import { usePaymentData } from '../hooks/useLocalStorage';
-import { DEFAULT_PAYMENT_DATA } from '../constants/serviceData';
+import {
+  useCustomerReservation,
+  useCustomerAddresses,
+} from '../hooks/useCustomerAPI';
+import useReservationStore from '../../../stores/reservationStore';
+
+// ⭐️ 시간 계산 함수들 추가
+const addMinutesToTime = (timeStr, minutes) => {
+  if (!timeStr || !minutes) return '';
+
+  const [hours, mins] = timeStr.split(':').map(Number);
+  const totalMinutes = hours * 60 + mins + minutes;
+
+  const newHours = Math.floor(totalMinutes / 60) % 24;
+  const newMins = totalMinutes % 60;
+
+  return `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`;
+};
+
+const formatTimeDisplay = (timeStr) => {
+  if (!timeStr) return '';
+  const [hours, minutes] = timeStr.split(':');
+  return `${hours}:${minutes}`;
+};
 
 const UserServiceRequest = () => {
   const navigate = useNavigate();
-  const [serviceType, setServiceType] = useState('정기청소');
-  const [selectedDate, setSelectedDate] = useState('2023-06-15');
-  const [selectedTime, setSelectedTime] = useState('14:00');
-  const [managerGender, setManagerGender] = useState('무관');
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState({
-    type: '집',
-    main: '서울시 강남구 테헤란로 123',
-    detail: '삼성아파트 101동 1001호',
+
+  // zustand store 사용
+  const { reservationData } = useReservationStore();
+
+  // API 훅 사용
+  const {
+    addresses,
+    loading: addressLoading,
+    error: addressError,
+    addAddress,
+  } = useCustomerAddresses();
+
+  const {
+    createReservation,
+    loading: reservationLoading,
+    error: reservationError,
+  } = useCustomerReservation();
+
+  const { setPaymentData } = usePaymentData();
+
+  // 폼 상태 관리
+  const [formData, setFormData] = useState({
+    serviceType: '원룸',
+    date: '',
+    startTime: '09:00', // 시작시간으로 변경
+    managerGender: '',
+    selectedAddress: null,
+    detailAddress: '',
+    isCurrentLocation: false,
+    addressMethod: '',
+    isDefaultAddress: false,
   });
 
-  const { paymentData, updateServiceInfo } = usePaymentData();
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
-  const handleServiceTypeChange = (type) => {
-    setServiceType(type);
+  // 종료시간 계산 (zustand store의 totalDuration 사용)
+  const endTime =
+    formData.startTime && reservationData.totalDuration > 0
+      ? addMinutesToTime(formData.startTime, reservationData.totalDuration)
+      : '';
+
+  // 컴포넌트 마운트 시 기본값 설정
+  useEffect(() => {
+    // 오늘 날짜를 기본값으로 설정
+    const today = new Date().toISOString().split('T')[0];
+    setFormData((prev) => ({ ...prev, date: today }));
+  }, []);
+
+  // 기본 주소가 있다면 선택
+  useEffect(() => {
+    if (addresses.length > 0) {
+      const defaultAddress = addresses.find((addr) => addr.isDefault);
+      if (defaultAddress) {
+        setFormData((prev) => ({ ...prev, selectedAddress: defaultAddress }));
+      }
+    }
+  }, [addresses]);
+
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleManagerGenderChange = (gender) => {
-    setManagerGender(gender);
+  const handleAddressSelect = (address) => {
+    setFormData((prev) => ({ ...prev, selectedAddress: address }));
   };
 
-  const handleAddressEdit = () => {
-    setShowAddressModal(true);
-  };
-
-  const handleAddressModalClose = () => {
-    setShowAddressModal(false);
-  };
-
-  const handleServiceSubmit = () => {
-    console.log('결제하기 버튼 클릭');
-
-    if (paymentData) {
-      // localStorage에서 저장된 결제 데이터가 있는 경우
-      const updatedServiceInfo = {
-        dateTime: `${selectedDate} ${selectedTime}`,
-        serviceType:
-          serviceType === '정기청소'
-            ? '정기 청소'
-            : paymentData.serviceInfo.serviceType,
-      };
-
-      updateServiceInfo(updatedServiceInfo);
-
-      // 결제 페이지로 이동
-      navigate('/user/payment', {
-        state: {
-          paymentData: {
-            ...paymentData,
-            serviceInfo: {
-              ...paymentData.serviceInfo,
-              ...updatedServiceInfo,
-            },
-          },
+  const handleCurrentLocationClick = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('현재 위치:', latitude, longitude);
+          handleInputChange('isCurrentLocation', true);
+          // 임시로 현재 위치 주소 설정
+          const currentLocationAddress = {
+            id: 'current',
+            type: '현재 위치',
+            main: `위도: ${latitude.toFixed(6)}, 경도: ${longitude.toFixed(6)}`,
+            detail: '현재 위치에서 측정된 좌표',
+            isDefault: false,
+          };
+          handleAddressSelect(currentLocationAddress);
         },
-      });
+        (error) => {
+          console.error('위치 정보를 가져올 수 없습니다:', error);
+          alert(
+            '위치 정보를 가져올 수 없습니다. 수동으로 주소를 입력해주세요.'
+          );
+        }
+      );
     } else {
-      // 기본 결제 정보 데이터 구성 (장바구니를 거치지 않은 경우)
-      const defaultPayment = {
-        ...DEFAULT_PAYMENT_DATA,
-        serviceInfo: {
-          ...DEFAULT_PAYMENT_DATA.serviceInfo,
-          dateTime: `${selectedDate} ${selectedTime}`,
-          serviceType:
-            serviceType === '정기청소'
-              ? '정기 청소'
-              : DEFAULT_PAYMENT_DATA.serviceInfo.serviceType,
-        },
-      };
-
-      // 결제 페이지로 이동
-      navigate('/user/payment', { state: { paymentData: defaultPayment } });
+      alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
     }
   };
 
+  const handleAddressSave = async () => {
+    if (!formData.addressMethod.trim()) {
+      alert('주소를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const newAddressData = {
+        type: '기타',
+        main: formData.addressMethod,
+        detail: formData.detailAddress || '',
+        isDefault: formData.isDefaultAddress,
+      };
+
+      const newAddress = await addAddress(newAddressData);
+      handleAddressSelect(newAddress);
+      setShowAddressModal(false);
+
+      // 폼 초기화
+      setFormData((prev) => ({
+        ...prev,
+        addressMethod: '',
+        detailAddress: '',
+        isDefaultAddress: false,
+      }));
+
+      alert('주소가 저장되었습니다.');
+    } catch (error) {
+      console.error('주소 저장 실패:', error);
+      alert('주소 저장에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  const handleSubmit = async () => {
+    // 필수 입력 검증
+    if (!formData.serviceType || !formData.date || !formData.startTime) {
+      alert('서비스 유형, 날짜, 시간을 모두 선택해주세요.');
+      return;
+    }
+
+    if (!formData.selectedAddress) {
+      alert('주소를 선택해주세요.');
+      return;
+    }
+
+    try {
+      // zustand store에서 예약 정보 가져오기
+      const { setReservationDate, setReservationTime, setAddress } =
+        useReservationStore.getState();
+
+      // zustand store에 예약 정보 저장
+      setReservationDate(formData.date);
+      setReservationTime(formData.startTime);
+      setAddress(
+        formData.selectedAddress.main,
+        formData.detailAddress || formData.selectedAddress.detail || ''
+      );
+
+      // ⭐️⭐️⭐️ 백엔드 ReservationRequestDto 규격에 맞는 데이터로 변경! ⭐️⭐️⭐️
+      const reservationData = {
+        subOptionId: 1, // TODO: 실제로는 선택된 서브옵션 ID 사용해야 함!
+        requestedDate: formData.date, // yyyy-MM-dd
+        requestedTime: `${formData.startTime}:00`, // HH:mm:ss 형식으로 변환
+      };
+
+      console.log('예약 요청 데이터:', reservationData);
+
+      // 백엔드에 예약 생성 요청 (ReservationResponseDto 응답받음)
+      const reservation = await createReservation(reservationData);
+
+      console.log('예약 생성 응답 (ReservationResponseDto):', reservation);
+
+      // Spring Boot ReservationResponseDto 필드 확인
+      if (!reservation || !reservation.reservationId) {
+        throw new Error('예약 응답 데이터가 올바르지 않습니다.');
+      }
+
+      // 결제 페이지로 넘길 데이터 준비 (Spring Boot DTO 구조 기반)
+      const paymentData = {
+        reservationId: reservation.reservationId, // Long
+        serviceInfo: {
+          type: formData.serviceType,
+          date: formData.date,
+          time: formData.startTime,
+          address: {
+            main: formData.selectedAddress.main,
+            detail:
+              formData.detailAddress || formData.selectedAddress.detail || '',
+          },
+          subOptionName: reservation.subOptionName, // String - 예약 서비스 명
+        },
+        amount: reservation.totalPrice, // Integer - 총 가격 (원 단위)
+        duration: reservation.totalDuration, // Integer - 총 소요 시간 (분 단위)
+        status: reservation.status, // ReservationStatus enum
+      };
+
+      // localStorage에 결제 데이터 저장 (결제 페이지에서 사용)
+      setPaymentData(paymentData);
+
+      console.log('예약 생성 완료, 결제 페이지로 이동:', {
+        reservationId: reservation.reservationId,
+        status: reservation.status,
+        totalPrice: reservation.totalPrice,
+        totalDuration: reservation.totalDuration,
+        subOptionName: reservation.subOptionName,
+      });
+
+      navigate('/user/payment');
+    } catch (error) {
+      console.error('예약 생성 실패:', error);
+      alert(`예약 생성에 실패했습니다: ${error.message}`);
+    }
+  };
+
+  // 로딩 상태
+  if (addressLoading || reservationLoading) {
+    return (
+      <div className="reservation-page">
+        <Header />
+        <div className="page-content-wrapper">
+          <div className="reservation-container">
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '200px',
+                fontSize: '16px',
+                color: '#666',
+              }}
+            >
+              {addressLoading
+                ? '주소 정보를 불러오는 중...'
+                : '예약을 생성하는 중...'}
+            </div>
+          </div>
+        </div>
+        <Footer current="/user/service-request" />
+      </div>
+    );
+  }
+
+  // 에러 상태
+  if (addressError || reservationError) {
+    return (
+      <div className="reservation-page">
+        <Header />
+        <div className="page-content-wrapper">
+          <div className="reservation-container">
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '200px',
+                fontSize: '16px',
+                color: '#e74c3c',
+              }}
+            >
+              <p>{addressError || reservationError}</p>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  marginTop: '10px',
+                  padding: '10px 20px',
+                  backgroundColor: '#4285f4',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                }}
+              >
+                새로고침
+              </button>
+            </div>
+          </div>
+        </div>
+        <Footer current="/user/service-request" />
+      </div>
+    );
+  }
+
   if (showAddressModal) {
     return (
-      <AddressModal
-        onClose={handleAddressModalClose}
-        onSelect={setSelectedAddress}
-      />
+      <div className="reservation-page">
+        <Header />
+        <div className="page-content-wrapper">
+          <div className="address-modal-container">
+            {/* 주소 입력 모달 */}
+            <div className="title-section">
+              <h1 className="page-title">주소 추가</h1>
+              <p className="page-subtitle">새로운 주소를 추가해주세요.</p>
+            </div>
+
+            <div className="address-method-section">
+              <label className="section-title">주소</label>
+              <input
+                type="text"
+                className="address-method-input"
+                placeholder="예: 서울시 강남구 테헤란로 123"
+                value={formData.addressMethod}
+                onChange={(e) =>
+                  handleInputChange('addressMethod', e.target.value)
+                }
+              />
+            </div>
+
+            <div className="detail-address-section">
+              <label className="section-title">상세 주소 (선택)</label>
+              <input
+                type="text"
+                className="detail-address-input"
+                placeholder="예: 101동 202호"
+                value={formData.detailAddress}
+                onChange={(e) =>
+                  handleInputChange('detailAddress', e.target.value)
+                }
+              />
+            </div>
+
+            <div className="default-address-section">
+              <label className="default-address-label">
+                <input
+                  type="checkbox"
+                  checked={formData.isDefaultAddress}
+                  onChange={(e) =>
+                    handleInputChange('isDefaultAddress', e.target.checked)
+                  }
+                />
+                <span className="checkmark"></span>
+                기본 주소로 설정
+              </label>
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                className="save-btn"
+                onClick={() => setShowAddressModal(false)}
+              >
+                취소
+              </button>
+              <button className="continue-btn" onClick={handleAddressSave}>
+                저장하기
+              </button>
+            </div>
+          </div>
+        </div>
+        <Footer current="/user/service-request" />
+      </div>
     );
   }
 
@@ -98,72 +385,77 @@ const UserServiceRequest = () => {
       <Header />
       <div className="page-content-wrapper">
         <div className="reservation-container">
-          {/* 서비스 요청 제목 */}
+          {/* 제목 섹션 */}
           <div className="title-section">
             <h1 className="page-title">서비스 요청</h1>
-            <p className="page-subtitle">
-              청소 서비스 요청 정보를 입력해주세요
-            </p>
+            <p className="page-subtitle">서비스 정보를 입력해주세요.</p>
           </div>
 
-          {/* 간격 맞춤을 위한 스페이서 */}
-          <div className="spacer-section"></div>
-
-          {/* 서비스 유형 섹션 */}
+          {/* 서비스 유형 선택 */}
           <div className="service-type-section">
             <h3 className="section-title">서비스 유형</h3>
             <div className="service-type-options">
-              <button
-                className={`service-type-btn ${serviceType === '정기청소' ? 'active' : ''}`}
-                onClick={() => handleServiceTypeChange('정기청소')}
-              >
-                정기 청소
-              </button>
-              <button
-                className={`service-type-btn ${serviceType === '일회성청소' ? 'active' : ''}`}
-                onClick={() => handleServiceTypeChange('일회성청소')}
-              >
-                일회성 청소
-              </button>
+              {['원룸', '투룸', '쓰리룸'].map((type) => (
+                <button
+                  key={type}
+                  className={`service-type-btn ${formData.serviceType === type ? 'active' : ''}`}
+                  onClick={() => handleInputChange('serviceType', type)}
+                >
+                  {type}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* 날짜 및 시간 섹션 */}
+          {/* 날짜 및 시간 선택 */}
           <div className="datetime-section">
             <h3 className="section-title">날짜 및 시간</h3>
             <div className="datetime-inputs">
               <input
                 type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
                 className="date-input"
+                value={formData.date}
+                onChange={(e) => handleInputChange('date', e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
               />
-              <div className="time-options">
-                <button
-                  className={`time-btn ${selectedTime === '14:00' ? 'active' : ''}`}
-                  onClick={() => setSelectedTime('14:00')}
-                >
-                  14:00
-                </button>
-                <button
-                  className={`time-btn ${selectedTime === '17:00' ? 'active' : ''}`}
-                  onClick={() => setSelectedTime('17:00')}
-                >
-                  17:00
-                </button>
+
+              {/* 시작시간 입력 */}
+              <div className="time-input-section">
+                <label className="time-label">시작 시간</label>
+                <input
+                  type="time"
+                  className="time-input"
+                  value={formData.startTime}
+                  onChange={(e) =>
+                    handleInputChange('startTime', e.target.value)
+                  }
+                />
               </div>
+
+              {/* 종료시간 표시 */}
+              {endTime && (
+                <div className="time-display-section">
+                  <label className="time-label">예상 종료 시간</label>
+                  <div className="time-display">
+                    {formatTimeDisplay(endTime)}
+                  </div>
+                  <div className="duration-display">
+                    (약 {reservationData.totalDuration}분 소요)
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 매니저 성별 섹션 */}
+          {/* 매니저 성별 선택 */}
           <div className="manager-gender-section">
-            <h3 className="section-title">매니저 성별</h3>
+            <h3 className="section-title">매니저 성별 (선택)</h3>
             <div className="gender-options">
-              {['무관', '남성', '여성'].map((gender) => (
+              {['남성', '여성', '상관없음'].map((gender) => (
                 <button
                   key={gender}
-                  className={`gender-btn ${managerGender === gender ? 'active' : ''}`}
-                  onClick={() => handleManagerGenderChange(gender)}
+                  className={`gender-btn ${formData.managerGender === gender ? 'active' : ''}`}
+                  onClick={() => handleInputChange('managerGender', gender)}
                 >
                   {gender}
                 </button>
@@ -173,164 +465,121 @@ const UserServiceRequest = () => {
 
           {/* 주소 섹션 */}
           <div className="address-section">
-            <div className="address-header">
-              <div className="address-icon">🏠</div>
-              <div className="address-content">
-                <h3 className="address-type">{selectedAddress.type}</h3>
-                <p className="address-main">{selectedAddress.main}</p>
-                <p className="address-detail">{selectedAddress.detail}</p>
+            <h3 className="section-title">서비스 주소</h3>
+
+            {/* 선택된 주소 표시 */}
+            {formData.selectedAddress && (
+              <div className="address-header">
+                <span className="address-icon">📍</span>
+                <div className="address-content">
+                  <h4 className="address-type">
+                    {formData.selectedAddress.type}
+                  </h4>
+                  <p className="address-main">
+                    {formData.selectedAddress.main}
+                  </p>
+                  <p className="address-detail">
+                    {formData.selectedAddress.detail}
+                  </p>
+                </div>
+                <div className="address-actions">
+                  <button
+                    className="edit-btn"
+                    onClick={() => setShowAddressModal(true)}
+                  >
+                    변경
+                  </button>
+                  <span className="time-indicator">약 30분 소요</span>
+                </div>
               </div>
-              <div className="address-actions">
-                <button className="edit-btn" onClick={handleAddressEdit}>
-                  수정
-                </button>
-                <span className="time-indicator">시간</span>
-              </div>
+            )}
+
+            {/* 현재 위치 사용 버튼 */}
+            <div className="current-location-section">
+              <button
+                className="current-location-btn"
+                onClick={handleCurrentLocationClick}
+              >
+                📍 현재 위치 사용하기
+              </button>
             </div>
+
+            {/* 저장된 주소 목록 */}
+            {addresses.length > 0 && (
+              <div className="saved-addresses-section">
+                <h4 className="section-title">저장된 주소</h4>
+                {addresses.map((address) => (
+                  <div
+                    key={address.id}
+                    className={`address-item ${formData.selectedAddress?.id === address.id ? 'selected' : ''}`}
+                    onClick={() => handleAddressSelect(address)}
+                  >
+                    <div className="address-radio">
+                      <div
+                        className={`radio-circle ${formData.selectedAddress?.id === address.id ? 'active' : ''}`}
+                      >
+                        {formData.selectedAddress?.id === address.id && (
+                          <div className="radio-dot"></div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="address-info">
+                      <span className="address-icon">🏠</span>
+                      <div className="address-text">
+                        <h4>
+                          {address.type} {address.isDefault && '(기본)'}
+                        </h4>
+                        <p className="address-main">{address.main}</p>
+                        <p className="address-detail">{address.detail}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 새 주소 추가 버튼 */}
+            <div style={{ marginTop: '16px' }}>
+              <button
+                className="edit-btn"
+                onClick={() => setShowAddressModal(true)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px dashed #4285f4',
+                  backgroundColor: 'transparent',
+                  textDecoration: 'none',
+                }}
+              >
+                + 새 주소 추가
+              </button>
+            </div>
+
+            {/* 상세 주소 입력 */}
+            {formData.selectedAddress && (
+              <div className="detail-address-section">
+                <label className="section-title">상세 주소 (선택)</label>
+                <input
+                  type="text"
+                  className="detail-address-input"
+                  placeholder="예: 101동 202호, 비밀번호 1234"
+                  value={formData.detailAddress}
+                  onChange={(e) =>
+                    handleInputChange('detailAddress', e.target.value)
+                  }
+                />
+              </div>
+            )}
           </div>
 
-          {/* 서비스 요청 버튼 */}
+          {/* 제출 버튼 */}
           <div className="submit-section">
             <button
-              className="primary-button submit-btn"
-              onClick={handleServiceSubmit}
+              className="submit-btn"
+              onClick={handleSubmit}
+              disabled={reservationLoading}
             >
-              결제하기
-            </button>
-          </div>
-        </div>
-      </div>
-      <Footer current="/user/service-request" />
-    </div>
-  );
-};
-
-// 주소 선택 모달 컴포넌트
-const AddressModal = ({ onClose, onSelect }) => {
-  const [addresses] = useState([
-    {
-      type: '집',
-      main: '서울시 강남구 테헤란로 123',
-      detail: '삼성아파트 101동 1001호',
-    },
-    {
-      type: '회사',
-      main: '서울시 서초구 서초대로 456',
-      detail: '서초빌딩 7층',
-    },
-  ]);
-  const [selectedAddressIndex, setSelectedAddressIndex] = useState(0);
-  const [detailAddress, setDetailAddress] = useState('');
-
-  const handleCurrentLocation = () => {
-    console.log('현재 위치 사용하기');
-    // TODO: 현재 위치 사용 로직
-  };
-
-  const handleAddressSave = () => {
-    console.log('주소 저장하기');
-    // TODO: 주소 저장 로직
-    onClose();
-  };
-
-  const handleContinueWithAddress = () => {
-    console.log('선택한 주소로 계속하기');
-    onSelect(addresses[selectedAddressIndex]);
-    onClose();
-  };
-
-  return (
-    <div className="user-service-request-page">
-      <Header />
-      <div className="page-content-wrapper">
-        <div className="address-modal-container">
-          {/* 제목 섹션 */}
-          <div className="title-section">
-            <h1 className="page-title">주소 등록</h1>
-            <p className="page-subtitle">서비스를 받을 주소를 등록해주세요</p>
-          </div>
-
-          {/* 현재 위치 사용 */}
-          <div className="current-location-section">
-            <button
-              className="current-location-btn"
-              onClick={handleCurrentLocation}
-            >
-              📍 현재 위치 사용하기
-            </button>
-          </div>
-
-          {/* 저장된 주소 */}
-          <div className="saved-addresses-section">
-            <h3 className="section-title">저장된 주소</h3>
-            {addresses.map((address, index) => (
-              <div
-                key={index}
-                className={`address-item ${selectedAddressIndex === index ? 'selected' : ''}`}
-                onClick={() => setSelectedAddressIndex(index)}
-              >
-                <div className="address-radio">
-                  <div
-                    className={`radio-circle ${selectedAddressIndex === index ? 'active' : ''}`}
-                  >
-                    {selectedAddressIndex === index && (
-                      <div className="radio-dot"></div>
-                    )}
-                  </div>
-                </div>
-                <div className="address-info">
-                  <div className="address-icon">🏠</div>
-                  <div className="address-text">
-                    <h4>{address.type}</h4>
-                    <p className="address-main">{address.main}</p>
-                    <p className="address-detail">{address.detail}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 세부 주소 등록 */}
-          <div className="detail-address-section">
-            <h3 className="section-title">세부 주소</h3>
-            <input
-              type="text"
-              placeholder="동, 호수 등 상세 주소를 입력"
-              value={detailAddress}
-              onChange={(e) => setDetailAddress(e.target.value)}
-              className="detail-address-input"
-            />
-          </div>
-
-          {/* 주소 방법 */}
-          <div className="address-method-section">
-            <h3 className="section-title">주소 방법</h3>
-            <input
-              type="text"
-              placeholder="예: 현관, 현관, 복도"
-              className="address-method-input"
-            />
-          </div>
-
-          {/* 기본 주소로 설정 체크박스 */}
-          <div className="default-address-section">
-            <label className="default-address-label">
-              <input type="checkbox" />
-              <span className="checkmark"></span>
-              기본 주소로 설정
-            </label>
-          </div>
-
-          {/* 버튼 섹션 */}
-          <div className="modal-buttons">
-            <button className="save-btn" onClick={handleAddressSave}>
-              주소 저장하기
-            </button>
-            <button
-              className="continue-btn"
-              onClick={handleContinueWithAddress}
-            >
-              선택한 주소로 계속하기
+              {reservationLoading ? '예약 생성 중...' : '결제하기'}
             </button>
           </div>
         </div>
