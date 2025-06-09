@@ -10,7 +10,7 @@
 .page-content-wrapper {
   min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
   padding: 16px;
-  padding-top: 0; /* Header 바로 아래부터 시작 */
+  padding-top: 76px; /* Header 높이 + 여백 (56px + 20px) */
   display: block; /* flex에서 block으로 변경 */
   width: 100%;
   box-sizing: border-box;
@@ -18,7 +18,7 @@
 
 /* Header 스타일 조정 */
 .user-service-page header {
-  position: sticky;
+  position: fixed;
   top: 0;
   z-index: 100;
   width: 100%;
@@ -28,6 +28,7 @@
   height: 56px;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .user-service-page .footer-container {
@@ -63,7 +64,7 @@ html {
   ); /* Header(56px) + Footer(84px) + 패딩(32px) */
   position: relative;
   z-index: 1; /* Footer보다 낮은 z-index */
-  margin-left: calc(50% - 240px); /* 중앙 정렬 대신 고정 위치 */
+  margin: 0 auto; /* 중앙 정렬 */
 }
 
 /* 인사말 섹션 */

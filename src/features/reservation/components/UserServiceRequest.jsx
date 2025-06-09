@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-// import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './UserServiceRequest.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
 
 const UserServiceRequest = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const [serviceType, setServiceType] = useState('정기청소');
   const [selectedDate, setSelectedDate] = useState('2023-06-15');
   const [selectedTime, setSelectedTime] = useState('14:00');
@@ -34,8 +34,45 @@ const UserServiceRequest = () => {
   };
 
   const handleServiceSubmit = () => {
-    console.log('서비스 요청하기 클릭');
-    // TODO: 서비스 요청 제출 로직
+    console.log('결제하기 버튼 클릭');
+
+    // localStorage에서 저장된 결제 데이터 가져오기
+    const savedPaymentData = localStorage.getItem('paymentData');
+
+    if (savedPaymentData) {
+      const paymentData = JSON.parse(savedPaymentData);
+
+      // 현재 선택된 날짜와 시간으로 업데이트
+      paymentData.serviceInfo.dateTime = `${selectedDate} ${selectedTime}`;
+      paymentData.serviceInfo.serviceType =
+        serviceType === '정기청소'
+          ? '정기 청소'
+          : paymentData.serviceInfo.serviceType;
+
+      // 결제 페이지로 이동
+      navigate('/user/payment', { state: { paymentData } });
+    } else {
+      // 기본 결제 정보 데이터 구성 (장바구니를 거치지 않은 경우)
+      const paymentData = {
+        serviceInfo: {
+          dateTime: `${selectedDate} ${selectedTime}`,
+          serviceType:
+            serviceType === '정기청소' ? '정기 청소' : '일회성 청소 (1인)',
+          manager: '김청소 매니저',
+        },
+        priceList: [
+          { name: '기본 요금', price: 80000 },
+          { name: '찬대 물기기', price: 10000 },
+          { name: '찬장 먼지 제거', price: 20000 },
+          { name: '일반 배출', price: 20000 },
+          { name: '음식물 배출', price: 25000 },
+        ],
+        totalAmount: 155000,
+      };
+
+      // 결제 페이지로 이동
+      navigate('/user/payment', { state: { paymentData } });
+    }
   };
 
   if (showAddressModal) {
@@ -146,7 +183,7 @@ const UserServiceRequest = () => {
           {/* 서비스 요청 버튼 */}
           <div className="submit-section">
             <button className="submit-btn" onClick={handleServiceSubmit}>
-              서비스 요청하기
+              결제하기
             </button>
           </div>
         </div>
@@ -158,7 +195,6 @@ const UserServiceRequest = () => {
 
 // 주소 선택 모달 컴포넌트
 const AddressModal = ({ onClose, onSelect }) => {
-  // const navigate = useNavigate();
   const [addresses] = useState([
     {
       type: '집',
