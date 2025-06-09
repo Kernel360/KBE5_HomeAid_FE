@@ -1,165 +1,182 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import './ManagerServiceCheckIn.css'; // Import CSS file for styling
-// import api from '@/services/apiClient'; // Import api client
-import { useMatchingRequestStatus } from '../../../contexts/MatchingRequestStatusContext';
+import React, { useEffect } from 'react';
+// TODO: 매칭내역 확인 기능 구현 시 필요
+// import { useNavigate } from 'react-router-dom';
+import './ManagerServiceCheckIn.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
+import useMatchingStore from '../../../stores/matchingStore';
+import { useServiceCheckIn } from '../hooks/useManagerAPI';
+import { NOTIFICATION_MESSAGES } from '../constants/matchingData';
+
+// TODO: 파일 업로드 기능 추가 시 필요한 import
+// import React, { useState, useEffect } from 'react';
 
 const ManagerServiceCheckIn = () => {
-  const navigate = useNavigate(); // Get navigate function
-  const { requestAccepted } = useMatchingRequestStatus(); // Get the shared state from context
+  // TODO: 매칭내역 확인 기능 사용 시 필요
+  // const navigate = useNavigate();
 
-  // Placeholder data - replace with actual data fetching logic
-  const [serviceDetails, setServiceDetails] = useState({
-    customerName: '김고객',
-    serviceType: '대청소',
-    dateTime: '2023-06-15 14:00',
-    address: '서울시 강남구 테헤란로 123',
-    checkInStatus: '미완료',
-    checkOutStatus: '미완료',
-  });
+  // zustand store 사용
+  const {
+    matchingRequest,
+    serviceProgress,
+    uiState,
+    toggleCheckInModal,
+    toggleCheckOutModal,
+    getCurrentStatus,
+    getButtonStates,
+  } = useMatchingStore();
 
-  const [showCheckInModal, setShowCheckInModal] = useState(false);
-  const [showCheckOutModal, setShowCheckOutModal] = useState(false);
+  // API 훅 사용
+  const {
+    loading,
+    error,
+    getServiceDetails,
+    performCheckIn,
+    performCheckOut,
+    // TODO: 파일 업로드 기능 구현 시 사용
+    // uploadServiceFile,
+  } = useServiceCheckIn();
 
-  // TODO: File Upload State and Handlers (remove or implement later)
+  // TODO: 파일 업로드 기능 구현 예정
+  // 파일 업로드 관련 로컬 상태 (현재 주석 처리)
   // const [showFileUpload, setShowFileUpload] = useState(false);
   // const [selectedFile, setSelectedFile] = useState(null);
 
-  // TODO: Fetch actual service details on component mount
-  // useEffect(() => {
-  //   const fetchServiceDetails = async () => {
-  //     try {
-  //       const response = await api.get('/api/v1/manager/service-details'); // Replace with actual endpoint
-  //       if (response.data) {
-  //         setServiceDetails(response.data);
-  //       }
-  //     } catch (error) {
-  //       console.error('Failed to fetch service details:', error);
-  //       alert('서비스 상세 정보를 불러오는데 실패했습니다.');
-  //     }
-  //   };
-  //   fetchServiceDetails();
-  // }, []);
+  // 컴포넌트 마운트 시 서비스 상세 정보 로드
+  useEffect(() => {
+    const serviceId = 1; // TODO: URL 파라미터에서 실제 ID 가져오기
+    getServiceDetails(serviceId).catch(console.error);
+  }, [getServiceDetails]);
 
+  // TODO: 매칭내역 확인 기능 - 현재 주석처리
+  /*
   const handleMatchingHistoryClick = () => {
-    navigate('/matching/matching-request'); // Navigate to the new matching request page
+    navigate('/matching/matching-request');
   };
+  */
 
   const handleCheckIn = () => {
-    setShowCheckInModal(true);
+    toggleCheckInModal();
   };
 
   const handleCheckOut = () => {
-    setShowCheckOutModal(true);
+    toggleCheckOutModal();
   };
 
   const confirmCheckIn = async () => {
     try {
-      // TODO: Replace with actual check-in API call
-      console.log('체크인 확인됨. API 호출 예정.');
-      // const response = await api.patch('/api/v1/manager/checkin', { serviceId: serviceDetails.id }); // Replace with actual endpoint and payload
-
-      // Assuming API call is successful, update state
-      setServiceDetails((prevDetails) => ({
-        ...prevDetails,
-        checkInStatus: '완료',
-      }));
-      alert('체크인이 완료되었습니다.');
+      const serviceId = 1; // TODO: 실제 서비스 ID 사용
+      await performCheckIn(serviceId);
+      alert(NOTIFICATION_MESSAGES.SERVICE.CHECKIN_SUCCESS);
+      toggleCheckInModal();
     } catch (error) {
       console.error('체크인 실패:', error);
-      alert('체크인에 실패했습니다.');
-    } finally {
-      setShowCheckInModal(false);
+      alert(NOTIFICATION_MESSAGES.SERVICE.CHECKIN_ERROR);
     }
   };
 
   const confirmCheckOut = async () => {
     try {
-      // TODO: Replace with actual check-out API call
-      console.log('체크아웃 확인됨. API 호출 예정.');
-      // const response = await api.patch('/api/v1/manager/checkout', { serviceId: serviceDetails.id }); // Replace with actual endpoint and payload
-
-      // Assuming API call is successful, update state
-      setServiceDetails((prevDetails) => ({
-        ...prevDetails,
-        checkOutStatus: '완료',
-      }));
-      alert('체크아웃이 완료되었습니다.');
+      const serviceId = 1; // TODO: 실제 서비스 ID 사용
+      await performCheckOut(serviceId);
+      alert(NOTIFICATION_MESSAGES.SERVICE.CHECKOUT_SUCCESS);
+      toggleCheckOutModal();
     } catch (error) {
       console.error('체크아웃 실패:', error);
-      alert('체크아웃에 실패했습니다.');
-    } finally {
-      setShowCheckOutModal(false);
+      alert(NOTIFICATION_MESSAGES.SERVICE.CHECKOUT_ERROR);
     }
   };
 
   const cancelCheckIn = () => {
-    setShowCheckInModal(false);
+    toggleCheckInModal();
   };
 
   const cancelCheckOut = () => {
-    setShowCheckOutModal(false);
+    toggleCheckOutModal();
   };
 
-  // TODO: File Upload State and Handlers (remove or implement later)
-  // const handleFileSelect = (event) => {
-  //   // Get the selected file from the input
-  //   const file = event.target.files ? event.target.files[0] : null;
-  //   setSelectedFile(file);
-  // };
+  // TODO: 파일 업로드 기능 구현 예정
+  /*
+  const handleFileSelect = (event) => {
+    const file = event.target.files ? event.target.files[0] : null;
+    setSelectedFile(file);
+  };
 
-  // const handleFileUpload = async () => {
-  //   if (!selectedFile) {
-  //     alert('파일을 선택해주세요.');
-  //     return;
-  //   }
-  //   try {
-  //     // TODO: Implement actual file upload API call
-  //     console.log('파일 등록 버튼 클릭됨. 파일 업로드 API 호출 예정:', selectedFile);
-  //     // Example using FormData for file upload:
-  //     // const formData = new FormData();
-  //     // formData.append('file', selectedFile);
-  //     // const response = await api.post('/api/v1/upload', formData); // Replace with actual endpoint
-  //     // Assuming file upload and registration is successful, update checkout status
-  //     setServiceDetails(prevDetails => ({
-  //       ...prevDetails,
-  //       checkOutStatus: '완료',
-  //     }));
-  //     alert('파일 등록 및 체크아웃이 완료되었습니다.');
-  //     setShowFileUpload(false); // Hide file upload interface
-  //     setSelectedFile(null); // Clear selected file
-  //   } catch (error) {
-  //     console.error('파일 업로드 실패:', error);
-  //     alert('파일 업로드에 실패했습니다.');
-  //   } 논리입니다.
-  // };
+  // 파일 업로드로 체크아웃 완료
+  const handleFileUploadAndCheckout = async () => {
+    if (!selectedFile) {
+      alert(NOTIFICATION_MESSAGES.SERVICE.FILE_REQUIRED);
+      return;
+    }
 
-  const isCheckInComplete = serviceDetails.checkInStatus === '완료';
-  const isCheckOutComplete = serviceDetails.checkOutStatus === '완료';
-  // 버튼 활성화는 매칭 요청이 수락되었는지 여부와 체크인/체크아웃 상태에만 의존합니다.
-  const isCheckinButtonEnabled =
-    requestAccepted && !isCheckInComplete && !isCheckOutComplete;
-  const isCheckoutButtonEnabled =
-    requestAccepted && isCheckInComplete && !isCheckOutComplete;
+    try {
+      const serviceId = 1; // TODO: 실제 서비스 ID 사용
+      
+      // 파일 업로드
+      await uploadServiceFile(serviceId, selectedFile);
+      
+      // 체크아웃 처리
+      await performCheckOut(serviceId);
+      
+      alert('파일 업로드 및 체크아웃이 완료되었습니다.');
+      setShowFileUpload(false);
+      setSelectedFile(null);
+    } catch (error) {
+      console.error('파일 업로드 또는 체크아웃 실패:', error);
+      alert('파일 업로드 또는 체크아웃 중 오류가 발생했습니다.');
+    }
+  };
+  */
 
-  // 디버깅을 위한 콘솔 출력
-  console.log('ManagerServiceCheckIn 상태:', {
-    requestAccepted,
-    isCheckInComplete,
-    isCheckOutComplete,
-    isCheckinButtonEnabled,
-    isCheckoutButtonEnabled,
-  });
+  // 버튼 활성화 상태 계산
+  const { isCheckInButtonEnabled, isCheckOutButtonEnabled } = getButtonStates();
+
+  // 로딩 상태
+  if (loading && !matchingRequest.customerName) {
+    return (
+      <div className="manager-service-page">
+        <Header />
+        <div className="page-content-wrapper">
+          <div className="manager-service-checkin-container">
+            <div className="loading-container">
+              <p>{NOTIFICATION_MESSAGES.GENERAL.LOADING}</p>
+            </div>
+          </div>
+        </div>
+        <Footer current="/matching/service-checkin" />
+      </div>
+    );
+  }
+
+  // 에러 상태
+  if (error && !matchingRequest.customerName) {
+    return (
+      <div className="manager-service-page">
+        <Header />
+        <div className="page-content-wrapper">
+          <div className="manager-service-checkin-container">
+            <div className="error-container">
+              <p>{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="retry-button"
+              >
+                새로고침
+              </button>
+            </div>
+          </div>
+        </div>
+        <Footer current="/matching/service-checkin" />
+      </div>
+    );
+  }
 
   return (
     <div className="manager-service-page">
       <Header />
       <div className="page-content-wrapper">
         <div className="manager-service-checkin-container">
-          {/* <h1>매니저 화면</h1> */}
-
+          {/* TODO: 매칭내역 확인 기능 - 현재 주석처리
           <div className="matching-details">
             <button
               className="matching-history-button"
@@ -168,121 +185,208 @@ const ManagerServiceCheckIn = () => {
               매칭 내역 확인
             </button>
           </div>
+          */}
 
-          {/* Map will be placed here */}
+          {/* Map 영역 */}
           <div className="service-map">
-            {/* TODO: Integrate map library and display map here */}
-            {/* Example: <MapComponent address={serviceDetails.address} /> */}
-            지도가 표시될 영역
+            <div className="map-placeholder">
+              <i className="fas fa-map-marker-alt"></i>
+              <p>지도가 표시될 영역</p>
+              <small>{matchingRequest.address}</small>
+            </div>
           </div>
 
           <div className="service-progress">
             <h2>서비스 진행</h2>
-            {/* TODO: Dynamically update status badge text */}
-            <span className="status-badge">
-              {isCheckInComplete
-                ? isCheckOutComplete
-                  ? '서비스 완료'
-                  : '서비스 진행 중'
-                : '체크인 필요'}
-            </span>
+            <span className="status-badge">{getCurrentStatus()}</span>
 
             <div className="details-card">
               <div className="detail-item">
                 <span className="label">고객명</span>
-                <span className="value">{serviceDetails.customerName}</span>
+                <span className="value">{matchingRequest.customerName}</span>
               </div>
               <div className="detail-item">
                 <span className="label">서비스 유형</span>
-                <span className="value">{serviceDetails.serviceType}</span>
+                <span className="value">{matchingRequest.serviceType}</span>
               </div>
               <div className="detail-item">
                 <span className="label">날짜 및 시간</span>
-                <span className="value">{serviceDetails.dateTime}</span>
+                <span className="value">{matchingRequest.dateTime}</span>
               </div>
               <div className="detail-item">
                 <span className="label">주소</span>
-                <span className="value">{serviceDetails.address}</span>
+                <span className="value">{matchingRequest.address}</span>
               </div>
             </div>
-          </div>
 
-          <div className="checkin-checkout-status">
-            <h3>체크인/체크아웃 상태</h3>
-            <div className="status-card">
-              <div className="status-item">
-                <span className="label">체크인</span>
-                <span
-                  className="value"
-                  style={{ color: isCheckInComplete ? 'green' : 'red' }}
-                >
-                  {serviceDetails.checkInStatus}
-                </span>
-              </div>
-              <div className="status-item">
-                <span className="label">체크아웃</span>
-                <span
-                  className="value"
-                  style={{ color: isCheckOutComplete ? 'green' : 'red' }}
-                >
-                  {serviceDetails.checkOutStatus}
-                </span>
+            {/* 체크인/체크아웃 상태 표시 */}
+            <div className="checkin-status-section">
+              <h3>서비스 진행 상태</h3>
+              <div className="status-items">
+                <div className="status-item">
+                  <div className="status-icon">
+                    <span
+                      className={`icon ${serviceProgress.checkInStatus === '완료' ? 'completed' : 'pending'}`}
+                    >
+                      {serviceProgress.checkInStatus === '완료' ? '✓' : '○'}
+                    </span>
+                  </div>
+                  <div className="status-details">
+                    <span className="status-label">체크인</span>
+                    <span
+                      className={`status-value ${serviceProgress.checkInStatus === '완료' ? 'completed' : 'pending'}`}
+                    >
+                      {serviceProgress.checkInStatus}
+                    </span>
+                    {serviceProgress.checkInTime && (
+                      <span className="status-time">
+                        {new Date(serviceProgress.checkInTime).toLocaleString(
+                          'ko-KR',
+                          {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="status-item">
+                  <div className="status-icon">
+                    <span
+                      className={`icon ${serviceProgress.checkOutStatus === '완료' ? 'completed' : 'pending'}`}
+                    >
+                      {serviceProgress.checkOutStatus === '완료' ? '✓' : '○'}
+                    </span>
+                  </div>
+                  <div className="status-details">
+                    <span className="status-label">체크아웃</span>
+                    <span
+                      className={`status-value ${serviceProgress.checkOutStatus === '완료' ? 'completed' : 'pending'}`}
+                    >
+                      {serviceProgress.checkOutStatus}
+                    </span>
+                    {serviceProgress.checkOutTime && (
+                      <span className="status-time">
+                        {new Date(serviceProgress.checkOutTime).toLocaleString(
+                          'ko-KR',
+                          {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="action-buttons">
-            <button
-              className="checkin-button"
-              onClick={handleCheckIn}
-              disabled={!isCheckinButtonEnabled}
-            >
-              체크인 하기
-            </button>
-            <button
-              className="checkout-button"
-              onClick={handleCheckOut}
-              disabled={!isCheckoutButtonEnabled}
-            >
-              체크아웃 하기
-            </button>
+            <div className="action-buttons">
+              <button
+                className={`action-button checkin-button ${!isCheckInButtonEnabled ? 'disabled' : ''}`}
+                onClick={handleCheckIn}
+                disabled={!isCheckInButtonEnabled || loading}
+              >
+                {loading ? '처리 중...' : '체크인'}
+              </button>
+              <button
+                className={`action-button checkout-button ${!isCheckOutButtonEnabled ? 'disabled' : ''}`}
+                onClick={handleCheckOut}
+                disabled={!isCheckOutButtonEnabled || loading}
+              >
+                {loading ? '처리 중...' : '체크아웃'}
+              </button>
+            </div>
+
+            {/* TODO: 파일 업로드 섹션 구현 예정 */}
+            {/* 파일 업로드 섹션 (현재 주석 처리)
+            {showFileUpload && (
+              <div className="file-upload-section">
+                <h3>서비스 완료 사진 업로드</h3>
+                <p className="upload-note">체크아웃을 완료하려면 서비스 완료 사진을 업로드해주세요.</p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="file-input"
+                />
+                {selectedFile && (
+                  <p className="selected-file">
+                    선택된 파일: {selectedFile.name}
+                  </p>
+                )}
+                <div className="file-upload-buttons">
+                  <button
+                    onClick={() => {
+                      setShowFileUpload(false);
+                      setSelectedFile(null);
+                    }}
+                    className="cancel-upload-button"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleFileUploadAndCheckout}
+                    disabled={!selectedFile || loading}
+                    className="upload-button"
+                  >
+                    {loading ? '업로드 중...' : '파일 업로드 & 체크아웃'}
+                  </button>
+                </div>
+              </div>
+            )}
+            */}
           </div>
 
           {/* Check-in Confirmation Modal */}
-          {showCheckInModal && (
+          {uiState.showCheckInModal && (
             <div className="modal-overlay">
               <div className="modal-content">
-                <p>체크인 하시겠습니까?</p>
-                <button onClick={confirmCheckIn}>확인</button>
-                <button onClick={cancelCheckIn}>취소</button>
+                <h3>체크인 확인</h3>
+                <p>서비스 체크인을 진행하시겠습니까?</p>
+                <div className="modal-actions">
+                  <button onClick={cancelCheckIn} className="cancel-button">
+                    취소
+                  </button>
+                  <button
+                    onClick={confirmCheckIn}
+                    className="confirm-button"
+                    disabled={loading}
+                  >
+                    {loading ? '처리 중...' : '확인'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           {/* Check-out Confirmation Modal */}
-          {showCheckOutModal && (
+          {uiState.showCheckOutModal && (
             <div className="modal-overlay">
               <div className="modal-content">
-                <p>체크아웃 하시겠습니까?</p>
-                <button onClick={confirmCheckOut}>확인</button>
-                <button onClick={cancelCheckOut}>취소</button>
+                <h3>체크아웃 확인</h3>
+                <p>서비스 체크아웃을 진행하시겠습니까?</p>
+                <div className="modal-actions">
+                  <button onClick={cancelCheckOut} className="cancel-button">
+                    취소
+                  </button>
+                  <button
+                    onClick={confirmCheckOut}
+                    className="confirm-button"
+                    disabled={loading}
+                  >
+                    {loading ? '처리 중...' : '체크아웃'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
-
-          {/* File Upload Interface (TODO: Implement or remove) */}
-          {/*
-          {showFileUpload && (
-            <div className="modal-overlay"> 
-              <div className="modal-content"> 
-                <p>파일을 등록해주세요.</p>
-                <input type="file" onChange={handleFileSelect} />
-                {selectedFile && <p>선택된 파일: {selectedFile.name}</p>}
-                <button onClick={handleFileUpload} disabled={!selectedFile}>파일 등록</button>
-              </div>
-            </div>
-          )}
-          */}
         </div>
       </div>
       <Footer current="/matching/service-checkin" />

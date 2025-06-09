@@ -1,64 +1,60 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './ManagerMatchingRequest.css';
-// import api from '@/services/apiClient'; // Import api client
-// import { useEffect } from 'react'; // Commented out unused import
-import { useMatchingRequestStatus } from '../../../contexts/MatchingRequestStatusContext'; // 올바른 임포트 경로
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
+import useMatchingStore from '../../../stores/matchingStore';
+import { useManagerMatching } from '../hooks/useManagerAPI';
+import { NOTIFICATION_MESSAGES } from '../constants/matchingData';
 
 const ManagerMatchingRequest = () => {
-  const navigate = useNavigate(); // Get navigate function
-  const { setRequestAccepted, isActionCompleted, setIsActionCompleted } =
-    useMatchingRequestStatus(); // Get the state updater and current state from context
+  const navigate = useNavigate();
 
-  // TODO: 실제 매칭 요청 데이터를 API에서 불러오도록 구현해야 합니다.
-  const matchingRequest = {
-    status: '신규 요청',
-    serviceType: '대청소',
-    dateTime: '2023-06-15 14:00',
-    estimatedTime: '3시간',
-    address: '서울시 강남구 테헤란로 123',
-    estimatedEarnings: '60,000원',
-    customerRequest:
-      '주방 기름때 제거에 신경써주세요. 욕실 곰팡이도 꼼꼼하게 청소 부탁드립니다.',
-  };
+  // zustand store 사용
+  const {
+    matchingRequest,
+    uiState,
+    toggleAcceptModal,
+    toggleRejectModal,
+    setRejectReason,
+    getCurrentStatus,
+    acceptMatching,
+  } = useMatchingStore();
 
-  // TODO: Fetch actual matching request details on component mount
-  // useEffect(() => {
-  //   const fetchMatchingRequest = async () => {
-  //     try {
-  //       const response = await api.get('/api/v1/manager/matching-request/[:requestId]'); // Replace with actual endpoint
-  //       if (response.data) {
-  //         setMatchingRequest(response.data);
-  //       }
-  //     } catch (error) {
-  //       console.error('Failed to fetch matching request details:', error);
-  //       alert('매칭 요청 정보를 불러오는데 실패했습니다.');
-  //     }
-  //   };
-  //   fetchMatchingRequest();
-  // }, []);
+  // API 훅 사용
+  const {
+    loading,
+    error,
+    getMatchingRequest,
+    acceptMatchingRequest,
+    rejectMatchingRequest,
+  } = useManagerMatching();
 
-  const [showAcceptModal, setShowAcceptModal] = React.useState(false);
-  const [showRejectModal, setShowRejectModal] = React.useState(false);
-  const [rejectReason, setRejectReason] = React.useState('');
+  // 컴포넌트 마운트 시 매칭 요청 데이터 로드
+  useEffect(() => {
+    const requestId = 1; // TODO: URL 파라미터에서 실제 ID 가져오기
+    getMatchingRequest(requestId).catch(console.error);
+  }, [getMatchingRequest]);
 
   const handleAccept = () => {
-    setShowAcceptModal(true);
+    toggleAcceptModal();
   };
 
-  const confirmAccept = () => {
-    setRequestAccepted(true);
-    setIsActionCompleted(true);
-    setShowAcceptModal(false);
-    navigate('/matching/service-checkin');
+  const confirmAccept = async () => {
+    try {
+      await acceptMatchingRequest(matchingRequest.id);
+      acceptMatching(); // zustand store 상태 업데이트
+      alert(NOTIFICATION_MESSAGES.MATCHING.ACCEPT_SUCCESS);
+      toggleAcceptModal();
+      navigate('/matching/list'); // ManagerMatchingList로 이동
+    } catch (error) {
+      console.error('매칭 요청 수락 실패:', error);
+      alert(NOTIFICATION_MESSAGES.MATCHING.ACCEPT_ERROR);
+    }
   };
 
   const handleReject = () => {
-    if (!isActionCompleted) {
-      setShowRejectModal(true);
-    }
+    toggleRejectModal();
   };
 
   const handleReasonInputChange = (event) => {
@@ -66,39 +62,73 @@ const ManagerMatchingRequest = () => {
   };
 
   const confirmReject = async () => {
-    if (!rejectReason.trim()) {
-      alert('거절 사유를 입력해주세요.');
-      return;
-    }
     try {
-      // TODO: Implement actual reject logic (API call)
-      console.log('거절 확인됨. API 호출 예정. 사유:', rejectReason);
-      // const response = await api.patch('/api/v1/manager/reject-request', { requestId: matchingRequest.id, reason: rejectReason }); // Replace with actual endpoint and payload
-
-      // Assuming API call is successful
-      alert('요청을 거절했습니다.'); // Placeholder - replace with actual success handling
-      setIsActionCompleted(true); // Disable buttons after action
-      setShowRejectModal(false); // Hide the modal
-      setRejectReason(''); // Clear the input
-      navigate('/matching/service-checkin'); // Navigate to the service checkin page
+      await rejectMatchingRequest(matchingRequest.id, uiState.rejectReason);
+      alert(NOTIFICATION_MESSAGES.MATCHING.REJECT_SUCCESS);
+      toggleRejectModal();
+      setRejectReason('');
+      navigate('/matching/list'); // ManagerMatchingList로 이동
     } catch (error) {
-      console.error('거절 실패:', error);
-      alert('요청 거절에 실패했습니다.');
+      console.error('매칭 요청 거절 실패:', error);
+      alert(error.message || NOTIFICATION_MESSAGES.MATCHING.REJECT_ERROR);
     }
   };
 
+  const cancelAccept = () => {
+    toggleAcceptModal();
+  };
+
   const cancelReject = () => {
-    setShowRejectModal(false);
+    toggleRejectModal();
     setRejectReason('');
   };
 
   const handleLocationConfirm = () => {
-    // TODO: Implement location confirmation logic (e.g., open map modal or navigate)
     console.log('위치 확인하기 clicked');
-    alert('위치 확인 기능 준비중...'); // Placeholder
+    alert('위치 확인 기능 준비중...');
   };
 
-  const areButtonsDisabled = isActionCompleted || showRejectModal; // Disable buttons if action completed or modal is open
+  // 로딩 상태
+  if (loading && !matchingRequest.id) {
+    return (
+      <div className="manager-matching-page">
+        <Header />
+        <div className="page-content-wrapper">
+          <div className="manager-matching-request-container">
+            <div className="loading-container">
+              <p>{NOTIFICATION_MESSAGES.GENERAL.LOADING}</p>
+            </div>
+          </div>
+        </div>
+        <Footer current="/matching/matching-request" />
+      </div>
+    );
+  }
+
+  // 에러 상태
+  if (error && !matchingRequest.id) {
+    return (
+      <div className="manager-matching-page">
+        <Header />
+        <div className="page-content-wrapper">
+          <div className="manager-matching-request-container">
+            <div className="error-container">
+              <p>{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="retry-button"
+              >
+                새로고침
+              </button>
+            </div>
+          </div>
+        </div>
+        <Footer current="/matching/matching-request" />
+      </div>
+    );
+  }
+
+  const areButtonsDisabled = loading || uiState.showRejectModal;
 
   return (
     <div className="manager-matching-page">
@@ -108,7 +138,7 @@ const ManagerMatchingRequest = () => {
           <h1 className="page-title">매칭 요청</h1>
 
           <div className="status-badge-container">
-            <span className="status-badge">{matchingRequest.status}</span>
+            <span className="status-badge">{getCurrentStatus()}</span>
           </div>
 
           <div className="details-section">
@@ -130,21 +160,24 @@ const ManagerMatchingRequest = () => {
             </div>
             <div className="detail-item estimated-earnings">
               <span className="label">예상 수입</span>
-              <span className="value">{matchingRequest.estimatedEarnings}</span>
+              <span className="value">
+                {matchingRequest.estimatedEarnings?.toLocaleString() || '0'}원
+              </span>
             </div>
           </div>
 
           <div className="customer-request-section">
             <h2 className="section-title">고객 요청사항</h2>
             <div className="request-box">
-              <p>{matchingRequest.customerRequest}</p>
+              <p>
+                {matchingRequest.customerRequest ||
+                  '특별한 요청사항이 없습니다.'}
+              </p>
             </div>
           </div>
 
           <div className="location-section" onClick={handleLocationConfirm}>
-            {/* Placeholder for map or location confirmation UI */}
             <div className="location-placeholder">
-              {/* Placeholder icon - you might need to add a font-awesome or similar library */}
               <i className="fas fa-map-marker-alt"></i>
               <span>위치 확인하기</span>
             </div>
@@ -156,7 +189,7 @@ const ManagerMatchingRequest = () => {
               onClick={handleAccept}
               disabled={areButtonsDisabled}
             >
-              수락하기
+              {loading ? '처리 중...' : '수락하기'}
             </button>
             <button
               className="reject-button"
@@ -168,20 +201,21 @@ const ManagerMatchingRequest = () => {
           </div>
 
           {/* Accept Confirmation Modal */}
-          {showAcceptModal && (
+          {uiState.showAcceptModal && (
             <div className="modal-overlay">
               <div className="modal-content">
                 <h3>수락 확인</h3>
                 <p>매칭 요청을 수락하시겠습니까?</p>
                 <div className="modal-actions">
-                  <button
-                    onClick={() => setShowAcceptModal(false)}
-                    className="cancel-button"
-                  >
+                  <button onClick={cancelAccept} className="cancel-button">
                     취소
                   </button>
-                  <button onClick={confirmAccept} className="confirm-button">
-                    확인
+                  <button
+                    onClick={confirmAccept}
+                    className="confirm-button"
+                    disabled={loading}
+                  >
+                    {loading ? '처리 중...' : '확인'}
                   </button>
                 </div>
               </div>
@@ -189,26 +223,27 @@ const ManagerMatchingRequest = () => {
           )}
 
           {/* Reject Reason Modal */}
-          {showRejectModal && (
+          {uiState.showRejectModal && (
             <div className="modal-overlay">
               <div className="modal-content">
                 <h3>거절 사유를 작성해주세요</h3>
                 <textarea
-                  value={rejectReason}
+                  value={uiState.rejectReason}
                   onChange={handleReasonInputChange}
-                  placeholder="너무 자주 거절할 경우 패널티가 부여될 수 있습니다.최대한 자세하게 작성해주세요."
-                  rows="5"
-                ></textarea>
+                  placeholder="너무 자주 거절할 경우 패널티가 부여될 수 있습니다. 최대한 자세하게 작성해주세요."
+                  rows="4"
+                  className="reject-reason-textarea"
+                />
                 <div className="modal-actions">
                   <button onClick={cancelReject} className="cancel-button">
                     취소
                   </button>
                   <button
                     onClick={confirmReject}
-                    disabled={!rejectReason.trim()}
-                    className="save-button"
+                    className="confirm-button"
+                    disabled={loading || !uiState.rejectReason.trim()}
                   >
-                    저장
+                    {loading ? '처리 중...' : '확인'}
                   </button>
                 </div>
               </div>
