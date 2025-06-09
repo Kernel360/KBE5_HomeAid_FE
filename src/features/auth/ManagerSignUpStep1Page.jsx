@@ -5,32 +5,76 @@ import { Calendar, Eye, EyeOff } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { ko } from 'date-fns/locale';
-import { format } from 'date-fns'; // 날짜 형식을 변환하기 위해 임포트
+import { format, isPast, parseISO } from 'date-fns'; // isPast, parseISO 임포트 추가
 import './styles/datepicker.css'; // 새로 생성한 CSS 파일 임포트
 import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
 
 // Step 1 유효성 검사 헬퍼 함수 (매니저)
-const validateManagerStep1Data = ({ name, phoneNumber, email, dateOfBirth, gender, password, confirmPassword, businessNumber }) => {
-  if (!name || !phoneNumber || !email || !dateOfBirth || !gender || !password || !confirmPassword || !businessNumber) {
-    return '모든 필수 정보를 입력해주세요.';
+const validateManagerStep1Data = ({ name, phoneNumber, email, dateOfBirth, gender, password, confirmPassword }) => {
+  // 1. NotBlank/NotNull 검사
+  if (!name || name.trim() === '') {
+    return '이름은 필수 입력값입니다.';
   }
+  // 전화번호에도 trim() 적용
+  const trimmedPhoneNumber = phoneNumber ? phoneNumber.trim() : '';
+  if (!trimmedPhoneNumber) {
+    return '전화번호는 필수 입력값입니다.';
+  }
+  if (!email || email.trim() === '') {
+    return '이메일은 필수 입력값입니다.';
+  }
+  // 이메일에도 trim() 적용
+  const trimmedEmail = email ? email.trim() : '';
+  if (!trimmedEmail) {
+    return '이메일은 필수 입력값입니다.';
+  }
+  if (!dateOfBirth) {
+    return '생년월일은 필수 입력값입니다.';
+  }
+  if (!gender || gender.trim() === '') {
+    return '성별은 필수 입력값입니다.';
+  }
+  if (!password || password.trim() === '') {
+    return '비밀번호는 필수 입력값입니다.';
+  }
+  if (!confirmPassword || confirmPassword.trim() === '') {
+    return '비밀번호 확인은 필수 입력값입니다.';
+  }
+
+  // 2. 비밀번호 일치 검사
   if (password !== confirmPassword) {
     return '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
   }
-  // 간단한 이메일 형식 검사
-  const emailRegex = /^[^\s@]+@[^\s@]+\\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return '유효한 이메일 주소를 입력해주세요.';
+
+  // 3. 이메일 형식 검사 (@Email)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(trimmedEmail)) {
+    return '올바른 이메일 형식이 아닙니다.';
   }
 
-  // 날짜가 유효하게 포맷 가능한지 확인 (null이 아닌지만 체크)
-  if (!dateOfBirth) {
-    return '유효한 생년월일을 입력해주세요.';
+  // 4. 이름 길이 검사 (@Size)
+  if (name.length < 2 || name.length > 20) {
+    return '이름은 2자 이상 20자 이하여야 합니다.';
   }
 
-  // TODO: 휴대폰 번호, 사업자 등록 번호 등 형식 유효성 검사 추가
+  // 5. 전화번호 형식 검사 (@Pattern)
+  const phoneRegex = /^01[016789]-\d{3,4}-\d{4}$/;
+  if (!phoneRegex.test(trimmedPhoneNumber)) {
+    return '전화번호 형식이 올바르지 않습니다. 예: 010-1234-5678';
+  }
 
-  return null; // 유효성 검사 통과
+  // 6. 생년월일 과거 날짜 검사 (@Past)
+  if (dateOfBirth && !isPast(dateOfBirth)) {
+    return '생년월일은 과거 날짜여야 합니다.';
+  }
+
+  // 7. 비밀번호 형식 검사 (@Pattern)
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+  if (!passwordRegex.test(password)) {
+    return '비밀번호는 8자 이상, 영문자, 숫자, 특수문자를 포함해야 합니다.';
+  }
+
+  return null; // 모든 유효성 검사 통과
 };
 
 const ManagerSignUpStep1Page = () => {
@@ -39,7 +83,6 @@ const ManagerSignUpStep1Page = () => {
   const [gender, setGender] = useState(''); // 'male' 또는 'female'
   const [dateOfBirth, setDateOfBirth] = useState(null); // null로 초기화
   const [email, setEmail] = useState(''); // 이메일 상태 추가
-  const [businessNumber, setBusinessNumber] = useState(''); // 사업자 등록 번호 상태 추가
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -57,13 +100,12 @@ const ManagerSignUpStep1Page = () => {
     // 헬퍼 함수를 사용하여 유효성 검사
     const validationError = validateManagerStep1Data({
       name,
-      phoneNumber,
-      email,
+      phoneNumber: phoneNumber.trim(), // 유효성 검사 시 전화번호 trim 적용
+      email: email.trim(), // 유효성 검사 시 이메일 trim 적용
       dateOfBirth,
       gender,
       password,
       confirmPassword,
-      businessNumber,
     });
 
     if (validationError) {
@@ -76,11 +118,10 @@ const ManagerSignUpStep1Page = () => {
 
     setManagerSignUpData({
       name,
-      phone: phoneNumber,
-      gender,
+      phone: phoneNumber.trim(), // 스토어 저장 시 전화번호 trim 적용
+      gender: gender.toUpperCase(), // 백엔드 GenderType enum에 맞게 대문자로 변환
       birth: formattedDateOfBirth,
-      email: email,
-      businessNumber: businessNumber,
+      email: email.trim(), // 스토어 저장 시 이메일 trim 적용
       password: password,
     });
 
@@ -218,20 +259,6 @@ const ManagerSignUpStep1Page = () => {
                  <option value="female">여</option>
                </select>
             </div>
-          </div>
-
-          {/* 사업자 등록 번호 Input - 새로 추가 (매니저 고유 필드) */}
-          <div style={{ marginBottom: '20px' }}>
-            <label htmlFor="businessNumber" style={{ display: 'block', fontSize: '14px', color: '#4B5563', fontWeight: '500', marginBottom: '8px' }}>사업자 등록 번호</label>
-            <input
-              id="businessNumber"
-              type="text"
-              placeholder="사업자 등록 번호를 입력해 주세요."
-              value={businessNumber}
-              onChange={e => setBusinessNumber(e.target.value)}
-              required
-              style={{ width: 'calc(100% - 26px)', padding: '13px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '16px', color: '#333' }}
-            />
           </div>
 
           {/* 비밀번호 Input */}
