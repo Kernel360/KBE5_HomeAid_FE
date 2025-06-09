@@ -1,74 +1,50 @@
-/* Page wrapper for footer positioning */
+/* Page wrapper */
 .manager-service-page {
   position: relative;
-  min-height: 100vh;
-  overflow-x: hidden; /* 가로 스크롤 방지 */
-  background-color: #f3f4f6; /* bg-gray-100 배경색 */
-}
-
-/* Header가 추가된 페이지의 콘텐츠 래퍼 */
-.page-content-wrapper {
-  min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
-  padding: 16px;
-  padding-top: 0; /* Header 바로 아래부터 시작 */
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
   width: 100%;
-  box-sizing: border-box;
+  min-height: 100vh;
+  background-color: #f3f4f6;
 }
 
-/* Header 스타일 조정 */
+/* Header 스타일링 */
 .manager-service-page header {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  margin: 0 auto;
+  height: 56px;
   background-color: white;
-  /* border-bottom: 1px solid #e5e7eb; */
+  z-index: 100;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.manager-service-page .footer-container {
+/* Footer 스타일링 */
+.manager-service-page footer {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
+  max-width: 480px;
+  height: 84px;
+  background-color: white;
+  z-index: 100;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 콘텐츠 영역 */
+.page-content-wrapper {
   max-width: 480px;
   margin: 0 auto;
-  z-index: 1000;
   background-color: white;
-  border-top: 1px solid #e9ecef;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 부드러운 스크롤 */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Clean styles for manager service checkin */
+/* 실제 콘텐츠 컨테이너 */
 .manager-service-checkin-container {
-  width: 100%;
-  max-width: 480px;
+  padding: 76px 20px 104px; /* 상단(헤더56px + 여백20px), 좌우20px, 하단(푸터84px + 여백20px) */
   background-color: white;
-  /* border-radius: 8px;
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05); */
-  padding: 24px 20px;
-  padding-bottom: 120px; /* Footer 높이 + 여유 공간 (84px + 36px) */
-  font-family: sans-serif;
-  box-sizing: border-box;
-  min-height: calc(
-    100vh - 172px
-  ); /* Header(56px) + Footer(84px) + 패딩(32px) */
-  position: relative;
-  z-index: 1; /* Footer보다 낮은 z-index */
-  margin: 0 auto; /* 추가 중앙 정렬 보장 */
-  overflow-y: auto;
 }
 
 .page-title {
@@ -282,20 +258,15 @@ html {
   background-color: #45a049;
 }
 
+/* 부드러운 스크롤 */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Mobile Styles */
 @media (max-width: 576px) {
-  .page-content-wrapper {
-    padding: 12px;
-    padding-top: 0;
-    min-height: calc(100vh - 56px);
-  }
-
   .manager-service-checkin-container {
-    padding: 20px 16px;
-    padding-bottom: 110px; /* 모바일에서 Footer 높이 + 여유 공간 */
-    min-height: calc(
-      100vh - 156px
-    ); /* Header(56px) + Footer(76px) + 패딩(24px) */
+    padding: 76px 16px 104px; /* 상단(헤더56px + 여백20px), 좌우16px, 하단(푸터84px + 여백20px) */
   }
 
   .matching-details {
@@ -353,14 +324,7 @@ html {
 
 /* 매우 작은 화면 대응 */
 @media (max-width: 360px) {
-  .page-content-wrapper {
-    padding: 8px;
-    padding-top: 0;
-  }
-
   .manager-service-checkin-container {
-    min-height: calc(
-      100vh - 140px
-    ); /* Header(56px) + Footer(76px) + 패딩(8px) */
+    padding: 76px 12px 104px; /* 상단(헤더56px + 여백20px), 좌우12px, 하단(푸터84px + 여백20px) */
   }
 }
