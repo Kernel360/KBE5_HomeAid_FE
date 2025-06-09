@@ -30,7 +30,37 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
     console.log('현재 전체 데이터:', allFormData); // ✅ 현재 전체 데이터 출력
   };
 
+  function validateFormData() {
+    const { preferenceIds, area, availableDays, startTime, endTime } = allFormData;
+    if (!preferenceIds || preferenceIds.length === 0) {
+      alert('제공 가능 서비스 선택해주세요.');
+      throw new Error('제공 가능 서비스를 선택해주세요.');
+    }
+    if (!area) {
+      alert('활동 지역을 선택해주세요.');
+      throw new Error('활동 지역을 선택해주세요.');
+    }
+    if (!availableDays || availableDays.length === 0) {
+      alert('근무 요일을 선택해주세요.');
+      throw new Error('근무 요일을 선택해주세요.');
+    }
+    if (!startTime || !endTime) {
+      alert('근무 시간을 설정해주세요.');
+      throw new Error('근무 시간을 설정해주세요.');
+    }
+    if (startTime >= endTime) {
+      alert('근무 시작 시간이 종료 시간보다 늦을 수 없습니다.');
+      throw new Error('근무 시작 시간이 종료 시간보다 늦을 수 없습니다.');
+    }
+    console.log('폼 데이터 유효성 검사 통과'); // ✅ 유효성 검사 통과 로그
+    return true; // 유효성 검사 통과
+  }
+
   const handleSubmit = () => {
+    if (!validateFormData()) {
+      console.error('폼 데이터 유효성 검사 실패'); // ✅ 유효성 검사 실패 로그
+      return; // 유효성 검사 실패 시 종료
+    } // ✅ 폼 데이터 유효성 검사
     console.log('🎯 최종 전체 데이터:', allFormData); // ✅ 전체 데이터 출력
     // API 호출 로직
     apiService.serviceOption.create(allFormData)
@@ -43,6 +73,22 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
         // 에러 처리 로직
       });
     // 완료 후 이전 단계로 돌아가기
+  };
+
+   // 서버용 -> 표시용 매핑
+  const reverseDayMapping = {
+    1: '월',
+    2: '화',
+    3: '수',
+    4: '목',
+    5: '금',
+    6: '토',
+    7: '일'
+  };
+
+    // 서버에서 오는 숫자 데이터를 표시용 한글로 변환
+  const getDisplayDays = () => {
+    return allFormData.availableDays.map(dayNum => reverseDayMapping[dayNum]).filter(Boolean);
   };
 
   return (
@@ -64,7 +110,7 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Profile Image */}
-          <div>
+          {/* <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">프로필 사진</h2>
             <div className="flex items-center gap-4">
               <div
@@ -95,7 +141,7 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
                 className="hidden"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Introduction */}
           {/* <div>
@@ -112,7 +158,7 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
           </div> */}
 
           {/* Specialties */}
-          <div>
+          {/* <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">특기 사항</h2>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <textarea
@@ -123,16 +169,16 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
                 className="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-700 placeholder-gray-500"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* 이전 단계 데이터 미리보기 (선택사항) */}
           <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
             <h4 className="text-sm font-medium text-blue-800 mb-2">입력된 정보 요약</h4>
             <p className="text-xs text-blue-700">
-              선택한 서비스: {allFormData.preferenceIds?.length || 0}개<br />
+              제공 서비스: {allFormData.preferenceIds?.length || 0}개<br />
               활동 지역: {allFormData.area}<br />
-              근무 요일: {allFormData.availableDays?.join(', ') || '없음'}요일<br />
-              근무 시간: {allFormData.workingHours?.startTime} - {allFormData.workingHours?.endTime}
+              근무 요일: {getDisplayDays().join(', ') || '없음'}요일<br />
+              근무 시간: {allFormData.startTime} - {allFormData.endTime}
             </p>
           </div>
         </div>

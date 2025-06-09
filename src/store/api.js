@@ -11,7 +11,7 @@ const apiClient = axios.create({
     },
     withCredentials: true
 });
-const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEyLCJyb2xlIjoiUk9MRV9NQU5BR0VSIiwiaWF0IjoxNzQ5NDQ5MTI4LCJleHAiOjE3NDk0NTI3Mjh9.SUIqaygPJe8mvJJYGUyZcUYJE0IbXQaSwF-sMPJLvAI';
+const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEyLCJyb2xlIjoiUk9MRV9NQU5BR0VSIiwiaWF0IjoxNzQ5NDU1MTQyLCJleHAiOjE3NDk0NTg3NDJ9.FaGcbudvDA-yqwp-yXmjAJNrRQ5bCcU5akyRuQq4Fd0';
 // 요청 인터셉터 (토큰 자동 추가 등)
 apiClient.interceptors.request.use(
     (config) => {
