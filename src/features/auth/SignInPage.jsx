@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 // npm install react-icons lucide-react --save
 import { Eye, EyeOff } from 'lucide-react'; // lucide-react 사용 예시
 import { authService } from '../../services/authService';
+import { useAuthStore } from '../../stores/authStore';
 
 const SignInPage = () => {
   const [phone, setphone] = useState('');
@@ -18,11 +19,30 @@ const SignInPage = () => {
     setError('');
     
     try {
-      console.log(phone);
       const data = await authService.signIn(phone, password);
       console.log('로그인 성공!', data);
-      
-      navigate('/user/service-option', { replace: true });
+      // localStorage에서 토큰 꺼내 zustand에도 저장
+      const token = localStorage.getItem('accessToken');
+      useAuthStore.getState().setAccessToken(token);
+
+      const user = {
+        role: data.role, // 백엔드에서 받은 실제 role로 교체
+        // ... 기타 사용자 정보
+        // TODO: 백엔드 응답의 다른 필요한 사용자 정보도 여기에 추가하세요.
+      };
+      useAuthStore.getState().setUser(user);
+
+      // 역할에 따른 페이지 이동
+      if (user.role === 'ROLE_CUSTOMER') {
+        navigate('/user/service-option', { replace: true });
+      } else if (user.role === 'ROLE_ADMIN'){
+        navigate('/admin', {replace: true});
+      } else if (user.role === 'ROLE_MANAGER'){
+        navigate('/manager', {replace: true}); // 매니저 경로 예시
+      } else {
+        console.warn('알 수 없는 사용자 역할:', user.role);
+        navigate('/', {replace: true}); // 기본 페이지로 이동
+      }
       
     } catch (err) {
       console.error('로그인 에러:', err);
