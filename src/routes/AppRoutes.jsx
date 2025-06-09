@@ -25,8 +25,9 @@ import ServiceRegistration from '../features/additional-info/pages';
 import CustomerLayout from '../layouts/CustomerLayout';
 import MainPage from '../features/main/MainPage'; 
 import Mypage from '../features/mypage/customer/pages/Mypage';
-import ManagerLayout from '../features/mypage/manager/ManagerMypage';
+import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
+import ManagerMainPage from '../features/manager/pages/ManagerMainPage';
 
 export const AppRoutes = () => {
   const commonRoutes = [
@@ -48,12 +49,12 @@ export const AppRoutes = () => {
       ],
     },
     {
-      path: '/manager/',
+      path: '/manager',
       element: <ManagerLayout />,
       children: [
         {
           index: true,
-          element: <MainPage />, //매니저 메인페이지 따로 만들거나 해야함함
+          element: <ManagerMainPage />,
         },
         {
           path: 'mypage',
