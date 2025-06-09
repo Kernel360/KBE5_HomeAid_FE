@@ -7,8 +7,6 @@ import ProfileCompletion from '../components/ProfileCompletion';
 
 const ServiceRegistration = () => {
   const [stepView, setStepView] = useState('step1');
-
-  const navigate = useNavigate();
   const [serviceOptions, setServiceOptions] = useState([]);
   const [allFormData, setAllFormData] = useState({
       // Step 1
@@ -26,12 +24,6 @@ const ServiceRegistration = () => {
       specialties: '',
   });
 
-  const [timeSlots, setTimeSlots] = useState([
-    { day: '월요일', startTime: '09:00', endTime: '18:00' },
-    { day: '화요일', startTime: '10:00', endTime: '16:00' },
-    { day: '수요일', startTime: '09:00', endTime: '18:00' },
-  ]);
-
   const handleServiceChange = (serviceId) => {
     setAllFormData(prev => ({
       ...prev,
@@ -39,22 +31,6 @@ const ServiceRegistration = () => {
         ? prev.preferenceIds.filter(id => id !== serviceId)
         : [...prev.preferenceIds, serviceId]
     }));
-  };
-
-  const handleTimeChange = (index, field, value) => {
-    const updatedSlots = [...timeSlots];
-    updatedSlots[index][field] = value;
-    setTimeSlots(updatedSlots);
-  };
-
-  const addTimeSlot = () => {
-    setTimeSlots([...timeSlots, { day: '', start: '09:00', end: '18:00' }]);
-  };
-
-  const handleSubmit = () => {
-    // console.log('Form submitted:', { ...formData, schedule: timeSlots });
-    navigate('/manager/additional-info/step2')
-    // API 호출 로직 추가
   };
 
   const fetchServiceOptions = async () => {
@@ -66,7 +42,6 @@ const ServiceRegistration = () => {
       console.error("서비스 옵션 데이터 가져오기 실패:", error);
     }
   };
-
 
   useEffect(() => {
     console.log("🔍 ServiceRegistration useEffect 실행됨");

@@ -123,22 +123,40 @@ const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <label className="block text-sm text-gray-600 mb-2">시작 시간</label>
-                <input
-                  type="time"
+                <select
                   value={startTime}
                   onChange={(e) => handleTimeChange('startTime', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                >
+                  {Array.from({ length: 24 }, (_, i) => {
+                    const hour = i.toString().padStart(2, '0');
+                    const timeValue = `${hour}:00`;
+                    return (
+                      <option key={timeValue} value={timeValue}>
+                        {hour}:00
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
               <span className="text-gray-400 mt-6">-</span>
               <div className="flex-1">
                 <label className="block text-sm text-gray-600 mb-2">종료 시간</label>
-                <input
-                  type="time"
+                <select
                   value={endTime}
                   onChange={(e) => handleTimeChange('endTime', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                >
+                  {Array.from({ length: 24 }, (_, i) => {
+                    const hour = i.toString().padStart(2, '0');
+                    const timeValue = `${hour}:00`;
+                    return (
+                      <option key={timeValue} value={timeValue}>
+                        {hour}:00
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
             </div>
           </div>

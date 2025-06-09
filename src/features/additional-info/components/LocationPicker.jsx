@@ -107,7 +107,7 @@ const LocationPicker = ({ onLocationSelect, currentAddress }) => {
             <MapPin className="w-5 h-5 text-gray-400 hover:text-blue-500" />
           )}
         </button>
-        <div className="flex-1">
+        {/* <div className="flex-1">
           <input
             type="text"
             value={currentAddress || ''}
@@ -115,10 +115,8 @@ const LocationPicker = ({ onLocationSelect, currentAddress }) => {
             className="w-full bg-transparent border-none outline-none text-sm text-gray-700"
             placeholder="활동 지역을 입력하거나 위치 버튼을 클릭하세요"
           />
-        </div>
-      </div>
-
-      {/* 에러 메시지 */}
+        </div> */}
+              {/* 에러 메시지 */}
       {error && (
         <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
           <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
@@ -134,6 +132,9 @@ const LocationPicker = ({ onLocationSelect, currentAddress }) => {
           </div>
         </div>
       )}
+      </div>
+
+
     </div>
   );
 };
