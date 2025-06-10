@@ -5,6 +5,7 @@ const useReservationStore = create((set, get) => ({
   reservationData: {
     selectedServices: [], // 선택된 서비스 ID 배열
     serviceDetails: [], // 선택된 서비스의 상세 정보
+    selectedSubOption: null, // 선택된 하위 옵션 (화장실청소, 건물청소 등)
     totalPrice: 0,
     totalDuration: 0,
     reservationDate: '',
@@ -40,6 +41,15 @@ const useReservationStore = create((set, get) => ({
       reservationData: {
         ...state.reservationData,
         serviceDetails: services,
+      },
+    })),
+
+  // 선택된 하위 옵션 설정 (화장실청소, 건물청소 등)
+  setSelectedSubOption: (subOption) =>
+    set((state) => ({
+      reservationData: {
+        ...state.reservationData,
+        selectedSubOption: subOption,
       },
     })),
 
@@ -140,6 +150,7 @@ const useReservationStore = create((set, get) => ({
       reservationData: {
         selectedServices: [],
         serviceDetails: [],
+        selectedSubOption: null,
         totalPrice: 0,
         totalDuration: 0,
         reservationDate: '',

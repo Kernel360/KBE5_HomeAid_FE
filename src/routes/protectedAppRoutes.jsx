@@ -5,10 +5,13 @@ import MatchingSystemActionPage from '../features/admin/pages/MatchingSystemActi
 import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
 import ManagerServiceCheckIn from '../features/matching/pages/ManagerServiceCheckIn';
 import ManagerMatchingRequest from '../features/matching/pages/ManagerMatchingRequest';
+import ManagerMatchingList from '../features/matching/pages/ManagerMatchingList';
 import UserServiceOption from '../features/reservation/components/UserServiceOption';
 import UserServiceSubOption from '../features/reservation/components/UserServiceSubOption';
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
 import UserServiceRequest from '../features/reservation/components/UserServiceRequest';
+import UserPayment from '../features/payment/pages/UserPayment';
+import UserPaymentComplete from '../features/payment/pages/UserPaymentComplete';
 import ServiceRegistration from '../features/additional-info/pages';
 import CustomerLayout from '../layouts/CustomerLayout';
 import MainPage from '../features/main/MainPage';
@@ -30,7 +33,9 @@ export const protectedAppRoutes = [
       { path: 'user/service-sub-option', element: <UserServiceSubOption /> },
       { path: 'user/service-option-cart', element: <UserServiceOptionCart /> },
       { path: 'user/service-request', element: <UserServiceRequest /> },
-    ]
+      { path: 'user/payment', element: <UserPayment /> },
+      { path: 'user/payment-complete', element: <UserPaymentComplete /> },
+    ],
   },
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)
   {
@@ -38,12 +43,31 @@ export const protectedAppRoutes = [
     element: <ManagerLayout />,
     allowedRoles: ['ROLE_MANAGER'],
     children: [
-      { index: true, element: <MainPage /> }, // 매니저 로그인 후 기본 페이지
       { path: 'mypage', element: <ManagerMypage /> },
       { path: 'additional-info', element: <ServiceRegistration /> },
       { path: 'matching/service-checkin', element: <ManagerServiceCheckIn /> },
-      { path: 'matching/matching-request', element: <ManagerMatchingRequest /> },
-    ]
+      {
+        path: 'matching/matching-request',
+        element: <ManagerMatchingRequest />,
+      },
+    ],
+  },
+
+  // 매칭 관련 라우트 (기존 경로 유지 - 직접 접근용)
+  {
+    path: '/matching/list',
+    element: <ManagerMatchingList />,
+    allowedRoles: ['ROLE_MANAGER', 'ROLE_ADMIN'],
+  },
+  {
+    path: '/matching/matching-request',
+    element: <ManagerMatchingRequest />,
+    allowedRoles: ['ROLE_MANAGER', 'ROLE_ADMIN'],
+  },
+  {
+    path: '/matching/service-checkin',
+    element: <ManagerServiceCheckIn />,
+    allowedRoles: ['ROLE_MANAGER', 'ROLE_ADMIN'],
   },
 
   // 관리자(ADMIN) 권한이 필요한 라우트
@@ -72,4 +96,4 @@ export const protectedAppRoutes = [
     element: <MatchingManagerList />,
     allowedRoles: ['ROLE_ADMIN'],
   },
-]; 
+];
