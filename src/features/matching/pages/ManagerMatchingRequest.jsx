@@ -15,13 +15,29 @@ import {
   CUSTOMER_ACTION,
   MATCHING_STATUS,
 } from '../constants/matchingData';
+import useReservationStore from '../store/useMatchingStore';
+import { apiService } from '../../../store/api';
 
 const ManagerMatchingRequest = () => {
   const navigate = useNavigate();
   const [rejectReason, setRejectReason] = useState('');
+  const activematching = useReservationStore((state) => state.activeMatching);
+  const [reservation, setReservation] = useState({});
 
   // ⭐️ 인증 정보 확인
   const { user, accessToken } = useAuthStore();
+
+  const fetchReservation = async (reservationId) => {
+    const response = await apiService.reservation.getById(reservationId)
+    console.log('수락하기 페이지 예약 정보', response.data.data);
+
+    setReservation(response.data.data)
+  }
+
+  useEffect(() => {
+    fetchReservation(activematching.reservationId);
+
+  }, [activematching.reservationId])
 
   // zustand store 사용
   const {
@@ -45,60 +61,20 @@ const ManagerMatchingRequest = () => {
   // 고객 응답 시뮬레이션용
   const { loading: customerLoading } = useCustomerMatching();
 
-  // ⭐️ 매니저 권한 확인 및 로깅
-  useEffect(() => {
-    console.log('🔐 매니저 매칭 요청 페이지 - 인증 정보 확인:');
-    console.log('👤 현재 사용자:', user);
-    console.log('🔑 액세스 토큰:', accessToken ? '있음' : '없음');
+  const fetchMatchAccept = async () => {
+    console.log('zus id ', activematching.matchingId)
 
-    if (user) {
-      console.log('📋 사용자 상세 정보:');
-      console.log('  - 사용자 ID:', user.userId);
-      console.log('  - 이름:', user.name);
-      console.log('  - 역할:', user.role);
-      console.log('  - 전화번호:', user.phone);
-      console.log('  - 이메일:', user.email);
+    const request = {
+      action: 'ACCEPT',
     }
+    console.log('request', request)
 
-    // 매니저 권한 확인
-    if (!user || user.role !== 'ROLE_MANAGER') {
-      console.warn('⚠️ 매니저 권한이 필요합니다.');
-      console.warn('현재 사용자 권한:', user?.role || '없음');
-    }
+    const response = await apiService.matching.acceptMatching(activematching.matchingId, request);
+    console.log('matching accept result ', response.data);
 
-    if (!accessToken) {
-      console.warn('⚠️ 인증 토큰이 없습니다. 로그인이 필요합니다.');
-    }
-  }, [user, accessToken]);
+    return response.data.success;
+  }
 
-  // 컴포넌트 마운트 시 매칭 정보 로드
-  useEffect(() => {
-    const matchingId = 1; // TODO: URL 파라미터에서 실제 ID 가져오기
-    if (matchingId && !matchingRequest.matchingId) {
-      loadMatchingDetail(matchingId);
-    }
-  }, [matchingRequest.matchingId]);
-
-  const loadMatchingDetail = async (matchingId) => {
-    try {
-      const data = await getMatchingDetail(matchingId);
-      setMatchingRequest({
-        matchingId: data.matchingId,
-        serviceType: data.serviceType,
-        reservedDate: data.reservedDate,
-        reservedTime: data.reservedTime,
-        estimatedDuration: data.estimatedDuration,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        customerRequest: data.customerRequest,
-        customerName: '김고객', // 더미 데이터
-        address: '서울시 강남구 테헤란로 123', // 더미 데이터
-        status: MATCHING_STATUS.PENDING_MANAGER_RESPONSE,
-      });
-    } catch (error) {
-      console.error('매칭 정보 로드 실패:', error);
-    }
-  };
 
   // 매칭 수락
   const handleAccept = async () => {
@@ -107,59 +83,55 @@ const ManagerMatchingRequest = () => {
       return;
     }
 
-    // ⭐️ 매니저 권한 재확인
-    if (!user || user.role !== 'ROLE_MANAGER') {
-      alert('매니저 권한이 필요합니다.');
-      console.error('권한 오류:', { user, expectedRole: 'ROLE_MANAGER' });
-      return;
-    }
 
     try {
-      console.log('🎯 매칭 수락 프로세스 시작:');
-      console.log('📋 요청 정보:');
-      console.log('  - 매칭 ID:', matchingRequest.matchingId);
-      console.log('  - 고객명:', matchingRequest.customerName);
-      console.log('  - 서비스 유형:', matchingRequest.serviceType);
-      console.log('  - 매니저 ID:', user.userId);
-      console.log('  - 매니저명:', user.name);
+      const acceptResult =  await fetchMatchAccept();
+      if (acceptResult) {
+        alert('해당 매칭에 수락하였습니다')
+        navigate('/matching/list');
+      }
+      // console.log('🎯 매칭 수락 프로세스 시작:');
+      // console.log('📋 요청 정보:');
+      // console.log('  - 매칭 ID:', matchingRequest.matchingId);
+      // console.log('  - 고객명:', matchingRequest.customerName);
+      // console.log('  - 서비스 유형:', matchingRequest.serviceType);
+      // console.log('  - 매니저 ID:', user.userId);
+      // console.log('  - 매니저명:', user.name);
 
-      // ⭐️ 수락 대기 메시지 표시
-      alert('수락 대기중입니다...');
+      // // ⭐️ 수락 대기 메시지 표시
+      // alert('수락 대기중입니다...');
 
-      await managerRespondToMatching(
-        matchingRequest.matchingId,
-        MANAGER_ACTION.ACCEPT
-      );
-
-      console.log('✅ 백엔드 API 응답 완료 (더미 응답 포함)');
+      // await managerRespondToMatching(
+      //   matchingRequest.matchingId,
+      //   MANAGER_ACTION.ACCEPT
+      // );
 
       // ⭐️ 매니저 수락 시 바로 매칭 완료 상태로 변경
       // respondAsManager(MANAGER_ACTION.ACCEPT); // 이건 PENDING_CUSTOMER_RESPONSE로 변경함
 
       // 바로 최종 매칭 완료 상태로 설정
-      respondAsCustomer(CUSTOMER_ACTION.CONFIRM);
+      // respondAsCustomer(CUSTOMER_ACTION.CONFIRM);
 
-      console.log('🎉 매칭 상태가 완료로 업데이트됨');
 
       // ⭐️ 최종 매칭 완료 안내창 (약간의 지연 후 표시)
-      setTimeout(() => {
-        alert('✅ 최종 매칭이 완료되었습니다!');
+      // setTimeout(() => {
+      //   alert('✅ 최종 매칭이 완료되었습니다!');
 
         // ⭐️ 확인 버튼 클릭 후 매칭 목록으로 이동 (새로고침 플래그 포함)
-        setTimeout(() => {
-          console.log('📍 매칭 목록으로 이동 (데이터 새로고침 요청)');
-          navigate('/matching/list', {
-            state: {
-              refreshData: true,
-              completedMatchingId: matchingRequest.matchingId,
-              managerInfo: {
-                id: user.userId,
-                name: user.name,
-              },
-            },
-          });
-        }, 500);
-      }, 1000); // 1초 후 완료 메시지 표시
+        // setTimeout(() => {
+        //   console.log('📍 매칭 목록으로 이동 (데이터 새로고침 요청)');
+        //   navigate('/matching/list', {
+        //     state: {
+        //       refreshData: true,
+        //       completedMatchingId: matchingRequest.matchingId,
+        //       managerInfo: {
+        //         id: user.userId,
+        //         name: user.name,
+        //       },
+        //     },
+        //   });
+        // }, 500);
+      // }, 1000); // 1초 후 완료 메시지 표시
     } catch (error) {
       console.error('매칭 수락 실패:', error);
       alert(NOTIFICATION_MESSAGES.MATCHING.ACCEPT_ERROR);
@@ -265,12 +237,12 @@ const ManagerMatchingRequest = () => {
 
           {/* 매칭 상태 표시 */}
           <div className="status-section">
-            <div className="status-item">
+            {/* <div className="status-item">
               <span className="status-label">매칭 ID</span>
               <span className="status-value">
                 #{matchingRequest.matchingId}
               </span>
-            </div>
+            </div> */}
             <div className="status-item">
               <span className="status-label">현재 상태</span>
               <span className={`status-badge ${matchingRequest.status}`}>
@@ -295,7 +267,7 @@ const ManagerMatchingRequest = () => {
             <div className="info-card">
               <div className="info-item">
                 <span className="label">고객명</span>
-                <span className="value">{matchingRequest.customerName}</span>
+                <span className="value">{reservation.customerName}</span>
               </div>
             </div>
           </div>
@@ -306,25 +278,25 @@ const ManagerMatchingRequest = () => {
             <div className="info-card">
               <div className="info-item">
                 <span className="label">서비스 유형</span>
-                <span className="value">{matchingRequest.serviceType}</span>
+                <span className="value">{reservation.subOptionName}</span>
               </div>
               <div className="info-item">
                 <span className="label">날짜</span>
-                <span className="value">{matchingRequest.reservedDate}</span>
+                <span className="value">{reservation.requestDate}</span>
               </div>
               <div className="info-item">
                 <span className="label">시간</span>
-                <span className="value">{matchingRequest.reservedTime}</span>
+                <span className="value">{reservation.requestTime}</span>
               </div>
               <div className="info-item">
                 <span className="label">예상 소요시간</span>
                 <span className="value">
-                  {matchingRequest.estimatedDuration}시간
+                  {reservation.totalDuration}시간
                 </span>
               </div>
               <div className="info-item">
                 <span className="label">위치</span>
-                <span className="value">{matchingRequest.address}</span>
+                <span className="value">{reservation.address}</span>
               </div>
             </div>
           </div>
@@ -333,7 +305,7 @@ const ManagerMatchingRequest = () => {
           <div className="section">
             <h2 className="section-title">고객 요청사항</h2>
             <div className="request-card">
-              <p>{matchingRequest.customerRequest}</p>
+              <p>{reservation.customerMemo}</p>
             </div>
           </div>
 

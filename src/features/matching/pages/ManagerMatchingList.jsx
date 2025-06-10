@@ -3,13 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import './ManagerMatchingList.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
-import useMatchingStore from '../../../stores/matchingStore';
 import { useManagerMatching } from '../hooks/useManagerAPI';
 import {
   MATCHING_STATUS,
   MATCHING_STATUS_LABELS,
   MATCHING_STATUS_COLORS,
 } from '../constants/matchingData';
+import { apiService } from '../../../store/api';
+import useMatchingStore from '../store/useMatchingStore';
 
 const ManagerMatchingList = () => {
   const navigate = useNavigate();
@@ -17,10 +18,11 @@ const ManagerMatchingList = () => {
   const [activeTab, setActiveTab] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState({});
+  const { activeReservation, setActiveMatching, setActiveReservation } = useMatchingStore();
 
   // zustand store 사용
-  const { setMatchingRequest } = useMatchingStore();
+  // const { setMatchingRequest } = useMatchingStore();
 
   // API 훅 사용
   const { loading, error, getMatchingList } = useManagerMatching();
@@ -32,78 +34,29 @@ const ManagerMatchingList = () => {
   const tabs = ['전체', '매칭 대기', '고객 응답 대기', '매칭 완료', '거절됨'];
 
   // 백엔드 상태를 탭 이름으로 매핑 (현재 사용하지 않지만 나중에 필요할 수 있음)
-  // eslint-disable-next-line no-unused-vars
-  const getTabNameFromStatus = (status) => {
-    switch (status) {
-      case MATCHING_STATUS.PENDING_MANAGER_RESPONSE:
-        return '매칭 대기';
-      case MATCHING_STATUS.PENDING_CUSTOMER_RESPONSE:
-        return '고객 응답 대기';
-      case MATCHING_STATUS.CONFIRMED:
-        return '매칭 완료';
-      case MATCHING_STATUS.REJECTED_BY_MANAGER:
-      case MATCHING_STATUS.REJECTED_BY_CUSTOMER:
-        return '거절됨';
-      default:
-        return '알 수 없음';
-    }
-  };
 
-  // 컴포넌트 마운트 시 매칭 리스트 로드
+  const fetchMatching = async () => {
+    const response = await apiService.manager.getAllMatcings();
+    setMatchingList(response.data.data.content)
+  }
+
   useEffect(() => {
-    loadMatchingList();
+    fetchMatching();
   }, []);
 
-  // ⭐️ 페이지가 다시 보일 때 데이터 새로고침 (매칭 완료 후 돌아올 때)
-  useEffect(() => {
-    const handleFocus = () => {
-      console.log('🔄 페이지 포커스 - 매칭 목록 새로고침');
-      loadMatchingList();
-    };
+  const fetchReservation = async (reservationId) => {
+    const response = await apiService.reservation.getById(reservationId);
+    console.log('단건 예약 정보', response.data.data);
 
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('🔄 페이지 표시 - 매칭 목록 새로고침');
-        loadMatchingList();
-      }
-    };
+    setSelectedItem(response.data.data)
+    // return response.data.data;
+  }
 
-    // 윈도우 포커스 이벤트 리스너 추가
-    window.addEventListener('focus', handleFocus);
-    // 페이지 가시성 변경 이벤트 리스너 추가
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // 클린업
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
-  // ⭐️ 페이지 경로가 변경될 때마다 데이터 새로고침 (매칭 요청 페이지에서 돌아올 때)
-  useEffect(() => {
-    if (location.pathname === '/matching/list') {
-      console.log('🔄 매칭 목록 페이지로 이동 - 데이터 새로고침');
-
-      // ⭐️ 매칭 완료 후 돌아온 경우 특별한 처리
-      if (location.state?.refreshData) {
-        console.log('✅ 매칭 완료 후 돌아옴 - 강제 데이터 새로고침', {
-          completedMatchingId: location.state.completedMatchingId,
-        });
-
-        // 약간의 지연 후 새로고침 (백엔드 업데이트 시간 고려)
-        setTimeout(() => {
-          loadMatchingList();
-        }, 100);
-      } else {
-        loadMatchingList();
-      }
-    }
-  }, [location.pathname, location.state]);
 
   const loadMatchingList = async () => {
     try {
-      const data = await getMatchingList();
+      const data = await getMatchingL
+      ist();
       console.log('📡 백엔드에서 받은 원본 매칭 데이터:', data);
 
       // 백엔드 데이터를 UI 형태로 변환
@@ -170,8 +123,11 @@ const ManagerMatchingList = () => {
   };
 
   // 상세보기 버튼 클릭
-  const handleDetailView = (matchingItem) => {
-    setSelectedItem(matchingItem);
+  const handleDetailView = (reservationId) => {
+    console.log('mathcing detail ', reservationId)
+    setSelectedItem(reservationId);
+    setActiveReservation(reservationId);
+    fetchReservation(reservationId);
     setShowDetailModal(true);
   };
 
@@ -199,46 +155,43 @@ const ManagerMatchingList = () => {
   };
 
   // 매칭하기 버튼 클릭 (매칭 대기 상태)
-  const handleMatching = (matchingItem) => {
+  const handleMatching = (matching) => {
     // 매칭 정보를 스토어에 저장하고 매칭 요청 페이지로 이동
-    setMatchingRequest({
-      matchingId: matchingItem.id,
-      customerName: matchingItem.customerName,
-      serviceType: matchingItem.serviceType,
-      reservedDate: matchingItem.workTime.split(' ')[0],
-      reservedTime: matchingItem.workTime.split(' ')[1],
-      estimatedDuration: matchingItem.estimatedDuration,
-      address: matchingItem.address,
-      customerRequest: matchingItem.customerRequest,
-      status: MATCHING_STATUS.PENDING_MANAGER_RESPONSE,
-    });
+    // setMatchingRequest({
+    //   matchingId: matchingItem.id,
+    //   customerName: matchingItem.customerName,
+    //   serviceType: matchingItem.serviceType,
+    //   reservedDate: matchingItem.workTime.split(' ')[0],
+    //   reservedTime: matchingItem.workTime.split(' ')[1],
+    //   estimatedDuration: matchingItem.estimatedDuration,
+    //   address: matchingItem.address,
+    //   customerRequest: matchingItem.customerRequest,
+    //   status: MATCHING_STATUS.PENDING_MANAGER_RESPONSE,
+    // });
+    console.log('매칭하기 버튼', matching);
+    setActiveMatching(matching)
+    setActiveReservation(matching.reservationId);
     navigate('/matching/matching-request');
   };
 
   // 버튼 렌더링 로직 (백엔드 상태 기반)
   const renderActionButtons = (item) => {
-    console.log(
-      `🔘 버튼 렌더링: ID ${item.id}, 상태: ${item.status}, 원본상태: ${item.originalStatus}`
-    );
-
     switch (item.status) {
-      case '매칭 대기': // PENDING_MANAGER_RESPONSE (REQUESTED, PENDING)
-        console.log(`  → "매칭하기" 버튼 표시`);
+      case 'REQUESTED': // 관리자가 매칭 시켜준 상태
         return (
           <button
             className="action-button matching-button"
             onClick={() => handleMatching(item)}
           >
-            매칭하기
+            수락하기
           </button>
         );
-      case '매칭 완료': // CONFIRMED (매니저가 수락한 상태)
-        console.log(`  → "상세보기", "청소하기" 버튼 표시`);
+      case 'CONFIRMED': // CONFIRMED (고객이 수락한 상태)
         return (
           <div className="button-group">
             <button
               className="action-button detail-button"
-              onClick={() => handleDetailView(item)}
+              onClick={() => handleDetailView(item.reservationId)}
             >
               상세보기
             </button>
@@ -250,22 +203,20 @@ const ManagerMatchingList = () => {
             </button>
           </div>
         );
-      case '고객 응답 대기': // PENDING_CUSTOMER_RESPONSE
-        console.log(`  → "상세보기" 버튼만 표시 (고객 응답 대기)`);
+      case 'ACCEPTED': //매니저가 수락한 상태 고객응답 대기
         return (
           <button
             className="action-button detail-button"
-            onClick={() => handleDetailView(item)}
+            onClick={() => handleDetailView(item.reservationId)}
           >
             상세보기
           </button>
         );
-      case '거절됨': // REJECTED_BY_MANAGER, REJECTED_BY_CUSTOMER
-        console.log(`  → "상세보기" 버튼만 표시 (거절됨)`);
+      case 'REJECTED': // CONFIREMD이 안되고 고객이 거절한 상태
         return (
           <button
             className="action-button detail-button"
-            onClick={() => handleDetailView(item)}
+            onClick={() => handleDetailView(item.reservationId)}
           >
             상세보기
           </button>
@@ -277,8 +228,8 @@ const ManagerMatchingList = () => {
   };
 
   // 상태별 배지 색상
-  const getStatusBadgeClass = (statusColor) => {
-    return `status-badge ${statusColor}`;
+  const getStatusBadgeClass = (status) => {
+    return `status-badge ${MATCHING_STATUS_COLORS[status]}`;
   };
 
   return (
@@ -335,33 +286,33 @@ const ManagerMatchingList = () => {
           {/* 매칭 리스트 */}
           {!loading && !error && (
             <div className="matching-list">
-              {getFilteredList().length === 0 ? (
+              {matchingList.length === 0 ? (
                 <div className="empty-state">
                   <p>매칭 내역이 없습니다.</p>
                 </div>
               ) : (
-                getFilteredList().map((item) => (
-                  <div key={item.id} className="matching-item">
+                matchingList.map((item) => (
+                  <div key={item.matchingId} className="matching-item">
                     <div className="item-header">
-                      <span className="item-id">#{item.id}</span>
-                      <span className={getStatusBadgeClass(item.statusColor)}>
-                        {item.status}
+                      <span className="item-id">#{item.matchingId}</span>
+                      <span className={getStatusBadgeClass(item.status)}>
+                        {item.statusDisplay}
                       </span>
                     </div>
 
                     <div className="item-content">
                       <div className="item-info">
                         <div className="info-row">
-                          <span className="label">고객명</span>
-                          <span className="value">{item.customerName}</span>
+                          <span className="label">고객명,현재는아이디</span>
+                          <span className="value">{item.customerId}</span>
                         </div>
                         <div className="info-row">
                           <span className="label">서비스 유형</span>
-                          <span className="value">{item.serviceType}</span>
+                          <span className="value">{item.subOptionName}</span>
                         </div>
                         <div className="info-row">
                           <span className="label">일시</span>
-                          <span className="value">{item.workTime}</span>
+                          <span className="value">{item.scheduleDateTime}</span>
                         </div>
                         {item.price && (
                           <div className="info-row">
@@ -398,47 +349,48 @@ const ManagerMatchingList = () => {
 
             <div className="modal-body">
               <div className="detail-section">
-                <div className="detail-row">
+                {/* <div className="detail-row">
                   <span className="detail-label">매칭 ID</span>
                   <span className="detail-value">#{selectedItem.id}</span>
-                </div>
+                </div> */}
                 <div className="detail-row">
-                  <span className="detail-label">상태</span>
+                  <span className="detail-label">예약 상태</span>
                   <span
                     className={`detail-value status-${selectedItem.statusColor}`}
                   >
                     {selectedItem.status}
                   </span>
                 </div>
-                <div className="detail-row">
+                {/* <div className="detail-row">
                   <span className="detail-label">고객명</span>
                   <span className="detail-value">
                     {selectedItem.customerName}
                   </span>
-                </div>
+                </div> */}
                 <div className="detail-row">
                   <span className="detail-label">서비스 유형</span>
                   <span className="detail-value">
-                    {selectedItem.serviceType}
+                    {selectedItem.subOptionName}
                   </span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">일시</span>
-                  <span className="detail-value">{selectedItem.workTime}</span>
+                  <span className="detail-value">{selectedItem.requestDate}</span>
+                  <span className="detail-value">{selectedItem.requestTime}</span>
                 </div>
-                {selectedItem.estimatedDuration && (
+                {selectedItem.totalDuration && (
                   <div className="detail-row">
                     <span className="detail-label">예상 소요시간</span>
                     <span className="detail-value">
-                      {selectedItem.estimatedDuration}시간
+                      {selectedItem.totalDuration}분
                     </span>
                   </div>
                 )}
-                {selectedItem.price && (
+                {selectedItem.totalPrice && (
                   <div className="detail-row">
                     <span className="detail-label">금액</span>
                     <span className="detail-value price-highlight">
-                      {selectedItem.price.toLocaleString()}원
+                      {selectedItem.totalPrice}원
                     </span>
                   </div>
                 )}
@@ -449,7 +401,7 @@ const ManagerMatchingList = () => {
                 <div className="detail-row">
                   <span className="detail-label">고객 요청사항</span>
                   <span className="detail-value">
-                    {selectedItem.customerRequest}
+                    {selectedItem.customerMemo}
                   </span>
                 </div>
               </div>
@@ -473,7 +425,7 @@ const ManagerMatchingList = () => {
                   청소하기
                 </button>
               )}
-              {selectedItem.status === '매칭 대기' && (
+              {selectedItem.status === 'REQUESTED' && (
                 <button
                   className="modal-button matching-button"
                   onClick={() => {

@@ -16,8 +16,9 @@ import ServiceRegistration from '../features/additional-info/pages';
 import CustomerLayout from '../layouts/CustomerLayout';
 import MainPage from '../features/main/MainPage';
 import Mypage from '../features/mypage/customer/pages/Mypage';
-import ManagerLayout from '../features/mypage/manager/ManagerMypage';
+import ManagerLayout from '../layouts/ManagerLayout'
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
+import ManagerMain from '../features/manager/pages/ManagerMainPage';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -42,6 +43,8 @@ export const protectedAppRoutes = [
     path: '/manager',
     element: <ManagerLayout />,
     allowedRoles: ['ROLE_MANAGER'],
+    index: true,
+    element: <ManagerMain />,
     children: [
       { path: 'mypage', element: <ManagerMypage /> },
       { path: 'additional-info', element: <ServiceRegistration /> },

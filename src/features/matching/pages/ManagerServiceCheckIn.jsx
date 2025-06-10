@@ -10,11 +10,15 @@ import {
   NOTIFICATION_MESSAGES,
   MATCHING_STATUS,
 } from '../constants/matchingData';
+import useReservationStore from '../store/useMatchingStore';
 
 // TODO: 파일 업로드 기능 추가 시 필요한 import
 // import React, { useState, useEffect } from 'react';
 
 const ManagerServiceCheckIn = () => {
+   const { activeReservation, setActiveReservation } = useReservationStore();
+    console.log(activeReservation);
+    
   // TODO: 매칭내역 확인 기능 사용 시 필요
   // const navigate = useNavigate();
 
