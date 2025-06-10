@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 // lucide-react 아이콘 사용 시 설치 필요: npm install react-icons lucide-react --save
 import { Calendar, Eye, EyeOff, Upload } from 'lucide-react'; // Upload 아이콘 추가
-import { authService } from '../../services/authService'; // authService 임포트
-import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
+import { authService } from '../../services/authService.js'; // authService 임포트
+import useSignUpStore from '../../stores/signUpStore.js'; // Zustand 스토어 임포트
 
 // Step 2 유효성 검사 헬퍼 함수 (매니저)
 const validateManagerStep2Data = ({ career, experience }) => {

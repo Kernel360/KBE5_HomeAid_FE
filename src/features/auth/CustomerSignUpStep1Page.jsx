@@ -7,7 +7,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { ko } from 'date-fns/locale';
 import { format, isValid } from 'date-fns'; // 날짜 형식을 변환하기 위해 임포트
 import './styles/datepicker.css'; // 새로 생성한 CSS 파일 임포트
-import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
+import useSignUpStore from '../../stores/signUpStore.js'; // Zustand 스토어 임포트
 
 // Step 1 유효성 검사 헬퍼 함수
 const validateCustomerStep1Data = ({ name, phoneNumber, email, dateOfBirth, gender, password, confirmPassword }) => {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react'; // Search 아이콘 임포트
-import { authService } from '../../services/authService'; // authService 임포트
-import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
+import { authService } from '../../services/authService.js'; // authService 임포트
+import useSignUpStore from '../../stores/signUpStore.js'; // Zustand 스토어 임포트
 
 // Step 2 유효성 검사 헬퍼 함수
 const validateCustomerStep2Data = ({ addressSearch, addressDetail }) => {

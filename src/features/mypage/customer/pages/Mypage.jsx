@@ -1,10 +1,10 @@
 import { User, ChevronRight } from "lucide-react";
 import { useState } from 'react';
-import MyProfile from '../components/MyProfile';
-import MyAddress from '../components/MyAddress';
-import MyReview from "../components/Myreview";
-import InquiryBoard from "../components/InquiryBoard";
-import AddressRegister from "../components/AddressRegister";
+import MyProfile from '../components/MyProfile.jsx';
+import MyAddress from '../components/MyAddress.jsx';
+import MyReview from "../components/Myreview.jsx";
+import InquiryBoard from "../components/InquiryBoard.jsx";
+import AddressRegister from "../components/AddressRegister.jsx";
 
 export default function MyPage() {
     const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry'

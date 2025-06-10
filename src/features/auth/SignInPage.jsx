@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // npm install react-icons lucide-react --save
 import { Eye, EyeOff } from 'lucide-react'; // lucide-react 사용 예시
-import { authService } from '../../services/authService';
-import { useAuthStore } from '../../stores/authStore';
-import Header from '../../components/Header';
+import { authService } from '../../services/authService.js';
+import { useAuthStore } from '../../stores/authStore.js';
+import Header from '../../components/Header.jsx';
 
 const SignInPage = () => {
   const [phone, setphone] = useState('');

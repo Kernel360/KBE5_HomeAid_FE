@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserServiceSubOption.css';
 import '../styles/common.css';
-import Footer from '../../../components/Footer';
-import Header from '../../../components/Header';
-import { useAuthStore } from '../../../stores/authStore';
-import { SERVICE_DESCRIPTIONS, USER_INFO } from '../constants/serviceData';
-import { useCustomerServices } from '../hooks/useCustomerAPI';
-import useReservationStore from '../../../stores/reservationStore';
+import Footer from '../../../components/Footer.jsx';
+import Header from '../../../components/Header.jsx';
+import { useAuthStore } from '../../../stores/authStore.js';
+import { SERVICE_DESCRIPTIONS, USER_INFO } from '../constants/serviceData.js';
+import { useCustomerServices } from '../hooks/useCustomerAPI.js';
+import useReservationStore from '../../../stores/reservationStore.js';
 
 const UserServiceSubOption = () => {
   const navigate = useNavigate();
