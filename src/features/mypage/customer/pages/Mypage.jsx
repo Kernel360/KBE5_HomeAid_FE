@@ -2,7 +2,7 @@ import { User, ChevronRight } from "lucide-react";
 import { useState } from 'react';
 import MyProfile from '../components/MyProfile.jsx';
 import MyAddress from '../components/MyAddress.jsx';
-import MyReview from "../components/Myreview.jsx";
+import MyReview from "../components/MyReview.jsx";
 import InquiryBoard from "../components/InquiryBoard.jsx";
 import AddressRegister from "../components/AddressRegister.jsx";
 
