@@ -14,7 +14,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   // 권한 체크
   if (!allowedRoles.includes(user.role)) {
     // 권한 없으면 접근 불가 페이지로
-    return <Navigate to="/403" replace />;
+    return <Navigate to="/auth/signin" replace />;
   }
 
   return children;
