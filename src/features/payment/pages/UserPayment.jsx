@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserPayment.css';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import useReservationStore from '../../../stores/reservationStore';
+import { usePaymentData } from '../../reservation/hooks/useLocalStorage';
 
 const UserPayment = () => {
   const navigate = useNavigate();
@@ -14,14 +15,31 @@ const UserPayment = () => {
     useReservationStore();
   const selectedServices = getSelectedServicesWithDetails();
 
-  // 결제 데이터 생성
+  // localStorage에서 결제 데이터 가져오기
+  const { paymentData: savedPaymentData } = usePaymentData();
+
+  // ⭐️ 디버깅: 결제 데이터 확인
+  useEffect(() => {
+    console.log('💳 UserPayment - 결제 데이터 상태:');
+    console.log('📊 zustand reservationData:', reservationData);
+    console.log('💾 localStorage paymentData:', savedPaymentData);
+    console.log('🛍️ selectedServices:', selectedServices);
+  }, [reservationData, savedPaymentData, selectedServices]);
+
+  // 결제 데이터 생성 (localStorage 데이터 우선 사용)
   const paymentData = {
     serviceInfo: {
       dateTime:
         reservationData.reservationDate && reservationData.reservationTime
           ? `${reservationData.reservationDate} ${reservationData.reservationTime}`
-          : '2023-06-15 14:00',
-      serviceType: '청소 서비스',
+          : savedPaymentData?.serviceInfo?.date &&
+              savedPaymentData?.serviceInfo?.time
+            ? `${savedPaymentData.serviceInfo.date} ${savedPaymentData.serviceInfo.time}`
+            : '2023-06-15 14:00',
+      serviceType:
+        savedPaymentData?.serviceInfo?.type ||
+        savedPaymentData?.serviceInfo?.subOptionName ||
+        '청소 서비스',
       manager: '매니저 배정 예정',
     },
     priceList:
@@ -38,14 +56,19 @@ const UserPayment = () => {
             { name: '음식물 배출', price: 25000 },
           ],
     totalAmount:
-      reservationData.totalPrice > 0 ? reservationData.totalPrice : 155000,
+      savedPaymentData?.amount ||
+      (reservationData.totalPrice > 0 ? reservationData.totalPrice : 155000),
   };
 
   const handlePayment = () => {
     // 결제 처리 로직
-    console.log('결제 데이터:', paymentData);
-    console.log('예약 데이터:', reservationData);
-    alert('결제 요청이 처리되었습니다.');
+    console.log('💳 결제 처리 중...');
+    console.log('💰 결제 데이터:', paymentData);
+    console.log('📋 예약 데이터:', reservationData);
+    console.log('📄 저장된 결제 데이터:', savedPaymentData);
+
+    // 결제 완료 시뮬레이션
+    alert('결제가 성공적으로 완료되었습니다!');
     navigate('/user/payment-complete');
   };
 

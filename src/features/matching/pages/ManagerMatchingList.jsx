@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './ManagerMatchingList.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
@@ -13,6 +13,7 @@ import {
 
 const ManagerMatchingList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -53,23 +54,91 @@ const ManagerMatchingList = () => {
     loadMatchingList();
   }, []);
 
+  // ⭐️ 페이지가 다시 보일 때 데이터 새로고침 (매칭 완료 후 돌아올 때)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('🔄 페이지 포커스 - 매칭 목록 새로고침');
+      loadMatchingList();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('🔄 페이지 표시 - 매칭 목록 새로고침');
+        loadMatchingList();
+      }
+    };
+
+    // 윈도우 포커스 이벤트 리스너 추가
+    window.addEventListener('focus', handleFocus);
+    // 페이지 가시성 변경 이벤트 리스너 추가
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // 클린업
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // ⭐️ 페이지 경로가 변경될 때마다 데이터 새로고침 (매칭 요청 페이지에서 돌아올 때)
+  useEffect(() => {
+    if (location.pathname === '/matching/list') {
+      console.log('🔄 매칭 목록 페이지로 이동 - 데이터 새로고침');
+
+      // ⭐️ 매칭 완료 후 돌아온 경우 특별한 처리
+      if (location.state?.refreshData) {
+        console.log('✅ 매칭 완료 후 돌아옴 - 강제 데이터 새로고침', {
+          completedMatchingId: location.state.completedMatchingId,
+        });
+
+        // 약간의 지연 후 새로고침 (백엔드 업데이트 시간 고려)
+        setTimeout(() => {
+          loadMatchingList();
+        }, 100);
+      } else {
+        loadMatchingList();
+      }
+    }
+  }, [location.pathname, location.state]);
+
   const loadMatchingList = async () => {
     try {
       const data = await getMatchingList();
+      console.log('📡 백엔드에서 받은 원본 매칭 데이터:', data);
+
       // 백엔드 데이터를 UI 형태로 변환
-      const transformedData = data.map((item) => ({
-        id: item.matchingId,
-        customerName: item.customerName || '김고객',
-        serviceType: item.serviceType,
-        workTime: `${item.reservedDate} ${item.reservedTime}`,
-        price: item.price,
-        status: MATCHING_STATUS_LABELS[item.status],
-        statusColor: MATCHING_STATUS_COLORS[item.status],
-        originalStatus: item.status, // 원본 상태 보존
-        estimatedDuration: item.estimatedDuration,
-        customerRequest: item.customerRequest,
-        address: '서울시 강남구 테헤란로 123', // 더미 주소
-      }));
+      const transformedData = data.map((item) => {
+        const transformed = {
+          id: item.matchingId,
+          customerName: item.customerName || '김고객',
+          serviceType: item.serviceType,
+          workTime: `${item.reservedDate} ${item.reservedTime}`,
+          price: item.price,
+          status: MATCHING_STATUS_LABELS[item.status],
+          statusColor: MATCHING_STATUS_COLORS[item.status],
+          originalStatus: item.status, // 원본 상태 보존
+          estimatedDuration: item.estimatedDuration,
+          customerRequest: item.customerRequest,
+          address: item.address || '주소 정보 없음', // 실제 주소 데이터 사용
+          // 추가 정보
+          reservationId: item.reservationId,
+          subOptionId: item.subOptionId,
+          totalDuration: item.totalDuration,
+        };
+
+        console.log(
+          `📋 매칭 ID ${item.matchingId}: ${item.status} → ${transformed.status}`,
+          {
+            원본상태: item.status,
+            변환상태: transformed.status,
+            색상: transformed.statusColor,
+          }
+        );
+
+        return transformed;
+      });
+
+      console.log('✅ 변환된 매칭 목록:', transformedData);
       setMatchingList(transformedData);
     } catch (err) {
       console.error('매칭 목록 로드 실패:', err);
@@ -148,8 +217,13 @@ const ManagerMatchingList = () => {
 
   // 버튼 렌더링 로직 (백엔드 상태 기반)
   const renderActionButtons = (item) => {
+    console.log(
+      `🔘 버튼 렌더링: ID ${item.id}, 상태: ${item.status}, 원본상태: ${item.originalStatus}`
+    );
+
     switch (item.status) {
-      case '매칭 대기': // PENDING_MANAGER_RESPONSE
+      case '매칭 대기': // PENDING_MANAGER_RESPONSE (REQUESTED, PENDING)
+        console.log(`  → "매칭하기" 버튼 표시`);
         return (
           <button
             className="action-button matching-button"
@@ -158,7 +232,8 @@ const ManagerMatchingList = () => {
             매칭하기
           </button>
         );
-      case '매칭 완료': // CONFIRMED
+      case '매칭 완료': // CONFIRMED (매니저가 수락한 상태)
+        console.log(`  → "상세보기", "청소하기" 버튼 표시`);
         return (
           <div className="button-group">
             <button
@@ -176,7 +251,17 @@ const ManagerMatchingList = () => {
           </div>
         );
       case '고객 응답 대기': // PENDING_CUSTOMER_RESPONSE
+        console.log(`  → "상세보기" 버튼만 표시 (고객 응답 대기)`);
+        return (
+          <button
+            className="action-button detail-button"
+            onClick={() => handleDetailView(item)}
+          >
+            상세보기
+          </button>
+        );
       case '거절됨': // REJECTED_BY_MANAGER, REJECTED_BY_CUSTOMER
+        console.log(`  → "상세보기" 버튼만 표시 (거절됨)`);
         return (
           <button
             className="action-button detail-button"
@@ -186,6 +271,7 @@ const ManagerMatchingList = () => {
           </button>
         );
       default:
+        console.log(`  → 알 수 없는 상태, 버튼 없음`);
         return null;
     }
   };

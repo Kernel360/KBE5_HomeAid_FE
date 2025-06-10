@@ -10,6 +10,8 @@ import {
   useCustomerAddresses,
 } from '../hooks/useCustomerAPI';
 import useReservationStore from '../../../stores/reservationStore';
+// ⭐️ 인증 정보 추가
+import { useAuthStore } from '../../../stores/authStore';
 
 // ⭐️ 시간 계산 함수들 추가
 const addMinutesToTime = (timeStr, minutes) => {
@@ -33,6 +35,9 @@ const formatTimeDisplay = (timeStr) => {
 const UserServiceRequest = () => {
   const navigate = useNavigate();
 
+  // ⭐️ 인증된 사용자 정보 가져오기 (최우선)
+  const { user, accessToken } = useAuthStore();
+
   // zustand store 사용
   const { reservationData } = useReservationStore();
 
@@ -50,7 +55,17 @@ const UserServiceRequest = () => {
     error: reservationError,
   } = useCustomerReservation();
 
-  const { setPaymentData } = usePaymentData();
+  const { updatePaymentData } = usePaymentData();
+
+  // ⭐️ 인증 및 주소 디버깅
+  React.useEffect(() => {
+    console.log('🏠 UserServiceRequest - 주소 상태:');
+    console.log('📍 addresses:', addresses);
+    console.log('⏳ addressLoading:', addressLoading);
+    console.log('❌ addressError:', addressError);
+    console.log('🔑 현재 토큰:', localStorage.getItem('accessToken'));
+    console.log('👤 현재 사용자:', user);
+  }, [addresses, addressLoading, addressError, user]);
 
   // 폼 상태 관리
   const [formData, setFormData] = useState({
@@ -82,13 +97,28 @@ const UserServiceRequest = () => {
 
   // 기본 주소가 있다면 선택
   useEffect(() => {
-    if (addresses.length > 0) {
+    if (addresses && addresses.length > 0) {
       const defaultAddress = addresses.find((addr) => addr.isDefault);
       if (defaultAddress) {
         setFormData((prev) => ({ ...prev, selectedAddress: defaultAddress }));
+        console.log('🏡 기본 주소 선택됨:', defaultAddress);
       }
     }
   }, [addresses]);
+
+  // ⭐️ 로그인 상태 확인
+  useEffect(() => {
+    console.log('🔐 UserServiceRequest - 현재 사용자 정보:', user);
+    console.log(
+      '🔑 UserServiceRequest - 액세스 토큰:',
+      accessToken ? '있음' : '없음'
+    );
+
+    if (!user || !accessToken) {
+      console.log('로그인 정보가 없습니다. 로그인 페이지로 이동합니다.');
+      navigate('/auth/signin');
+    }
+  }, [user, accessToken, navigate]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -161,6 +191,13 @@ const UserServiceRequest = () => {
   };
 
   const handleSubmit = async () => {
+    // ⭐️ 로그인 확인
+    if (!user || !accessToken) {
+      alert('로그인이 필요합니다. 다시 로그인해주세요.');
+      navigate('/auth/signin');
+      return;
+    }
+
     // 필수 입력 검증
     if (!formData.serviceType || !formData.date || !formData.startTime) {
       alert('서비스 유형, 날짜, 시간을 모두 선택해주세요.');
@@ -190,9 +227,12 @@ const UserServiceRequest = () => {
         subOptionId: 1, // TODO: 실제로는 선택된 서브옵션 ID 사용해야 함!
         requestedDate: formData.date, // yyyy-MM-dd
         requestedTime: `${formData.startTime}:00`, // HH:mm:ss 형식으로 변환
+        // ⭐️ 인증된 사용자 정보 자동 포함 (백엔드에서 JWT 토큰으로 사용자 식별)
+        // customerId는 백엔드에서 JWT 토큰을 통해 자동으로 인식됩니다.
       };
 
-      console.log('예약 요청 데이터:', reservationData);
+      console.log('🔐 인증된 사용자:', user);
+      console.log('📝 예약 요청 데이터:', reservationData);
 
       // 백엔드에 예약 생성 요청 (ReservationResponseDto 응답받음)
       const reservation = await createReservation(reservationData);
@@ -224,7 +264,7 @@ const UserServiceRequest = () => {
       };
 
       // localStorage에 결제 데이터 저장 (결제 페이지에서 사용)
-      setPaymentData(paymentData);
+      updatePaymentData(paymentData);
 
       console.log('예약 생성 완료, 결제 페이지로 이동:', {
         reservationId: reservation.reservationId,
@@ -331,19 +371,6 @@ const UserServiceRequest = () => {
                 value={formData.addressMethod}
                 onChange={(e) =>
                   handleInputChange('addressMethod', e.target.value)
-                }
-              />
-            </div>
-
-            <div className="detail-address-section">
-              <label className="section-title">상세 주소 (선택)</label>
-              <input
-                type="text"
-                className="detail-address-input"
-                placeholder="예: 101동 202호"
-                value={formData.detailAddress}
-                onChange={(e) =>
-                  handleInputChange('detailAddress', e.target.value)
                 }
               />
             </div>
@@ -505,7 +532,7 @@ const UserServiceRequest = () => {
             </div>
 
             {/* 저장된 주소 목록 */}
-            {addresses.length > 0 && (
+            {addresses && addresses.length > 0 && (
               <div className="saved-addresses-section">
                 <h4 className="section-title">저장된 주소</h4>
                 {addresses.map((address) => (
@@ -554,22 +581,6 @@ const UserServiceRequest = () => {
                 + 새 주소 추가
               </button>
             </div>
-
-            {/* 상세 주소 입력 */}
-            {formData.selectedAddress && (
-              <div className="detail-address-section">
-                <label className="section-title">상세 주소 (선택)</label>
-                <input
-                  type="text"
-                  className="detail-address-input"
-                  placeholder="예: 101동 202호, 비밀번호 1234"
-                  value={formData.detailAddress}
-                  onChange={(e) =>
-                    handleInputChange('detailAddress', e.target.value)
-                  }
-                />
-              </div>
-            )}
           </div>
 
           {/* 제출 버튼 */}

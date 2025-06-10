@@ -110,7 +110,32 @@ html {
   font-size: 18px;
   font-weight: 500;
   color: #333;
+  margin: 0 0 12px 0;
+}
+
+/* ⭐️ 사용자 환영 정보 스타일 */
+.user-welcome-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.welcome-message {
+  font-size: 14px;
+  color: #666;
   margin: 0;
+  font-style: italic;
+}
+
+.user-badge {
+  font-size: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
 }
 
 /* 서비스 선택 메시지 섹션 */
@@ -147,12 +172,14 @@ html {
   border: 2px solid #e0e0e0;
   border-radius: 16px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
   background-color: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px;
 }
 
 .sub-service-option:hover {
@@ -173,66 +200,219 @@ html {
   cursor: default;
 }
 
-.sub-service-option.empty:hover {
-  border-color: #ddd;
-  background-color: white;
-  transform: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* 옵션 라벨 스타일 */
+.option-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-top: 8px;
+  text-align: center;
 }
 
-/* 화장실 아이콘 */
-.toilet-icon {
+.sub-service-option.selected .option-label {
+  color: #4285f4;
+  font-weight: 600;
+}
+
+/* 빨래 아이콘 스타일 */
+.laundry-icon {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.toilet-bowl {
-  width: 40px;
+  width: 50px;
   height: 50px;
-  border: 3px solid #333;
-  border-radius: 20px 20px 25px 25px;
-  background-color: white;
-  position: relative;
 }
 
-.toilet-bowl::after {
-  content: '';
+.washing-machine {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.machine-body {
+  width: 40px;
+  height: 35px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 8px;
+  border: 2px solid #90caf9;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+}
+
+.machine-door {
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: 2px solid #2196f3;
+  border-radius: 50%;
+  position: absolute;
+  top: 12px;
+  left: 15px;
+}
+
+.water-drops {
+  position: absolute;
+  top: -5px;
+  right: 0;
+  display: flex;
+  gap: 2px;
+}
+
+.water-drops span {
+  font-size: 12px;
+  animation: droplet 2s infinite;
+}
+
+@keyframes droplet {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: translateY(0px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(3px);
+  }
+}
+
+/* 청소 아이콘 스타일 */
+.cleaning-icon {
+  position: relative;
+  width: 50px;
+  height: 50px;
+}
+
+.cleaning-tools {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.broom {
+  width: 3px;
+  height: 30px;
+  background: #8d6e63;
   position: absolute;
   top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 25px;
-  height: 15px;
-  border: 2px solid #333;
-  border-radius: 50%;
-  background-color: #f0f8ff;
+  left: 20px;
+  border-radius: 2px;
+}
+
+.broom::after {
+  content: '';
+  width: 12px;
+  height: 8px;
+  background: #ffb74d;
+  border-radius: 4px;
+  position: absolute;
+  bottom: -8px;
+  left: -4.5px;
+}
+
+.dustpan {
+  width: 15px;
+  height: 12px;
+  background: #e0e0e0;
+  border: 2px solid #bdbdbd;
+  border-radius: 0 0 8px 8px;
+  position: absolute;
+  bottom: 8px;
+  left: 30px;
 }
 
 .sparkles {
   position: absolute;
-  top: -5px;
-  right: -10px;
+  top: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
 }
 
 .sparkles span {
-  font-size: 12px;
+  font-size: 10px;
   animation: sparkle 1.5s infinite;
 }
 
 @keyframes sparkle {
   0%,
   100% {
-    opacity: 0.7;
+    opacity: 0.4;
     transform: scale(1);
   }
   50% {
     opacity: 1;
     transform: scale(1.2);
+  }
+}
+
+/* 육아 아이콘 스타일 */
+.childcare-icon {
+  position: relative;
+  width: 50px;
+  height: 50px;
+}
+
+.baby-items {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.baby-bottle {
+  width: 8px;
+  height: 20px;
+  background: linear-gradient(to bottom, #ffcdd2 0%, #f8bbd9 100%);
+  border-radius: 4px;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  border: 1px solid #f48fb1;
+}
+
+.baby-bottle::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: #e91e63;
+  border-radius: 50%;
+  position: absolute;
+  top: -2px;
+  left: 2px;
+}
+
+.baby-toy {
+  width: 12px;
+  height: 12px;
+  background: #fff3e0;
+  border: 2px solid #ffb74d;
+  border-radius: 50%;
+  position: absolute;
+  top: 20px;
+  right: 10px;
+}
+
+.hearts {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 2px;
+}
+
+.hearts span {
+  font-size: 12px;
+  animation: heartbeat 2s infinite;
+}
+
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
   }
 }
 

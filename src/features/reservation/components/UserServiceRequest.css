@@ -88,7 +88,7 @@ html {
   max-width: 480px;
   background-color: white;
   padding: 0 20px; /* 상단 패딩 제거 */
-  padding-bottom: 120px; /* Footer 높이 + 여유 공간 (84px + 36px) */
+  padding-bottom: 30px; /* Footer 높이 + 여유 공간 (84px + 36px) */
   font-family: sans-serif;
   box-sizing: border-box;
   min-height: calc(
@@ -669,4 +669,30 @@ html {
   .datetime-inputs {
     gap: 12px;
   }
+}
+
+/* ⭐️ 사용자 정보 배너 스타일 */
+.user-info-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.user-info-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-info-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.user-info-icon {
+  font-size: 18px;
+  opacity: 0.9;
 }

@@ -55,28 +55,53 @@ export const useCustomerServices = () => {
 
   // 더미 서비스 데이터
   const dummyServices = [
-    { id: 'vacuum', name: '진공청소기 청소', price: 5000, duration: 30 },
-    { id: 'mop', name: '걸레질', price: 3000, duration: 20 },
-    { id: 'dust', name: '먼지 제거', price: 2000, duration: 15 },
-    { id: 'bathroom', name: '화장실 청소', price: 8000, duration: 45 },
-    { id: 'kitchen', name: '주방 청소', price: 10000, duration: 60 },
+    { id: 1, name: '화장실 청소', price: 15000, duration: 30 },
+    { id: 2, name: '주방 청소', price: 20000, duration: 45 },
+    { id: 3, name: '거실 청소', price: 18000, duration: 40 },
+    { id: 4, name: '침실 청소', price: 12000, duration: 25 },
+    { id: 5, name: '베란다 청소', price: 8000, duration: 20 },
+    { id: 6, name: '창문 청소', price: 10000, duration: 30 },
+    { id: 7, name: '에어컨 청소', price: 25000, duration: 60 },
+    { id: 8, name: '냉장고 청소', price: 15000, duration: 35 },
   ];
 
   // 서비스 목록 로드
   const loadServices = useCallback(async () => {
     try {
+      console.log('🔄 실제 DB 서비스 데이터 로드 시작...');
       const serviceData = await apiCall(getCustomerServices);
-      if (serviceData && serviceData.length > 0) {
-        setServices(serviceData);
+      console.log('📡 서비스 API 응답 전체 데이터:', serviceData);
+
+      // 페이징된 응답에서 실제 데이터 배열 추출
+      const list = serviceData.content || serviceData || [];
+      console.log('📋 추출된 서비스 리스트:', list);
+      console.log('📊 서비스 개수:', list.length);
+
+      if (list.length > 0) {
+        // ⭐️ 실제 DB 데이터를 UI 형태로 변환
+        const transformedServices = list.map((service) => ({
+          id: service.id,
+          name: service.name,
+          price: service.base_price || service.basePrice || service.price,
+          duration:
+            service.duration_minutes ||
+            service.durationMinutes ||
+            service.duration ||
+            60, // 분 단위
+        }));
+
+        console.log('✅ 실제 DB 데이터 변환 완료:', transformedServices);
+        setServices(transformedServices);
+        return transformedServices;
       } else {
         // API 응답이 비어있으면 더미 데이터 사용
-        console.log('API 응답이 비어있습니다. 더미 데이터를 사용합니다.');
+        console.log('⚠️ API 응답이 비어있습니다. 더미 데이터를 사용합니다.');
         setServices(dummyServices);
+        return dummyServices;
       }
-      return serviceData;
     } catch (err) {
-      console.error('Failed to load services:', err);
-      console.log('API 호출 실패 - 더미 데이터로 대체합니다.');
+      console.error('❌ 서비스 로드 실패:', err);
+      console.log('🎭 API 호출 실패 - 더미 데이터로 대체합니다.');
       setServices(dummyServices);
       return dummyServices;
     }
@@ -96,14 +121,68 @@ export const useCustomerAddresses = () => {
   const [addresses, setAddresses] = useState([]);
   const { loading, error, clearError, apiCall } = useApiCall();
 
+  // 더미 주소 데이터
+  const dummyAddresses = [
+    {
+      id: 1,
+      type: '집',
+      main: '서울시 강남구 테헤란로 123',
+      detail: '101동 202호',
+      isDefault: true,
+    },
+    {
+      id: 2,
+      type: '회사',
+      main: '서울시 서초구 서초대로 456',
+      detail: '5층',
+      isDefault: false,
+    },
+    {
+      id: 3,
+      type: '기타',
+      main: '서울시 마포구 홍대입구역 12번 출구',
+      detail: '2층 카페 앞',
+      isDefault: false,
+    },
+  ];
+
   // 주소 목록 로드
   const loadAddresses = useCallback(async () => {
     try {
+      console.log('🏠 주소 데이터 로드 시작...');
+      console.log(
+        '🔑 현재 localStorage 토큰:',
+        localStorage.getItem('accessToken') ? '있음' : '없음'
+      );
+
       const addressData = await apiCall(getCustomerAddresses);
-      setAddresses(addressData);
-      return addressData;
+      console.log('📡 주소 API 응답:', addressData);
+
+      if (addressData && addressData.length > 0) {
+        console.log('✅ 실제 주소 데이터 사용:', addressData);
+        setAddresses(addressData);
+      } else {
+        console.log(
+          '⚠️ 주소 API 응답이 비어있습니다. 더미 데이터를 사용합니다.'
+        );
+        console.log('🎭 더미 주소 데이터:', dummyAddresses);
+        setAddresses(dummyAddresses);
+      }
+      return addressData && addressData.length > 0
+        ? addressData
+        : dummyAddresses;
     } catch (err) {
-      console.error('Failed to load addresses:', err);
+      console.error('❌ 주소 로드 실패:', err);
+
+      if (err.message.includes('403')) {
+        console.log('🚫 403 Forbidden - 인증 토큰 문제일 수 있습니다.');
+        console.log('🔍 토큰 확인:', localStorage.getItem('accessToken'));
+      }
+
+      console.log('🎭 주소 API 호출 실패 - 더미 데이터로 대체합니다.');
+      console.log('🎭 사용할 더미 주소 데이터:', dummyAddresses);
+      setAddresses(dummyAddresses);
+      return dummyAddresses;
     }
   }, [apiCall]);
 

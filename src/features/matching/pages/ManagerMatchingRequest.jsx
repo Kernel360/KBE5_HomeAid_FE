@@ -4,6 +4,7 @@ import './ManagerMatchingRequest.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
 import useMatchingStore from '../../../stores/matchingStore';
+import { useAuthStore } from '../../../stores/authStore';
 import {
   useManagerMatching,
   useCustomerMatching,
@@ -18,6 +19,9 @@ import {
 const ManagerMatchingRequest = () => {
   const navigate = useNavigate();
   const [rejectReason, setRejectReason] = useState('');
+
+  // ⭐️ 인증 정보 확인
+  const { user, accessToken } = useAuthStore();
 
   // zustand store 사용
   const {
@@ -39,10 +43,33 @@ const ManagerMatchingRequest = () => {
   } = useManagerMatching();
 
   // 고객 응답 시뮬레이션용
-  const {
-    loading: customerLoading,
-    respondToMatching: customerRespondToMatching,
-  } = useCustomerMatching();
+  const { loading: customerLoading } = useCustomerMatching();
+
+  // ⭐️ 매니저 권한 확인 및 로깅
+  useEffect(() => {
+    console.log('🔐 매니저 매칭 요청 페이지 - 인증 정보 확인:');
+    console.log('👤 현재 사용자:', user);
+    console.log('🔑 액세스 토큰:', accessToken ? '있음' : '없음');
+
+    if (user) {
+      console.log('📋 사용자 상세 정보:');
+      console.log('  - 사용자 ID:', user.userId);
+      console.log('  - 이름:', user.name);
+      console.log('  - 역할:', user.role);
+      console.log('  - 전화번호:', user.phone);
+      console.log('  - 이메일:', user.email);
+    }
+
+    // 매니저 권한 확인
+    if (!user || user.role !== 'ROLE_MANAGER') {
+      console.warn('⚠️ 매니저 권한이 필요합니다.');
+      console.warn('현재 사용자 권한:', user?.role || '없음');
+    }
+
+    if (!accessToken) {
+      console.warn('⚠️ 인증 토큰이 없습니다. 로그인이 필요합니다.');
+    }
+  }, [user, accessToken]);
 
   // 컴포넌트 마운트 시 매칭 정보 로드
   useEffect(() => {
@@ -80,30 +107,59 @@ const ManagerMatchingRequest = () => {
       return;
     }
 
+    // ⭐️ 매니저 권한 재확인
+    if (!user || user.role !== 'ROLE_MANAGER') {
+      alert('매니저 권한이 필요합니다.');
+      console.error('권한 오류:', { user, expectedRole: 'ROLE_MANAGER' });
+      return;
+    }
+
     try {
+      console.log('🎯 매칭 수락 프로세스 시작:');
+      console.log('📋 요청 정보:');
+      console.log('  - 매칭 ID:', matchingRequest.matchingId);
+      console.log('  - 고객명:', matchingRequest.customerName);
+      console.log('  - 서비스 유형:', matchingRequest.serviceType);
+      console.log('  - 매니저 ID:', user.userId);
+      console.log('  - 매니저명:', user.name);
+
+      // ⭐️ 수락 대기 메시지 표시
+      alert('수락 대기중입니다...');
+
       await managerRespondToMatching(
         matchingRequest.matchingId,
         MANAGER_ACTION.ACCEPT
       );
 
-      // 매니저 응답 처리
-      respondAsManager(MANAGER_ACTION.ACCEPT);
+      console.log('✅ 백엔드 API 응답 완료 (더미 응답 포함)');
 
-      alert(NOTIFICATION_MESSAGES.MATCHING.ACCEPT_SUCCESS);
+      // ⭐️ 매니저 수락 시 바로 매칭 완료 상태로 변경
+      // respondAsManager(MANAGER_ACTION.ACCEPT); // 이건 PENDING_CUSTOMER_RESPONSE로 변경함
 
-      // 고객 응답 시뮬레이션 (개발용)
-      setTimeout(async () => {
-        try {
-          await customerRespondToMatching(
-            matchingRequest.matchingId,
-            CUSTOMER_ACTION.CONFIRM
-          );
-          respondAsCustomer(CUSTOMER_ACTION.CONFIRM);
-          alert('고객이 매칭을 확정했습니다! 최종 매칭이 완료되었습니다.');
-        } catch (error) {
-          console.error('고객 응답 시뮬레이션 실패:', error);
-        }
-      }, 2000);
+      // 바로 최종 매칭 완료 상태로 설정
+      respondAsCustomer(CUSTOMER_ACTION.CONFIRM);
+
+      console.log('🎉 매칭 상태가 완료로 업데이트됨');
+
+      // ⭐️ 최종 매칭 완료 안내창 (약간의 지연 후 표시)
+      setTimeout(() => {
+        alert('✅ 최종 매칭이 완료되었습니다!');
+
+        // ⭐️ 확인 버튼 클릭 후 매칭 목록으로 이동 (새로고침 플래그 포함)
+        setTimeout(() => {
+          console.log('📍 매칭 목록으로 이동 (데이터 새로고침 요청)');
+          navigate('/matching/list', {
+            state: {
+              refreshData: true,
+              completedMatchingId: matchingRequest.matchingId,
+              managerInfo: {
+                id: user.userId,
+                name: user.name,
+              },
+            },
+          });
+        }, 500);
+      }, 1000); // 1초 후 완료 메시지 표시
     } catch (error) {
       console.error('매칭 수락 실패:', error);
       alert(NOTIFICATION_MESSAGES.MATCHING.ACCEPT_ERROR);

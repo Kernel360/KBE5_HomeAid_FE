@@ -110,7 +110,32 @@ html {
   font-size: 20px;
   font-weight: 500;
   color: #333;
+  margin: 0 0 12px 0;
+}
+
+/* ⭐️ 사용자 환영 정보 스타일 */
+.user-welcome-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.welcome-message {
+  font-size: 14px;
+  color: #666;
   margin: 0;
+  font-style: italic;
+}
+
+.user-badge {
+  font-size: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
 }
 
 /* 로고 섹션 */
