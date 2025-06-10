@@ -2,14 +2,20 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
+import { useAuthStore } from '../../../stores/authStore';
 import './BoardList.css';
 
 const BoardList = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('notice'); // 'notice' or 'inquiry'
 
-  // 임시 공지사항 데이터
-  const notices = [
+  // ⭐️ 인증 상태 및 권한 확인
+  const { user, accessToken } = useAuthStore();
+  const isLoggedIn = user && accessToken;
+  const isAdmin = user && user.role === 'ROLE_ADMIN';
+
+  // 임시 공지사항 데이터 (조회수 상태 추가)
+  const [notices, setNotices] = useState([
     {
       id: 1,
       title: '[공지] 서비스 이용 안내',
@@ -34,7 +40,7 @@ const BoardList = () => {
       views: 192,
       isImportant: false,
     },
-  ];
+  ]);
 
   // 임시 문의글 데이터
   const inquiries = [
@@ -64,12 +70,45 @@ const BoardList = () => {
     },
   ];
 
+  // ⭐️ 조회수 증가 함수
+  const increaseViews = (postId, type) => {
+    if (type === 'notice') {
+      setNotices((prevNotices) =>
+        prevNotices.map((notice) =>
+          notice.id === postId ? { ...notice, views: notice.views + 1 } : notice
+        )
+      );
+    }
+    // 실제 구현 시에는 여기서 API 호출하여 서버에 조회수 증가 요청
+    // await updatePostViews(postId, type);
+  };
+
+  // ⭐️ 게시글 클릭 핸들러 (조회수 증가 포함)
   const handlePostClick = (postId, type) => {
+    // 조회수 증가
+    increaseViews(postId, type);
+    // 상세 페이지로 이동
     navigate(`/board/${type}/${postId}`);
   };
 
-  const handleWriteClick = () => {
-    navigate('/board/write');
+  // ⭐️ 문의글 작성 핸들러
+  const handleInquiryWriteClick = () => {
+    // ⭐️ 문의글 작성 시 로그인 체크
+    if (!isLoggedIn) {
+      alert('문의글 작성은 로그인이 필요합니다.\n로그인 후 이용해주세요.');
+      navigate('/auth/signin');
+      return;
+    }
+    navigate('/board/write?type=inquiry');
+  };
+
+  // ⭐️ 공지사항 작성 핸들러 (관리자만)
+  const handleNoticeWriteClick = () => {
+    if (!isAdmin) {
+      alert('공지사항 작성은 관리자만 가능합니다.');
+      return;
+    }
+    navigate('/board/write?type=notice');
   };
 
   return (
@@ -94,6 +133,18 @@ const BoardList = () => {
 
           {activeTab === 'notice' ? (
             <div className="notice-list">
+              {/* 관리자만 공지사항 작성 가능 */}
+              {isAdmin && (
+                <div className="write-button-container">
+                  <button
+                    className="write-button"
+                    onClick={handleNoticeWriteClick}
+                  >
+                    공지사항 작성
+                  </button>
+                </div>
+              )}
+
               {notices.map((notice) => (
                 <div
                   key={notice.id}
@@ -101,10 +152,12 @@ const BoardList = () => {
                   onClick={() => handlePostClick(notice.id, 'notice')}
                 >
                   <div className="post-main">
-                    {notice.isImportant && (
-                      <span className="important-badge">중요</span>
-                    )}
-                    <h2 className="post-title">{notice.title}</h2>
+                    <div className="post-title-container">
+                      {notice.isImportant && (
+                        <span className="important-badge">중요</span>
+                      )}
+                      <h2 className="post-title">{notice.title}</h2>
+                    </div>
                     <div className="post-info">
                       <span className="post-author">{notice.author}</span>
                       <span className="post-date">{notice.date}</span>
@@ -119,8 +172,13 @@ const BoardList = () => {
           ) : (
             <div className="inquiry-list">
               <div className="write-button-container">
-                <button className="write-button" onClick={handleWriteClick}>
-                  문의글 작성
+                <button
+                  className="write-button"
+                  onClick={handleInquiryWriteClick}
+                  disabled={!isLoggedIn}
+                  title={!isLoggedIn ? '로그인이 필요합니다' : ''}
+                >
+                  {isLoggedIn ? '문의글 작성' : '로그인 후 문의글 작성'}
                 </button>
               </div>
               {inquiries.map((inquiry) => (

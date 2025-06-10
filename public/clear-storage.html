@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Clear Local Storage</title>
+  </head>
+  <body>
+    <h1>Local Storage 초기화</h1>
+    <button onclick="clearStorage()">초기화</button>
+    <p id="result"></p>
+
+    <script>
+      function clearStorage() {
+        // 예약 관련 localStorage 키 삭제
+        localStorage.removeItem('reservation-list-storage');
+        localStorage.removeItem('reservation-store');
+
+        // 모든 localStorage 항목 확인
+        console.log('삭제 후 localStorage:', localStorage);
+
+        document.getElementById('result').innerHTML =
+          '✅ localStorage가 초기화되었습니다.';
+
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      }
+
+      // 페이지 로드시 현재 localStorage 상태 표시
+      window.onload = function () {
+        console.log('현재 localStorage:', localStorage);
+
+        const keys = Object.keys(localStorage);
+        if (keys.length > 0) {
+          console.log('localStorage 키들:', keys);
+        } else {
+          console.log('localStorage가 비어있습니다.');
+        }
+      };
+    </script>
+  </body>
+</html>

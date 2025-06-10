@@ -12,6 +12,8 @@ import UserServiceOptionCart from '../features/reservation/components/UserServic
 import UserServiceRequest from '../features/reservation/components/UserServiceRequest';
 import UserPayment from '../features/payment/pages/UserPayment';
 import UserPaymentComplete from '../features/payment/pages/UserPaymentComplete';
+import UserReservationList from '../features/main/UserReservationList';
+import UserReservationDetail from '../features/main/UserReservationDetail';
 import ServiceRegistration from '../features/additional-info/pages';
 import CustomerLayout from '../layouts/CustomerLayout';
 import MainPage from '../features/main/MainPage';
@@ -29,6 +31,11 @@ export const protectedAppRoutes = [
     children: [
       { index: true, element: <MainPage /> }, // 고객 로그인 후 기본 페이지
       { path: 'mypage', element: <Mypage /> },
+      { path: 'user/reservations', element: <UserReservationList /> },
+      {
+        path: 'user/reservation/:reservationId',
+        element: <UserReservationDetail />,
+      },
       { path: 'user/service-option', element: <UserServiceOption /> },
       { path: 'user/service-sub-option', element: <UserServiceSubOption /> },
       { path: 'user/service-option-cart', element: <UserServiceOptionCart /> },

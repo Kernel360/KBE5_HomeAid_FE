@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react'; // lucide-react 사용 예시
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
+import Header from '../../components/Header';
 
 const SignInPage = () => {
   const [phone, setphone] = useState('');
@@ -46,46 +47,25 @@ const SignInPage = () => {
 
       // ⭐️ 디버깅: 백엔드 응답에서 이름 관련 필드 확인
       console.log('🔍 백엔드 응답에서 이름 관련 필드들:');
-      console.log('  - data.name:', data.name);
-      console.log('  - data.username:', data.username);
-      console.log('  - data.customerName:', data.customerName);
-      console.log('  - data.managerName:', data.managerName);
-      console.log('  - data.realName:', data.realName);
-      console.log('  - data.fullName:', data.fullName);
-      console.log('  - data.displayName:', data.displayName);
-      console.log('  - 전체 백엔드 응답:', data);
-      console.log('📝 최종 추출된 사용자 이름:', user.name);
+      console.log('  - name:', data.name);
+      console.log('  - username:', data.username);
+      console.log('  - customerName:', data.customerName);
+      console.log('  - managerName:', data.managerName);
+      console.log('  - realName:', data.realName);
+      console.log('  - fullName:', data.fullName);
+      console.log('  - displayName:', data.displayName);
 
-      // ⭐️ 임시: 백엔드 분석을 위해 일단 로그인 허용 (이름이 없어도)
-      if (!user.name || user.name === '고객' || user.name === 'customer') {
-        console.warn('⚠️ 백엔드에서 올바른 사용자 이름을 받지 못했습니다.');
-        console.warn('💡 현재 받은 이름:', user.name);
-        console.warn(
-          '💡 백엔드 전체 응답을 확인하여 이름 필드를 찾으세요:',
-          data
-        );
-
-        // 백엔드 응답에서 다른 가능한 이름 필드들 재확인
-        const possibleNames = [
-          data.customerName,
-          data.managerName,
-          data.username,
-          data.realName,
-          data.fullName,
-          data.displayName,
-          data.memberName,
-          data.userName,
-          data.user?.name,
-          data.customer?.name,
-          data.manager?.name,
-        ].filter((name) => name && name !== '고객' && name !== 'customer');
-
-        if (possibleNames.length > 0) {
-          user.name = possibleNames[0];
-          console.log(
-            '✅ 대체 이름 필드에서 실제 이름을 찾았습니다:',
-            user.name
-          );
+      // ⭐️ 이름이 없는 경우 처리
+      if (!user.name) {
+        if (user.role === 'ROLE_CUSTOMER') {
+          user.name = '고객';
+          console.log('🔧 ROLE_CUSTOMER이므로 이름을 "고객"으로 설정');
+        } else if (user.role === 'ROLE_MANAGER') {
+          user.name = '매니저';
+          console.log('🔧 ROLE_MANAGER이므로 이름을 "매니저"로 설정');
+        } else if (user.role === 'ROLE_ADMIN') {
+          user.name = '관리자';
+          console.log('🔧 ROLE_ADMIN이므로 이름을 "관리자"로 설정');
         } else {
           // 임시로 전화번호 기반 이름 생성 (디버깅용)
           user.name = `사용자_${phone.slice(-4)}`;
@@ -205,231 +185,249 @@ const SignInPage = () => {
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        minHeight: '100vh',
-        background: '#fff',
-        padding: '40px 20px',
-      }}
-    >
-      <div style={{ width: '100%', maxWidth: '360px', textAlign: 'left' }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#222' }}>
-            <span style={{ color: '#247cff' }}>ant</span>work
-          </h1>
-        </div>
+    <div className="min-h-screen flex justify-center">
+      <div className="w-full max-w-lg relative bg-white">
+        {/* Header */}
+        <Header showBackButton={true} />
 
-        {/* Title */}
-        <h2
-          style={{
-            fontSize: '24px',
-            fontWeight: 'bold',
-            color: '#222',
-            marginBottom: '32px',
-          }}
+        {/* 메인 컨텐츠 */}
+        <main
+          className="px-6 py-6 min-h-screen flex flex-col"
+          style={{ marginTop: '64px' }}
         >
-          계정에
-          <br />
-          로그인하세요.
-        </h2>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-          {/* Phone Number Input */}
-          <div style={{ marginBottom: '24px' }}>
-            <label
-              htmlFor="phone"
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                color: '#333',
-                fontWeight: 'bold',
-                marginBottom: '8px',
-              }}
-            >
-              휴대폰 번호
-            </label>
-            <input
-              id="phone"
-              type="text"
-              placeholder="휴대폰 번호를 입력해 주세요."
-              value={phone}
-              onChange={(e) => setphone(e.target.value)}
-              required
-              style={{
-                width: 'calc(100% - 26px)',
-                padding: '13px',
-                borderRadius: '8px',
-                border: '1px solid #ddd',
-                fontSize: '16px',
-              }}
-            />
-          </div>
-
-          {/* Password Input */}
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              htmlFor="password"
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                color: '#333',
-                fontWeight: 'bold',
-                marginBottom: '8px',
-              }}
-            >
-              비밀번호
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="비밀번호를 입력해 주세요."
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                style={{
-                  width: 'calc(100% - 26px)',
-                  padding: '13px',
-                  borderRadius: '8px',
-                  border: '1px solid #ddd',
-                  fontSize: '16px',
-                }}
-              />
-              {/* Password Visibility Toggle Icon */}
-              <button
-                type="button"
-                onClick={togglePasswordVisibility}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                {/* lucide-react 아이콘 사용 예시. 설치 필요.*/}
-                {showPassword ? (
-                  <EyeOff size={20} color="#888" />
-                ) : (
-                  <Eye size={20} color="#888" />
-                )}
-                {/* 아이콘 라이브러리 미사용 시 임시 텍스트 또는 이모지 사용 */}
-                {/* {showPassword ? '👁️' : ' blind'} */}
-              </button>
-            </div>
-            {/* Forgot Password Link */}
-            <div
-              style={{ textAlign: 'right', fontSize: '13px', marginTop: '8px' }}
-            >
-              <a href="#" style={{ color: '#247cff', textDecoration: 'none' }}>
-                비밀번호 찾기
-              </a>
-            </div>
-          </div>
-
-          {error && (
-            <div
-              style={{
-                color: '#e74c3c',
-                fontSize: '14px',
-                marginBottom: '16px',
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          {/* Login Button (Black)*/}
-          <button
-            type="submit"
-            disabled={loading}
+          <div
             style={{
               width: '100%',
-              background: '#000',
-              color: '#fff',
-              fontWeight: 'bold',
-              fontSize: '18px',
-              padding: '14px',
-              border: 'none',
-              borderRadius: '8px',
-              marginBottom: '24px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.3s ease, opacity 0.3s ease',
-              opacity: loading ? 0.7 : 1,
+              maxWidth: '360px',
+              textAlign: 'left',
+              margin: '0 auto',
             }}
           >
-            {loading ? '로그인 중...' : '로그인'}
-          </button>
-        </form>
+            {/* Logo */}
+            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <h1
+                style={{ fontSize: '32px', fontWeight: 'bold', color: '#222' }}
+              >
+                <span style={{ color: '#247cff' }}>ant</span>work
+              </h1>
+            </div>
 
-        {/* Or Separator */}
-        <div
-          style={{
-            textAlign: 'center',
-            color: '#aaa',
-            fontSize: '14px',
-            margin: '24px 0',
-          }}
-        >
-          Or
-        </div>
+            {/* Title */}
+            <h2
+              style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#222',
+                marginBottom: '32px',
+              }}
+            >
+              계정에
+              <br />
+              로그인하세요.
+            </h2>
 
-        {/* Sign Up Button (Light Grey)*/}
-        <button
-          onClick={() => navigate('/auth/signup')}
-          style={{
-            width: '100%',
-            background: '#f0f0f0', // 라이트그레이 톤 배경색
-            color: '#333', // 글자색
-            fontWeight: 'bold',
-            fontSize: '18px',
-            padding: '14px',
-            border: 'none',
-            borderRadius: '8px', // 로그인 버튼과 동일한 모양
-            marginBottom: '16px',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s ease',
-          }}
-        >
-          회원가입
-        </button>
+            {/* Form */}
+            <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+              {/* Phone Number Input */}
+              <div style={{ marginBottom: '24px' }}>
+                <label
+                  htmlFor="phone"
+                  style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    color: '#333',
+                    fontWeight: 'bold',
+                    marginBottom: '8px',
+                  }}
+                >
+                  휴대폰 번호
+                </label>
+                <input
+                  id="phone"
+                  type="text"
+                  placeholder="휴대폰 번호를 입력해 주세요."
+                  value={phone}
+                  onChange={(e) => setphone(e.target.value)}
+                  required
+                  style={{
+                    width: 'calc(100% - 26px)',
+                    padding: '13px',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    fontSize: '16px',
+                  }}
+                />
+              </div>
 
-        {/* Google Login Button */}
-        <button
-          onClick={handleGoogleLogin}
-          style={{
-            width: '100%',
-            background: '#fff',
-            color: '#222',
-            fontWeight: '500',
-            fontSize: '16px',
-            padding: '12px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            marginBottom: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s ease, border-color 0.3s ease',
-          }}
-        >
-          <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            alt="Google"
-            style={{ width: '20px', height: '20px' }}
-          />
-          Continue with Google
-        </button>
+              {/* Password Input */}
+              <div style={{ marginBottom: '16px' }}>
+                <label
+                  htmlFor="password"
+                  style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    color: '#333',
+                    fontWeight: 'bold',
+                    marginBottom: '8px',
+                  }}
+                >
+                  비밀번호
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="비밀번호를 입력해 주세요."
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    style={{
+                      width: 'calc(100% - 26px)',
+                      padding: '13px',
+                      borderRadius: '8px',
+                      border: '1px solid #ddd',
+                      fontSize: '16px',
+                    }}
+                  />
+                  {/* Password Visibility Toggle Icon */}
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {/* lucide-react 아이콘 사용 예시. 설치 필요.*/}
+                    {showPassword ? (
+                      <EyeOff size={20} color="#888" />
+                    ) : (
+                      <Eye size={20} color="#888" />
+                    )}
+                    {/* 아이콘 라이브러리 미사용 시 임시 텍스트 또는 이모지 사용 */}
+                    {/* {showPassword ? '👁️' : ' blind'} */}
+                  </button>
+                </div>
+                {/* Forgot Password Link */}
+                <div
+                  style={{
+                    textAlign: 'right',
+                    fontSize: '13px',
+                    marginTop: '8px',
+                  }}
+                >
+                  <a
+                    href="#"
+                    style={{ color: '#247cff', textDecoration: 'none' }}
+                  >
+                    비밀번호 찾기
+                  </a>
+                </div>
+              </div>
+
+              {error && (
+                <div
+                  style={{
+                    color: '#e74c3c',
+                    fontSize: '14px',
+                    marginBottom: '16px',
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+
+              {/* Login Button (Black)*/}
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  background: '#000',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  fontSize: '18px',
+                  padding: '14px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  marginBottom: '24px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'background-color 0.3s ease, opacity 0.3s ease',
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? '로그인 중...' : '로그인'}
+              </button>
+            </form>
+
+            {/* Or Separator */}
+            <div
+              style={{
+                textAlign: 'center',
+                color: '#aaa',
+                fontSize: '14px',
+                margin: '24px 0',
+              }}
+            >
+              Or
+            </div>
+
+            {/* Sign Up Button (Light Grey)*/}
+            <button
+              onClick={() => navigate('/auth/signup')}
+              style={{
+                width: '100%',
+                background: '#f0f0f0', // 라이트그레이 톤 배경색
+                color: '#333', // 글자색
+                fontWeight: 'bold',
+                fontSize: '18px',
+                padding: '14px',
+                border: 'none',
+                borderRadius: '8px', // 로그인 버튼과 동일한 모양
+                marginBottom: '16px',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s ease',
+              }}
+            >
+              회원가입
+            </button>
+
+            {/* Google Login Button */}
+            <button
+              onClick={handleGoogleLogin}
+              style={{
+                width: '100%',
+                background: '#fff',
+                color: '#222',
+                fontWeight: '500',
+                fontSize: '16px',
+                padding: '12px',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                marginBottom: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                transition:
+                  'background-color 0.3s ease, border-color 0.3s ease',
+              }}
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                style={{ width: '20px', height: '20px' }}
+              />
+              Continue with Google
+            </button>
+          </div>
+        </main>
       </div>
     </div>
   );

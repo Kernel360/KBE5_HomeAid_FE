@@ -1,10 +1,17 @@
 /* Footer.css */
 .footer-container {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
   background-color: white;
   border-top: 1px solid #e9ecef;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   padding: 0;
   margin: 0 auto;
+  width: 100%;
+  max-width: 512px; /* max-w-lg와 동일 */
 }
 
 .footer-nav {
