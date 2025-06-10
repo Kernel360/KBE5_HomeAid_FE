@@ -34,8 +34,6 @@ const GoogleMapPicker = ({ onLocationSelect, selectedLocation }) => {
   // 위치 선택 처리 (지도 클릭과 현재 위치에서 공통 사용)
   const handleLocationSelect = useCallback(
     async (lat, lng, source = 'map') => {
-      console.log(`${source}에서 선택된 좌표:`, { lat, lng });
-
       const newLocation = { lat, lng };
       setMarker(newLocation);
 
@@ -52,8 +50,7 @@ const GoogleMapPicker = ({ onLocationSelect, selectedLocation }) => {
             source, // 'map' 또는 'current_location'
           });
         }
-      } catch (error) {
-        console.error('주소 변환 실패, 좌표로 진행:', error);
+      } catch {
         // Geocoding 실패해도 좌표 정보로 계속 진행
         if (onLocationSelect) {
           onLocationSelect({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserServiceRequest.css';
 import '../styles/common.css';
@@ -58,16 +58,6 @@ const UserServiceRequest = () => {
 
   const { updatePaymentData } = usePaymentData();
 
-  // ⭐️ 인증 및 주소 디버깅
-  // React.useEffect(() => {
-  //   console.log('🏠 UserServiceRequest - 주소 상태:');
-  //   console.log('📍 addresses:', addresses);
-  //   console.log('⏳ addressLoading:', addressLoading);
-  //   console.log('❌ addressError:', addressError);
-  //   console.log('🔑 현재 토큰:', localStorage.getItem('accessToken'));
-  //   console.log('👤 현재 사용자:', user);
-  // }, [addresses, addressLoading, addressError, user]);
-
   // 폼 상태 관리
   const [formData, setFormData] = useState({
     serviceType: '원룸',
@@ -82,6 +72,10 @@ const UserServiceRequest = () => {
   });
 
   const [showAddressModal, setShowAddressModal] = useState(false);
+  // ⭐️ 중복 제출 방지를 위한 상태 추가
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // ⭐️ React StrictMode에서 중복 호출 방지를 위한 ref
+  const submissionRef = useRef(false);
 
   // 종료시간 계산 (zustand store의 totalDuration 사용)
   const endTime =
@@ -102,21 +96,13 @@ const UserServiceRequest = () => {
       const defaultAddress = addresses.find((addr) => addr.isDefault);
       if (defaultAddress) {
         setFormData((prev) => ({ ...prev, selectedAddress: defaultAddress }));
-        console.log('🏡 기본 주소 선택됨:', defaultAddress);
       }
     }
   }, [addresses]);
 
   // ⭐️ 로그인 상태 확인
   useEffect(() => {
-    console.log('🔐 UserServiceRequest - 현재 사용자 정보:', user);
-    console.log(
-      '🔑 UserServiceRequest - 액세스 토큰:',
-      accessToken ? '있음' : '없음'
-    );
-
     if (!user || !accessToken) {
-      console.log('로그인 정보가 없습니다. 로그인 페이지로 이동합니다.');
       navigate('/auth/signin');
     }
   }, [user, accessToken, navigate]);
@@ -131,8 +117,6 @@ const UserServiceRequest = () => {
 
   // 지도에서 위치 선택 시 처리하는 함수
   const handleMapLocationSelect = (locationData) => {
-    console.log('위치 선택됨:', locationData);
-
     let main, detail;
 
     if (locationData.source === 'current_location') {
@@ -165,13 +149,6 @@ const UserServiceRequest = () => {
       'isCurrentLocation',
       locationData.source === 'current_location'
     );
-
-    // 선택 완료 메시지
-    const sourceText =
-      locationData.source === 'current_location'
-        ? '현재 위치'
-        : '지도에서 선택한 위치';
-    console.log(`${sourceText}가 설정되었습니다:`, mapAddress);
   };
 
   const handleAddressSave = async () => {
@@ -208,6 +185,11 @@ const UserServiceRequest = () => {
   };
 
   const handleSubmit = async () => {
+    // ⭐️ 중복 제출 방지 (state + ref 이중 체크)
+    if (isSubmitting || submissionRef.current) {
+      return;
+    }
+
     // ⭐️ 로그인 확인
     if (!user || !accessToken) {
       alert('로그인이 필요합니다. 다시 로그인해주세요.');
@@ -226,6 +208,10 @@ const UserServiceRequest = () => {
       return;
     }
 
+    // ⭐️ 제출 시작 - 이중 잠금
+    setIsSubmitting(true);
+    submissionRef.current = true;
+
     try {
       // zustand store에서 예약 정보 가져오기
       const { setReservationDate, setReservationTime, setSelectedAddress } =
@@ -241,12 +227,6 @@ const UserServiceRequest = () => {
         detail: formData.detailAddress || formData.selectedAddress.detail || '',
       });
 
-      console.log('🗺️ 저장된 주소 정보:', {
-        selectedAddress: formData.selectedAddress,
-        coordinates: formData.selectedAddress?.coordinates,
-        detailAddress: formData.detailAddress,
-      });
-
       // ⭐️⭐️⭐️ 백엔드 ReservationRequestDto 규격에 맞는 데이터로 변경! ⭐️⭐️⭐️
       const reservationData = {
         subOptionId: 1, // TODO: 실제로는 선택된 서브옵션 ID 사용해야 함!
@@ -259,18 +239,8 @@ const UserServiceRequest = () => {
         // customerId는 백엔드에서 JWT 토큰을 통해 자동으로 인식됩니다.
       };
 
-      console.log('🔐 인증된 사용자:', user);
-      console.log('📝 예약 요청 데이터:', reservationData);
-      console.log('📍 전송할 위치정보:', {
-        latitude: reservationData.latitude,
-        longitude: reservationData.longitude,
-        coordinates: formData.selectedAddress?.coordinates,
-      });
-
       // 백엔드에 예약 생성 요청 (ReservationResponseDto 응답받음)
       const reservation = await createReservation(reservationData);
-
-      console.log('예약 생성 응답 (ReservationResponseDto):', reservation);
 
       // Spring Boot ReservationResponseDto 필드 확인
       if (!reservation || !reservation.reservationId) {
@@ -299,18 +269,15 @@ const UserServiceRequest = () => {
       // localStorage에 결제 데이터 저장 (결제 페이지에서 사용)
       updatePaymentData(paymentData);
 
-      console.log('예약 생성 완료, 결제 페이지로 이동:', {
-        reservationId: reservation.reservationId,
-        status: reservation.status,
-        totalPrice: reservation.totalPrice,
-        totalDuration: reservation.totalDuration,
-        subOptionName: reservation.subOptionName,
-      });
-
       navigate('/user/payment');
     } catch (error) {
       console.error('예약 생성 실패:', error);
       alert(`예약 생성에 실패했습니다: ${error.message}`);
+      // ⭐️ 실패 시 ref 초기화 (재시도 가능하도록)
+      submissionRef.current = false;
+    } finally {
+      // ⭐️ 제출 완료 - 버튼 다시 활성화 (실패 시에도 재시도 가능하도록)
+      setIsSubmitting(false);
     }
   };
 
@@ -631,9 +598,20 @@ const UserServiceRequest = () => {
             <button
               className="submit-btn"
               onClick={handleSubmit}
-              disabled={reservationLoading}
+              disabled={isSubmitting || reservationLoading}
+              style={{
+                opacity: isSubmitting || reservationLoading ? 0.6 : 1,
+                cursor:
+                  isSubmitting || reservationLoading
+                    ? 'not-allowed'
+                    : 'pointer',
+              }}
             >
-              {reservationLoading ? '예약 생성 중...' : '결제하기'}
+              {isSubmitting
+                ? '예약 생성 중...'
+                : reservationLoading
+                  ? '로딩 중...'
+                  : '결제하기'}
             </button>
           </div>
         </div>

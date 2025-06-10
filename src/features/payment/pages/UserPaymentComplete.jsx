@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import useReservationStore from '../../../stores/reservationStore';
+import { usePaymentData } from '../../reservation/hooks/useLocalStorage';
 // ⭐️ 중복 예약 생성 방지를 위해 createCustomerReservation import 제거
 // import { createCustomerReservation } from '../../reservation/api/customerAPI';
 import './UserPaymentComplete.css';
@@ -16,19 +17,17 @@ const UserPaymentComplete = () => {
   } = useReservationStore();
   const selectedServices = getSelectedServicesWithDetails();
 
+  // ⭐️ 결제 완료 후 데이터 정리를 위한 hook 추가
+  const { clearPaymentData } = usePaymentData();
+
   useEffect(() => {
     // ⭐️ 중복 예약 생성 방지: 예약은 이미 UserServiceRequest에서 생성되었음
     // 결제 완료 페이지에서는 매니저 할당만 처리하거나 단순히 완료 상태만 표시
     const handlePaymentComplete = async () => {
       // 이미 처리되었는지 확인
       if (reservationData.isSaved || reservationData.managerId) {
-        console.log('✅ 이미 처리된 예약입니다:', reservationData);
         return;
       }
-
-      console.log('💳 결제 완료 - 예약 정보 확인:');
-      console.log('📋 reservationData:', reservationData);
-      console.log('🏠 selectedAddress:', reservationData.selectedAddress);
 
       // ⭐️ 예약은 이미 생성되었으므로 로컬 상태만 업데이트
       const { setReservationInfo } = useReservationStore.getState();
@@ -37,8 +36,6 @@ const UserPaymentComplete = () => {
         status: 'CONFIRMED',
         isSaved: true,
       });
-
-      console.log('✅ 결제 완료 처리 완료 - 중복 예약 생성 없음');
     };
 
     // 한번만 실행
@@ -46,8 +43,11 @@ const UserPaymentComplete = () => {
   }, []); // 빈 dependency array로 컴포넌트 마운트 시 한번만
 
   const handleGoHome = () => {
-    // 예약 데이터 초기화하고 메인 홈페이지로 이동
+    // ⭐️ 예약 데이터와 결제 데이터 모두 초기화
     resetReservationData();
+    if (clearPaymentData) {
+      clearPaymentData();
+    }
     navigate('/');
   };
 
@@ -67,7 +67,7 @@ const UserPaymentComplete = () => {
             <p className="page-subtitle">
               예약이 성공적으로 접수되었습니다.
               <br />
-              매니저(ID: 20)가 배정되어 곧 연락을 드리겠습니다.
+              매니저를 배정중이며 곧 연락을 드리겠습니다.
             </p>
           </div>
 
@@ -100,7 +100,7 @@ const UserPaymentComplete = () => {
             {/* 배정된 매니저 정보 */}
             <div className="info-item">
               <span className="info-label">배정 매니저: </span>
-              <span className="info-value">매니저 ID: 20</span>
+              <span className="info-value">배정중</span>
             </div>
 
             {reservationData.reservationDate && (

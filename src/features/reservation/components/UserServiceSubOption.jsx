@@ -16,39 +16,14 @@ const UserServiceSubOption = () => {
   const [selectedSubOption, setSelectedSubOption] = useState(null);
 
   // zustand store 사용
-  const {
-    reservationData,
-    setServiceDetails,
-    setSelectedSubOption: setStoreSubOption, // store에 하위 옵션 저장
-  } = useReservationStore();
+  const { setServiceDetails, setSelectedSubOption: setStoreSubOption } =
+    useReservationStore();
 
   // API 훅 사용
   const { services, loading, loadServices } = useCustomerServices();
 
   // ⭐️ 인증된 사용자 정보 가져오기
   const { user, accessToken } = useAuthStore();
-
-  // ⭐️ 하위 옵션 선택 핸들러
-  const handleSubOptionSelect = (optionId, optionName) => {
-    console.log(`🔘 하위 옵션 선택: ${optionName} (${optionId})`);
-    setSelectedSubOption(optionId);
-
-    // zustand store에 선택된 하위 옵션 저장 (DB 저장용)
-    const subOptionData = {
-      id: optionId,
-      name: optionName,
-      timestamp: new Date().toISOString(),
-    };
-
-    setStoreSubOption(subOptionData);
-
-    console.log('💾 선택된 하위 옵션이 store에 저장됨:', subOptionData);
-    console.log('📦 현재 전체 예약 데이터:', reservationData);
-    console.log('🔍 이 데이터가 DB에 전송될 예정:', {
-      selectedSubOption: subOptionData,
-      serviceDetails: reservationData.serviceDetails,
-    });
-  };
 
   // ⭐️ 사용자 인사말 생성 함수
   const getUserGreeting = () => {
@@ -66,16 +41,28 @@ const UserServiceSubOption = () => {
     return `${userName}님, 어떤 청소 서비스가 필요하신가요?`;
   };
 
-  // ⭐️ 로그인 상태 확인
-  React.useEffect(() => {
-    console.log('🔐 UserServiceSubOption - 현재 사용자 정보:', user);
-    console.log(
-      '🔑 UserServiceSubOption - 액세스 토큰:',
-      accessToken ? '있음' : '없음'
-    );
+  // ⭐️ 하위 옵션 선택 핸들러
+  const handleOptionSelect = (optionName, optionId) => {
+    const subOptionData = {
+      id: optionId,
+      name: optionName,
+    };
 
+    setSelectedSubOption(subOptionData);
+    setStoreSubOption(subOptionData); // store에도 저장
+  };
+
+  const handleContinue = () => {
+    if (!selectedSubOption) {
+      alert('서비스 옵션을 선택해주세요.');
+      return;
+    }
+    navigate('/user/service-request');
+  };
+
+  // ⭐️ 로그인 상태 확인
+  useEffect(() => {
     if (!user || !accessToken) {
-      console.log('로그인 정보가 없습니다. 로그인 페이지로 이동합니다.');
       navigate('/auth/signin');
     }
   }, [user, accessToken, navigate]);
@@ -83,8 +70,7 @@ const UserServiceSubOption = () => {
   // 컴포넌트 마운트 시 서비스 옵션 로드
   useEffect(() => {
     loadServices().catch(() => {
-      // API 호출 실패 시에도 더미 데이터 설정
-      console.log('API 호출 실패 - 더미 데이터 사용');
+      // API 호출 실패 시에도 더미 데이터 설정 (무음)
     });
   }, [loadServices]);
 
@@ -92,7 +78,6 @@ const UserServiceSubOption = () => {
   useEffect(() => {
     // ⭐️ 실제 API 서비스 데이터를 store에 설정
     if (services && services.length > 0) {
-      console.log('🔄 실제 서비스 데이터를 store에 설정:', services);
       setServiceDetails(services);
     }
   }, [services, setServiceDetails]);
@@ -105,25 +90,6 @@ const UserServiceSubOption = () => {
   // const handleServiceToggle = (serviceId) => {
   //   toggleService(serviceId);
   // };
-
-  const handleNextStep = async () => {
-    // ⭐️ 하위 옵션 선택 확인
-    if (!selectedSubOption) {
-      alert('청소 서비스 유형을 선택해주세요.');
-      return;
-    }
-
-    try {
-      console.log('🎯 선택된 하위 옵션:', selectedSubOption);
-      console.log('📦 현재 예약 데이터:', reservationData);
-
-      // 서비스 요청 페이지로 이동
-      navigate('/user/service-request');
-    } catch (error) {
-      console.error('다음 단계 진행 실패:', error);
-      alert('다음 단계 진행에 실패했습니다. 다시 시도해주세요.');
-    }
-  };
 
   // 로딩 상태 표시 (단순화)
   if (loading && (!services || services.length === 0)) {
@@ -176,7 +142,7 @@ const UserServiceSubOption = () => {
               className={`service-card sub-service-option ${
                 selectedSubOption === 'laundry' ? 'selected' : ''
               }`}
-              onClick={() => handleSubOptionSelect('laundry', '빨래')}
+              onClick={() => handleOptionSelect('빨래', 'laundry')}
             >
               <div className="laundry-icon">
                 <div className="washing-machine">
@@ -197,7 +163,7 @@ const UserServiceSubOption = () => {
               className={`service-card sub-service-option ${
                 selectedSubOption === 'cleaning' ? 'selected' : ''
               }`}
-              onClick={() => handleSubOptionSelect('cleaning', '청소')}
+              onClick={() => handleOptionSelect('청소', 'cleaning')}
             >
               <div className="cleaning-icon">
                 <div className="cleaning-tools">
@@ -218,7 +184,7 @@ const UserServiceSubOption = () => {
               className={`service-card sub-service-option ${
                 selectedSubOption === 'childcare' ? 'selected' : ''
               }`}
-              onClick={() => handleSubOptionSelect('childcare', '육아')}
+              onClick={() => handleOptionSelect('육아', 'childcare')}
             >
               <div className="childcare-icon">
                 <div className="baby-items">
@@ -364,19 +330,14 @@ const UserServiceSubOption = () => {
                 }}
               >
                 <p style={{ margin: '0', fontSize: '14px', color: '#1a73e8' }}>
-                  ✅ 선택된 서비스:{' '}
-                  {selectedSubOption === 'laundry'
-                    ? '빨래'
-                    : selectedSubOption === 'cleaning'
-                      ? '청소'
-                      : '육아'}
+                  ✅ 선택된 서비스: {selectedSubOption.name}
                 </p>
               </div>
             )}
 
             <button
               className="primary-button reservation-button"
-              onClick={handleNextStep}
+              onClick={handleContinue}
               disabled={!selectedSubOption}
               style={{
                 opacity: selectedSubOption ? 1 : 0.6,
