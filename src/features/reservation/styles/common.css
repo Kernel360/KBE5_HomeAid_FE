@@ -1,0 +1,289 @@
+/* 공통 페이지 래퍼 스타일 */
+.reservation-page {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: #f3f4f6;
+  display: flex;
+  justify-content: center;
+}
+
+/* Header가 추가된 페이지의 콘텐츠 래퍼 */
+.page-content-wrapper {
+  width: 100%;
+  max-width: 480px;
+  box-sizing: border-box;
+  padding-top: 76px; /* Header 높이(56px) + 여백(20px) */
+  padding-bottom: 104px; /* 푸터 높이(84px) + 여백(20px) */
+  padding-left: 16px;
+  padding-right: 16px;
+  min-height: 100vh;
+}
+
+/* Header 스타일 조정 */
+.reservation-page header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: 100%;
+  max-width: 480px;
+  background-color: white;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  /* border-bottom: 1px solid #e5e7eb; */
+  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
+  padding: 0 16px;
+}
+
+/* 헤더 내부 버튼 스타일 강화 */
+.reservation-page header button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.reservation-page header button:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 헤더 화살표 아이콘 스타일 강화 */
+.reservation-page header button svg {
+  width: 24px !important;
+  height: 24px !important;
+  color: #000000 !important;
+  stroke: #000000 !important;
+  stroke-width: 2 !important;
+  display: block !important;
+}
+
+.reservation-page .footer-container {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  z-index: 100;
+  background-color: white;
+  border-top: 1px solid #e9ecef;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 부드러운 스크롤 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 공통 컨테이너 스타일 */
+.reservation-container {
+  width: 100%;
+  max-width: 480px;
+  background-color: white;
+  padding: 0 20px 120px 20px; /* 상단 패딩 제거, Footer 공간 확보 */
+  font-family: sans-serif;
+  box-sizing: border-box;
+  min-height: calc(
+    100vh - 172px
+  ); /* Header(56px) + Footer(84px) + 패딩(32px) */
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+}
+
+/* 첫 번째 섹션에 적용할 공통 스타일 */
+.reservation-container > .greeting-section,
+.reservation-container > .title-section {
+  padding-top: 24px; /* 헤더와의 간격 */
+  margin-top: 0;
+}
+
+/* 공통 섹션 스타일 */
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* 공통 버튼 스타일 */
+.primary-button {
+  width: 100%;
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.primary-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+.primary-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.primary-button:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 공통 체크박스 스타일 */
+.custom-checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+  position: relative;
+  padding-left: 30px;
+}
+
+.custom-checkbox-label input[type='checkbox'] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.custom-checkmark {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  height: 18px;
+  width: 18px;
+  background-color: white;
+  border: 2px solid #ddd;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.custom-checkbox-label input:checked ~ .custom-checkmark {
+  background-color: #4285f4;
+  border-color: #4285f4;
+}
+
+.custom-checkmark:after {
+  content: '';
+  position: absolute;
+  display: none;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.custom-checkbox-label input:checked ~ .custom-checkmark:after {
+  display: block;
+}
+
+/* 공통 카드 스타일 */
+.service-card {
+  background-color: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.service-card:hover {
+  border-color: #4285f4;
+  background-color: #f8f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.service-card.selected {
+  border-color: #4285f4;
+  background-color: #e3f2fd;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .reservation-page header {
+    margin: 0 auto;
+    left: 0;
+    transform: none;
+  }
+
+  .reservation-page .footer-container {
+    margin: 0 auto;
+    left: 0;
+    transform: none;
+  }
+
+  .reservation-container {
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-content-wrapper {
+    padding-top: 76px; /* Header 높이(56px) + 여백(20px) 유지 */
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .reservation-container {
+    padding: 0 16px 110px 16px;
+    min-height: calc(100vh - 156px);
+  }
+
+  .primary-button {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .page-content-wrapper {
+    padding-top: 76px; /* Header 높이(56px) + 여백(20px) 유지 */
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .reservation-container {
+    padding: 0 12px 100px 12px;
+  }
+}

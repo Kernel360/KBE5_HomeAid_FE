@@ -1,17 +1,15 @@
 import React from 'react';
-// Remove BrowserRouter import as it's already in main.jsx
-import { BrowserRouter } from 'react-router-dom';
-import { MatchingRequestStatusProvider } from './contexts/MatchingRequestStatusContext';
+import { BrowserRouter as Router } from 'react-router-dom';
 import { AppRoutes } from './routes/AppRoutes';
+import './App.css';
 
 function App() {
   return (
-    // Remove BrowserRouter wrapper as it's already in main.jsx
-    <BrowserRouter>
-      <MatchingRequestStatusProvider>
+    <Router>
+      <div className="App">
         <AppRoutes />
-      </MatchingRequestStatusProvider>
-    </BrowserRouter>
+      </div>
+    </Router>
   );
 }
 

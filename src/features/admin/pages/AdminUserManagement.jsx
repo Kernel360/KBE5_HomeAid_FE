@@ -1,22 +1,20 @@
 import React, { useState } from 'react';
 import './AdminUserManagement.css';
+// import { useNavigate } from 'react-router-dom';
 
 const AdminUserManagement = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('all'); // 'all', 'active', or 'inactive'
-  const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 3; // 한 페이지에 보여줄 사용자 수
+  // const navigate = useNavigate();
 
   // Dummy data for demonstration
   const allUsers = [
     {
-      id: 1001,
+      id: 1001, // 자동 값
       name: '김고객',
       contact: '010-1234-5678',
       email: 'kim@example.com',
-      signupDate: '2023-05-15',
-      lastActivity: '2시간 전',
-      initial: '김',
+      signupDate: '2023-05-15', // 로그인날짜 필요없음
+      lastActivity: '2시간 전', // 필요없음
+      initial: '김', // 필요없음
       status: 'active',
     },
     {
@@ -131,6 +129,12 @@ const AdminUserManagement = () => {
     },
   ];
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState('all'); // 'all', 'active', or 'inactive'
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 3;
+
+  // 검색/필터링 적용
   const filteredUsers = allUsers.filter((user) => {
     if (filter === 'active' && user.status !== 'active') {
       return false;
@@ -146,15 +150,13 @@ const AdminUserManagement = () => {
     );
   });
 
+  // 페이지네이션 적용
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
-
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
+  const handlePageChange = (newPage) => setCurrentPage(newPage);
 
   return (
     <div className="admin-user-management">

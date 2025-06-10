@@ -10,7 +10,7 @@
 .page-content-wrapper {
   min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
   padding: 16px;
-  padding-top: 0; /* Header 바로 아래부터 시작 */
+  padding-top: 56px; /* Header 높이와 정확히 동일 */
   display: block; /* flex에서 block으로 변경 */
   width: 100%;
   box-sizing: border-box;
@@ -18,7 +18,7 @@
 
 /* Header 스타일 조정 */
 .user-service-request-page header {
-  position: sticky;
+  position: fixed;
   top: 0;
   z-index: 100;
   width: 100%;
@@ -28,6 +28,38 @@
   height: 56px;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0 16px;
+}
+
+/* 헤더 내부 버튼 스타일 강화 */
+.user-service-request-page header button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.user-service-request-page header button:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 헤더 화살표 아이콘 스타일 강화 */
+.user-service-request-page header button svg {
+  width: 24px !important;
+  height: 24px !important;
+  color: #000000 !important;
+  stroke: #000000 !important;
+  stroke-width: 2 !important;
+  display: block !important;
 }
 
 .user-service-request-page .footer-container {
@@ -55,8 +87,8 @@ html {
   width: 100%;
   max-width: 480px;
   background-color: white;
-  padding: 24px 20px;
-  padding-bottom: 120px; /* Footer 높이 + 여유 공간 (84px + 36px) */
+  padding: 0 20px; /* 상단 패딩 제거 */
+  padding-bottom: 30px; /* Footer 높이 + 여유 공간 (84px + 36px) */
   font-family: sans-serif;
   box-sizing: border-box;
   min-height: calc(
@@ -64,14 +96,15 @@ html {
   ); /* Header(56px) + Footer(84px) + 패딩(32px) */
   position: relative;
   z-index: 1; /* Footer보다 낮은 z-index */
-  margin-left: calc(50% - 240px); /* 중앙 정렬 대신 고정 위치 */
+  margin: 0 auto; /* 중앙 정렬 */
 }
 
 /* 제목 섹션 */
 .title-section {
-  margin-top: 20px; /* 상단 여백 통일 */
+  margin-top: 0; /* 상단 여백 제거 */
   margin-bottom: 50px;
   text-align: left;
+  padding-top: 0; /* 패딩 완전 제거 */
 }
 
 .page-title {
@@ -165,27 +198,58 @@ html {
   background-color: white;
 }
 
-.time-options {
+/* 시간 입력 섹션 */
+.time-input-section {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.time-btn {
-  flex: 1;
+.time-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.time-input {
   padding: 12px 16px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  background-color: white;
   font-size: 14px;
-  color: #666;
+  color: #333;
+  background-color: white;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.time-btn.active {
-  background-color: #4285f4;
-  color: white;
+.time-input:focus {
+  outline: none;
   border-color: #4285f4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.1);
+}
+
+/* 종료시간 표시 섹션 */
+.time-display-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.time-display {
+  font-size: 18px;
+  font-weight: 600;
+  color: #4285f4;
+  margin: 0;
+}
+
+.duration-display {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
 }
 
 /* 매니저 성별 */
@@ -542,7 +606,6 @@ html {
   }
 
   .service-type-btn,
-  .time-btn,
   .gender-btn {
     padding: 10px 12px;
     font-size: 13px;
@@ -598,7 +661,7 @@ html {
   }
 
   .service-type-options,
-  .time-options,
+  .time-input-section,
   .gender-options {
     gap: 8px;
   }
@@ -606,4 +669,30 @@ html {
   .datetime-inputs {
     gap: 12px;
   }
+}
+
+/* ⭐️ 사용자 정보 배너 스타일 */
+.user-info-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.user-info-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-info-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.user-info-icon {
+  font-size: 18px;
+  opacity: 0.9;
 }

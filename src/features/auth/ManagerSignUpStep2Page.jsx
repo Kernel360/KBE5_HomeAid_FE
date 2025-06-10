@@ -8,10 +8,10 @@ import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임�
 
 // Step 2 유효성 검사 헬퍼 함수 (매니저)
 const validateManagerStep2Data = ({ career, experience }) => {
-  if (!career || career.trim() === '') { 
+  if (!career || career.trim() === '') {
     return '경력 사항(Career)을 입력해주세요.';
   }
-  if (!experience || experience.trim() === '') { 
+  if (!experience || experience.trim() === '') {
     return '경험(Experience)을 입력해주세요.';
   }
   // TODO: 필요하다면 서류 업로드 여부 등 추가 유효성 검사 포함
@@ -49,12 +49,14 @@ const ManagerSignUpStep2Page = () => {
 
     // 현재 단계에서 수집된 경력과 업로드된 파일 정보를 합침
     const managerSignUpDataForApi = {
-        ...managerSignUpData, // Step1에서 저장된 데이터
-        gender: managerSignUpData.gender ? managerSignUpData.gender.toUpperCase() : '', // 성별 값을 대문자로 변환
-        career: career, // 경력 사항(Career) 추가
-        experience: experience, // 경험(Experience) 추가
-        // 파일 정보는 DTO에 맞춰서 처리 방식 결정 필요
-        // uploadedFile: selectedFile // DTO에 맞는 형식으로 변환 필요
+      ...managerSignUpData, // Step1에서 저장된 데이터
+      gender: managerSignUpData.gender
+        ? managerSignUpData.gender.toUpperCase()
+        : '', // 성별 값을 대문자로 변환
+      career: career, // 경력 사항(Career) 추가
+      experience: experience, // 경험(Experience) 추가
+      // 파일 정보는 DTO에 맞춰서 처리 방식 결정 필요
+      // uploadedFile: selectedFile // DTO에 맞는 형식으로 변환 필요
     };
 
     console.log('API 전송 데이터:', managerSignUpDataForApi); // 전송할 데이터 로그 추가
@@ -73,11 +75,14 @@ const ManagerSignUpStep2Page = () => {
 
       // 성공 시 완료 페이지로 이동
       navigate('/auth/signup/manager/completion');
-
     } catch (err) {
       console.error('매니저 회원가입 실패:', err);
       // 백엔드에서 보낸 오류 메시지 또는 기본 메시지 표시
-      setError(err.response?.data?.message || err.message || '회원가입 중 오류가 발생했습니다.');
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          '회원가입 중 오류가 발생했습니다.'
+      );
     } finally {
       setLoading(false); // 로딩 종료
     }
@@ -88,59 +93,183 @@ const ManagerSignUpStep2Page = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', minHeight: '100vh', background: '#f4f5f7', padding: '40px 20px' }}>
-      <div style={{ width: '100%', maxWidth: '360px', padding: '24px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', textAlign: 'left' }}>
-
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        minHeight: '100vh',
+        background: '#f4f5f7',
+        padding: '40px 20px',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '360px',
+          padding: '24px',
+          background: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          textAlign: 'left',
+        }}
+      >
         {/* Header */}
         <div style={{ marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#222', marginBottom: '8px' }}>서비스 정보 등록</h2>
-          <div style={{ fontSize: '15px', color: '#888' }}>제공 가능한 서비스 정보를 입력해주세요</div>
+          <h2
+            style={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#222',
+              marginBottom: '8px',
+            }}
+          >
+            서비스 정보 등록
+          </h2>
+          <div style={{ fontSize: '15px', color: '#888' }}>
+            제공 가능한 서비스 정보를 입력해주세요
+          </div>
         </div>
 
         {/* Step Indicator - Step 2 of 3 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', padding: '0 2px' }}>
-          <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#247cff', borderRadius: '2px' }}></div>
-          <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#247cff', borderRadius: '2px' }}></div>
-          <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#ddd', borderRadius: '2px' }}></div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '32px',
+            padding: '0 2px',
+          }}
+        >
+          <div
+            style={{
+              width: 'calc(33.33% - 2px)',
+              height: '4px',
+              background: '#247cff',
+              borderRadius: '2px',
+            }}
+          ></div>
+          <div
+            style={{
+              width: 'calc(33.33% - 2px)',
+              height: '4px',
+              background: '#247cff',
+              borderRadius: '2px',
+            }}
+          ></div>
+          <div
+            style={{
+              width: 'calc(33.33% - 2px)',
+              height: '4px',
+              background: '#ddd',
+              borderRadius: '2px',
+            }}
+          ></div>
         </div>
 
         {/* Career Section - 새로 추가 */}
         <div style={{ marginBottom: '32px' }}>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#222', marginBottom: '8px' }}>경력 (Career)</div>
-          <div style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}>
+          <div
+            style={{
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: '#222',
+              marginBottom: '8px',
+            }}
+          >
+            경력 (Career)
+          </div>
+          <div
+            style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}
+          >
             (예: 간병인 5년, 청소 전문가 3년)
           </div>
           <textarea
             placeholder="본인의 전문 경력을 입력해 주세요 (예: 간병인 5년, 청소 전문가 3년)"
             value={career}
-            onChange={e => setCareer(e.target.value)}
-            style={{ width: 'calc(100% - 26px)', minHeight: '80px', padding: '13px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '16px', color: '#333', resize: 'vertical' }}
+            onChange={(e) => setCareer(e.target.value)}
+            style={{
+              width: 'calc(100% - 26px)',
+              minHeight: '80px',
+              padding: '13px',
+              borderRadius: '8px',
+              border: '1px solid #E5E7EB',
+              fontSize: '16px',
+              color: '#333',
+              resize: 'vertical',
+            }}
             required
           />
         </div>
 
         {/* Experience Section - 기존 Experience를 DTO에 맞춰 수정 */}
         <div style={{ marginBottom: '32px' }}>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#222', marginBottom: '8px' }}>경험 (Experience)</div>
-          <div style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}>
+          <div
+            style={{
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: '#222',
+              marginBottom: '8px',
+            }}
+          >
+            경험 (Experience)
+          </div>
+          <div
+            style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}
+          >
             (예: 노인 케어와 위생 관리에 자신 있습니다.)
           </div>
           <textarea
             placeholder="본인의 경험과 강점을 자유롭게 입력해 주세요."
             value={experience}
-            onChange={e => setExperience(e.target.value)}
-            style={{ width: 'calc(100% - 26px)', minHeight: '120px', padding: '13px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '16px', color: '#333', resize: 'vertical' }}
+            onChange={(e) => setExperience(e.target.value)}
+            style={{
+              width: 'calc(100% - 26px)',
+              minHeight: '120px',
+              padding: '13px',
+              borderRadius: '8px',
+              border: '1px solid #E5E7EB',
+              fontSize: '16px',
+              color: '#333',
+              resize: 'vertical',
+            }}
             required
           />
         </div>
 
         {/* Document Upload Section - 기존 유지 */}
         <div style={{ marginBottom: '32px' }}>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#222', marginBottom: '8px' }}>서류 업로드</div>
-          <div style={{ fontSize: '15px', color: '#666', marginBottom: '16px'}}>
+          <div
+            style={{
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: '#222',
+              marginBottom: '8px',
+            }}
+          >
+            서류 업로드
+          </div>
+          <div
+            style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}
+          >
             본인 인증을 위한 서류를 업로드해주세요 (예: 신분증, 경력증명서).
           </div>
-          <label htmlFor="document-upload" style={{ border: '1px solid #E5E7EB', borderRadius: '8px', padding: '20px', backgroundColor: '#F9FAFB', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '120px', cursor: 'pointer' }}>
+          <label
+            htmlFor="document-upload"
+            style={{
+              border: '1px solid #E5E7EB',
+              borderRadius: '8px',
+              padding: '20px',
+              backgroundColor: '#F9FAFB',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '120px',
+              cursor: 'pointer',
+            }}
+          >
             <input
               id="document-upload"
               type="file"
@@ -148,14 +277,32 @@ const ManagerSignUpStep2Page = () => {
               style={{ display: 'none' }} // 기본 파일 입력 숨김
             />
             {selectedFile ? (
-              <div style={{ fontSize: '16px', color: '#333', fontWeight: '500' }}>{selectedFile.name}</div>
+              <div
+                style={{ fontSize: '16px', color: '#333', fontWeight: '500' }}
+              >
+                {selectedFile.name}
+              </div>
             ) : (
               <>
                 {/* Placeholder for Upload Icon */}
-                <div style={{ width: '40px', height: '40px', backgroundColor: '#D1D5DB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-                   <Upload size={24} color="#6B7280" /> {/* lucide-react Upload 아이콘 사용 */}
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#D1D5DB',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <Upload size={24} color="#6B7280" />{' '}
+                  {/* lucide-react Upload 아이콘 사용 */}
                 </div>
-                <div style={{ fontSize: '14px', color: '#6B7280' }}>pdf 파일로 제출</div>
+                <div style={{ fontSize: '14px', color: '#6B7280' }}>
+                  pdf 파일로 제출
+                </div>
               </>
             )}
           </label>
@@ -204,11 +351,21 @@ const ManagerSignUpStep2Page = () => {
         </div>
 
         {/* 에러 메시지 표시 */}
-        {error && <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: '16px', textAlign: 'center' }}>{error}</div>}
-
+        {error && (
+          <div
+            style={{
+              color: '#e74c3c',
+              fontSize: '14px',
+              marginTop: '16px',
+              textAlign: 'center',
+            }}
+          >
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default ManagerSignUpStep2Page; 
+export default ManagerSignUpStep2Page;
