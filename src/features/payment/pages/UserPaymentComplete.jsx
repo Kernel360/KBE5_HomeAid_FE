@@ -1,13 +1,20 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import useReservationStore from '../../../stores/reservationStore';
-import { createCustomerReservation } from '../../reservation/api/customerAPI';
+import { usePaymentData } from '../../reservation/hooks/useLocalStorage';
+// ⭐️ 중복 예약 생성 방지를 위해 createCustomerReservation import 제거
+// import { createCustomerReservation } from '../../reservation/api/customerAPI';
 import './UserPaymentComplete.css';
 
 const UserPaymentComplete = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // ⭐️ 결제 페이지에서 전달받은 결제 정보
+  const { paymentResult, serviceInfo, totalAmount } = location.state || {};
+
   const {
     reservationData,
     getSelectedServicesWithDetails,
@@ -15,107 +22,37 @@ const UserPaymentComplete = () => {
   } = useReservationStore();
   const selectedServices = getSelectedServicesWithDetails();
 
+  // ⭐️ 결제 완료 후 데이터 정리를 위한 hook 추가
+  const { clearPaymentData } = usePaymentData();
+
   useEffect(() => {
-    // 결제 완료 후 실제 DB에 매니저 ID 저장 (한번만 실행)
-    const saveManagerIdToDB = async () => {
+    // ⭐️ 중복 예약 생성 방지: 예약은 이미 UserServiceRequest에서 생성되었음
+    // 결제 완료 페이지에서는 매니저 할당만 처리하거나 단순히 완료 상태만 표시
+    const handlePaymentComplete = async () => {
       // 이미 처리되었는지 확인
       if (reservationData.isSaved || reservationData.managerId) {
         return;
       }
 
-      try {
-        console.log('👨‍💼 예약 생성 및 매니저 할당 시작...');
-
-        // ⭐️ 1단계: 예약 생성 (managerId 없이)
-        const reservationRequest = {
-          subOptionId: Number(reservationData.selectedSubOption?.id) || 1,
-          requestedDate:
-            reservationData.reservationDate ||
-            new Date().toISOString().split('T')[0],
-          requestedTime: reservationData.reservationTime
-            ? `${reservationData.reservationTime}:00`
-            : '14:00:00',
-          customerNote: reservationData.customerNote || null,
-        };
-
-        console.log('📝 1단계: 예약 생성 요청:', reservationRequest);
-
-        // 백엔드 API 호출 - 예약 생성
-        const response = await createCustomerReservation(reservationRequest);
-
-        console.log(
-          '✅ 1단계: 예약 생성 완료 - 예약 ID:',
-          response.reservationId
-        );
-
-        // ⭐️ 임시: 매니저 할당 비활성화 (예약 생성만 확인)
-        console.log('📝 매니저 할당은 임시로 비활성화, 로컬에만 저장');
-
-        // 로컬 상태 업데이트
-        const { setReservationInfo } = useReservationStore.getState();
-        setReservationInfo({
-          managerId: 20, // 화면 표시용
-          reservationId: response.reservationId,
-          status: 'CONFIRMED',
-          isSaved: true,
-        });
-
-        // TODO: 매니저 할당 API 개발 완료 후 활성화
-        /*
-        // ⭐️ 2단계: 생성된 예약에 매니저 ID 20 할당
-        if (response.reservationId) {
-          try {
-            console.log('👨‍💼 2단계: 매니저 ID 20 할당 시작...');
-            
-            await assignManagerToReservation(response.reservationId, 20);
-            
-            console.log('🎯 2단계: 매니저 ID 20 DB 할당 성공!');
-            
-            // 로컬 상태 업데이트
-            const { setReservationInfo } = useReservationStore.getState();
-            setReservationInfo({ 
-              managerId: 20,
-              reservationId: response.reservationId,
-              status: 'CONFIRMED',
-              isSaved: true 
-            });
-            
-          } catch (managerError) {
-            console.log('❌ 2단계: 모든 매니저 할당 방법 실패, 로컬에만 저장');
-            console.log('매니저 할당 오류:', managerError.message);
-            
-            // 매니저 할당 실패 시에도 예약은 성공했으므로 로컬 상태 업데이트
-            const { setReservationInfo } = useReservationStore.getState();
-            setReservationInfo({ 
-              managerId: 20,
-              reservationId: response.reservationId,
-              status: 'CONFIRMED',
-              isSaved: true 
-            });
-          }
-        }
-        */
-      } catch (error) {
-        console.log('❌ 예약 생성 실패, 로컬에만 매니저 ID 20 저장');
-        console.log('오류 내용:', error.message);
-
-        // API 실패 시에도 로컬 상태는 업데이트
-        const { setReservationInfo } = useReservationStore.getState();
-        setReservationInfo({
-          managerId: 20,
-          status: 'CONFIRMED',
-          isSaved: true,
-        });
-      }
+      // ⭐️ 예약은 이미 생성되었으므로 로컬 상태만 업데이트
+      const { setReservationInfo } = useReservationStore.getState();
+      setReservationInfo({
+        managerId: 20, // 화면 표시용 (실제로는 백엔드에서 할당)
+        status: 'CONFIRMED',
+        isSaved: true,
+      });
     };
 
     // 한번만 실행
-    saveManagerIdToDB();
+    handlePaymentComplete();
   }, []); // 빈 dependency array로 컴포넌트 마운트 시 한번만
 
   const handleGoHome = () => {
-    // 예약 데이터 초기화하고 메인 홈페이지로 이동
+    // ⭐️ 예약 데이터와 결제 데이터 모두 초기화
     resetReservationData();
+    if (clearPaymentData) {
+      clearPaymentData();
+    }
     navigate('/');
   };
 
@@ -135,7 +72,7 @@ const UserPaymentComplete = () => {
             <p className="page-subtitle">
               예약이 성공적으로 접수되었습니다.
               <br />
-              매니저(ID: 20)가 배정되어 곧 연락을 드리겠습니다.
+              매니저를 배정중이며 곧 연락을 드리겠습니다.
             </p>
           </div>
 
@@ -155,28 +92,76 @@ const UserPaymentComplete = () => {
 
           {/* 예약 정보 요약 */}
           <div className="reservation-summary">
-            <h3 className="summary-title">예약 정보</h3>
+            <h3 className="summary-title">결제 및 예약 정보</h3>
+
+            {/* ⭐️ 백엔드에서 받은 결제 정보 표시 */}
+            {paymentResult && (
+              <>
+                <div className="info-item">
+                  <span className="info-label">결제 ID: </span>
+                  <span className="info-value">{paymentResult.id}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">예약 번호: </span>
+                  <span className="info-value">
+                    {paymentResult.reservationId}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">결제 상태: </span>
+                  <span className="info-value">
+                    {paymentResult.status === 'COMPLETED'
+                      ? '결제 완료'
+                      : paymentResult.status === 'PENDING'
+                        ? '결제 대기'
+                        : paymentResult.status}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">결제 수단: </span>
+                  <span className="info-value">
+                    {paymentResult.paymentMethod === 'TRANSFER'
+                      ? '계좌이체'
+                      : paymentResult.paymentMethod === 'CARD'
+                        ? '신용카드'
+                        : paymentResult.paymentMethod === 'CASH'
+                          ? '현금'
+                          : paymentResult.paymentMethod}
+                  </span>
+                </div>
+                {paymentResult.paidAt && (
+                  <div className="info-item">
+                    <span className="info-label">결제 시간: </span>
+                    <span className="info-value">
+                      {new Date(paymentResult.paidAt).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
 
             {/* 선택된 서비스 옵션 표시 */}
             <div className="info-item">
               <span className="info-label">서비스 유형: </span>
               <span className="info-value">
-                {reservationData.selectedSubOption?.name || '청소 서비스'}
+                {serviceInfo?.serviceType ||
+                  reservationData.selectedSubOption?.name ||
+                  '청소 서비스'}
               </span>
             </div>
 
             {/* 배정된 매니저 정보 */}
             <div className="info-item">
               <span className="info-label">배정 매니저: </span>
-              <span className="info-value">매니저 ID: 20</span>
+              <span className="info-value">배정중</span>
             </div>
 
-            {reservationData.reservationDate && (
+            {(serviceInfo?.dateTime || reservationData.reservationDate) && (
               <div className="info-item">
                 <span className="info-label">날짜: </span>
                 <span className="info-value">
-                  {reservationData.reservationDate}{' '}
-                  {reservationData.reservationTime}
+                  {serviceInfo?.dateTime ||
+                    `${reservationData.reservationDate} ${reservationData.reservationTime}`}
                 </span>
               </div>
             )}
@@ -185,7 +170,13 @@ const UserPaymentComplete = () => {
               <div className="info-item">
                 <span className="info-label">주소: </span>
                 <span className="info-value">
-                  {reservationData.address} {reservationData.addressDetail}
+                  {/* 위도, 경도가 포함된 addressDetail만 표시하거나, address가 좌표 정보인 경우 처리 */}
+                  {reservationData.addressDetail &&
+                  reservationData.addressDetail.includes('위도:')
+                    ? reservationData.addressDetail
+                    : reservationData.address.includes('위도:')
+                      ? reservationData.address
+                      : `${reservationData.address} ${reservationData.addressDetail || ''}`}
                 </span>
               </div>
             )}
@@ -203,9 +194,12 @@ const UserPaymentComplete = () => {
             <div className="total-amount">
               <span className="amount-label">총 결제 금액: </span>
               <span className="amount-value">
-                {reservationData.totalPrice > 0
-                  ? reservationData.totalPrice.toLocaleString()
-                  : '155,000'}
+                {(
+                  paymentResult?.amount ||
+                  totalAmount ||
+                  reservationData.totalPrice ||
+                  155000
+                ).toLocaleString()}
                 원
               </span>
             </div>

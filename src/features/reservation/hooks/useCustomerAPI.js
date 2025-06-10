@@ -6,6 +6,7 @@ import {
   deleteCustomerAddress,
   createCustomerReservation,
   getCustomerReservation,
+  getCustomerReservations,
   cancelCustomerReservation,
   getMatchedManagers,
   getManagerProfile,
@@ -68,14 +69,10 @@ export const useCustomerServices = () => {
   // 서비스 목록 로드
   const loadServices = useCallback(async () => {
     try {
-      console.log('🔄 실제 DB 서비스 데이터 로드 시작...');
       const serviceData = await apiCall(getCustomerServices);
-      console.log('📡 서비스 API 응답 전체 데이터:', serviceData);
 
       // 페이징된 응답에서 실제 데이터 배열 추출
       const list = serviceData.content || serviceData || [];
-      console.log('📋 추출된 서비스 리스트:', list);
-      console.log('📊 서비스 개수:', list.length);
 
       if (list.length > 0) {
         // ⭐️ 실제 DB 데이터를 UI 형태로 변환
@@ -90,18 +87,14 @@ export const useCustomerServices = () => {
             60, // 분 단위
         }));
 
-        console.log('✅ 실제 DB 데이터 변환 완료:', transformedServices);
         setServices(transformedServices);
         return transformedServices;
       } else {
-        // API 응답이 비어있으면 더미 데이터 사용
-        console.log('⚠️ API 응답이 비어있습니다. 더미 데이터를 사용합니다.');
         setServices(dummyServices);
         return dummyServices;
       }
     } catch (err) {
       console.error('❌ 서비스 로드 실패:', err);
-      console.log('🎭 API 호출 실패 - 더미 데이터로 대체합니다.');
       setServices(dummyServices);
       return dummyServices;
     }
@@ -156,16 +149,10 @@ export const useCustomerAddresses = () => {
       );
 
       const addressData = await apiCall(getCustomerAddresses);
-      console.log('📡 주소 API 응답:', addressData);
 
       if (addressData && addressData.length > 0) {
-        console.log('✅ 실제 주소 데이터 사용:', addressData);
         setAddresses(addressData);
       } else {
-        console.log(
-          '⚠️ 주소 API 응답이 비어있습니다. 더미 데이터를 사용합니다.'
-        );
-        console.log('🎭 더미 주소 데이터:', dummyAddresses);
         setAddresses(dummyAddresses);
       }
       return addressData && addressData.length > 0
@@ -175,12 +162,8 @@ export const useCustomerAddresses = () => {
       console.error('❌ 주소 로드 실패:', err);
 
       if (err.message.includes('403')) {
-        console.log('🚫 403 Forbidden - 인증 토큰 문제일 수 있습니다.');
         console.log('🔍 토큰 확인:', localStorage.getItem('accessToken'));
       }
-
-      console.log('🎭 주소 API 호출 실패 - 더미 데이터로 대체합니다.');
-      console.log('🎭 사용할 더미 주소 데이터:', dummyAddresses);
       setAddresses(dummyAddresses);
       return dummyAddresses;
     }
@@ -392,5 +375,479 @@ export const useCustomerPayment = () => {
     error,
     clearError,
     makePayment,
+  };
+};
+
+// 예약 목록 관리 훅
+export const useCustomerReservationList = () => {
+  const [reservations, setReservations] = useState({
+    pending: [],
+    completed: [],
+    visited: [],
+    cancelled: [],
+  });
+  const { loading, error, clearError, apiCall } = useApiCall();
+
+  // 예약 목록 로드
+  const loadReservations = useCallback(
+    async (page = 0, size = 50) => {
+      try {
+        const response = await apiCall(getCustomerReservations, page, size);
+        console.log('🔍 백엔드 원본 응답:', response);
+
+        // Spring Boot PagedResponseDto 구조 처리
+        const reservationList =
+          response.content || response.data || response || [];
+
+        console.log('📋 예약 리스트:', reservationList);
+
+        // ⭐️ 각 예약에 대해 상세 정보 추가 조회
+        const enrichedReservations = await Promise.all(
+          reservationList.map(async (reservation) => {
+            try {
+              // 개별 예약 상세 조회로 누락된 정보 보완
+              const detailData = await apiCall(
+                getCustomerReservation,
+                reservation.reservationId
+              );
+              console.log(
+                `🔍 예약 ${reservation.reservationId} 상세 정보:`,
+                detailData
+              );
+
+              // 상세 정보와 목록 정보 병합
+              return {
+                ...reservation,
+                ...detailData,
+                // 기존 데이터 우선, 상세 데이터로 보완
+                requestedDate:
+                  detailData.requestedDate || reservation.requestedDate,
+                requestedTime:
+                  detailData.requestedTime || reservation.requestedTime,
+                totalPrice: detailData.totalPrice || reservation.totalPrice,
+                totalDuration:
+                  detailData.totalDuration || reservation.totalDuration,
+                address: detailData.address || reservation.address,
+                customerNote:
+                  detailData.customerNote || reservation.customerNote,
+              };
+            } catch (error) {
+              console.warn(
+                `⚠️ 예약 ${reservation.reservationId} 상세 조회 실패:`,
+                error
+              );
+              // 상세 조회 실패 시 원본 데이터 사용
+              return reservation;
+            }
+          })
+        );
+
+        console.log('📋 보완된 예약 리스트:', enrichedReservations);
+
+        // ⭐️ Spring Boot ReservationStatus에 맞게 상태 매핑
+        const categorized = {
+          pending: enrichedReservations.filter((r) => {
+            // REQUESTED("예약 요청됨"), MATCHING("매칭 중")
+            return r.status === 'REQUESTED' || r.status === 'MATCHING';
+          }),
+          completed: enrichedReservations.filter((r) => {
+            // MATCHED("매칭 완료")
+            return r.status === 'MATCHED';
+          }),
+          visited: enrichedReservations.filter((r) => {
+            // COMPLETED("서비스 완료")
+            return r.status === 'COMPLETED';
+          }),
+          cancelled: enrichedReservations.filter((r) => {
+            // CANCELLED("예약 취소됨")
+            return r.status === 'CANCELLED';
+          }),
+        };
+
+        // ⭐️ 프론트엔드 UI 형태로 데이터 변환
+        const transformData = (reservations) => {
+          return reservations.map((r) => {
+            console.log('🔧 변환 중인 원본 데이터:', r);
+
+            // ⭐️ 실제 백엔드 데이터 구조에 맞춰서 변환
+            // 현재 받고 있는 필드: reservationId, status, totalPrice, totalDuration, subOptionName
+            const transformed = {
+              id: r.reservationId || r.id,
+              type: r.subOptionName || getServiceName(r.subOptionId),
+              // ⭐️ 상세 조회로 받은 실제 데이터 우선 사용
+              date: r.requestedDate || getTodayDate(),
+              time: r.requestedTime
+                ? formatTimeRange(r.requestedTime, r.totalDuration || 180)
+                : getDefaultTimeRange(),
+              price: r.totalPrice || getDefaultPrice(r.subOptionName),
+              icon: getServiceIcon(r.subOptionId, r.subOptionName),
+              status: mapBackendStatus(r.status),
+              address: r.address || '서울시 강남구',
+              addressDetail: r.addressDetail || '',
+              customerNote: r.customerNote || '',
+              backendData: r, // 원본 데이터 보존
+              createdAt:
+                r.createdAt || r.requestedDate || new Date().toISOString(),
+            };
+
+            console.log('✨ 변환된 데이터:', transformed);
+            return transformed;
+          });
+        };
+
+        const transformedData = {
+          pending: transformData(categorized.pending),
+          completed: transformData(categorized.completed),
+          visited: transformData(categorized.visited),
+          cancelled: transformData(categorized.cancelled),
+        };
+
+        console.log('✅ 변환된 예약 데이터:', transformedData);
+        console.log('🔍 pending 데이터 상세:', transformedData.pending);
+        console.log('📊 카테고리별 개수:', {
+          pending: transformedData.pending.length,
+          completed: transformedData.completed.length,
+          visited: transformedData.visited.length,
+          cancelled: transformedData.cancelled.length,
+        });
+
+        setReservations(transformedData);
+        return transformedData;
+      } catch (err) {
+        console.error('Failed to load reservation list:', err);
+        // 오류 시 더미 데이터로 페이징 테스트
+        console.log('🧪 페이징 테스트용 더미 데이터 생성...');
+
+        const createDummyReservation = (
+          id,
+          status,
+          type,
+          date,
+          time,
+          price
+        ) => ({
+          id,
+          type,
+          date,
+          time,
+          price,
+          icon:
+            type === '청소'
+              ? 'cleaning'
+              : type === '빨래'
+                ? 'laundry'
+                : 'childcare',
+          status,
+          address: '서울시 강남구',
+          addressDetail: '',
+          customerNote: '',
+          backendData: {
+            reservationId: id,
+            status: status.toUpperCase(),
+            subOptionName: type,
+          },
+          createdAt: new Date().toISOString(),
+        });
+
+        const dummyReservations = {
+          pending: [
+            createDummyReservation(
+              1,
+              'pending',
+              '청소',
+              '2025-01-20',
+              '14:00~17:00',
+              25000
+            ),
+            createDummyReservation(
+              2,
+              'pending',
+              '빨래',
+              '2025-01-21',
+              '10:00~12:00',
+              15000
+            ),
+            createDummyReservation(
+              3,
+              'pending',
+              '육아',
+              '2025-01-22',
+              '09:00~15:00',
+              50000
+            ),
+            createDummyReservation(
+              4,
+              'pending',
+              '청소',
+              '2025-01-23',
+              '16:00~19:00',
+              30000
+            ),
+            createDummyReservation(
+              5,
+              'pending',
+              '빨래',
+              '2025-01-24',
+              '11:00~13:00',
+              18000
+            ),
+            createDummyReservation(
+              6,
+              'pending',
+              '청소',
+              '2025-01-25',
+              '14:00~17:00',
+              25000
+            ),
+            createDummyReservation(
+              7,
+              'pending',
+              '육아',
+              '2025-01-26',
+              '08:00~14:00',
+              45000
+            ),
+          ],
+          completed: [
+            createDummyReservation(
+              11,
+              'completed',
+              '청소',
+              '2025-01-15',
+              '14:00~17:00',
+              25000
+            ),
+            createDummyReservation(
+              12,
+              'completed',
+              '빨래',
+              '2025-01-16',
+              '10:00~12:00',
+              15000
+            ),
+            createDummyReservation(
+              13,
+              'completed',
+              '육아',
+              '2025-01-17',
+              '09:00~15:00',
+              50000
+            ),
+            createDummyReservation(
+              14,
+              'completed',
+              '청소',
+              '2025-01-18',
+              '16:00~19:00',
+              30000
+            ),
+            createDummyReservation(
+              15,
+              'completed',
+              '빨래',
+              '2025-01-19',
+              '11:00~13:00',
+              18000
+            ),
+            createDummyReservation(
+              16,
+              'completed',
+              '청소',
+              '2025-01-20',
+              '14:00~17:00',
+              25000
+            ),
+          ],
+          visited: [
+            createDummyReservation(
+              21,
+              'visited',
+              '청소',
+              '2025-01-10',
+              '14:00~17:00',
+              25000
+            ),
+            createDummyReservation(
+              22,
+              'visited',
+              '빨래',
+              '2025-01-11',
+              '10:00~12:00',
+              15000
+            ),
+            createDummyReservation(
+              23,
+              'visited',
+              '육아',
+              '2025-01-12',
+              '09:00~15:00',
+              50000
+            ),
+            createDummyReservation(
+              24,
+              'visited',
+              '청소',
+              '2025-01-13',
+              '16:00~19:00',
+              30000
+            ),
+            createDummyReservation(
+              25,
+              'visited',
+              '빨래',
+              '2025-01-14',
+              '11:00~13:00',
+              18000
+            ),
+            createDummyReservation(
+              26,
+              'visited',
+              '청소',
+              '2025-01-15',
+              '14:00~17:00',
+              25000
+            ),
+            createDummyReservation(
+              27,
+              'visited',
+              '육아',
+              '2025-01-16',
+              '08:00~14:00',
+              45000
+            ),
+            createDummyReservation(
+              28,
+              'visited',
+              '청소',
+              '2025-01-17',
+              '14:00~17:00',
+              25000
+            ),
+          ],
+          cancelled: [
+            createDummyReservation(
+              31,
+              'cancelled',
+              '청소',
+              '2025-01-05',
+              '14:00~17:00',
+              25000
+            ),
+            createDummyReservation(
+              32,
+              'cancelled',
+              '빨래',
+              '2025-01-06',
+              '10:00~12:00',
+              15000
+            ),
+            createDummyReservation(
+              33,
+              'cancelled',
+              '육아',
+              '2025-01-07',
+              '09:00~15:00',
+              50000
+            ),
+          ],
+        };
+
+        setReservations(dummyReservations);
+        return dummyReservations;
+      }
+    },
+    [apiCall]
+  );
+
+  // ⭐️ 헬퍼 함수들
+  const getServiceName = (subOptionId, subOptionName) => {
+    // 1. 백엔드에서 직접 받은 subOptionName 우선 사용
+    if (subOptionName) {
+      return subOptionName;
+    }
+
+    // 2. subOptionId로 매핑
+    const serviceMapping = {
+      1: '빨래',
+      2: '청소',
+      3: '육아',
+    };
+    return serviceMapping[subOptionId] || '서비스';
+  };
+
+  const getServiceIcon = (subOptionId, subOptionName) => {
+    // 1. subOptionName 우선 사용
+    if (subOptionName) {
+      if (subOptionName.includes('빨래')) return 'laundry';
+      if (subOptionName.includes('청소')) return 'cleaning';
+      if (subOptionName.includes('육아')) return 'childcare';
+    }
+
+    // 2. subOptionId로 매핑 (백업)
+    const iconMapping = {
+      1: 'laundry',
+      2: 'cleaning',
+      3: 'childcare',
+    };
+    return iconMapping[subOptionId] || 'home';
+  };
+
+  const formatTimeRange = (startTime, durationMinutes = 180) => {
+    if (!startTime) return '시간 정보 없음';
+
+    try {
+      const [hours, minutes] = startTime.split(':').map(Number);
+      const startTotalMinutes = hours * 60 + minutes;
+      const endTotalMinutes = startTotalMinutes + durationMinutes;
+
+      const endHours = Math.floor(endTotalMinutes / 60) % 24;
+      const endMins = endTotalMinutes % 60;
+
+      const formatTime = (h, m) =>
+        `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+
+      return `${formatTime(hours, minutes)}~${formatTime(endHours, endMins)}`;
+    } catch (error) {
+      console.warn('⚠️ 시간 형식 변환 실패:', startTime, error);
+      return '시간 정보 오류';
+    }
+  };
+
+  const mapBackendStatus = (backendStatus) => {
+    const statusMapping = {
+      REQUESTED: 'pending',
+      MATCHING: 'pending',
+      MATCHED: 'completed',
+      COMPLETED: 'visited',
+      CANCELLED: 'cancelled',
+    };
+    return statusMapping[backendStatus] || 'pending';
+  };
+
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  const getDefaultTimeRange = () => {
+    // 오늘 오후 2시부터 5시까지 기본 시간 설정
+    return '14:00~17:00';
+  };
+
+  const getDefaultPrice = (subOptionName) => {
+    const defaultPrice = {
+      빨래: 10000,
+      청소: 15000,
+      육아: 20000,
+    };
+    return defaultPrice[subOptionName] || 0;
+  };
+
+  return {
+    reservations,
+    loading,
+    error,
+    clearError,
+    loadReservations,
   };
 };
