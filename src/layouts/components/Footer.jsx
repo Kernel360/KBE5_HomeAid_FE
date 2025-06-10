@@ -54,7 +54,7 @@ const FooterItem = ({ icon: Icon, label, isActive, onClick, url }) => {
 const Footer = () => {
     const [activeTab, setActiveTab] = useState('홈');
 
-    const footerItems = [
+    const footerItems = [   //현재 매니저 고객 푸터정보 같음 로그인시 권한에 따라 매니저면 매니저용 푸터 정보 줘야 함 ex) /manager/mypage
         { icon: Home, label: '홈', url: '/' },
         { icon: Search, label: '실시간 검색' },
         { icon: Heart, label: '이벤트' },
