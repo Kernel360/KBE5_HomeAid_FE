@@ -141,35 +141,76 @@ html {
   border: 1px solid #e9ecef;
 }
 
+/* 정보 카드 내 항목들 */
 .info-item {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  font-size: 15px;
-  line-height: 1.4;
-  min-height: 20px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
 }
 
 .info-item:last-child {
-  margin-bottom: 0;
+  border-bottom: none;
+}
+
+/* ⭐️ 중요 정보 하이라이트 (예약 번호 등) */
+.info-item.highlight {
+  background-color: #f8f9ff;
+  padding: 12px 16px;
+  margin: 0 -16px 8px -16px;
+  border-radius: 8px;
+  border: 1px solid #e3f2fd;
 }
 
 .info-item .label {
   font-weight: 500;
-  color: #555;
-  flex-shrink: 0;
-  width: 35%;
-  margin-right: 16px;
+  color: #666;
+  font-size: 14px;
 }
 
 .info-item .value {
   font-weight: 600;
   color: #333;
+  font-size: 14px;
   text-align: right;
-  flex: 1;
-  word-break: keep-all;
-  line-height: 1.4;
+  max-width: 60%;
+  word-break: break-word;
+}
+
+/* ⭐️ 예약 번호 스타일 */
+.value.reservation-id {
+  color: #4285f4;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: 'Courier New', monospace;
+}
+
+/* ⭐️ 서비스 유형 스타일 */
+.value.service-type {
+  color: #2e7d32;
+  font-weight: 700;
+}
+
+/* ⭐️ 예약 상태 스타일 */
+.value.status-pending {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.value.status-completed {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.value.status-visited {
+  color: #2196f3;
+  font-weight: 600;
+}
+
+.value.status-cancelled {
+  color: #f44336;
+  font-weight: 600;
 }
 
 /* 결제 정보 카드 */
@@ -325,6 +366,38 @@ html {
 
 .payment-button:active {
   transform: translateY(0);
+}
+
+/* ⭐️ 비활성화된 결제 버튼 스타일 */
+.payment-button.disabled,
+.payment-button:disabled {
+  background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  opacity: 0.6;
+}
+
+.payment-button.disabled:hover,
+.payment-button:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ⭐️ 결제 불가 알림 메시지 스타일 */
+.payment-notice {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.payment-notice p {
+  margin: 0;
+  font-size: 14px;
+  color: #856404;
+  font-weight: 500;
 }
 
 .cancel-button {

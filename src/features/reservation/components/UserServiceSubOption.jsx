@@ -16,8 +16,11 @@ const UserServiceSubOption = () => {
   const [selectedSubOption, setSelectedSubOption] = useState(null);
 
   // zustand store 사용
-  const { setServiceDetails, setSelectedSubOption: setStoreSubOption } =
-    useReservationStore();
+  const {
+    setServiceDetails,
+    setSelectedSubOption: setStoreSubOption,
+    setReservationInfo,
+  } = useReservationStore();
 
   // API 훅 사용
   const { services, loading, loadServices } = useCustomerServices();
@@ -50,6 +53,28 @@ const UserServiceSubOption = () => {
 
     setSelectedSubOption(subOptionData);
     setStoreSubOption(subOptionData); // store에도 저장
+
+    // ⭐️ 선택된 서브옵션에 따른 서비스 데이터를 reservationStore에 저장
+    const selectedServiceData = getServiceData(optionId);
+    const totalPrice = selectedServiceData.services.reduce(
+      (total, service) => total + service.price,
+      0
+    );
+
+    // 예약 데이터에 서비스 정보 저장
+    setReservationInfo({
+      selectedServices: selectedServiceData.services.map((service, index) => ({
+        id: `${optionId}-${index}`,
+        name: service.name,
+        price: service.price,
+        selected: true,
+      })),
+      serviceDetails: selectedServiceData.services,
+      totalPrice: totalPrice,
+      totalDuration: optionId === 'childcare' ? 240 : 180, // 육아: 4시간, 나머지: 3시간
+      serviceTitle: selectedServiceData.title,
+      serviceDuration: selectedServiceData.duration,
+    });
   };
 
   const handleContinue = () => {
@@ -82,14 +107,56 @@ const UserServiceSubOption = () => {
     }
   }, [services, setServiceDetails]);
 
-  // 선택된 서비스가 변경될 때마다 총액 계산
-  // useEffect(() => {
-  //   calculateTotals();
-  // }, [reservationData.selectedServices, calculateTotals]);
+  // ⭐️ 서브옵션별 서비스 데이터 정의
+  const getServiceData = (subOptionId) => {
+    const serviceData = {
+      laundry: {
+        title: '기본 빨래 서비스',
+        duration: '약 2-3시간 소요',
+        services: [
+          { name: '세탁물 분류 및 세탁', price: 15000 },
+          { name: '건조 및 정리', price: 8000 },
+          { name: '다림질 (기본)', price: 12000 },
+          { name: '세탁 후 정리정돈', price: 5000 },
+        ],
+      },
+      cleaning: {
+        title: '기본 청소 서비스',
+        duration: '약 2-3시간 소요',
+        services: [
+          { name: '바닥 청소 및 걸레질', price: 20000 },
+          { name: '먼지 제거 및 정돈', price: 15000 },
+          { name: '쓰레기통 비우기', price: 5000 },
+          { name: '화장실 기본 청소', price: 18000 },
+        ],
+      },
+      childcare: {
+        title: '기본 육아 서비스',
+        duration: '약 3-4시간 소요',
+        services: [
+          { name: '아이 돌봄 및 놀이', price: 25000 },
+          { name: '식사 준비 및 수유', price: 15000 },
+          { name: '기저귀 교체 및 위생관리', price: 10000 },
+          { name: '아이 안전 관리', price: 12000 },
+        ],
+      },
+    };
 
-  // const handleServiceToggle = (serviceId) => {
-  //   toggleService(serviceId);
-  // };
+    return serviceData[subOptionId] || serviceData.cleaning; // 기본값은 청소
+  };
+
+  // 현재 선택된 서브옵션의 서비스 데이터 가져오기
+  const currentServiceData = selectedSubOption
+    ? getServiceData(selectedSubOption.id)
+    : getServiceData('cleaning');
+
+  // 총 가격 계산
+  const getTotalPrice = () => {
+    return currentServiceData.services.reduce(
+      (total, service) => total + service.price,
+      0
+    );
+  };
 
   // 로딩 상태 표시 (단순화)
   if (loading && (!services || services.length === 0)) {
@@ -140,7 +207,9 @@ const UserServiceSubOption = () => {
             {/* 빨래 옵션 */}
             <div
               className={`service-card sub-service-option ${
-                selectedSubOption === 'laundry' ? 'selected' : ''
+                selectedSubOption && selectedSubOption.id === 'laundry'
+                  ? 'selected'
+                  : ''
               }`}
               onClick={() => handleOptionSelect('빨래', 'laundry')}
             >
@@ -161,7 +230,9 @@ const UserServiceSubOption = () => {
             {/* 청소 옵션 */}
             <div
               className={`service-card sub-service-option ${
-                selectedSubOption === 'cleaning' ? 'selected' : ''
+                selectedSubOption && selectedSubOption.id === 'cleaning'
+                  ? 'selected'
+                  : ''
               }`}
               onClick={() => handleOptionSelect('청소', 'cleaning')}
             >
@@ -182,7 +253,9 @@ const UserServiceSubOption = () => {
             {/* 육아 옵션 */}
             <div
               className={`service-card sub-service-option ${
-                selectedSubOption === 'childcare' ? 'selected' : ''
+                selectedSubOption && selectedSubOption.id === 'childcare'
+                  ? 'selected'
+                  : ''
               }`}
               onClick={() => handleOptionSelect('육아', 'childcare')}
             >
@@ -207,70 +280,37 @@ const UserServiceSubOption = () => {
                 <span className="clock-icon">🕐</span>
               </div>
               <div className="service-title">
-                <h3>기본 청소 서비스</h3>
-                <span className="service-duration">약 2-3시간 소요</span>
+                <h3>{currentServiceData.title}</h3>
+                <span className="service-duration">
+                  {currentServiceData.duration}
+                </span>
               </div>
             </div>
 
-            {/* TODO: 나중에 실제 API 데이터로 교체 예정 */}
-            {/* 현재는 더미 데이터로 표시 */}
+            {/* 동적 서비스 목록 */}
             <div className="service-checklist">
-              {/* 더미 데이터 - 기본 서비스 목록 */}
-              <div className="checklist-item">
-                <label className="service-checkbox-label">
-                  <input type="checkbox" disabled checked={true} />
-                  <span className="service-checkmark"></span>
-                  <span className="service-name">바닥 청소 및 걸레질</span>
-                  <span className="service-price">기본 포함</span>
-                </label>
-              </div>
+              {currentServiceData.services.map((service, index) => (
+                <div key={index} className="checklist-item">
+                  <label className="service-checkbox-label">
+                    <input type="checkbox" disabled checked={true} />
+                    <span className="service-checkmark"></span>
+                    <span className="service-name">{service.name}</span>
+                    <span className="service-price">
+                      {service.price.toLocaleString()}원
+                    </span>
+                  </label>
+                </div>
+              ))}
+            </div>
 
-              <div className="checklist-item">
-                <label className="service-checkbox-label">
-                  <input type="checkbox" disabled checked={true} />
-                  <span className="service-checkmark"></span>
-                  <span className="service-name">먼지 제거 및 정돈</span>
-                  <span className="service-price">기본 포함</span>
-                </label>
+            {/* 총 가격 표시 */}
+            <div className="total-price-section">
+              <div className="total-price-item">
+                <span className="total-label">총 예상 금액:</span>
+                <span className="total-amount">
+                  {getTotalPrice().toLocaleString()}원
+                </span>
               </div>
-
-              <div className="checklist-item">
-                <label className="service-checkbox-label">
-                  <input type="checkbox" disabled checked={true} />
-                  <span className="service-checkmark"></span>
-                  <span className="service-name">쓰레기통 비우기</span>
-                  <span className="service-price">기본 포함</span>
-                </label>
-              </div>
-
-              <div className="checklist-item">
-                <label className="service-checkbox-label">
-                  <input type="checkbox" disabled checked={true} />
-                  <span className="service-checkmark"></span>
-                  <span className="service-name">화장실 기본 청소</span>
-                  <span className="service-price">기본 포함</span>
-                </label>
-              </div>
-
-              {/* TODO: 향후 실제 API 데이터로 교체
-                  현재 주석처리된 코드를 활성화하여 사용 예정
-                  API 연동 시 아래 코드를 사용:
-                  
-                  {services.map((service) => (
-                    <div key={service.id} className="checklist-item">
-                      <label className="service-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={reservationData.selectedServices.includes(service.id)}
-                          onChange={() => handleServiceToggle(service.id)}
-                        />
-                        <span className="service-checkmark"></span>
-                        <span className="service-name">{service.name}</span>
-                        <span className="service-price">+{service.price.toLocaleString()}원</span>
-                      </label>
-                    </div>
-                  ))}
-              */}
             </div>
 
             <div className="service-note">
@@ -279,41 +319,6 @@ const UserServiceSubOption = () => {
               </span>
             </div>
           </div>
-
-          {/* 가격 정보 표시 (주석처리) */}
-          {/* 
-          {reservationData.selectedServices.length > 0 && (
-            <div
-              className="pricing-section"
-              style={{
-                marginBottom: '20px',
-                padding: '16px',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '8px',
-              }}
-            >
-              <h4
-                style={{
-                  margin: '0 0 8px 0',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                }}
-              >
-                예상 금액
-              </h4>
-              <p
-                style={{
-                  margin: '0',
-                  fontSize: '18px',
-                  fontWeight: '700',
-                  color: '#4285f4',
-                }}
-              >
-                총 {reservationData.totalPrice.toLocaleString()}원
-              </p>
-            </div>
-          )}
-          */}
 
           {/* 다음 단계 버튼 섹션 */}
           <div className="reservation-section">

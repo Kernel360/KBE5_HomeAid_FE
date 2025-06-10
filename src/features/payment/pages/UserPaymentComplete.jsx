@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import useReservationStore from '../../../stores/reservationStore';
@@ -10,6 +10,11 @@ import './UserPaymentComplete.css';
 
 const UserPaymentComplete = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // ⭐️ 결제 페이지에서 전달받은 결제 정보
+  const { paymentResult, serviceInfo, totalAmount } = location.state || {};
+
   const {
     reservationData,
     getSelectedServicesWithDetails,
@@ -87,13 +92,61 @@ const UserPaymentComplete = () => {
 
           {/* 예약 정보 요약 */}
           <div className="reservation-summary">
-            <h3 className="summary-title">예약 정보</h3>
+            <h3 className="summary-title">결제 및 예약 정보</h3>
+
+            {/* ⭐️ 백엔드에서 받은 결제 정보 표시 */}
+            {paymentResult && (
+              <>
+                <div className="info-item">
+                  <span className="info-label">결제 ID: </span>
+                  <span className="info-value">{paymentResult.id}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">예약 번호: </span>
+                  <span className="info-value">
+                    {paymentResult.reservationId}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">결제 상태: </span>
+                  <span className="info-value">
+                    {paymentResult.status === 'COMPLETED'
+                      ? '결제 완료'
+                      : paymentResult.status === 'PENDING'
+                        ? '결제 대기'
+                        : paymentResult.status}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">결제 수단: </span>
+                  <span className="info-value">
+                    {paymentResult.paymentMethod === 'TRANSFER'
+                      ? '계좌이체'
+                      : paymentResult.paymentMethod === 'CARD'
+                        ? '신용카드'
+                        : paymentResult.paymentMethod === 'CASH'
+                          ? '현금'
+                          : paymentResult.paymentMethod}
+                  </span>
+                </div>
+                {paymentResult.paidAt && (
+                  <div className="info-item">
+                    <span className="info-label">결제 시간: </span>
+                    <span className="info-value">
+                      {new Date(paymentResult.paidAt).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
 
             {/* 선택된 서비스 옵션 표시 */}
             <div className="info-item">
               <span className="info-label">서비스 유형: </span>
               <span className="info-value">
-                {reservationData.selectedSubOption?.name || '청소 서비스'}
+                {serviceInfo?.serviceType ||
+                  reservationData.selectedSubOption?.name ||
+                  '청소 서비스'}
               </span>
             </div>
 
@@ -103,12 +156,12 @@ const UserPaymentComplete = () => {
               <span className="info-value">배정중</span>
             </div>
 
-            {reservationData.reservationDate && (
+            {(serviceInfo?.dateTime || reservationData.reservationDate) && (
               <div className="info-item">
                 <span className="info-label">날짜: </span>
                 <span className="info-value">
-                  {reservationData.reservationDate}{' '}
-                  {reservationData.reservationTime}
+                  {serviceInfo?.dateTime ||
+                    `${reservationData.reservationDate} ${reservationData.reservationTime}`}
                 </span>
               </div>
             )}
@@ -141,9 +194,12 @@ const UserPaymentComplete = () => {
             <div className="total-amount">
               <span className="amount-label">총 결제 금액: </span>
               <span className="amount-value">
-                {reservationData.totalPrice > 0
-                  ? reservationData.totalPrice.toLocaleString()
-                  : '155,000'}
+                {(
+                  paymentResult?.amount ||
+                  totalAmount ||
+                  reservationData.totalPrice ||
+                  155000
+                ).toLocaleString()}
                 원
               </span>
             </div>

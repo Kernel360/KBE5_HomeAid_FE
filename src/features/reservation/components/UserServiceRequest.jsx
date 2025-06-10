@@ -5,12 +5,13 @@ import '../styles/common.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
 import GoogleMapPicker from '../../../components/GoogleMapPicker';
-import { usePaymentData } from '../hooks/useLocalStorage';
+// import { usePaymentData } from '../hooks/useLocalStorage';
 import {
   useCustomerReservation,
   useCustomerAddresses,
 } from '../hooks/useCustomerAPI';
 import useReservationStore from '../../../stores/reservationStore';
+import useReservationListStore from '../../../stores/reservationListStore';
 // ⭐️ 인증 정보 추가
 import { useAuthStore } from '../../../stores/authStore';
 
@@ -50,20 +51,14 @@ const UserServiceRequest = () => {
     addAddress,
   } = useCustomerAddresses();
 
-  const {
-    createReservation,
-    loading: reservationLoading,
-    error: reservationError,
-  } = useCustomerReservation();
+  const { createReservation } = useCustomerReservation();
 
-  const { updatePaymentData } = usePaymentData();
+  // const { updatePaymentData } = usePaymentData();
 
   // 폼 상태 관리
   const [formData, setFormData] = useState({
-    serviceType: '원룸',
     date: '',
     startTime: '09:00', // 시작시간으로 변경
-    managerGender: '',
     selectedAddress: null,
     detailAddress: '',
     isCurrentLocation: false,
@@ -198,8 +193,8 @@ const UserServiceRequest = () => {
     }
 
     // 필수 입력 검증
-    if (!formData.serviceType || !formData.date || !formData.startTime) {
-      alert('서비스 유형, 날짜, 시간을 모두 선택해주세요.');
+    if (!formData.date || !formData.startTime) {
+      alert('날짜와 시간을 선택해주세요.');
       return;
     }
 
@@ -227,49 +222,197 @@ const UserServiceRequest = () => {
         detail: formData.detailAddress || formData.selectedAddress.detail || '',
       });
 
-      // ⭐️⭐️⭐️ 백엔드 ReservationRequestDto 규격에 맞는 데이터로 변경! ⭐️⭐️⭐️
-      const reservationData = {
-        subOptionId: 1, // TODO: 실제로는 선택된 서브옵션 ID 사용해야 함!
-        requestedDate: formData.date, // yyyy-MM-dd
-        requestedTime: `${formData.startTime}:00`, // HH:mm:ss 형식으로 변환
-        // ⭐️ 위치정보 추가
-        latitude: formData.selectedAddress?.coordinates?.lat || null,
-        longitude: formData.selectedAddress?.coordinates?.lng || null,
-        // ⭐️ 인증된 사용자 정보 자동 포함 (백엔드에서 JWT 토큰으로 사용자 식별)
-        // customerId는 백엔드에서 JWT 토큰을 통해 자동으로 인식됩니다.
-      };
+      // ⭐️ 현재 예약 데이터 가져오기
+      const currentReservationData =
+        useReservationStore.getState().reservationData;
 
-      // 백엔드에 예약 생성 요청 (ReservationResponseDto 응답받음)
-      const reservation = await createReservation(reservationData);
+      // ⭐️ 종료 시간 계산
+      const endTime = addMinutesToTime(
+        formData.startTime,
+        currentReservationData.totalDuration
+      );
 
-      // Spring Boot ReservationResponseDto 필드 확인
-      if (!reservation || !reservation.reservationId) {
-        throw new Error('예약 응답 데이터가 올바르지 않습니다.');
+      try {
+        // ⭐️ 백엔드 API 호출을 위한 예약 데이터 준비
+        const backendReservationData = {
+          // Spring Boot ReservationRequestDto에 정확히 맞는 구조
+          reservationDate: formData.date, // LocalDate용 (yyyy-MM-dd)
+          reservationTime: formData.startTime, // LocalTime용 (HH:mm -> HH:mm:ss로 변환됨)
+          subOptionId: getSubOptionId(currentReservationData.selectedSubOption), // Long
+          latitude:
+            formData.selectedAddress.coordinates?.lat ||
+            formData.selectedAddress.coordinates?.latitude ||
+            null, // Double
+          longitude:
+            formData.selectedAddress.coordinates?.lng ||
+            formData.selectedAddress.coordinates?.longitude ||
+            null, // Double
+        };
+
+        console.log('🚀 백엔드 예약 데이터:', backendReservationData);
+        console.log('📋 전송 전 상세 정보:');
+        console.log('- 사용자 정보:', user);
+        console.log(
+          '- 선택된 서브옵션:',
+          currentReservationData.selectedSubOption
+        );
+        console.log('- 총 금액:', currentReservationData.totalPrice);
+        console.log('- 선택된 주소:', formData.selectedAddress);
+
+        // Spring Boot @NotNull 필드 검증 (requestedDate, requestedTime, subOptionId)
+        const requiredFields = [
+          'reservationDate',
+          'reservationTime',
+          'subOptionId',
+        ];
+        const missingFields = requiredFields.filter(
+          (field) => !backendReservationData[field]
+        );
+
+        if (missingFields.length > 0) {
+          console.error('❌ Spring Boot 필수 필드 누락:', missingFields);
+          alert(
+            `Spring Boot 필수 정보가 누락되었습니다: ${missingFields.join(', ')}`
+          );
+          return;
+        }
+
+        // subOptionId가 유효한 숫자인지 확인
+        if (
+          !Number.isInteger(backendReservationData.subOptionId) ||
+          backendReservationData.subOptionId <= 0
+        ) {
+          console.error(
+            '❌ subOptionId가 유효하지 않음:',
+            backendReservationData.subOptionId
+          );
+          alert('서비스 선택이 올바르지 않습니다. 다시 선택해주세요.');
+          return;
+        }
+
+        // ⭐️ 실제 백엔드 API 호출
+        const backendReservation = await createReservation(
+          backendReservationData
+        );
+
+        console.log('✅ 백엔드 예약 성공:', backendReservation);
+
+        // ⭐️ 백엔드 성공 시 로컬 스토어에도 추가 (즉시 반영용)
+        const { addReservation } = useReservationListStore.getState();
+        const localReservationData = {
+          // 백엔드 응답 또는 원본 데이터를 로컬 형식으로 변환
+          id:
+            backendReservation.reservationId ||
+            backendReservation.id ||
+            Date.now(),
+          type: currentReservationData.selectedSubOption?.name || '서비스',
+          date: formData.date,
+          time: `${formData.startTime}~${endTime}`,
+          price: currentReservationData.totalPrice || 0,
+          icon: getServiceIcon(currentReservationData.selectedSubOption?.id),
+          status: 'pending', // 새로 생성된 예약은 REQUESTED 상태이므로 pending
+          address: formData.selectedAddress.main,
+          addressDetail:
+            formData.detailAddress || formData.selectedAddress.detail || '',
+          customerNote: currentReservationData.customerNote || '',
+          selectedServices: currentReservationData.selectedServices || [],
+          serviceDetails: currentReservationData.serviceDetails || [],
+          createdAt: new Date().toISOString(),
+          // 백엔드 응답 데이터도 보존 (Spring Boot 형식)
+          backendData: {
+            ...backendReservation,
+            status: 'REQUESTED', // 새 예약의 기본 상태
+            subOptionId: getSubOptionId(
+              currentReservationData.selectedSubOption
+            ),
+            requestedDate: formData.date,
+            requestedTime: `${formData.startTime}:00`,
+          },
+        };
+
+        addReservation(localReservationData);
+        console.log('💾 로컬 스토어에도 예약 데이터 추가 완료');
+
+        // ⭐️ 성공 메시지
+        alert(
+          `예약이 접수되었습니다!\n\n` +
+            `서비스: ${currentReservationData.selectedSubOption?.name || '서비스'}\n` +
+            `날짜: ${formData.date}\n` +
+            `시간: ${formData.startTime}~${endTime}\n` +
+            `금액: ${currentReservationData.totalPrice.toLocaleString()}원\n\n` +
+            `이용내역에서 예약 상태를 확인하실 수 있습니다.`
+        );
+
+        // ⭐️ 이용내역 페이지로 이동
+        navigate('/user/reservations');
+      } catch (backendError) {
+        console.error('❌ 예약 생성 실패:', backendError);
+
+        // ⭐️ 사용자에게 오류 메시지 표시 (로컬 저장 없음)
+        let errorMessage = '예약 생성에 실패했습니다.';
+
+        if (backendError.message.includes('400')) {
+          errorMessage += '\n\n다음 사항을 확인해주세요:\n';
+          errorMessage += '• 모든 필수 정보가 입력되었는지 확인\n';
+          errorMessage += '• 날짜와 시간이 올바른지 확인\n';
+          errorMessage += '• 주소 정보가 정확한지 확인';
+        } else if (backendError.message.includes('401')) {
+          errorMessage += '\n\n로그인이 만료되었습니다. 다시 로그인해주세요.';
+        } else if (backendError.message.includes('403')) {
+          errorMessage += '\n\n접근 권한이 없습니다.';
+        } else if (backendError.message.includes('500')) {
+          errorMessage +=
+            '\n\n서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        } else {
+          errorMessage += '\n\n네트워크 연결을 확인하고 다시 시도해주세요.';
+        }
+
+        alert(errorMessage);
+
+        // ⭐️ 오류 발생 시에는 페이지 이동하지 않음
+        return;
       }
 
-      // 결제 페이지로 넘길 데이터 준비 (Spring Boot DTO 구조 기반)
-      const paymentData = {
-        reservationId: reservation.reservationId, // Long
-        serviceInfo: {
-          type: formData.serviceType,
-          date: formData.date,
-          time: formData.startTime,
-          address: {
-            main: formData.selectedAddress.main,
-            detail:
-              formData.detailAddress || formData.selectedAddress.detail || '',
-          },
-          subOptionName: reservation.subOptionName, // String - 예약 서비스 명
-        },
-        amount: reservation.totalPrice, // Integer - 총 가격 (원 단위)
-        duration: reservation.totalDuration, // Integer - 총 소요 시간 (분 단위)
-        status: reservation.status, // ReservationStatus enum
-      };
+      // ⭐️ 선택된 서브옵션에서 백엔드 API에 맞는 ID 추출 함수
+      function getSubOptionId(selectedSubOption) {
+        if (!selectedSubOption || !selectedSubOption.id) {
+          console.warn('선택된 서브옵션이 없습니다. 기본값(1)을 사용합니다.');
+          return 1; // 기본값으로 빨래 ID 사용
+        }
 
-      // localStorage에 결제 데이터 저장 (결제 페이지에서 사용)
-      updatePaymentData(paymentData);
+        // 서브옵션 ID 매핑 (프론트엔드 ID -> 백엔드 ID)
+        const subOptionMapping = {
+          laundry: 1, // 빨래
+          cleaning: 2, // 청소
+          childcare: 3, // 육아
+        };
 
-      navigate('/user/payment');
+        const backendId = subOptionMapping[selectedSubOption.id];
+        if (!backendId) {
+          console.warn(
+            `알 수 없는 서브옵션 ID: ${selectedSubOption.id}. 기본값(1)을 사용합니다.`
+          );
+          return 1;
+        }
+
+        console.log(
+          '선택된 서브옵션:',
+          selectedSubOption.name,
+          '-> 백엔드 ID:',
+          backendId
+        );
+        return backendId;
+      }
+
+      // ⭐️ 서비스 아이콘 매핑 함수
+      function getServiceIcon(subOptionId) {
+        const iconMapping = {
+          laundry: 'laundry',
+          cleaning: 'cleaning',
+          childcare: 'childcare',
+        };
+        return iconMapping[subOptionId] || 'home';
+      }
     } catch (error) {
       console.error('예약 생성 실패:', error);
       alert(`예약 생성에 실패했습니다: ${error.message}`);
@@ -282,7 +425,7 @@ const UserServiceRequest = () => {
   };
 
   // 로딩 상태
-  if (addressLoading || reservationLoading) {
+  if (addressLoading) {
     return (
       <div className="reservation-page">
         <Header />
@@ -310,7 +453,7 @@ const UserServiceRequest = () => {
   }
 
   // 에러 상태
-  if (addressError || reservationError) {
+  if (addressError) {
     return (
       <div className="reservation-page">
         <Header />
@@ -327,7 +470,7 @@ const UserServiceRequest = () => {
                 color: '#e74c3c',
               }}
             >
-              <p>{addressError || reservationError}</p>
+              <p>{addressError}</p>
               <button
                 onClick={() => window.location.reload()}
                 style={{
@@ -418,19 +561,35 @@ const UserServiceRequest = () => {
             <p className="page-subtitle">서비스 정보를 입력해주세요.</p>
           </div>
 
-          {/* 서비스 유형 선택 */}
-          <div className="service-type-section">
-            <h3 className="section-title">서비스 유형</h3>
-            <div className="service-type-options">
-              {['원룸', '투룸', '쓰리룸'].map((type) => (
-                <button
-                  key={type}
-                  className={`service-type-btn ${formData.serviceType === type ? 'active' : ''}`}
-                  onClick={() => handleInputChange('serviceType', type)}
-                >
-                  {type}
-                </button>
-              ))}
+          {/* 선택된 서비스 정보 표시 */}
+          <div className="selected-service-section">
+            <h3 className="section-title">선택된 서비스</h3>
+            <div className="service-info-card">
+              <div className="service-icon">
+                {reservationData.selectedSubOption?.id === 'cleaning'
+                  ? '🧹'
+                  : reservationData.selectedSubOption?.id === 'laundry'
+                    ? '👕'
+                    : reservationData.selectedSubOption?.id === 'childcare'
+                      ? '👶'
+                      : '🏠'}
+              </div>
+              <div className="service-details">
+                <h4 className="service-name">
+                  {reservationData.selectedSubOption?.name || '서비스'}
+                </h4>
+                <p className="service-description">
+                  {reservationData.serviceTitle || '기본 서비스'}
+                </p>
+                <div className="service-pricing">
+                  <span className="service-duration">
+                    약 {reservationData.totalDuration || 180}분 소요
+                  </span>
+                  <span className="service-price">
+                    {(reservationData.totalPrice || 0).toLocaleString()}원
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -471,22 +630,6 @@ const UserServiceRequest = () => {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* 매니저 성별 선택 */}
-          <div className="manager-gender-section">
-            <h3 className="section-title">매니저 성별 (선택)</h3>
-            <div className="gender-options">
-              {['남성', '여성', '상관없음'].map((gender) => (
-                <button
-                  key={gender}
-                  className={`gender-btn ${formData.managerGender === gender ? 'active' : ''}`}
-                  onClick={() => handleInputChange('managerGender', gender)}
-                >
-                  {gender}
-                </button>
-              ))}
             </div>
           </div>
 
@@ -598,20 +741,13 @@ const UserServiceRequest = () => {
             <button
               className="submit-btn"
               onClick={handleSubmit}
-              disabled={isSubmitting || reservationLoading}
+              disabled={isSubmitting}
               style={{
-                opacity: isSubmitting || reservationLoading ? 0.6 : 1,
-                cursor:
-                  isSubmitting || reservationLoading
-                    ? 'not-allowed'
-                    : 'pointer',
+                opacity: isSubmitting ? 0.6 : 1,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
               }}
             >
-              {isSubmitting
-                ? '예약 생성 중...'
-                : reservationLoading
-                  ? '로딩 중...'
-                  : '결제하기'}
+              {isSubmitting ? '예약 생성 중...' : '예약하기'}
             </button>
           </div>
         </div>

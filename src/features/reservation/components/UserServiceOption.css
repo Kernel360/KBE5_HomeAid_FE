@@ -10,7 +10,7 @@
 .page-content-wrapper {
   min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
   padding: 16px;
-  padding-top: 76px; /* Header 높이(56px) + 여백(20px) */
+  padding-top: 0; /* 패딩 제거하여 헤더와 바로 붙임 */
   display: block; /* flex에서 block으로 변경 */
   width: 100%;
   box-sizing: border-box;
@@ -103,7 +103,7 @@ html {
   margin-top: 0; /* 상단 여백 제거 */
   margin-bottom: 50px;
   text-align: left;
-  padding-top: 24px; /* 약간의 내부 패딩만 */
+  padding-top: 0; /* 패딩도 제거하여 헤더에 완전히 붙임 */
 }
 
 .greeting-text {
