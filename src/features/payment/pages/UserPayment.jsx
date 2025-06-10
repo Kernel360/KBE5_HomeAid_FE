@@ -111,7 +111,13 @@ const UserPayment = () => {
                 <div className="info-item">
                   <span className="label">서비스 주소</span>
                   <span className="value">
-                    {reservationData.address} {reservationData.addressDetail}
+                    {/* 위도, 경도가 포함된 addressDetail만 표시하거나, address가 좌표 정보인 경우 처리 */}
+                    {reservationData.addressDetail &&
+                    reservationData.addressDetail.includes('위도:')
+                      ? reservationData.addressDetail
+                      : reservationData.address.includes('위도:')
+                        ? reservationData.address
+                        : `${reservationData.address} ${reservationData.addressDetail || ''}`}
                   </span>
                 </div>
               )}

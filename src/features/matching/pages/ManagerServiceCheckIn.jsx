@@ -398,8 +398,8 @@ const ManagerServiceCheckIn = () => {
                   >
                     {loading ? '업로드 중...' : '파일 업로드 & 체크아웃'}
                   </button>
-                </div>
-              </div>
+          </div>
+        </div>
             )}
             */}
           </div>

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import useReservationStore from '../../../stores/reservationStore';
-import { createCustomerReservation } from '../../reservation/api/customerAPI';
+// ⭐️ 중복 예약 생성 방지를 위해 createCustomerReservation import 제거
+// import { createCustomerReservation } from '../../reservation/api/customerAPI';
 import './UserPaymentComplete.css';
 
 const UserPaymentComplete = () => {
@@ -16,101 +17,32 @@ const UserPaymentComplete = () => {
   const selectedServices = getSelectedServicesWithDetails();
 
   useEffect(() => {
-    // 결제 완료 후 실제 DB에 매니저 ID 저장 (한번만 실행)
-    const saveManagerIdToDB = async () => {
+    // ⭐️ 중복 예약 생성 방지: 예약은 이미 UserServiceRequest에서 생성되었음
+    // 결제 완료 페이지에서는 매니저 할당만 처리하거나 단순히 완료 상태만 표시
+    const handlePaymentComplete = async () => {
       // 이미 처리되었는지 확인
       if (reservationData.isSaved || reservationData.managerId) {
+        console.log('✅ 이미 처리된 예약입니다:', reservationData);
         return;
       }
 
-      try {
-        console.log('👨‍💼 예약 생성 및 매니저 할당 시작...');
+      console.log('💳 결제 완료 - 예약 정보 확인:');
+      console.log('📋 reservationData:', reservationData);
+      console.log('🏠 selectedAddress:', reservationData.selectedAddress);
 
-        // ⭐️ 1단계: 예약 생성 (managerId 없이)
-        const reservationRequest = {
-          subOptionId: Number(reservationData.selectedSubOption?.id) || 1,
-          requestedDate:
-            reservationData.reservationDate ||
-            new Date().toISOString().split('T')[0],
-          requestedTime: reservationData.reservationTime
-            ? `${reservationData.reservationTime}:00`
-            : '14:00:00',
-          customerNote: reservationData.customerNote || null,
-        };
+      // ⭐️ 예약은 이미 생성되었으므로 로컬 상태만 업데이트
+      const { setReservationInfo } = useReservationStore.getState();
+      setReservationInfo({
+        managerId: 20, // 화면 표시용 (실제로는 백엔드에서 할당)
+        status: 'CONFIRMED',
+        isSaved: true,
+      });
 
-        console.log('📝 1단계: 예약 생성 요청:', reservationRequest);
-
-        // 백엔드 API 호출 - 예약 생성
-        const response = await createCustomerReservation(reservationRequest);
-
-        console.log(
-          '✅ 1단계: 예약 생성 완료 - 예약 ID:',
-          response.reservationId
-        );
-
-        // ⭐️ 임시: 매니저 할당 비활성화 (예약 생성만 확인)
-        console.log('📝 매니저 할당은 임시로 비활성화, 로컬에만 저장');
-
-        // 로컬 상태 업데이트
-        const { setReservationInfo } = useReservationStore.getState();
-        setReservationInfo({
-          managerId: 20, // 화면 표시용
-          reservationId: response.reservationId,
-          status: 'CONFIRMED',
-          isSaved: true,
-        });
-
-        // TODO: 매니저 할당 API 개발 완료 후 활성화
-        /*
-        // ⭐️ 2단계: 생성된 예약에 매니저 ID 20 할당
-        if (response.reservationId) {
-          try {
-            console.log('👨‍💼 2단계: 매니저 ID 20 할당 시작...');
-            
-            await assignManagerToReservation(response.reservationId, 20);
-            
-            console.log('🎯 2단계: 매니저 ID 20 DB 할당 성공!');
-            
-            // 로컬 상태 업데이트
-            const { setReservationInfo } = useReservationStore.getState();
-            setReservationInfo({ 
-              managerId: 20,
-              reservationId: response.reservationId,
-              status: 'CONFIRMED',
-              isSaved: true 
-            });
-            
-          } catch (managerError) {
-            console.log('❌ 2단계: 모든 매니저 할당 방법 실패, 로컬에만 저장');
-            console.log('매니저 할당 오류:', managerError.message);
-            
-            // 매니저 할당 실패 시에도 예약은 성공했으므로 로컬 상태 업데이트
-            const { setReservationInfo } = useReservationStore.getState();
-            setReservationInfo({ 
-              managerId: 20,
-              reservationId: response.reservationId,
-              status: 'CONFIRMED',
-              isSaved: true 
-            });
-          }
-        }
-        */
-      } catch (error) {
-        console.log('❌ 예약 생성 실패, 로컬에만 매니저 ID 20 저장');
-        console.log('오류 내용:', error.message);
-
-        // API 실패 시에도 로컬 상태는 업데이트
-        const { setReservationInfo } = useReservationStore.getState();
-        setReservationInfo({
-          managerId: 20,
-          status: 'CONFIRMED',
-          isSaved: true,
-        });
-      }
+      console.log('✅ 결제 완료 처리 완료 - 중복 예약 생성 없음');
     };
 
     // 한번만 실행
-    saveManagerIdToDB();
+    handlePaymentComplete();
   }, []); // 빈 dependency array로 컴포넌트 마운트 시 한번만
 
   const handleGoHome = () => {
@@ -185,7 +117,13 @@ const UserPaymentComplete = () => {
               <div className="info-item">
                 <span className="info-label">주소: </span>
                 <span className="info-value">
-                  {reservationData.address} {reservationData.addressDetail}
+                  {/* 위도, 경도가 포함된 addressDetail만 표시하거나, address가 좌표 정보인 경우 처리 */}
+                  {reservationData.addressDetail &&
+                  reservationData.addressDetail.includes('위도:')
+                    ? reservationData.addressDetail
+                    : reservationData.address.includes('위도:')
+                      ? reservationData.address
+                      : `${reservationData.address} ${reservationData.addressDetail || ''}`}
                 </span>
               </div>
             )}

@@ -127,9 +127,12 @@ html {
 
 .section-title {
   font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 16px 0;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 20px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #4285f4;
+  display: inline-block;
 }
 
 /* 서비스 정보 카드 */
@@ -143,9 +146,11 @@ html {
 .info-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
   font-size: 15px;
+  line-height: 1.4;
+  min-height: 20px;
 }
 
 .info-item:last-child {
@@ -153,15 +158,20 @@ html {
 }
 
 .info-item .label {
-  font-weight: normal;
-  color: #666;
+  font-weight: 500;
+  color: #555;
   flex-shrink: 0;
+  width: 35%;
+  margin-right: 16px;
 }
 
 .info-item .value {
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
   text-align: right;
+  flex: 1;
+  word-break: keep-all;
+  line-height: 1.4;
 }
 
 /* 결제 정보 카드 */

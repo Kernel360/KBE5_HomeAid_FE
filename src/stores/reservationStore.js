@@ -12,6 +12,7 @@ const useReservationStore = create((set, get) => ({
     reservationTime: '',
     address: '',
     addressDetail: '',
+    selectedAddress: null, // 선택된 주소 객체 (위치정보 포함)
     customerNote: '',
     status: 'PENDING', // PENDING, CONFIRMED, COMPLETED, CANCELLED
   },
@@ -105,13 +106,26 @@ const useReservationStore = create((set, get) => ({
       },
     })),
 
-  // 주소 정보 설정
+  // 주소 정보 설정 (기존 방식 유지 + 새로운 selectedAddress 방식 추가)
   setAddress: (address, addressDetail = '') =>
     set((state) => ({
       reservationData: {
         ...state.reservationData,
         address,
         addressDetail,
+      },
+    })),
+
+  // 선택된 주소 객체 설정 (위치정보 포함)
+  setSelectedAddress: (addressObject) =>
+    set((state) => ({
+      reservationData: {
+        ...state.reservationData,
+        selectedAddress: addressObject,
+        // 기존 호환성을 위해 address, addressDetail도 업데이트
+        address: addressObject?.main || addressObject?.address || '',
+        addressDetail:
+          addressObject?.detail || addressObject?.addressDetail || '',
       },
     })),
 
@@ -157,6 +171,7 @@ const useReservationStore = create((set, get) => ({
         reservationTime: '',
         address: '',
         addressDetail: '',
+        selectedAddress: null,
         customerNote: '',
         status: 'PENDING',
       },

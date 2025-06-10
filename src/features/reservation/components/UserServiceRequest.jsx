@@ -4,6 +4,7 @@ import './UserServiceRequest.css';
 import '../styles/common.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
+import GoogleMapPicker from '../../../components/GoogleMapPicker';
 import { usePaymentData } from '../hooks/useLocalStorage';
 import {
   useCustomerReservation,
@@ -58,14 +59,14 @@ const UserServiceRequest = () => {
   const { updatePaymentData } = usePaymentData();
 
   // ⭐️ 인증 및 주소 디버깅
-  React.useEffect(() => {
-    console.log('🏠 UserServiceRequest - 주소 상태:');
-    console.log('📍 addresses:', addresses);
-    console.log('⏳ addressLoading:', addressLoading);
-    console.log('❌ addressError:', addressError);
-    console.log('🔑 현재 토큰:', localStorage.getItem('accessToken'));
-    console.log('👤 현재 사용자:', user);
-  }, [addresses, addressLoading, addressError, user]);
+  // React.useEffect(() => {
+  //   console.log('🏠 UserServiceRequest - 주소 상태:');
+  //   console.log('📍 addresses:', addresses);
+  //   console.log('⏳ addressLoading:', addressLoading);
+  //   console.log('❌ addressError:', addressError);
+  //   console.log('🔑 현재 토큰:', localStorage.getItem('accessToken'));
+  //   console.log('👤 현재 사용자:', user);
+  // }, [addresses, addressLoading, addressError, user]);
 
   // 폼 상태 관리
   const [formData, setFormData] = useState({
@@ -128,33 +129,49 @@ const UserServiceRequest = () => {
     setFormData((prev) => ({ ...prev, selectedAddress: address }));
   };
 
-  const handleCurrentLocationClick = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          console.log('현재 위치:', latitude, longitude);
-          handleInputChange('isCurrentLocation', true);
-          // 임시로 현재 위치 주소 설정
-          const currentLocationAddress = {
-            id: 'current',
-            type: '현재 위치',
-            main: `위도: ${latitude.toFixed(6)}, 경도: ${longitude.toFixed(6)}`,
-            detail: '현재 위치에서 측정된 좌표',
-            isDefault: false,
-          };
-          handleAddressSelect(currentLocationAddress);
-        },
-        (error) => {
-          console.error('위치 정보를 가져올 수 없습니다:', error);
-          alert(
-            '위치 정보를 가져올 수 없습니다. 수동으로 주소를 입력해주세요.'
-          );
-        }
-      );
+  // 지도에서 위치 선택 시 처리하는 함수
+  const handleMapLocationSelect = (locationData) => {
+    console.log('위치 선택됨:', locationData);
+
+    let main, detail;
+
+    if (locationData.source === 'current_location') {
+      // 현재 위치인 경우
+      main = '현재 위치에서 측정된 좌표';
+      detail = `위도: ${locationData.coordinates.lat.toFixed(6)}, 경도: ${locationData.coordinates.lng.toFixed(6)}`;
     } else {
-      alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
+      // 지도에서 선택한 경우
+      main = locationData.address.includes('위도:')
+        ? '지도에서 선택한 위치'
+        : locationData.address;
+      detail = `위도: ${locationData.coordinates.lat.toFixed(6)}, 경도: ${locationData.coordinates.lng.toFixed(6)}`;
     }
+
+    const mapAddress = {
+      id:
+        locationData.source === 'current_location'
+          ? 'current-location'
+          : 'map-selected',
+      type:
+        locationData.source === 'current_location' ? '현재 위치' : '지도 선택',
+      main: main,
+      detail: detail,
+      isDefault: false,
+      coordinates: locationData.coordinates,
+    };
+
+    handleAddressSelect(mapAddress);
+    handleInputChange(
+      'isCurrentLocation',
+      locationData.source === 'current_location'
+    );
+
+    // 선택 완료 메시지
+    const sourceText =
+      locationData.source === 'current_location'
+        ? '현재 위치'
+        : '지도에서 선택한 위치';
+    console.log(`${sourceText}가 설정되었습니다:`, mapAddress);
   };
 
   const handleAddressSave = async () => {
@@ -211,28 +228,44 @@ const UserServiceRequest = () => {
 
     try {
       // zustand store에서 예약 정보 가져오기
-      const { setReservationDate, setReservationTime, setAddress } =
+      const { setReservationDate, setReservationTime, setSelectedAddress } =
         useReservationStore.getState();
 
       // zustand store에 예약 정보 저장
       setReservationDate(formData.date);
       setReservationTime(formData.startTime);
-      setAddress(
-        formData.selectedAddress.main,
-        formData.detailAddress || formData.selectedAddress.detail || ''
-      );
+
+      // ⭐️ 위치정보를 포함한 주소 객체 저장
+      setSelectedAddress({
+        ...formData.selectedAddress,
+        detail: formData.detailAddress || formData.selectedAddress.detail || '',
+      });
+
+      console.log('🗺️ 저장된 주소 정보:', {
+        selectedAddress: formData.selectedAddress,
+        coordinates: formData.selectedAddress?.coordinates,
+        detailAddress: formData.detailAddress,
+      });
 
       // ⭐️⭐️⭐️ 백엔드 ReservationRequestDto 규격에 맞는 데이터로 변경! ⭐️⭐️⭐️
       const reservationData = {
         subOptionId: 1, // TODO: 실제로는 선택된 서브옵션 ID 사용해야 함!
         requestedDate: formData.date, // yyyy-MM-dd
         requestedTime: `${formData.startTime}:00`, // HH:mm:ss 형식으로 변환
+        // ⭐️ 위치정보 추가
+        latitude: formData.selectedAddress?.coordinates?.lat || null,
+        longitude: formData.selectedAddress?.coordinates?.lng || null,
         // ⭐️ 인증된 사용자 정보 자동 포함 (백엔드에서 JWT 토큰으로 사용자 식별)
         // customerId는 백엔드에서 JWT 토큰을 통해 자동으로 인식됩니다.
       };
 
       console.log('🔐 인증된 사용자:', user);
       console.log('📝 예약 요청 데이터:', reservationData);
+      console.log('📍 전송할 위치정보:', {
+        latitude: reservationData.latitude,
+        longitude: reservationData.longitude,
+        coordinates: formData.selectedAddress?.coordinates,
+      });
 
       // 백엔드에 예약 생성 요청 (ReservationResponseDto 응답받음)
       const reservation = await createReservation(reservationData);
@@ -494,6 +527,26 @@ const UserServiceRequest = () => {
           <div className="address-section">
             <h3 className="section-title">서비스 주소</h3>
 
+            {/* 구글 맵으로 위치 선택 */}
+            <div style={{ marginTop: '16px', marginBottom: '24px' }}>
+              <h4 className="section-title">지도에서 위치 선택</h4>
+              <GoogleMapPicker
+                onLocationSelect={handleMapLocationSelect}
+                selectedLocation={
+                  formData.selectedAddress?.coordinates
+                    ? {
+                        lat:
+                          formData.selectedAddress.coordinates.latitude ||
+                          formData.selectedAddress.coordinates.lat,
+                        lng:
+                          formData.selectedAddress.coordinates.longitude ||
+                          formData.selectedAddress.coordinates.lng,
+                      }
+                    : null
+                }
+              />
+            </div>
+
             {/* 선택된 주소 표시 */}
             {formData.selectedAddress && (
               <div className="address-header">
@@ -520,16 +573,6 @@ const UserServiceRequest = () => {
                 </div>
               </div>
             )}
-
-            {/* 현재 위치 사용 버튼 */}
-            <div className="current-location-section">
-              <button
-                className="current-location-btn"
-                onClick={handleCurrentLocationClick}
-              >
-                📍 현재 위치 사용하기
-              </button>
-            </div>
 
             {/* 저장된 주소 목록 */}
             {addresses && addresses.length > 0 && (

@@ -68,14 +68,10 @@ export const useCustomerServices = () => {
   // 서비스 목록 로드
   const loadServices = useCallback(async () => {
     try {
-      console.log('🔄 실제 DB 서비스 데이터 로드 시작...');
       const serviceData = await apiCall(getCustomerServices);
-      console.log('📡 서비스 API 응답 전체 데이터:', serviceData);
 
       // 페이징된 응답에서 실제 데이터 배열 추출
       const list = serviceData.content || serviceData || [];
-      console.log('📋 추출된 서비스 리스트:', list);
-      console.log('📊 서비스 개수:', list.length);
 
       if (list.length > 0) {
         // ⭐️ 실제 DB 데이터를 UI 형태로 변환
@@ -90,18 +86,14 @@ export const useCustomerServices = () => {
             60, // 분 단위
         }));
 
-        console.log('✅ 실제 DB 데이터 변환 완료:', transformedServices);
         setServices(transformedServices);
         return transformedServices;
       } else {
-        // API 응답이 비어있으면 더미 데이터 사용
-        console.log('⚠️ API 응답이 비어있습니다. 더미 데이터를 사용합니다.');
         setServices(dummyServices);
         return dummyServices;
       }
     } catch (err) {
       console.error('❌ 서비스 로드 실패:', err);
-      console.log('🎭 API 호출 실패 - 더미 데이터로 대체합니다.');
       setServices(dummyServices);
       return dummyServices;
     }
@@ -156,16 +148,10 @@ export const useCustomerAddresses = () => {
       );
 
       const addressData = await apiCall(getCustomerAddresses);
-      console.log('📡 주소 API 응답:', addressData);
 
       if (addressData && addressData.length > 0) {
-        console.log('✅ 실제 주소 데이터 사용:', addressData);
         setAddresses(addressData);
       } else {
-        console.log(
-          '⚠️ 주소 API 응답이 비어있습니다. 더미 데이터를 사용합니다.'
-        );
-        console.log('🎭 더미 주소 데이터:', dummyAddresses);
         setAddresses(dummyAddresses);
       }
       return addressData && addressData.length > 0
@@ -175,12 +161,8 @@ export const useCustomerAddresses = () => {
       console.error('❌ 주소 로드 실패:', err);
 
       if (err.message.includes('403')) {
-        console.log('🚫 403 Forbidden - 인증 토큰 문제일 수 있습니다.');
         console.log('🔍 토큰 확인:', localStorage.getItem('accessToken'));
       }
-
-      console.log('🎭 주소 API 호출 실패 - 더미 데이터로 대체합니다.');
-      console.log('🎭 사용할 더미 주소 데이터:', dummyAddresses);
       setAddresses(dummyAddresses);
       return dummyAddresses;
     }
