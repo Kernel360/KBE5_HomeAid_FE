@@ -227,6 +227,14 @@
   background-color: #fee2e2;
 }
 
+.quick-action-button-icon.settlement-bg {
+  background-color: #10b981;
+}
+
+.quick-action-button-icon.mypage-bg {
+  background-color: #e0e7ff;
+}
+
 .system-status-section {
   display: flex;
   flex-direction: column;
