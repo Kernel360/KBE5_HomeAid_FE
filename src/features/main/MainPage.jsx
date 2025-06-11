@@ -1,4 +1,5 @@
 import Header from '../../components/Header.jsx';
+import Footer from '../../components/Footer.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -31,7 +32,7 @@ const MainPage = () => {
 
         {/* 메인 컨텐츠 */}
         <main
-          className="px-6 py-6 min-h-screen flex flex-col"
+          className={`px-6 py-6 min-h-screen flex flex-col ${user ? 'pb-24' : ''}`}
           style={{ marginTop: '64px' }}
         >
           {/* 인사말 */}
@@ -122,7 +123,7 @@ const MainPage = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate('/customer')}
+                  onClick={() => navigate('/customer/mypage')}
                   className="flex items-center justify-center p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors duration-200"
                 >
                   <span className="text-sm font-medium text-gray-700">
@@ -183,6 +184,9 @@ const MainPage = () => {
             </div>
           </div>
         </main>
+
+        {/* 로그인된 사용자에게만 Footer 표시 */}
+        {user && <Footer current="/" />}
       </div>
     </div>
   );
