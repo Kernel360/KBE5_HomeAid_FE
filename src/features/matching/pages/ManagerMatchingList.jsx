@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './ManagerMatchingList.css';
-import Footer from '../../../components/Footer';
-import Header from '../../../components/Header';
-import { useManagerMatching } from '../hooks/useManagerAPI';
+import Footer from '../../../components/Footer.jsx';
+import Header from '../../../components/Header.jsx';
+import useMatchingStore from '../../../stores/matchingStore.js';
+import { useManagerMatching } from '../hooks/useManagerAPI.js';
 import {
   MATCHING_STATUS,
   MATCHING_STATUS_LABELS,
@@ -11,6 +12,7 @@ import {
 } from '../constants/matchingData';
 import { apiService } from '../../../store/api';
 import useMatchingStore from '../store/useMatchingStore';
+} from '../constants/matchingData.js';
 
 const ManagerMatchingList = () => {
   const navigate = useNavigate();

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserServiceOptionCart.css';
 import '../styles/common.css';
-import Footer from '../../../components/Footer';
-import Header from '../../../components/Header';
-import { useCartData, usePaymentData } from '../hooks/useLocalStorage';
-import { PRICING } from '../constants/serviceData';
+import Footer from '../../../components/Footer.jsx';
+import Header from '../../../components/Header.jsx';
+import { useCartData, usePaymentData } from '../hooks/useLocalStorage.js';
+import { PRICING } from '../constants/serviceData.js';
 
 const UserServiceOptionCart = () => {
   const navigate = useNavigate();

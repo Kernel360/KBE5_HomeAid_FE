@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserServiceRequest.css';
 import '../styles/common.css';
-import Footer from '../../../components/Footer';
-import Header from '../../../components/Header';
-import GoogleMapPicker from '../../../components/GoogleMapPicker';
+import Footer from '../../../components/Footer.jsx';
+import Header from '../../../components/Header.jsx';
+import GoogleMapPicker from '../../../components/GoogleMapPicker.jsx';
 // import { usePaymentData } from '../hooks/useLocalStorage';
 import {
   useCustomerReservation,

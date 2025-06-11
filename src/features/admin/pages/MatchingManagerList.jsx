@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './MatchingManagerList.css';
-import MatchingManagerCard from '../components/MatchingManagerCard';
+import MatchingManagerCard from '../components/MatchingManagerCard.jsx';
 
 function MatchingManagerList() {
   // Placeholder data for managers

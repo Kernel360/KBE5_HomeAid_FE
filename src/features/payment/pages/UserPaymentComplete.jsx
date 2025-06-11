@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Header from '../../../components/Header';
-import Footer from '../../../components/Footer';
-import useReservationStore from '../../../stores/reservationStore';
-import { usePaymentData } from '../../reservation/hooks/useLocalStorage';
+import Header from '../../../components/Header.jsx';
+import Footer from '../../../components/Footer.jsx';
+import useReservationStore from '../../../stores/reservationStore.js';
+import { usePaymentData } from '../../reservation/hooks/useLocalStorage.js';
 // ⭐️ 중복 예약 생성 방지를 위해 createCustomerReservation import 제거
 // import { createCustomerReservation } from '../../reservation/api/customerAPI';
 import './UserPaymentComplete.css';
