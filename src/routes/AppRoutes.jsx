@@ -1,12 +1,12 @@
 import { useRoutes, Navigate } from 'react-router-dom';
 import { AuthRoutes } from '../features/auth/routes';
-import { Landing } from '../features/misc/routes';
 import { NotFound } from '../lib/not-found';
 import { Forbidden } from '../lib/Forbidden';
 import { About } from '../features/misc/routes';
 import { Contact } from '../features/misc/routes';
 import { Policy } from '../features/misc/routes';
 import { Terms } from '../features/misc/routes';
+import MainPage from '../features/main/MainPage';
 
 import { publicRoutes } from './public';
 import ProtectedRoute from './ProtectedRoute';
@@ -14,7 +14,6 @@ import { protectedAppRoutes } from './protectedAppRoutes.jsx';
 
 export const AppRoutes = () => {
   const commonRoutes = [
-    { path: '/', element: <Landing /> },
     { path: '/auth/*', element: <AuthRoutes /> },
     { path: '/404', element: <NotFound /> },
     { path: '/about', element: <About /> },
@@ -38,6 +37,7 @@ export const AppRoutes = () => {
   }));
 
   const routes = useRoutes([
+    { path: '/', element: <MainPage /> },
     ...publicRoutes,
     ...routesWithProtection,
     ...commonRoutes,
