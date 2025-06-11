@@ -1,8 +1,11 @@
 // 예시: src/services/apiClient.js
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080', // 8080=Spring 기본 포트
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json; charset=utf-8',
@@ -17,7 +20,7 @@ console.log('  - withCredentials:', api.defaults.withCredentials);
 // AT 만료 시, 새로운 AT 요청
 const refreshAccessToken = async () => {
   try {
-    const response = await api.post('/api/v1/users/auth/refresh');
+    const response = await api.post(`/api/${API_VERSION}/users/auth/refresh`);
     const newAccessToken =
       response.headers['authorization'] || response.headers['Authorization'];
     if (newAccessToken) {
