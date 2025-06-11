@@ -11,6 +11,7 @@ import ManagerMatchingList from '../features/matching/pages/ManagerMatchingList'
 import BoardList from '../features/board/pages/BoardList';
 import BoardDetail from '../features/board/pages/BoardDetail';
 import BoardWrite from '../features/board/pages/BoardWrite';
+import EventList from '../features/main/EventList';
 
 // Define routes that are accessible without authentication
 export const publicRoutes = [
@@ -29,4 +30,5 @@ export const publicRoutes = [
   { path: '/board/notice/:id', element: <BoardDetail /> },
   { path: '/board/inquiry/:id', element: <BoardDetail /> },
   { path: '/board/write', element: <BoardWrite /> },
+  { path: '/event', element: <EventList /> },
 ];

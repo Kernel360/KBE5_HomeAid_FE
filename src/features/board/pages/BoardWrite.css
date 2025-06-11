@@ -4,6 +4,9 @@
   min-height: 100vh;
   width: 100%;
   background-color: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* Header 스타일링 */
@@ -13,8 +16,8 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 480px;
-  height: 56px;
+  max-width: 512px;
+  height: 64px;
   background-color: white;
   z-index: 100;
   border-bottom: 1px solid #e5e7eb;
@@ -27,7 +30,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 480px;
+  max-width: 512px;
   height: 84px;
   background-color: white;
   z-index: 100;
@@ -35,16 +38,21 @@
 }
 
 .board-content {
-  max-width: 480px;
+  width: 100%;
+  max-width: 512px;
   margin: 0 auto;
-  padding-top: 56px;
+  padding-top: 64px;
   padding-bottom: 84px;
   min-height: 100vh;
   background-color: white;
+  box-sizing: border-box;
 }
 
 .board-container {
+  width: 100%;
+  max-width: 100%;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .board-write-header {

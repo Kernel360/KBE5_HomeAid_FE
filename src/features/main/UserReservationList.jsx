@@ -249,15 +249,7 @@ const UserReservationList = () => {
               justifyContent: 'flex-end',
               padding: '16px 20px',
             }}
-          >
-            <button
-              className="refresh-btn"
-              onClick={refreshData}
-              title="새로고침"
-            >
-              🔄
-            </button>
-          </div>
+          ></div>
 
           {/* 탭 네비게이션 */}
           <div className="tab-navigation">

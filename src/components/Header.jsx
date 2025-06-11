@@ -25,21 +25,65 @@ export default function Header({
   };
 
   return (
-    <header className="fixed top-0 left-1/2 transform -translate-x-1/2 z-50 flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200 w-full max-w-lg">
+    <header
+      className="fixed top-0 z-50 flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200"
+      style={{
+        position: 'fixed',
+        top: '0',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '512px',
+        zIndex: 50,
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e9ecef',
+        // boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+      }}
+    >
       {/* 왼쪽: 뒤로가기 버튼 또는 빈 공간 */}
       <div className="flex items-center">
         {!isMainPage && showBackButton && (
           <button
             onClick={handleBackClick}
-            className="flex items-center justify-center w-10 h-10 p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+            style={{
+              backgroundColor: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              width: '40px',
+              height: '40px',
+              padding: '0',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              // boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
+              outline: 'none',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
           >
             <ArrowLeft
-              size={24}
-              className="text-black"
+              size={20}
               style={{
-                color: '#000000',
-                strokeWidth: 2,
+                color: '#1a1a1a',
+                strokeWidth: 3,
+                width: '20px',
+                height: '20px',
                 display: 'block',
+                pointerEvents: 'none',
               }}
             />
           </button>

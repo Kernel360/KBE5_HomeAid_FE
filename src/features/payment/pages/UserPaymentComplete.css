@@ -10,29 +10,51 @@
 /* Header가 추가된 페이지의 콘텐츠 래퍼 */
 .page-content-wrapper {
   width: 100%;
-  max-width: 480px;
+  max-width: 512px;
   box-sizing: border-box;
-  padding-top: 76px; /* Header 높이(56px) + 여백(20px) */
-  padding-bottom: 104px; /* 푸터 높이(84px) + 여백(20px) */
+  padding-top: 80px; /* Header 높이 + 여백 */
+  padding-bottom: 100px; /* Footer 높이 + 여백 */
   padding-left: 16px;
   padding-right: 16px;
   min-height: 100vh;
+  margin: 0 auto;
 }
 
-/* Header 스타일 조정 */
-.payment-complete-page header {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  width: 100%;
-  max-width: 480px;
-  background-color: white;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
+/* Header 강제 중앙 정렬 - 더 구체적인 선택자들 */
+.payment-complete-page header,
+.payment-complete-page > header,
+.payment-complete-page header[class],
+.payment-complete-page header[class*='fixed'],
+.payment-complete-page header[class*='left-1/2'] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 50 !important;
+  width: 100% !important;
+  max-width: 512px !important;
+  background-color: white !important;
+  border-bottom: 1px solid #e9ecef !important;
+  box-shadow: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Footer 강제 중앙 정렬 */
+.payment-complete-page .footer-container {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 50 !important;
+  width: 100% !important;
+  max-width: 512px !important;
+  background-color: white !important;
+  border-top: 1px solid #e9ecef !important;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* 헤더 내부 버튼 스타일 강화 */
@@ -64,19 +86,6 @@
   display: block !important;
 }
 
-.payment-complete-page .footer-container {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  z-index: 100;
-  background-color: white;
-  border-top: 1px solid #e9ecef;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-}
-
 /* 부드러운 스크롤 */
 html {
   scroll-behavior: smooth;
@@ -84,7 +93,7 @@ html {
 
 .payment-complete-container {
   width: 100%;
-  max-width: 480px;
+  max-width: 512px; /* 헤더 너비에 맞춤 */
   background-color: white;
   padding: 0 20px 24px 20px;
   border-radius: 12px;
@@ -232,26 +241,24 @@ html {
 /* 모바일 대응 */
 @media (max-width: 768px) {
   .payment-complete-page header {
-    margin: 0 auto;
-    left: 0;
-    transform: none;
+    max-width: 512px !important;
+    margin-left: calc(50% - 256px) !important;
   }
 
   .payment-complete-page .footer-container {
-    margin: 0 auto;
-    left: 0;
-    transform: none;
+    max-width: 512px !important;
+    margin-left: calc(50% - 256px) !important;
   }
 }
 
 @media (max-width: 576px) {
   .page-content-wrapper {
-    padding-top: 76px; /* Header 높이(56px) + 여백(20px) 유지 */
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-top: 80px;
+    padding-bottom: 104px;
   }
 
   .payment-complete-container {
+    max-width: 512px;
     padding: 0 16px 20px 16px;
   }
 
@@ -260,17 +267,18 @@ html {
   }
 
   .page-title {
-    font-size: 22px;
+    font-size: 20px;
   }
 }
 
 @media (max-width: 360px) {
   .page-content-wrapper {
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-top: 76px;
+    padding-bottom: 100px;
   }
 
   .payment-complete-container {
+    max-width: 512px;
     padding: 0 12px 16px 12px;
   }
 
@@ -279,6 +287,39 @@ html {
   }
 
   .page-title {
-    font-size: 20px;
+    font-size: 18px;
   }
+}
+
+/* 최종 헤더 중앙 정렬 강제 적용 - 최고 우선순위 */
+html body .payment-complete-page header[class] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 50 !important;
+  width: 100% !important;
+  max-width: 512px !important;
+  background-color: white !important;
+  border-bottom: 1px solid #e9ecef !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+
+/* 브라우저별 호환성을 위한 추가 선택자 */
+html body div .payment-complete-page header,
+html body div .payment-complete-page > header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 50 !important;
+  width: 100% !important;
+  max-width: 512px !important;
+  background-color: white !important;
+  border-bottom: 1px solid #e9ecef !important;
+  box-shadow: none !important;
+  margin: 0 !important;
 }

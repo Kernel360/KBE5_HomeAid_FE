@@ -18,7 +18,7 @@
   padding-left: 0;
   padding-right: 0;
   margin: 0; /* 모든 마진 제거 */
-  margin-top: 64px; /* 헤더 높이만큼 마진으로 시작 위치 조정 */
+  margin-top: 20px; /* 헤더 높이 마진 제거 - MainPage와 동일하게 */
   flex: 1;
   display: flex;
   flex-direction: column;

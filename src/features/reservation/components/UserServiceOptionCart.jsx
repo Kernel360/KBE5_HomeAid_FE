@@ -77,9 +77,9 @@ const UserServiceOptionCart = () => {
 
   return (
     <div className="reservation-page">
-      <Header />
+      <Header showBackButton={true} />
       <div className="page-content-wrapper">
-        <div className="reservation-container">
+        <div className="reservation-container" style={{ marginTop: '64px' }}>
           {/* 제목 섹션 */}
           <div className="title-section">
             <h1 className="page-title">장바구니</h1>
