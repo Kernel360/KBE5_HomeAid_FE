@@ -2,6 +2,7 @@ import { Home, MoreHorizontal, Search, Heart, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// eslint-disable-next-line no-unused-vars
 const FooterItem = ({ icon: IconComponent, label, isActive, onClick, url }) => {
   const [isPressed, setIsPressed] = useState(false);
   const navigate = useNavigate();
