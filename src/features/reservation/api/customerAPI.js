@@ -1,6 +1,19 @@
 /* eslint-env node */
-// Base API URL - Vite 프록시 사용 (CORS 문제 해결)
-const API_BASE_URL = '';
+// Base API URL - 환경변수 사용
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+
+// API 기본 URL 구성
+const getBaseUrl = () => {
+  const baseUrl = `${API_BASE_URL}/api/${API_VERSION}`;
+  console.log('🔧 API 기본 URL:', {
+    baseUrl,
+    environment: import.meta.env.MODE,
+    apiUrl: import.meta.env.VITE_API_URL,
+    version: import.meta.env.VITE_API_VERSION
+  });
+  return baseUrl;
+};
 
 // JWT 토큰을 헤더에 추가하는 함수
 const getAuthHeaders = () => {
@@ -28,64 +41,77 @@ const getAuthHeaders = () => {
 
 // 기본 API 호출 함수
 const apiCall = async (url, options = {}) => {
-  const fullUrl = `${API_BASE_URL}${url}`;
+  // 전체 URL 구성
+  const fullUrl = `${getBaseUrl()}${url}`;
+
+  console.log('🌐 API 요청:', {
+    url: fullUrl,
+    method: options.method || 'GET',
+    environment: import.meta.env.MODE,
+    apiUrl: import.meta.env.VITE_API_URL
+  });
+
   const requestOptions = {
     headers: getAuthHeaders(),
     ...options,
   };
 
-  console.log('🌐 API 호출:', {
-    url: fullUrl,
-    method: requestOptions.method || 'GET',
-    headers: requestOptions.headers,
-    body: requestOptions.body,
-  });
+  try {
+    const response = await fetch(fullUrl, requestOptions);
 
-  const response = await fetch(fullUrl, requestOptions);
+    if (!response.ok) {
+      let errorData = null;
+      let errorText = '';
 
-  if (!response.ok) {
-    let errorData = null;
-    let errorText = '';
+      try {
+        errorText = await response.text();
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText || `HTTP ${response.status}` };
+      }
 
-    try {
-      errorText = await response.text();
-      errorData = JSON.parse(errorText);
-    } catch {
-      errorData = { message: errorText || `HTTP ${response.status}` };
-    }
+      console.error('❌ API 에러 응답:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData: errorData,
+        responseText: errorText,
+        url: fullUrl
+      });
 
-    console.error('❌ API 에러 응답:', {
-      status: response.status,
-      statusText: response.statusText,
-      errorData: errorData,
-      responseText: errorText,
-    });
+      // 400 에러의 경우 더 자세한 정보 제공
+      if (response.status === 400) {
+        const detailedMessage =
+          errorData?.message ||
+          errorData?.error ||
+          errorText ||
+          '요청 형식이 잘못되었습니다.';
+        throw new Error(`Bad Request (400): ${detailedMessage}`);
+      }
 
-    // 400 에러의 경우 더 자세한 정보 제공
-    if (response.status === 400) {
-      const detailedMessage =
+      throw new Error(
         errorData?.message ||
-        errorData?.error ||
-        errorText ||
-        '요청 형식이 잘못되었습니다.';
-      throw new Error(`Bad Request (400): ${detailedMessage}`);
+          errorData?.error ||
+          `HTTP error! status: ${response.status}`
+      );
     }
 
-    throw new Error(
-      errorData?.message ||
-        errorData?.error ||
-        `HTTP error! status: ${response.status}`
-    );
+    const result = await response.json();
+
+    // Spring Boot CommonApiResponse 구조 처리
+    if (result && typeof result === 'object' && 'data' in result) {
+      return result.data;
+    }
+
+    return result;
+  } catch (error) {
+    console.error('❌ API 호출 실패:', {
+      error: error.message,
+      url: fullUrl,
+      environment: import.meta.env.MODE,
+      apiUrl: import.meta.env.VITE_API_URL
+    });
+    throw error;
   }
-
-  const result = await response.json();
-
-  // Spring Boot CommonApiResponse 구조 처리
-  if (result && typeof result === 'object' && 'data' in result) {
-    return result.data;
-  }
-
-  return result;
 };
 
 // ==================== 서비스 관련 API ====================
