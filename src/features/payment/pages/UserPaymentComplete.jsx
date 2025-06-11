@@ -72,7 +72,6 @@ const UserPaymentComplete = () => {
             <p className="page-subtitle">
               예약이 성공적으로 접수되었습니다.
               <br />
-              매니저를 배정중이며 곧 연락을 드리겠습니다.
             </p>
           </div>
 

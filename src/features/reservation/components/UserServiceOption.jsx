@@ -47,21 +47,15 @@ const UserServiceOption = () => {
   };
 
   const handleServiceClick = (serviceType) => {
-    console.log(`${serviceType} 서비스 선택됨`);
-    if (serviceType === SERVICE_TYPES.CLEANING) {
-      navigate('/customer/service-sub-option');
-    }
-    // TODO: 다른 서비스 타입에 대한 로직 구현
+    navigate('/customer/service-sub-option', { state: { serviceType } });
   };
 
   const handleReservationClick = () => {
-    console.log('365일 24시간 서비스 예약 버튼 클릭');
-    // TODO: 예약 페이지로 이동하는 로직 구현
+    navigate('/customer/service-sub-option');
   };
 
   const handleEventClick = () => {
-    console.log('이벤트 또는 공지사항 클릭');
-    // TODO: 이벤트/공지사항 페이지로 이동하는 로직 구현
+    navigate('/customer/event');
   };
 
   return (

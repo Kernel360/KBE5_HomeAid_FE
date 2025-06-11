@@ -93,8 +93,7 @@ export const useCustomerServices = () => {
         setServices(dummyServices);
         return dummyServices;
       }
-    } catch (err) {
-      console.error('❌ 서비스 로드 실패:', err);
+    } catch {
       setServices(dummyServices);
       return dummyServices;
     }
@@ -117,8 +116,6 @@ export const useCustomerAddresses = () => {
   // 주소 목록 로드
   const loadAddresses = useCallback(async () => {
     try {
-      console.log(localStorage.getItem('accessToken') ? '있음' : '없음');
-
       const addressData = await apiCall(getCustomerAddresses);
 
       if (addressData && addressData.length > 0) {
@@ -128,11 +125,7 @@ export const useCustomerAddresses = () => {
         setAddresses([]);
         return [];
       }
-    } catch (err) {
-      if (err.message.includes('403')) {
-        console.log('🔍 토큰 확인:', localStorage.getItem('accessToken'));
-      }
-
+    } catch {
       // ⭐️ 에러 시에도 빈 배열 설정
       setAddresses([]);
       return [];
@@ -266,6 +259,7 @@ export const useCustomerReservation = () => {
     createReservation,
     loadReservation,
     cancelReservation,
+    getReservationById: loadReservation,
   };
 };
 
@@ -374,7 +368,7 @@ export const useCustomerReservationList = () => {
 
   // 예약 목록 로드
   const loadReservations = useCallback(
-    async (page = 0, size = 50) => {
+    async (page = 0, size = 20) => {
       try {
         const response = await apiCall(getCustomerReservations, page, size);
 
@@ -391,12 +385,22 @@ export const useCustomerReservationList = () => {
                 getCustomerReservation,
                 reservation.reservationId
               );
-              console.log(detailData);
+
+              // ⭐️ 결제 정보도 함께 조회 시도 (있다면)
+              let paymentInfo = null;
+              try {
+                // 결제 정보 조회 API가 있다면 호출
+                // paymentInfo = await apiCall(getCustomerPayment, reservation.reservationId);
+              } catch {
+                // 결제 정보 조회 실패는 무시 (아직 결제하지 않은 예약일 수 있음)
+              }
 
               // 상세 정보와 목록 정보 병합
               return {
                 ...reservation,
                 ...detailData,
+                // ⭐️ 결제 정보 추가
+                paymentInfo: paymentInfo,
                 // 기존 데이터 우선, 상세 데이터로 보완
                 requestedDate:
                   detailData.requestedDate || reservation.requestedDate,
@@ -409,8 +413,7 @@ export const useCustomerReservationList = () => {
                 customerNote:
                   detailData.customerNote || reservation.customerNote,
               };
-            } catch (error) {
-              console.warn(error);
+            } catch {
               // 상세 조회 실패 시 원본 데이터 사용
               return reservation;
             }
@@ -440,30 +443,31 @@ export const useCustomerReservationList = () => {
         // ⭐️ 프론트엔드 UI 형태로 데이터 변환
         const transformData = (reservations) => {
           return reservations.map((r) => {
-            console.log(r);
-
             // ⭐️ 실제 백엔드 데이터 구조에 맞춰서 변환
             // 현재 받고 있는 필드: reservationId, status, totalPrice, totalDuration, subOptionName
             const transformed = {
               id: r.reservationId || r.id,
               type: r.subOptionName || getServiceName(r.subOptionId),
-              // ⭐️ 상세 조회로 받은 실제 데이터 우선 사용
-              date: r.requestedDate || getTodayDate(),
-              time: r.requestedTime
-                ? formatTimeRange(r.requestedTime, r.totalDuration || 180)
-                : getDefaultTimeRange(),
-              price: r.totalPrice || getDefaultPrice(r.subOptionName),
+              // ⭐️ 실제 DB 데이터 사용 (고정값 제거)
+              date: r.requestedDate || formatDateFromDB(r.createdAt),
+              time:
+                r.requestedTime && r.totalDuration
+                  ? formatTimeRange(r.requestedTime, r.totalDuration)
+                  : formatTimeRange(
+                      r.requestedTime || '09:00',
+                      r.totalDuration || 180
+                    ),
+              price:
+                r.totalPrice || getServicePrice(r.subOptionId, r.subOptionName),
               icon: getServiceIcon(r.subOptionId, r.subOptionName),
               status: mapBackendStatus(r.status),
-              address: r.address || '서울시 강남구',
+              address: r.address || '주소 정보 없음',
               addressDetail: r.addressDetail || '',
-              customerNote: r.customerNote || '',
+              customerNote: r.customerNote || r.customerMemo || '',
               backendData: r, // 원본 데이터 보존
-              createdAt:
-                r.createdAt || r.requestedDate || new Date().toISOString(),
+              createdAt: r.createdAt || new Date().toISOString(),
             };
 
-            console.log('✨ 변환된 데이터:', transformed);
             return transformed;
           });
         };
@@ -477,31 +481,35 @@ export const useCustomerReservationList = () => {
 
         setReservations(transformedData);
         return transformedData;
-      } catch (err) {
-        console.error('Failed to load reservation list:', err);
+      } catch {
+        // 에러 시 빈 데이터 반환
+        const emptyData = {
+          pending: [],
+          completed: [],
+          visited: [],
+          cancelled: [],
+        };
+        setReservations(emptyData);
+        return emptyData;
       }
     },
     [apiCall]
   );
 
-  // ⭐️ 헬퍼 함수들
+  // 헬퍼 함수들
   const getServiceName = (subOptionId, subOptionName) => {
-    // 1. 백엔드에서 직접 받은 subOptionName 우선 사용
-    if (subOptionName) {
-      return subOptionName;
-    }
+    if (subOptionName) return subOptionName;
 
-    // 2. subOptionId로 매핑
-    const serviceMapping = {
+    const serviceNames = {
       1: '빨래',
       2: '청소',
       3: '육아',
     };
-    return serviceMapping[subOptionId] || '서비스';
+    return serviceNames[subOptionId] || '서비스';
   };
 
   const getServiceIcon = (subOptionId, subOptionName) => {
-    // 1. subOptionName 우선 사용
+    // 1. subOptionName으로 우선 판단
     if (subOptionName) {
       if (subOptionName.includes('빨래')) return 'laundry';
       if (subOptionName.includes('청소')) return 'cleaning';
@@ -532,8 +540,7 @@ export const useCustomerReservationList = () => {
         `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
       return `${formatTime(hours, minutes)}~${formatTime(endHours, endMins)}`;
-    } catch (error) {
-      console.warn('⚠️ 시간 형식 변환 실패:', startTime, error);
+    } catch {
       return '시간 정보 오류';
     }
   };
@@ -549,23 +556,35 @@ export const useCustomerReservationList = () => {
     return statusMapping[backendStatus] || 'pending';
   };
 
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+  // ⭐️ DB 날짜 형식을 UI 형식으로 변환
+  const formatDateFromDB = (dbDate) => {
+    if (!dbDate) return new Date().toISOString().split('T')[0];
+
+    try {
+      // ISO 날짜 문자열이나 Date 객체를 YYYY-MM-DD 형식으로 변환
+      const date = new Date(dbDate);
+      return date.toISOString().split('T')[0];
+    } catch {
+      return new Date().toISOString().split('T')[0];
+    }
   };
 
-  const getDefaultTimeRange = () => {
-    // 오늘 오후 2시부터 5시까지 기본 시간 설정
-    return '14:00~17:00';
-  };
+  // ⭐️ 서비스별 금액 설정 (사용자 요구사항)
+  const getServicePrice = (subOptionId, subOptionName) => {
+    // 1. subOptionName으로 우선 판단
+    if (subOptionName) {
+      if (subOptionName.includes('빨래')) return 40000;
+      if (subOptionName.includes('청소')) return 58000;
+      if (subOptionName.includes('육아')) return 62000;
+    }
 
-  const getDefaultPrice = (subOptionName) => {
-    const defaultPrice = {
-      빨래: 10000,
-      청소: 15000,
-      육아: 20000,
+    // 2. subOptionId로 매핑 (백업)
+    const priceMapping = {
+      1: 40000, // 빨래
+      2: 58000, // 청소
+      3: 62000, // 육아
     };
-    return defaultPrice[subOptionName] || 0;
+    return priceMapping[subOptionId] || 40000; // 기본값
   };
 
   return {

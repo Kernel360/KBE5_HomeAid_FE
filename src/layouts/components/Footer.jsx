@@ -62,10 +62,9 @@ const Footer = () => {
     { icon: MoreHorizontal, label: '더보기', url: '/mypage' },
   ];
 
-  const handleTabClick = (tabName) => {
-    setActiveTab(tabName);
-    // 여기에 라우팅 로직이나 다른 동작을 추가할 수 있습니다
-    console.log(`${tabName} 탭이 클릭되었습니다`);
+  const handleTabClick = (tab) => {
+    setActiveTab(tab.label);
+    navigate(tab.url);
   };
 
   return (

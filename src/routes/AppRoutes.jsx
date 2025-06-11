@@ -8,6 +8,11 @@ import { Policy } from '../features/misc/routes';
 import { Terms } from '../features/misc/routes';
 import MainPage from '../features/main/MainPage';
 
+import BoardList from '../features/board/pages/BoardList';
+import BoardWrite from '../features/board/pages/BoardWrite';
+import BoardDetail from '../features/board/pages/BoardDetail';
+import EventList from '../features/main/EventList';
+
 import ProtectedRoute from './ProtectedRoute';
 import { protectedAppRoutes } from './protectedAppRoutes.jsx';
 
@@ -21,6 +26,15 @@ export const AppRoutes = () => {
     { path: '/terms', element: <Terms /> },
     { path: '/403', element: <Forbidden /> },
     { path: '*', element: <Navigate to="/404" /> },
+  ];
+
+  const publicRoutes = [
+    { path: '/board', element: <BoardList /> },
+    { path: '/board/list', element: <BoardList /> },
+    { path: '/board/write', element: <BoardWrite /> },
+    { path: '/board/notice/:id', element: <BoardDetail /> },
+    { path: '/board/inquiry/:id', element: <BoardDetail /> },
+    { path: '/event', element: <EventList /> },
   ];
 
   const routesWithProtection = protectedAppRoutes.map((route) => ({
@@ -42,12 +56,13 @@ export const AppRoutes = () => {
   const routes = useRoutes([
     {
       path: '/',
-      element: <MainPage />, // 로그인 여부와 상관없이 메인페이지 표시
+      element: <MainPage />,
     },
     {
       path: '/main',
-      element: <MainPage />, // 로그인 여부와 상관없이 메인페이지 표시
+      element: <MainPage />,
     },
+    ...publicRoutes,
     ...routesWithProtection,
     ...commonRoutes,
   ]);

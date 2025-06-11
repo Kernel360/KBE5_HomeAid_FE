@@ -4,8 +4,8 @@ import './UserServiceRequest.css';
 import '../styles/common.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
-// TODO: 구글맵 연동 완료 후 활성화
-// import GoogleMapPicker from '../../../components/GoogleMapPicker';
+// Google Maps 컴포넌트 활성화
+import GoogleMapPicker from '../../../components/GoogleMapPicker';
 // import { usePaymentData } from '../hooks/useLocalStorage';
 import {
   useCustomerReservation,
@@ -50,6 +50,7 @@ const UserServiceRequest = () => {
     loading: addressLoading,
     error: addressError,
     addAddress,
+    loadAddresses,
   } = useCustomerAddresses();
 
   const { createReservation } = useCustomerReservation();
@@ -92,14 +93,26 @@ const UserServiceRequest = () => {
       const defaultAddress = addresses.find((addr) => addr.isDefault);
       if (defaultAddress) {
         setFormData((prev) => ({ ...prev, selectedAddress: defaultAddress }));
+      } else {
+        // 기본 주소가 없으면 첫 번째 주소 선택
+        setFormData((prev) => ({ ...prev, selectedAddress: addresses[0] }));
       }
     }
-  }, [addresses]);
+  }, [addresses, addressLoading]);
+
+  // ⭐️ 로그인한 사용자의 주소 재로딩 (토큰 변경 시)
+  useEffect(() => {
+    if (user && accessToken) {
+      // 이미 선언된 loadAddresses 함수 사용
+      loadAddresses();
+    }
+  }, [user, accessToken, loadAddresses]);
 
   // ⭐️ 로그인 상태 확인
   useEffect(() => {
     if (!user || !accessToken) {
       navigate('/auth/signin');
+      return;
     }
   }, [user, accessToken, navigate]);
 
@@ -108,12 +121,10 @@ const UserServiceRequest = () => {
   };
 
   const handleAddressSelect = (address) => {
-    console.log('🏠 주소 선택됨:', address);
     setFormData((prev) => ({ ...prev, selectedAddress: address }));
   };
 
-  // TODO: 구글맵 연동 완료 후 활성화
-  /*
+  // Google Maps 위치 선택 핸들러 활성화
   // 지도에서 위치 선택 시 처리하는 함수
   const handleMapLocationSelect = (locationData) => {
     let main, detail;
@@ -149,7 +160,6 @@ const UserServiceRequest = () => {
       locationData.source === 'current_location'
     );
   };
-  */
 
   const handleAddressSave = async () => {
     if (!formData.addressMethod.trim()) {
@@ -162,8 +172,8 @@ const UserServiceRequest = () => {
       detail: formData.detailAddress || '', // 상세 주소
       type: '기타', // 주소 타입
       isDefault: formData.isDefaultAddress, // 기본 주소 여부
-      // TODO: 구글맵 연동 완료 후 위도/경도 추가
-      coordinates: {
+      // Google Maps에서 선택한 위도/경도 좌표 포함
+      coordinates: formData.selectedAddress?.coordinates || {
         lat: null,
         lng: null,
       },
@@ -292,154 +302,176 @@ const UserServiceRequest = () => {
       const selectedAddressMain =
         formData.selectedAddress.main || formData.selectedAddress.address || '';
       const selectedAddressDetail =
-        formData.detailAddress ||
         formData.selectedAddress.detail ||
         formData.selectedAddress.addressDetail ||
         '';
 
-      if (!selectedAddressId || typeof selectedAddressId !== 'number') {
-        alert(
-          '❌ 유효한 주소를 선택해주세요!\n\n주소 ID가 없습니다.\n\n해결방법:\n1. 저장된 주소 목록에서 주소 선택\n2. "새 주소 추가"로 새 주소 등록'
-        );
-        return;
-      }
+      // ⭐️ Google Maps에서 선택한 위치인 경우 특별 처리
+      if (
+        selectedAddressId === 'current-location' ||
+        selectedAddressId === 'map-selected'
+      ) {
+        // TODO: 향후 Google Maps 선택 위치를 주소 테이블에 자동 등록하는 기능 추가
+        // TODO: 현재는 임시로 위도/경도를 주소 문자열로 변환해서 전달
+        const coordinates = formData.selectedAddress.coordinates;
+        if (coordinates && coordinates.lat && coordinates.lng) {
+          try {
+            // ⭐️ 위도/경도를 주소 문자열로 사용 (임시 처리)
+            const coordinateAddress = `위도: ${coordinates.lat.toFixed(6)}, 경도: ${coordinates.lng.toFixed(6)}`;
 
-      try {
-        // ⭐️ 백엔드 API 호출을 위한 예약 데이터 준비
-        const backendReservationData = {
-          // 🔧 Spring Boot Reservation 엔티티에 정확히 맞는 구조
-          requestedDate: formData.date, // LocalDate용 (yyyy-MM-dd)
-          requestedTime: `${formData.startTime}:00`, // LocalTime용 (HH:mm:ss 형식 필수)
-          subOptionId: getSubOptionId(currentReservationData.selectedSubOption), // Long
-          customerId: user?.userId || null, // Long (필수)
-          // ⭐️ 주소 문자열 대신 CustomerAddress ID 전송
-          addressId: selectedAddressId, // Long (CustomerAddress 테이블의 ID)
-          // 📝 참고: address, addressDetail은 제거 (별도 테이블에 저장됨)
-          totalPrice: currentReservationData.totalPrice || 0, // Integer
-          totalDuration: currentReservationData.totalDuration || 0, // Integer
-          customerMemo: currentReservationData.customerNote || '', // String (TEXT)
-        };
+            // ⭐️ 백엔드 API 호출을 위한 예약 데이터 준비 (주소 문자열 방식)
+            const backendReservationData = {
+              requestedDate: formData.date,
+              requestedTime: `${formData.startTime}:00`,
+              subOptionId: getSubOptionId(
+                currentReservationData.selectedSubOption
+              ),
+              customerId: user?.userId || null,
+              // ⭐️ 주소 ID 대신 주소 문자열 직접 전달 (Google Maps 선택 시)
+              address: selectedAddressMain || coordinateAddress,
+              addressDetail:
+                selectedAddressDetail ||
+                `위도: ${coordinates.lat}, 경도: ${coordinates.lng}`,
+              totalPrice: currentReservationData.totalPrice || 0,
+              totalDuration: currentReservationData.totalDuration || 0,
+              customerMemo: currentReservationData.customerNote || '',
+              // ⭐️ 좌표 정보도 추가로 전달
+              latitude: coordinates.lat,
+              longitude: coordinates.lng,
+            };
 
-        // Spring Boot 필수 필드 검증
-        const requiredFields = [
-          'requestedDate',
-          'requestedTime',
-          'subOptionId',
-          'customerId',
-        ];
-        const missingFields = requiredFields.filter(
-          (field) => !backendReservationData[field]
-        );
+            // ⭐️ 실제 백엔드 API 호출
+            const backendReservation = await createReservation(
+              backendReservationData
+            );
 
-        if (missingFields.length > 0) {
+            // ⭐️ 성공 시 로컬 스토어에 추가
+            const { addReservation } = useReservationListStore.getState();
+            const localReservationData = {
+              serviceType:
+                currentReservationData.selectedSubOption?.name || '서비스',
+              selectedSubOption: currentReservationData.selectedSubOption,
+              reservationDate: formData.date,
+              reservationTime: formData.startTime,
+              endTime: endTime,
+              totalPrice: currentReservationData.totalPrice || 0,
+              address: selectedAddressMain || coordinateAddress,
+              addressDetail:
+                selectedAddressDetail ||
+                `위도: ${coordinates.lat}, 경도: ${coordinates.lng}`,
+              customerNote: currentReservationData.customerNote || '',
+              selectedServices: currentReservationData.selectedServices || [],
+              serviceDetails: currentReservationData.serviceDetails || [],
+              backendData: {
+                ...backendReservation,
+                status: backendReservation.status || 'REQUESTED',
+                address: backendReservation.address || coordinateAddress,
+                addressDetail:
+                  backendReservation.addressDetail ||
+                  `위도: ${coordinates.lat}, 경도: ${coordinates.lng}`,
+                latitude: coordinates.lat,
+                longitude: coordinates.lng,
+              },
+            };
+
+            addReservation(localReservationData);
+            navigate('/customer/reservations');
+            return; // Google Maps 처리 완료, 함수 종료
+          } catch (mapError) {
+            alert(
+              `Google Maps 위치로 예약 생성에 실패했습니다: ${mapError.message}`
+            );
+            return;
+          }
+        } else {
           alert(
-            `필수 정보가 누락되었습니다: ${missingFields.join(', ')}\n\n` +
-              '다시 로그인하고 모든 정보를 입력해주세요.'
+            '위치 정보가 올바르지 않습니다. 지도에서 위치를 다시 선택해주세요.'
           );
           return;
         }
+      }
 
-        // ⭐️ 실제 백엔드 API 호출
-        const backendReservation = await createReservation(
-          backendReservationData
+      // ⭐️ 기존 저장된 주소 사용 시 백엔드 API 호출을 위한 예약 데이터 준비
+      const backendReservationData = {
+        // 🔧 Spring Boot Reservation 엔티티에 정확히 맞는 구조
+        requestedDate: formData.date, // LocalDate용 (yyyy-MM-dd)
+        requestedTime: `${formData.startTime}:00`, // LocalTime용 (HH:mm:ss 형식 필수)
+        subOptionId: getSubOptionId(currentReservationData.selectedSubOption), // Long
+        customerId: user?.userId || null, // Long (필수)
+        // ⭐️ 주소 문자열 대신 CustomerAddress ID 전송
+        addressId: selectedAddressId, // Long (CustomerAddress 테이블의 ID)
+        // 📝 참고: address, addressDetail은 제거 (별도 테이블에 저장됨)
+        totalPrice: currentReservationData.totalPrice || 0, // Integer
+        totalDuration: currentReservationData.totalDuration || 0, // Integer
+        customerMemo: currentReservationData.customerNote || '', // String (TEXT)
+      };
+
+      // Spring Boot 필수 필드 검증
+      const requiredFields = [
+        'requestedDate',
+        'requestedTime',
+        'subOptionId',
+        'customerId',
+      ];
+      const missingFields = requiredFields.filter(
+        (field) => !backendReservationData[field]
+      );
+
+      if (missingFields.length > 0) {
+        alert(
+          `필수 정보가 누락되었습니다: ${missingFields.join(', ')}\n\n` +
+            '다시 로그인하고 모든 정보를 입력해주세요.'
         );
-
-        // ⭐️ 백엔드 성공 시 로컬 스토어에도 추가 (즉시 반영용)
-        const { addReservation } = useReservationListStore.getState();
-        const localReservationData = {
-          // reservationListStore의 addReservation에서 기대하는 형식에 맞춤
-          serviceType:
-            currentReservationData.selectedSubOption?.name || '서비스',
-          selectedSubOption: currentReservationData.selectedSubOption,
-          reservationDate: formData.date,
-          reservationTime: formData.startTime,
-          endTime: endTime,
-          totalPrice: currentReservationData.totalPrice || 0,
-          address: selectedAddressMain, // ⭐️ 원본 주소 사용 (백엔드 null 대신)
-          addressDetail: selectedAddressDetail, // ⭐️ 원본 상세주소 사용 (백엔드 null 대신)
-          customerNote: currentReservationData.customerNote || '',
-          selectedServices: currentReservationData.selectedServices || [],
-          serviceDetails: currentReservationData.serviceDetails || [],
-          // 백엔드 응답 데이터도 포함 (하지만 주소는 원본 사용)
-          backendData: {
-            ...backendReservation,
-            status: backendReservation.status || 'REQUESTED',
-            subOptionId: getSubOptionId(
-              currentReservationData.selectedSubOption
-            ),
-            requestedDate: formData.date,
-            requestedTime: `${formData.startTime}:00`,
-            customerId: user?.userId,
-            // ⭐️ 백엔드에서 null로 온 주소 대신 원본 주소 정보 보존
-            address: backendReservation.address || selectedAddressMain,
-            addressDetail:
-              backendReservation.addressDetail || selectedAddressDetail,
-            totalPrice:
-              backendReservation.totalPrice ||
-              currentReservationData.totalPrice ||
-              0,
-            totalDuration:
-              backendReservation.totalDuration ||
-              currentReservationData.totalDuration ||
-              0,
-          },
-        };
-
-        addReservation(localReservationData);
-
-        // ⭐️ 이용내역 페이지로 이동
-        navigate('/customer/reservations');
-      } catch (backendError) {
-        console.error(
-          '❌ 백엔드 DB 저장 실패, 로컬 저장으로 대체:',
-          backendError
-        );
-
-        // ⭐️ 사용자에게 오류 메시지 표시 (로컬 저장 없음)
-        let errorMessage = '예약 생성에 실패했습니다.';
-
-        if (backendError.message.includes('400')) {
-          errorMessage += '\n\n다음 사항을 확인해주세요:\n';
-          errorMessage += '• 모든 필수 정보가 입력되었는지 확인\n';
-          errorMessage += '• 날짜와 시간이 올바른지 확인\n';
-          errorMessage += '• 주소 정보가 정확한지 확인';
-        } else if (backendError.message.includes('401')) {
-          errorMessage += '\n\n로그인이 만료되었습니다. 다시 로그인해주세요.';
-        } else if (backendError.message.includes('403')) {
-          errorMessage += '\n\n접근 권한이 없습니다.';
-        } else if (backendError.message.includes('500')) {
-          errorMessage +=
-            '\n\n서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
-        } else {
-          errorMessage += '\n\n네트워크 연결을 확인하고 다시 시도해주세요.';
-        }
-
-        alert(errorMessage);
-
-        // ⭐️ 오류 발생 시에는 페이지 이동하지 않음
         return;
       }
 
-      // ⭐️ 선택된 서브옵션에서 백엔드 API에 맞는 ID 추출 함수
-      function getSubOptionId(selectedSubOption) {
-        if (!selectedSubOption || !selectedSubOption.id) {
-          return 2; // 기본값으로 청소 ID 사용
-        }
+      // ⭐️ 실제 백엔드 API 호출
+      const backendReservation = await createReservation(
+        backendReservationData
+      );
 
-        // 서브옵션 ID 매핑 (프론트엔드 ID -> 백엔드 subOptionId)
-        const subOptionMapping = {
-          laundry: 1, // 빨래/세탁
-          cleaning: 2, // 청소
-          childcare: 3, // 육아
-        };
+      // ⭐️ 백엔드 성공 시 로컬 스토어에도 추가 (즉시 반영용)
+      const { addReservation } = useReservationListStore.getState();
+      const localReservationData = {
+        // reservationListStore의 addReservation에서 기대하는 형식에 맞춤
+        serviceType: currentReservationData.selectedSubOption?.name || '서비스',
+        selectedSubOption: currentReservationData.selectedSubOption,
+        reservationDate: formData.date,
+        reservationTime: formData.startTime,
+        endTime: endTime,
+        totalPrice: currentReservationData.totalPrice || 0,
+        address: selectedAddressMain, // ⭐️ 원본 주소 사용 (백엔드 null 대신)
+        addressDetail: selectedAddressDetail, // ⭐️ 원본 상세주소 사용 (백엔드 null 대신)
+        customerNote: currentReservationData.customerNote || '',
+        selectedServices: currentReservationData.selectedServices || [],
+        serviceDetails: currentReservationData.serviceDetails || [],
+        // 백엔드 응답 데이터도 포함 (하지만 주소는 원본 사용)
+        backendData: {
+          ...backendReservation,
+          status: backendReservation.status || 'REQUESTED',
+          subOptionId: getSubOptionId(currentReservationData.selectedSubOption),
+          requestedDate: formData.date,
+          requestedTime: `${formData.startTime}:00`,
+          customerId: user?.userId,
+          // ⭐️ 백엔드에서 null로 온 주소 대신 원본 주소 정보 보존
+          address: backendReservation.address || selectedAddressMain,
+          addressDetail:
+            backendReservation.addressDetail || selectedAddressDetail,
+          totalPrice:
+            backendReservation.totalPrice ||
+            currentReservationData.totalPrice ||
+            0,
+          totalDuration:
+            backendReservation.totalDuration ||
+            currentReservationData.totalDuration ||
+            0,
+        },
+      };
 
-        const backendId = subOptionMapping[selectedSubOption.id];
-        if (!backendId) {
-          return 2; // 청소 서비스로 기본값 설정
-        }
+      addReservation(localReservationData);
 
-        return backendId;
-      }
+      // ⭐️ 이용내역 페이지로 이동
+      navigate('/customer/reservations');
     } catch (error) {
       alert(`예약 생성에 실패했습니다: ${error.message}`);
       // ⭐️ 실패 시 ref 초기화 (재시도 가능하도록)
@@ -449,6 +481,27 @@ const UserServiceRequest = () => {
       setIsSubmitting(false);
     }
   };
+
+  // ⭐️ 선택된 서브옵션에서 백엔드 API에 맞는 ID 추출 함수
+  function getSubOptionId(selectedSubOption) {
+    if (!selectedSubOption || !selectedSubOption.id) {
+      return 2; // 기본값으로 청소 ID 사용
+    }
+
+    // 서브옵션 ID 매핑 (프론트엔드 ID -> 백엔드 subOptionId)
+    const subOptionMapping = {
+      laundry: 1, // 빨래/세탁
+      cleaning: 2, // 청소
+      childcare: 3, // 육아
+    };
+
+    const backendId = subOptionMapping[selectedSubOption.id];
+    if (!backendId) {
+      return 2; // 청소 서비스로 기본값 설정
+    }
+
+    return backendId;
+  }
 
   // 로딩 상태
   if (addressLoading) {
@@ -662,29 +715,7 @@ const UserServiceRequest = () => {
 
           {/* 주소 섹션 */}
           <div className="address-section">
-            <h3 className="section-title">서비스 주소</h3>
-
-            {/* TODO: 구글 맵 위치 선택 기능 - 백엔드 연동 완료 후 활성화 */}
-            {/* 
-            <div style={{ marginTop: '16px', marginBottom: '24px' }}>
-              <h4 className="section-title">지도에서 위치 선택</h4>
-              <GoogleMapPicker
-                onLocationSelect={handleMapLocationSelect}
-                selectedLocation={
-                  formData.selectedAddress?.coordinates
-                    ? {
-                        lat:
-                          formData.selectedAddress.coordinates.latitude ||
-                          formData.selectedAddress.coordinates.lat,
-                        lng:
-                          formData.selectedAddress.coordinates.longitude ||
-                          formData.selectedAddress.coordinates.lng,
-                      }
-                    : null
-                }
-              />
-            </div>
-            */}
+            <h3 className="section-title">서비스 받을 주소</h3>
 
             {/* 선택된 주소 표시 */}
             {formData.selectedAddress && (
@@ -713,6 +744,32 @@ const UserServiceRequest = () => {
               </div>
             )}
 
+            {/* Google Maps 위치 선택 섹션 - 선택된 주소 바로 밑으로 이동 */}
+            <div style={{ marginTop: '20px', marginBottom: '24px' }}>
+              <h4
+                className="section-title"
+                style={{ fontSize: '16px', marginBottom: '12px' }}
+              >
+                지도에서 위치 선택
+              </h4>
+              <p
+                style={{
+                  fontSize: '14px',
+                  color: '#666',
+                  marginBottom: '16px',
+                  lineHeight: '1.5',
+                }}
+              >
+                현재 위치를 사용하거나 지도를 클릭하여 정확한 위치를 선택하세요.
+                <br />
+                선택한 위치의 위도/경도 좌표가 자동으로 저장됩니다.
+              </p>
+              <GoogleMapPicker
+                onLocationSelect={handleMapLocationSelect}
+                selectedLocation={formData.selectedAddress?.coordinates}
+              />
+            </div>
+
             {/* 주소 로딩 상태 */}
             {addressLoading && (
               <div
@@ -727,21 +784,82 @@ const UserServiceRequest = () => {
               </div>
             )}
 
+            {/* 주소가 없을 때 안내 메시지 */}
+            {!addressLoading && (!addresses || addresses.length === 0) && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '12px',
+                  border: '1px solid #e9ecef',
+                }}
+              >
+                <div style={{ fontSize: '24px', marginBottom: '12px' }}></div>
+                <p
+                  style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#333',
+                    margin: '0 0 8px 0',
+                  }}
+                >
+                  저장된 주소가 없습니다
+                </p>
+                <p
+                  style={{
+                    fontSize: '14px',
+                    color: '#666',
+                    margin: '0 0 20px 0',
+                  }}
+                >
+                  서비스를 받을 주소를 먼저 추가해주세요
+                </p>
+                <button
+                  onClick={() => setShowAddressModal(true)}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: '#4285f4',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  주소 추가하기
+                </button>
+              </div>
+            )}
+
             {/* 저장된 주소 목록 */}
             {!addressLoading && addresses && addresses.length > 0 && (
               <div className="saved-addresses-section">
-                <h4 className="section-title">
-                  저장된 주소 ({addresses.length}개)
+                <h4
+                  className="section-title"
+                  style={{ fontSize: '14px', marginBottom: '12px' }}
+                >
+                  다른 주소 선택
                 </h4>
+
                 {addresses.map((address) => (
                   <div
                     key={address.id}
-                    className={`address-item ${formData.selectedAddress?.id === address.id ? 'selected' : ''}`}
+                    className={`address-item ${
+                      formData.selectedAddress?.id === address.id
+                        ? 'selected'
+                        : ''
+                    }`}
                     onClick={() => handleAddressSelect(address)}
                   >
                     <div className="address-radio">
                       <div
-                        className={`radio-circle ${formData.selectedAddress?.id === address.id ? 'active' : ''}`}
+                        className={`radio-circle ${
+                          formData.selectedAddress?.id === address.id
+                            ? 'active'
+                            : ''
+                        }`}
                       >
                         {formData.selectedAddress?.id === address.id && (
                           <div className="radio-dot"></div>
@@ -749,11 +867,9 @@ const UserServiceRequest = () => {
                       </div>
                     </div>
                     <div className="address-info">
-                      <span className="address-icon">🏠</span>
+                      <span className="address-icon">📍</span>
                       <div className="address-text">
-                        <h4>
-                          {address.type} {address.isDefault && '(기본)'}
-                        </h4>
+                        <h4>{address.type}</h4>
                         <p className="address-main">{address.main}</p>
                         <p className="address-detail">{address.detail}</p>
                       </div>
@@ -764,21 +880,23 @@ const UserServiceRequest = () => {
             )}
 
             {/* 새 주소 추가 버튼 */}
-            <div style={{ marginTop: '16px' }}>
-              <button
-                className="edit-btn"
-                onClick={() => setShowAddressModal(true)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px dashed #4285f4',
-                  backgroundColor: 'transparent',
-                  textDecoration: 'none',
-                }}
-              >
-                + 새 주소 추가
-              </button>
-            </div>
+            {!addressLoading && (
+              <div style={{ marginTop: '16px' }}>
+                <button
+                  className="edit-btn"
+                  onClick={() => setShowAddressModal(true)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px dashed #4285f4',
+                    backgroundColor: 'transparent',
+                    textDecoration: 'none',
+                  }}
+                >
+                  + 새 주소 추가
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 제출 버튼 */}

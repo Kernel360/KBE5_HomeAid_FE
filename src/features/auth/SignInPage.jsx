@@ -13,7 +13,7 @@ const SignInPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, accessToken, setUser, setAccessToken, logout } = useAuthStore();
+  const { setUser, setAccessToken, logout } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,14 +21,12 @@ const SignInPage = () => {
     setError('');
 
     try {
-      console.log('zus user 새로 저장전', user);
       // 🔥 먼저 모든 상태 완전 초기화
       logout(); // 또는 setUser(null), setAccessToken(null)
       localStorage.removeItem('accessToken');
       localStorage.removeItem('auth-storage'); // Zustand persist 데이터도 삭제
 
       const data = await authService.signIn(phone, password);
-      console.log('🔐 로그인 성공! 백엔드 응답:', data);
 
       // localStorage에서 토큰 꺼내 zustand에도 저장
       const token = localStorage.getItem('accessToken');
@@ -37,25 +35,14 @@ const SignInPage = () => {
       setUser(data);
       setAccessToken(token);
 
-      console.log('🔍 저장된 정보 확인:');
-      console.log('  - localStorage 토큰:', token?.substring(0, 20) + '...');
-      console.log('  - zustand 토큰:', accessToken?.substring(0, 20) + '...');
-      console.log('  - zustand 사용자:', user);
-      console.log('  - 사용자 role:', user?.role);
-      console.log('  - 사용자 ID:', user?.userId);
-
       // 역할에 따른 페이지 이동
       if (data.role === 'ROLE_CUSTOMER') {
-        console.log('고객 로그인 /customer/service-option으로 이동');
         navigate('/customer/service-option', { replace: true });
       } else if (data.role === 'ROLE_ADMIN') {
-        console.log('관리자 로그인 /admin으로 이동');
         navigate('/admin', { replace: true });
       } else if (data.role === 'ROLE_MANAGER') {
-        console.log('매니저 로그인 /manager/mypage로 이동');
         navigate('/manager/mypage', { replace: true }); // 매니저는 직접 매칭 리스트로 이동
       } else {
-        console.warn('알 수 없는 사용자 역할:', data.role);
         navigate('/', { replace: true }); // 기본 페이지로 이동
       }
     } catch (err) {

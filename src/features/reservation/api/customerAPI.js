@@ -6,12 +6,6 @@ const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
 // API 기본 URL 구성
 const getBaseUrl = () => {
   const baseUrl = `${API_BASE_URL}/api/${API_VERSION}`;
-  console.log('🔧 API 기본 URL:', {
-    baseUrl,
-    environment: import.meta.env.MODE,
-    apiUrl: import.meta.env.VITE_API_URL,
-    version: import.meta.env.VITE_API_VERSION,
-  });
   return baseUrl;
 };
 
@@ -33,7 +27,7 @@ const getAuthHeaders = () => {
         token = null;
       }
     } catch (error) {
-      console.warn('🔍 JWT 토큰 파싱 실패:', error.message);
+      console.warn('JWT 토큰 파싱 실패:', error.message);
     }
   }
 
@@ -47,11 +41,6 @@ const getAuthHeaders = () => {
     Authorization: `Bearer ${token}`,
   };
 
-  console.log('요청 헤더:', {
-    hasToken: !!token,
-    tokenPreview: token ? `${token.substring(0, 10)}...` : 'none',
-  });
-
   return headers;
 };
 
@@ -60,80 +49,49 @@ const apiCall = async (url, options = {}) => {
   // 전체 URL 구성
   const fullUrl = `${getBaseUrl()}${url}`;
 
-  console.log('🌐 API 요청:', {
-    url: fullUrl,
-    method: options.method || 'GET',
-    environment: import.meta.env.MODE,
-    apiUrl: import.meta.env.VITE_API_URL,
-  });
-
   const requestOptions = {
     headers: getAuthHeaders(),
     ...options,
   };
 
-  try {
-    const response = await fetch(fullUrl, requestOptions);
+  const response = await fetch(fullUrl, requestOptions);
 
-    if (!response.ok) {
-      let errorData = null;
-      let errorText = '';
+  if (!response.ok) {
+    let errorData = null;
+    let errorText = '';
 
-      try {
-        errorText = await response.text();
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { message: errorText || `HTTP ${response.status}` };
-      }
-      try {
-        errorText = await response.text();
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { message: errorText || `HTTP ${response.status}` };
-      }
+    try {
+      errorText = await response.text();
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = { message: errorText || `HTTP ${response.status}` };
+    }
 
-      console.error('❌ API 에러 응답:', {
-        status: response.status,
-        statusText: response.statusText,
-        errorData: errorData,
-        responseText: errorText,
-        url: fullUrl,
-      });
-
-      // 400 에러의 경우 더 자세한 정보 제공
-      if (response.status === 400) {
-        const detailedMessage =
-          errorData?.message ||
-          errorData?.error ||
-          errorText ||
-          '요청 형식이 잘못되었습니다.';
-        throw new Error(`Bad Request (400): ${detailedMessage}`);
-      }
-
-      throw new Error(
+    // 400 에러의 경우 더 자세한 정보 제공
+    if (response.status === 400) {
+      const detailedMessage =
         errorData?.message ||
-          errorData?.error ||
-          `HTTP error! status: ${response.status}`
-      );
+        errorData?.error ||
+        errorText ||
+        '요청 형식이 잘못되었습니다.';
+      throw new Error(`Bad Request (400): ${detailedMessage}`);
     }
 
-    const result = await response.json();
-
-    // Spring Boot CommonApiResponse 구조 처리
-    if (result && typeof result === 'object' && 'data' in result) {
-      return result.data;
-    }
-
-    return result;
-  } catch (error) {
-    console.error('❌ API 호출 실패:', {
-      error: error.message,
-      url: fullUrl,
-      environment: import.meta.env.MODE,
-      apiUrl: import.meta.env.VITE_API_URL,
-    });
-    throw error;
+    throw new Error(
+      errorData?.message ||
+        errorData?.error ||
+        `HTTP error! status: ${response.status}`
+    );
   }
+
+  const result = await response.json();
+
+  // Spring Boot CommonApiResponse 구조 처리
+  if (result && typeof result === 'object' && 'data' in result) {
+    return result.data;
+  }
+
+  return result;
 };
 
 // ==================== 서비스 관련 API ====================
@@ -179,13 +137,8 @@ export const getCustomerServices = async () => {
 // 기존 주소 목록 조회 (백엔드에서만 가져오기)
 export const getCustomerAddresses = async () => {
   try {
-    console.log(
-      '현재 JWT 토큰:',
-      localStorage.getItem('accessToken') ? '있음' : '없음'
-    );
-
-    // 실제 백엔드 API 호출
-    const response = await apiCall('/api/v1/customers/addresses');
+    // ⭐️ URL 중복 수정: /api/v1 제거 (getBaseUrl에서 이미 추가됨)
+    const response = await apiCall('/customers/addresses');
 
     if (response && response.length > 0) {
       // 백엔드 CustomerAddressResponseDto[]를 프론트엔드 형식으로 변환
@@ -206,26 +159,15 @@ export const getCustomerAddresses = async () => {
           },
         };
 
-        console.log(`✨ 변환된 주소 ${index + 1}:`, transformed);
         return transformed;
       });
 
       return transformedAddresses;
     } else {
-      return []; // ⭐️ Mock 데이터 대신 빈 배열 반환
+      return [];
     }
-  } catch (error) {
-    // 토큰 관련 에러인지 확인
-    if (error.message.includes('403')) {
-      console.log('🔍 JWT 토큰 문제 가능성:');
-      const token = localStorage.getItem('accessToken');
-      console.log('- 토큰 존재 여부:', !!token);
-      if (token) {
-        console.log('- 토큰 미리보기:', token.substring(0, 20) + '...');
-      }
-    }
-
-    // ⭐️ 에러 시에도 Mock 데이터 대신 빈 배열 반환
+  } catch {
+    // ⭐️ 에러 시에도 빈 배열 반환
     return [];
   }
 };
@@ -241,7 +183,8 @@ export const createCustomerAddress = async (addressData) => {
       longitude: addressData.coordinates?.lng || addressData.longitude || null, // 경도
     };
 
-    const response = await apiCall('/api/v1/customers/addresses', {
+    // ⭐️ URL 중복 수정: /api/v1 제거
+    const response = await apiCall('/customers/addresses', {
       method: 'POST',
       body: JSON.stringify(backendAddressData),
     });
@@ -294,65 +237,53 @@ export const getCustomerReservations = async (page = 0, size = 10) => {
 
 // 예약에 매니저 할당 (단순화된 방식)
 export const assignManagerToReservation = async (reservationId, managerId) => {
+  // 방법 1: 매니저 할당 전용 엔드포인트
   try {
-    // 방법 1: 매니저 할당 전용 엔드포인트
+    const response = await apiCall(
+      `/reservations/${reservationId}/assign-manager`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ managerId: managerId }),
+      }
+    );
+    return response;
+  } catch {
+    // 방법 2: 예약 상태 업데이트와 함께 매니저 할당
     try {
-      const response = await apiCall(
-        `/reservations/${reservationId}/assign-manager`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ managerId: managerId }),
-        }
-      );
+      const response = await apiCall(`/reservations/${reservationId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: 'CONFIRMED',
+          managerId: managerId,
+        }),
+      });
       return response;
     } catch {
-      // 방법 2: 예약 상태 업데이트와 함께 매니저 할당
-      try {
-        const response = await apiCall(
-          `/reservations/${reservationId}/status`,
-          {
-            method: 'PATCH',
-            body: JSON.stringify({
-              status: 'CONFIRMED',
-              managerId: managerId,
-            }),
-          }
-        );
-        return response;
-      } catch {
-        // 방법 3: 간단한 매니저 할당
-        const response = await apiCall(`/managers/${managerId}/assign`, {
-          method: 'POST',
-          body: JSON.stringify({ reservationId: reservationId }),
-        });
-        return response;
-      }
+      // 방법 3: 간단한 매니저 할당
+      const response = await apiCall(`/managers/${managerId}/assign`, {
+        method: 'POST',
+        body: JSON.stringify({ reservationId: reservationId }),
+      });
+      return response;
     }
-  } catch (error) {
-    console.log('❌ 모든 매니저 할당 방법 실패:', error.message);
-    throw error;
   }
 };
 
 // 서비스 예약
 export const createCustomerReservation = async (reservationData) => {
+  // ⭐️ CustomerAddress ID 방식으로 변경 (address, addressDetail 제거)
+  const springBootData = {
+    requestedDate: reservationData.requestedDate, // LocalDate (yyyy-MM-dd)
+    requestedTime: reservationData.requestedTime, // LocalTime (HH:mm:ss)
+    subOptionId: reservationData.subOptionId, // Long
+    customerId: reservationData.customerId, // Long (필수)
+    addressId: reservationData.addressId, // Long (CustomerAddress 테이블의 ID)
+    totalPrice: reservationData.totalPrice, // Integer
+    totalDuration: reservationData.totalDuration, // Integer
+    customerMemo: reservationData.customerMemo || '', // String (TEXT)
+  };
+
   try {
-    console.log('🔄 Spring Boot ReservationRequestDto 형식으로 변환');
-
-    // ⭐️ CustomerAddress ID 방식으로 변경 (address, addressDetail 제거)
-    const springBootData = {
-      requestedDate: reservationData.requestedDate, // LocalDate (yyyy-MM-dd)
-      requestedTime: reservationData.requestedTime, // LocalTime (HH:mm:ss)
-      subOptionId: reservationData.subOptionId, // Long
-      customerId: reservationData.customerId, // Long (필수)
-      addressId: reservationData.addressId, // Long (CustomerAddress 테이블의 ID)
-      totalPrice: reservationData.totalPrice, // Integer
-      totalDuration: reservationData.totalDuration, // Integer
-      customerMemo: reservationData.customerMemo || '', // String (TEXT)
-    };
-
-    console.log('📤 Spring Boot로 전송할 데이터:', springBootData);
-
     const response = await apiCall('/reservations', {
       method: 'POST',
       body: JSON.stringify(springBootData),
@@ -360,27 +291,11 @@ export const createCustomerReservation = async (reservationData) => {
 
     return response;
   } catch (error) {
-    console.error('❌ Spring Boot DB 저장 실패:', error.message);
-
     // JWT 토큰 관련 에러 상세 처리
     if (
       error.message.includes('401') ||
       error.message.includes('JWT_INVALID')
     ) {
-      console.log('🔍 JWT 토큰 문제 진단:');
-      const token = localStorage.getItem('accessToken');
-
-      if (token) {
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          console.log('🔍 토큰 만료 시간:', new Date(payload.exp * 1000));
-          console.log('🔍 현재 시간:', new Date());
-          console.log('🔍 토큰 만료됨:', payload.exp * 1000 < Date.now());
-        } catch (parseError) {
-          console.log('🔍 토큰 파싱 실패:', parseError.message);
-        }
-      }
-
       throw new Error(
         'JWT_TOKEN_INVALID: JWT 토큰이 유효하지 않습니다. 백엔드 JWT 설정을 확인해주세요.'
       );

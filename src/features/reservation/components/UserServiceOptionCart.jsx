@@ -42,36 +42,7 @@ const UserServiceOptionCart = () => {
   const canSubmit = agreements.age && agreements.terms && agreements.privacy;
 
   const handleServiceRequest = () => {
-    if (canSubmit) {
-      console.log('서비스 요청하기 버튼 클릭');
-
-      // 결제 데이터 구성
-      const priceList = [
-        { name: cartData.basePrice.name, price: cartData.basePrice.price },
-        ...cartData.selectedServices.map((service) => ({
-          name: service.name,
-          price: service.price,
-        })),
-      ];
-
-      const paymentData = {
-        serviceInfo: {
-          dateTime: '2023-06-15 14:00',
-          serviceType: cartData.subOptionType
-            ? `${cartData.subOptionType} (1인)`
-            : '일회성 청소 (1인)',
-          manager: '김청소 매니저',
-        },
-        priceList: priceList,
-        totalAmount: getTotalAmount(),
-      };
-
-      // 결제 데이터를 localStorage에 저장
-      updatePaymentData(paymentData);
-
-      // 서비스 요청 페이지로 이동
-      navigate('/customer/service-request');
-    }
+    navigate('/customer/service-request');
   };
 
   return (
