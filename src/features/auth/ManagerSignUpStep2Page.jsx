@@ -3,8 +3,12 @@ import { useNavigate } from 'react-router-dom';
 
 // lucide-react 아이콘 사용 시 설치 필요: npm install react-icons lucide-react --save
 import { Calendar, Eye, EyeOff, Upload } from 'lucide-react'; // Upload 아이콘 추가
-import { authService } from '../../services/authService.js'; // authService 임포트
-import useSignUpStore from '../../stores/signUpStore.js'; // Zustand 스토어 임포트
+import { authService } from '../../services/authService'; // authService 임포트
+import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
+import ManagerSignUpCompletionModal from './ManagerSignUpCompletionPage'; // 모달 컴포넌트 임포트
+
 
 // Step 2 유효성 검사 헬퍼 함수 (매니저)
 const validateManagerStep2Data = ({ career, experience }) => {
@@ -25,6 +29,7 @@ const ManagerSignUpStep2Page = () => {
   const [selectedFile, setSelectedFile] = useState(null); // 파일 상태 추가
   const [loading, setLoading] = useState(false); // 로딩 상태 추가
   const [error, setError] = useState(''); // 에러 상태 추가
+  const [showCompletionModal, setShowCompletionModal] = useState(false); // 완료 모달 상태 추가
 
   const navigate = useNavigate();
 
@@ -73,8 +78,8 @@ const ManagerSignUpStep2Page = () => {
       // 회원가입 성공 시 스토어 데이터 초기화
       resetSignUpData();
 
-      // 성공 시 완료 페이지로 이동
-      navigate('/auth/signup/manager/completion');
+      // 성공 시 모달 표시
+      setShowCompletionModal(true);
     } catch (err) {
       console.error('매니저 회원가입 실패:', err);
       // 백엔드에서 보낸 오류 메시지 또는 기본 메시지 표시
@@ -95,24 +100,26 @@ const ManagerSignUpStep2Page = () => {
   return (
     <div
       style={{
+        position: 'relative',
+        minHeight: '100vh',
+        overflow: 'x-hidden',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'flex-start',
-        minHeight: '100vh',
-        background: '#f4f5f7',
-        padding: '40px 20px',
       }}
     >
+      <Header showBackButton={true} />
+
       <div
         style={{
           width: '100%',
-          maxWidth: '360px',
-          padding: '24px',
+          maxWidth: '512px',
+          marginTop: '20px', // Header 높이만큼
+          marginBottom: '64px', // Footer 높이만큼
+          minHeight: 'calc(100vh - 128px)', // Header + Footer 높이 제외
+          padding: '40px 20px',
+          boxSizing: 'border-box',
           background: '#fff',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          textAlign: 'left',
         }}
       >
         {/* Header */}
@@ -199,11 +206,10 @@ const ManagerSignUpStep2Page = () => {
               color: '#333',
               resize: 'vertical',
             }}
-            required
           />
         </div>
 
-        {/* Experience Section - 기존 Experience를 DTO에 맞춰 수정 */}
+        {/* Experience Section */}
         <div style={{ marginBottom: '32px' }}>
           <div
             style={{
@@ -218,15 +224,15 @@ const ManagerSignUpStep2Page = () => {
           <div
             style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}
           >
-            (예: 노인 케어와 위생 관리에 자신 있습니다.)
+            (예: 독거노인 돌봄, 병원 청소, 사무실 관리 등)
           </div>
           <textarea
-            placeholder="본인의 경험과 강점을 자유롭게 입력해 주세요."
+            placeholder="본인의 서비스 경험을 입력해 주세요 (예: 독거노인 돌봄, 병원 청소, 사무실 관리 등)"
             value={experience}
             onChange={(e) => setExperience(e.target.value)}
             style={{
               width: 'calc(100% - 26px)',
-              minHeight: '120px',
+              minHeight: '80px',
               padding: '13px',
               borderRadius: '8px',
               border: '1px solid #E5E7EB',
@@ -234,11 +240,10 @@ const ManagerSignUpStep2Page = () => {
               color: '#333',
               resize: 'vertical',
             }}
-            required
           />
         </div>
 
-        {/* Document Upload Section - 기존 유지 */}
+        {/* Document Upload Section */}
         <div style={{ marginBottom: '32px' }}>
           <div
             style={{
@@ -253,60 +258,53 @@ const ManagerSignUpStep2Page = () => {
           <div
             style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}
           >
-            본인 인증을 위한 서류를 업로드해주세요 (예: 신분증, 경력증명서).
+            신분증, 자격증 등 관련 서류를 업로드해주세요
           </div>
-          <label
-            htmlFor="document-upload"
+
+          {/* File Upload Input */}
+          <div
             style={{
-              border: '1px solid #E5E7EB',
+              border: '2px dashed #E5E7EB',
               borderRadius: '8px',
-              padding: '20px',
-              backgroundColor: '#F9FAFB',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '120px',
+              padding: '32px',
+              textAlign: 'center',
               cursor: 'pointer',
+              transition: 'border-color 0.2s ease',
             }}
+            onClick={() => document.getElementById('fileInput').click()}
           >
             <input
-              id="document-upload"
+              id="fileInput"
               type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
               onChange={handleFileChange}
-              style={{ display: 'none' }} // 기본 파일 입력 숨김
+              style={{ display: 'none' }}
             />
-            {selectedFile ? (
-              <div
-                style={{ fontSize: '16px', color: '#333', fontWeight: '500' }}
-              >
-                {selectedFile.name}
-              </div>
-            ) : (
-              <>
-                {/* Placeholder for Upload Icon */}
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#D1D5DB',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <Upload size={24} color="#6B7280" />{' '}
-                  {/* lucide-react Upload 아이콘 사용 */}
-                </div>
-                <div style={{ fontSize: '14px', color: '#6B7280' }}>
-                  pdf 파일로 제출
-                </div>
-              </>
-            )}
-          </label>
+            <Upload size={32} color="#6B7280" style={{ marginBottom: '8px' }} />
+            <div
+              style={{ fontSize: '16px', color: '#333', marginBottom: '4px' }}
+            >
+              {selectedFile ? selectedFile.name : '파일을 선택하세요'}
+            </div>
+            <div style={{ fontSize: '14px', color: '#888' }}>
+              PDF, JPG, PNG, DOC 파일 지원 (최대 10MB)
+            </div>
+          </div>
         </div>
+
+        {/* 에러 메시지 표시 */}
+        {error && (
+          <div
+            style={{
+              color: '#e74c3c',
+              fontSize: '14px',
+              marginBottom: '24px',
+              textAlign: 'center',
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         {/* Navigation Buttons */}
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -331,7 +329,7 @@ const ManagerSignUpStep2Page = () => {
           <button
             type="button"
             onClick={handleSignUp}
-            disabled={loading} // 로딩 중 버튼 비활성화
+            disabled={loading}
             style={{
               flexGrow: 1,
               background: '#247cff',
@@ -341,29 +339,23 @@ const ManagerSignUpStep2Page = () => {
               padding: '14px',
               border: 'none',
               borderRadius: '8px',
-              cursor: loading ? 'not-allowed' : 'pointer', // 로딩 중 커서 변경
+              cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'background-color 0.3s ease',
-              opacity: loading ? 0.7 : 1, // 로딩 중 투명도 조절
+              opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? '회원가입 중...' : '회원가입'} {/* 로딩 텍스트 변경 */}
+            {loading ? '회원가입 중...' : '회원가입'}
           </button>
         </div>
-
-        {/* 에러 메시지 표시 */}
-        {error && (
-          <div
-            style={{
-              color: '#e74c3c',
-              fontSize: '14px',
-              marginTop: '16px',
-              textAlign: 'center',
-            }}
-          >
-            {error}
-          </div>
-        )}
       </div>
+
+      <Footer />
+
+      {/* 회원가입 완료 모달 */}
+      <ManagerSignUpCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+      />
     </div>
   );
 };

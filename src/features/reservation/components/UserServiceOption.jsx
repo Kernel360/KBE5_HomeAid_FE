@@ -1,7 +1,3 @@
-// ⭐️ UserServiceOption 컴포넌트
-// 로그인한 고객이 서비스를 선택하는 첫 번째 페이지
-// 인증된 사용자의 이름을 동적으로 표시합니다.
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './UserServiceOption.css';
@@ -45,24 +41,6 @@ const UserServiceOption = () => {
     }
   }, [user, accessToken, navigate]);
 
-  // ⭐️ 개발용 테스트 함수
-  const testUserInfo = () => {
-    const testUser = {
-      userId: 'test123',
-      role: 'ROLE_CUSTOMER',
-      name: '김철수',
-      phone: '010-1234-5678',
-      email: 'kimcs@test.com',
-    };
-
-    const { setUser, setAccessToken } = useAuthStore.getState();
-    setUser(testUser);
-    setAccessToken('test-token');
-
-    console.log('🧪 테스트 사용자 정보 설정:', testUser);
-    console.log('📝 표시될 인사말:', `안녕하세요, ${testUser.name}님!`);
-  };
-
   const handleServiceClick = (serviceType) => {
     console.log(`${serviceType} 서비스 선택됨`);
     if (serviceType === SERVICE_TYPES.CLEANING) {
@@ -83,9 +61,9 @@ const UserServiceOption = () => {
 
   return (
     <div className="reservation-page">
-      <Header />
+      <Header showBackButton={true} />
       <div className="page-content-wrapper">
-        <div className="reservation-container">
+        <div className="reservation-container" style={{ marginTop: '64px' }}>
           {/* 인사말 섹션 */}
           <div className="greeting-section">
             <h1 className="greeting-text">{getUserGreeting()}</h1>
@@ -96,80 +74,6 @@ const UserServiceOption = () => {
                 {/* {user.role === 'ROLE_CUSTOMER' && (
                   <span className="user-badge">고객</span>
                 )} */}
-              </div>
-            )}
-
-            {/* ⭐️ 개발용 테스트 버튼 (프로덕션에서 제거) */}
-            {!user && (
-              <div
-                style={{
-                  marginTop: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    color: '#495057',
-                  }}
-                >
-                  🧪 테스트용 로그인:
-                </div>
-                <button
-                  onClick={testUserInfo}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#e3f2fd',
-                    border: '1px solid #2196f3',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                    color: '#1976d2',
-                  }}
-                >
-                  🧪 정상 사용자 (김철수)
-                </button>
-                <button
-                  onClick={() => {
-                    // 실제 백엔드 응답과 유사한 형태로 시뮬레이션
-                    const simulatedBackendResponse = {
-                      userId: 12345,
-                      role: 'ROLE_CUSTOMER',
-                      name: '이영희',
-                      phone: '010-1234-5678',
-                      email: 'lee@example.com',
-                    };
-
-                    const { setUser, setAccessToken } = useAuthStore.getState();
-                    setUser(simulatedBackendResponse);
-                    setAccessToken('simulated-jwt-token-12345');
-
-                    // localStorage에도 저장 (실제 로그인과 동일하게)
-                    localStorage.setItem(
-                      'accessToken',
-                      'simulated-jwt-token-12345'
-                    );
-
-                    console.log(
-                      '💡 실제 로그인 시뮬레이션:',
-                      simulatedBackendResponse
-                    );
-                  }}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#e8f5e8',
-                    border: '1px solid #4caf50',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                    color: '#2e7d32',
-                  }}
-                >
-                  💡 실제 로그인 시뮬레이션 (이영희)
-                </button>
               </div>
             )}
           </div>

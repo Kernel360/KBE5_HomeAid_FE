@@ -1,49 +1,36 @@
-/* Page wrapper for footer positioning */
+/* Page wrapper */
 .board-page {
-  position: relative;
   min-height: 100vh;
-  width: 100%;
   background-color: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* Header 스타일링 */
-.board-page header {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+/* 콘텐츠 래퍼 - 헤더와 푸터 사이에 위치 */
+.page-content-wrapper {
   width: 100%;
-  max-width: 480px;
-  height: 56px;
-  background-color: white;
-  z-index: 100;
-  border-bottom: 1px solid #e5e7eb;
+  max-width: 512px; /* 헤더/푸터와 동일한 너비 */
+  box-sizing: border-box;
+  padding: 20px 16px;
+  margin-top: 64px; /* Header 높이 */
+  margin-bottom: 100px; /* Footer 높이 + 여백 */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Footer 스타일링 */
-.board-page footer {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  height: 84px;
-  background-color: white;
-  z-index: 100;
-  border-top: 1px solid #e5e7eb;
-}
-
-.board-content {
-  max-width: 480px;
-  margin: 0 auto;
-  padding-top: 56px;
-  padding-bottom: 84px;
-  min-height: 100vh;
-  background-color: white;
-}
-
+/* 메인 컨테이너 */
 .board-container {
+  width: 100%;
+  max-width: 512px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 20px;
 }
 
@@ -126,7 +113,7 @@
 }
 
 .post-item {
-  background-color: white;
+  background-color: #fafafa;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
@@ -142,6 +129,7 @@
   border-color: #4f6ef7;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
+  background-color: #f5f5f5;
 }
 
 .post-item.important {
@@ -198,114 +186,227 @@
   display: flex;
   gap: 16px;
   font-size: 14px;
-  color: #6b7280;
+  color: #666;
+  line-height: 1.2;
+}
+
+.post-author {
+  font-weight: 500;
+}
+
+.post-date {
+  color: #9ca3af;
+}
+
+.post-views {
+  font-size: 13px;
+  color: #9ca3af;
   font-weight: 500;
 }
 
 .post-stats {
-  font-size: 14px;
-  color: #6b7280;
+  display: flex;
+  align-items: center;
   margin-left: 16px;
   flex-shrink: 0;
-  font-weight: 500;
 }
 
 .post-status {
+  display: flex;
+  align-items: center;
   margin-left: 16px;
-  flex-shrink: 0;
 }
 
 .status-badge {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: white;
 }
 
 .status-badge.completed {
-  background-color: #34d399;
-  color: white;
+  background-color: #10b981;
 }
 
 .status-badge.pending {
-  background-color: #fbbf24;
-  color: white;
+  background-color: #f59e0b;
 }
 
-/* Mobile Styles */
-@media (max-width: 576px) {
+/* 페이지네이션 스타일 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 32px;
+  padding: 20px 0;
+}
+
+.page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+  color: #6b7280;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: #4f6ef7;
+  color: #4f6ef7;
+  background-color: #f8faff;
+}
+
+.page-btn.active {
+  background-color: #4f6ef7;
+  border-color: #4f6ef7;
+  color: white;
+  font-weight: 600;
+}
+
+.page-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background-color: #f9fafb;
+}
+
+.prev-btn,
+.next-btn {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 480px) {
+  .page-content-wrapper {
+    padding: 16px 12px;
+    margin-top: 64px;
+    margin-bottom: 96px; /* Footer 높이 + 여백 */
+  }
+
   .board-container {
     padding: 16px;
+    border-radius: 8px;
   }
 
   .tab-button {
-    padding: 12px 10px;
-    font-size: 15px;
+    padding: 12px 8px;
+    font-size: 14px;
   }
 
   .post-item {
     padding: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 
   .post-title {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .post-info,
-  .post-stats {
+  .post-views {
     font-size: 13px;
   }
 
   .status-badge {
-    font-size: 13px;
-    padding: 5px 10px;
+    font-size: 11px;
+    padding: 3px 6px;
   }
 
   .write-button {
-    font-size: 15px;
     padding: 12px 14px;
+    font-size: 15px;
   }
 
   .important-badge,
   .private-badge {
-    font-size: 12px;
-    padding: 3px 8px;
+    font-size: 10px;
+    padding: 2px 5px;
+  }
+
+  /* 모바일 페이지네이션 */
+  .pagination {
+    gap: 4px;
+    margin-top: 24px;
+    padding: 16px 0;
+  }
+
+  .page-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .prev-btn,
+  .next-btn {
+    font-size: 16px;
   }
 }
 
-/* 매우 작은 화면 대응 */
 @media (max-width: 360px) {
+  .page-content-wrapper {
+    padding: 12px 8px;
+    margin-top: 60px;
+    margin-bottom: 92px; /* Footer 높이 + 여백 */
+  }
+
   .board-container {
     padding: 12px;
   }
 
   .tab-button {
-    padding: 10px 8px;
-    font-size: 14px;
+    padding: 10px 6px;
+    font-size: 13px;
   }
 
   .post-item {
-    padding: 14px;
+    padding: 12px;
   }
 
   .post-title {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .post-info,
-  .post-stats,
-  .status-badge {
+  .post-views {
     font-size: 12px;
   }
 
   .write-button {
-    font-size: 14px;
     padding: 10px 12px;
+    font-size: 14px;
   }
 
   .important-badge {
-    font-size: 11px;
-    padding: 2px 6px;
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+
+  /* 작은 화면 페이지네이션 */
+  .pagination {
+    gap: 2px;
+    margin-top: 20px;
+    padding: 12px 0;
+  }
+
+  .page-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .prev-btn,
+  .next-btn {
+    font-size: 14px;
   }
 }

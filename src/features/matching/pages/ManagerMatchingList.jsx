@@ -234,7 +234,7 @@ const ManagerMatchingList = () => {
 
   return (
     <div className="manager-matching-list-page">
-      <Header />
+      <Header showBackButton={true} />
       <div className="page-content-wrapper">
         <div className="manager-matching-list-container">
           <h1 className="page-title">매칭 내역 조회</h1>
