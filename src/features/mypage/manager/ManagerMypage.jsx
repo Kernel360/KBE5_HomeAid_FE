@@ -1,88 +1,104 @@
-import { User, ChevronRight } from "lucide-react";
-import { useState } from 'react';
-import { useNavigate } from "react-router-dom";
+import { User, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import Footer from '../../../components/Footer.jsx';
+import { useAuthStore } from '../../../stores/authStore';
 
 export default function ManagerMypage() {
-    const [currentView, setCurrentView] = useState('main'); // 'step1', 'step2', 'step3'
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
 
-    const MainView = () => (
-        <div className="min-h-screen bg-gray-50 pb-20">
-            <header className="bg-white px-6 py-4 border-b border-gray-200">
-                <h1 className="text-xl font-bold text-gray-900">마이페이지</h1>
-            </header>
+  // 디버깅: 사용자 객체 구조 확인
+  console.log('Manager user object:', user);
 
-            <main className="px-6 py-6">
-                {/* 프로필 정보 */}
-                <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
-                    <div className="flex items-center mb-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                            <User className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-900">홍길동님</h3>
-                            <p className="text-sm text-gray-500">hong@example.com</p>
-                        </div>
-                    </div>
-                </div>
+  const MainView = () => (
+    <div className="min-h-screen bg-gray-100 flex justify-center">
+      <div className="w-full max-w-lg bg-gray-50 h-screen flex flex-col">
+        <header className="bg-white px-6 py-4 border-b border-gray-200 flex-shrink-0">
+          <h1 className="text-xl font-bold text-gray-900">마이페이지</h1>
+        </header>
 
-                {/* 메뉴 리스트 */}
-                <div className="bg-white rounded-2xl shadow-sm">
+        <main
+          className="px-6 py-6 flex-1 overflow-y-auto"
+          style={{ paddingBottom: '100px' }}
+        >
+          {/* 프로필 정보 */}
+          <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                <User className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">
+                  {user?.username || '매니저'}님
+                </h3>
+                {/* TODO: 이메일이나 폰번호 받아오면 수정예정 */}
+                {/* <p className="text-sm text-gray-500">
+                  ID: {user?.userId || '정보 없음'}
+                </p> */}
+              </div>
+            </div>
+          </div>
 
-                    <button
-                        onClick={() => 
-                            confirm('서비스 등록을 위해 추가 정보를 입력하시겠습니까?') &&
-                            navigate('/manager/additional-info')
-                        }
-                        className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                    >
-                        <span className="text-gray-900">내 정보 수정</span>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
+          {/* 메뉴 리스트 */}
+          <div className="bg-white rounded-2xl shadow-sm">
+            <button
+              onClick={() =>
+                confirm('서비스 등록을 위해 추가 정보를 입력하시겠습니까?') &&
+                navigate('/manager/additional-info')
+              }
+              className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-gray-900">내 정보 수정</span>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
 
-                    <button
-                        onClick={() => setCurrentView('address')}
-                        className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                    >
-                        <span className="text-gray-900">주소 관리</span>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
+            <button
+              onClick={() => navigate('/manager/address')}
+              className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-gray-900">주소 관리</span>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
 
-                    <button
-                        onClick={() => setCurrentView('review')}
-                        className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                    >
-                        <span className="text-gray-900">리뷰 관리</span>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
+            <button
+              onClick={() => navigate('/manager/review')}
+              className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-gray-900">리뷰 관리</span>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
 
-                    <button
-                        onClick={() => setCurrentView('inquiry')}
-                        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                    >
-                        <span className="text-gray-900">문의 게시판</span>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
-                </div>
+            <button
+              onClick={() => navigate('/board')}
+              className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-gray-900">문의 게시판</span>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
 
-                {/* 로그아웃 */}
-                <div className="mt-6">
-                    <button className="text-red-500 text-sm">로그아웃</button>
-                </div>
-            </main>
-        </div>
-    );
+          {/* 로그아웃 */}
+          {/* <div className="mt-6">
+            <button className="text-red-500 text-sm">로그아웃</button>
+          </div> */}
+        </main>
 
-    // //조건부 렌더링
-    // switch (currentView) {
-    //     case 'board':
-    //         return <></>;
-    //     case '정산':
-    //         return <></>;
-    //     case 'additionalInfo':
-    //         return <ServiceRegistration />;
-    //     default:
-    //         return <MainView />;
-    // }
-    return <MainView />; // 기본적으로 MainView를 렌더링
-};
+        {/* Footer 추가 */}
+        <Footer current="/manager/mypage" />
+      </div>
+    </div>
+  );
+
+  // //조건부 렌더링
+  // switch (currentView) {
+  //     case 'board':
+  //         return <></>;
+  //     case '정산':
+  //         return <></>;
+  //     case 'additionalInfo':
+  //         return <ServiceRegistration />;
+  //     default:
+  //         return <MainView />;
+  // }
+  return <MainView />; // 기본적으로 MainView를 렌더링
+}
