@@ -147,6 +147,10 @@ export const apiService = {
     },
     matching: {
         acceptMatching: (matchingId, data) => api.patch(`/manager/matchings/${matchingId}/to-customer`, data)
+    },
+    workLog: {
+        checkIn: (data) => api.post('/managers/work-logs', data),
+        checkOut: (data) => api.patch('/managers/work-logs', data)
     }
 };
 

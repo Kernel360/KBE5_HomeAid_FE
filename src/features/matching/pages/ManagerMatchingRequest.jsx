@@ -3,25 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import './ManagerMatchingRequest.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
-import useMatchingStore from '../../../stores/matchingStore.js';
 import { useAuthStore } from '../../../stores/authStore.js';
-import {
-  useManagerMatching,
-  useCustomerMatching,
-} from '../hooks/useManagerAPI.js';
-import {
-  NOTIFICATION_MESSAGES,
-  MANAGER_ACTION,
-  CUSTOMER_ACTION,
-  MATCHING_STATUS,
-} from '../constants/matchingData.js';
-import useReservationStore from '../store/useMatchingStore';
 import { apiService } from '../../../store/api';
+import reservationStore from '../store/reservationStore.js';
 
 const ManagerMatchingRequest = () => {
+
   const navigate = useNavigate();
   const [rejectReason, setRejectReason] = useState('');
-  const activematching = useReservationStore((state) => state.activeMatching);
+  const activematching = reservationStore((state) => state.activeMatching);
   const [reservation, setReservation] = useState({});
 
   // ⭐️ 인증 정보 확인
@@ -36,102 +26,25 @@ const ManagerMatchingRequest = () => {
 
   useEffect(() => {
     fetchReservation(activematching.reservationId);
-
   }, [activematching.reservationId])
 
-  // zustand store 사용
-  const {
-    matchingRequest,
-    uiState,
-    toggleRejectModal,
-    respondAsManager,
-    respondAsCustomer,
-    canRespondToMatching,
-    setMatchingRequest,
-  } = useMatchingStore();
-
-  // API 훅 사용
-  const {
-    loading: managerLoading,
-    error: managerError,
-    getMatchingDetail,
-    respondToMatching: managerRespondToMatching,
-  } = useManagerMatching();
-
-  // 고객 응답 시뮬레이션용
-  const { loading: customerLoading } = useCustomerMatching();
-
   const fetchMatchAccept = async () => {
-    console.log('zus id ', activematching.matchingId)
-
     const request = {
       action: 'ACCEPT',
     }
-    console.log('request', request)
-
     const response = await apiService.matching.acceptMatching(activematching.matchingId, request);
-    console.log('matching accept result ', response.data);
-
     return response.data.success;
   }
 
 
   // 매칭 수락
   const handleAccept = async () => {
-    if (!canRespondToMatching()) {
-      alert('이미 응답한 매칭입니다.');
-      return;
-    }
-
-
     try {
       const acceptResult =  await fetchMatchAccept();
       if (acceptResult) {
         alert('해당 매칭에 수락하였습니다')
         navigate('/matching/list');
       }
-      // console.log('🎯 매칭 수락 프로세스 시작:');
-      // console.log('📋 요청 정보:');
-      // console.log('  - 매칭 ID:', matchingRequest.matchingId);
-      // console.log('  - 고객명:', matchingRequest.customerName);
-      // console.log('  - 서비스 유형:', matchingRequest.serviceType);
-      // console.log('  - 매니저 ID:', user.userId);
-      // console.log('  - 매니저명:', user.name);
-
-      // // ⭐️ 수락 대기 메시지 표시
-      // alert('수락 대기중입니다...');
-
-      // await managerRespondToMatching(
-      //   matchingRequest.matchingId,
-      //   MANAGER_ACTION.ACCEPT
-      // );
-
-      // ⭐️ 매니저 수락 시 바로 매칭 완료 상태로 변경
-      // respondAsManager(MANAGER_ACTION.ACCEPT); // 이건 PENDING_CUSTOMER_RESPONSE로 변경함
-
-      // 바로 최종 매칭 완료 상태로 설정
-      // respondAsCustomer(CUSTOMER_ACTION.CONFIRM);
-
-
-      // ⭐️ 최종 매칭 완료 안내창 (약간의 지연 후 표시)
-      // setTimeout(() => {
-      //   alert('✅ 최종 매칭이 완료되었습니다!');
-
-        // ⭐️ 확인 버튼 클릭 후 매칭 목록으로 이동 (새로고침 플래그 포함)
-        // setTimeout(() => {
-        //   console.log('📍 매칭 목록으로 이동 (데이터 새로고침 요청)');
-        //   navigate('/matching/list', {
-        //     state: {
-        //       refreshData: true,
-        //       completedMatchingId: matchingRequest.matchingId,
-        //       managerInfo: {
-        //         id: user.userId,
-        //         name: user.name,
-        //       },
-        //     },
-        //   });
-        // }, 500);
-      // }, 1000); // 1초 후 완료 메시지 표시
     } catch (error) {
       console.error('매칭 수락 실패:', error);
       alert(NOTIFICATION_MESSAGES.MATCHING.ACCEPT_ERROR);
@@ -140,38 +53,6 @@ const ManagerMatchingRequest = () => {
 
   // 매칭 거절
   const handleReject = async () => {
-    if (!canRespondToMatching()) {
-      alert('이미 응답한 매칭입니다.');
-      return;
-    }
-
-    if (!rejectReason.trim()) {
-      alert(NOTIFICATION_MESSAGES.MATCHING.REJECT_REASON_REQUIRED);
-      return;
-    }
-
-    try {
-      await managerRespondToMatching(
-        matchingRequest.matchingId,
-        MANAGER_ACTION.REJECT,
-        rejectReason.trim()
-      );
-
-      // 매니저 응답 처리
-      respondAsManager(MANAGER_ACTION.REJECT, rejectReason.trim());
-
-      alert(NOTIFICATION_MESSAGES.MATCHING.REJECT_SUCCESS);
-      toggleRejectModal();
-      setRejectReason('');
-
-      // 매칭 목록으로 이동
-      setTimeout(() => {
-        navigate('/matching/list');
-      }, 1000);
-    } catch (error) {
-      console.error('매칭 거절 실패:', error);
-      alert(NOTIFICATION_MESSAGES.MATCHING.REJECT_ERROR);
-    }
   };
 
   const handleRejectCancel = () => {

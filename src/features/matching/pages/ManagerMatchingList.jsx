@@ -3,14 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import './ManagerMatchingList.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
-import { useManagerMatching } from '../hooks/useManagerAPI.js';
 import {
   MATCHING_STATUS,
   MATCHING_STATUS_LABELS,
   MATCHING_STATUS_COLORS,
 } from '../constants/matchingData.js';
 import { apiService } from '../../../store/api';
-import useMatchingStore from '../store/useMatchingStore';
+import reservationStore from '../store/reservationStore.js';
 
 const ManagerMatchingList = () => {
   const navigate = useNavigate();
@@ -19,13 +18,7 @@ const ManagerMatchingList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState({});
-  const { activeReservation, setActiveMatching, setActiveReservation } = useMatchingStore();
-
-  // zustand store 사용
-  // const { setMatchingRequest } = useMatchingStore();
-
-  // API 훅 사용
-  const { loading, error, getMatchingList } = useManagerMatching();
+  const setReservationId = reservationStore().setReservationId
 
   // 매칭 목록 상태
   const [matchingList, setMatchingList] = useState([]);
@@ -37,7 +30,10 @@ const ManagerMatchingList = () => {
 
   const fetchMatching = async () => {
     const response = await apiService.manager.getAllMatcings();
+    
     setMatchingList(response.data.data.content)
+    console.log('매칭 리스트', matchingList)
+    console.log('매칭 리스트 백 원본', response.data.data)
   }
 
   useEffect(() => {
@@ -51,54 +47,6 @@ const ManagerMatchingList = () => {
     setSelectedItem(response.data.data)
     // return response.data.data;
   }
-
-
-  const loadMatchingList = async () => {
-    try {
-      const data = await getMatchingL
-      ist();
-      console.log('📡 백엔드에서 받은 원본 매칭 데이터:', data);
-
-      // 백엔드 데이터를 UI 형태로 변환
-      const transformedData = data.map((item) => {
-        const transformed = {
-          id: item.matchingId,
-          customerName: item.customerName || '김고객',
-          serviceType: item.serviceType,
-          workTime: `${item.reservedDate} ${item.reservedTime}`,
-          price: item.price,
-          status: MATCHING_STATUS_LABELS[item.status],
-          statusColor: MATCHING_STATUS_COLORS[item.status],
-          originalStatus: item.status, // 원본 상태 보존
-          estimatedDuration: item.estimatedDuration,
-          customerRequest: item.customerRequest,
-          address: item.address || '주소 정보 없음', // 실제 주소 데이터 사용
-          // 추가 정보
-          reservationId: item.reservationId,
-          subOptionId: item.subOptionId,
-          totalDuration: item.totalDuration,
-        };
-
-        console.log(
-          `📋 매칭 ID ${item.matchingId}: ${item.status} → ${transformed.status}`,
-          {
-            원본상태: item.status,
-            변환상태: transformed.status,
-            색상: transformed.statusColor,
-          }
-        );
-
-        return transformed;
-      });
-
-      console.log('✅ 변환된 매칭 목록:', transformedData);
-      setMatchingList(transformedData);
-    } catch (err) {
-      console.error('매칭 목록 로드 실패:', err);
-      // 에러 시 빈 배열 설정
-      setMatchingList([]);
-    }
-  };
 
   // 탭별 필터링
   const getFilteredList = () => {
@@ -124,9 +72,7 @@ const ManagerMatchingList = () => {
 
   // 상세보기 버튼 클릭
   const handleDetailView = (reservationId) => {
-    console.log('mathcing detail ', reservationId)
-    setSelectedItem(reservationId);
-    setActiveReservation(reservationId);
+    console.log('예약건 상세보기 ', reservationId)
     fetchReservation(reservationId);
     setShowDetailModal(true);
   };
@@ -138,39 +84,14 @@ const ManagerMatchingList = () => {
   };
 
   // 청소하기 버튼 클릭 (매칭 완료 상태)
-  const handleServiceStart = (matchingItem) => {
-    // 매칭 정보를 스토어에 저장하고 서비스 체크인 페이지로 이동
-    setMatchingRequest({
-      matchingId: matchingItem.id,
-      customerName: matchingItem.customerName,
-      serviceType: matchingItem.serviceType,
-      reservedDate: matchingItem.workTime.split(' ')[0],
-      reservedTime: matchingItem.workTime.split(' ')[1],
-      address: matchingItem.address,
-      customerRequest: matchingItem.customerRequest,
-      status: MATCHING_STATUS.CONFIRMED,
-      estimatedDuration: matchingItem.estimatedDuration,
-    });
+  const handleServiceStart = (reservationId) => {
+    setReservationId(reservationId);
     navigate('/matching/service-checkin');
   };
 
   // 매칭하기 버튼 클릭 (매칭 대기 상태)
   const handleMatching = (matching) => {
-    // 매칭 정보를 스토어에 저장하고 매칭 요청 페이지로 이동
-    // setMatchingRequest({
-    //   matchingId: matchingItem.id,
-    //   customerName: matchingItem.customerName,
-    //   serviceType: matchingItem.serviceType,
-    //   reservedDate: matchingItem.workTime.split(' ')[0],
-    //   reservedTime: matchingItem.workTime.split(' ')[1],
-    //   estimatedDuration: matchingItem.estimatedDuration,
-    //   address: matchingItem.address,
-    //   customerRequest: matchingItem.customerRequest,
-    //   status: MATCHING_STATUS.PENDING_MANAGER_RESPONSE,
-    // });
     console.log('매칭하기 버튼', matching);
-    setActiveMatching(matching)
-    setActiveReservation(matching.reservationId);
     navigate('/matching/matching-request');
   };
 
@@ -197,7 +118,7 @@ const ManagerMatchingList = () => {
             </button>
             <button
               className="action-button service-button"
-              onClick={() => handleServiceStart(item)}
+              onClick={() => handleServiceStart(item.reservationId)}
             >
               청소하기
             </button>
@@ -267,24 +188,23 @@ const ManagerMatchingList = () => {
           </div>
 
           {/* 로딩 상태 */}
-          {loading && (
+          {/* {loading && (
             <div className="loading-state">
               <p>로딩 중...</p>
             </div>
-          )}
+          )} */}
 
           {/* 에러 상태 */}
-          {error && !loading && (
+          {/* {error && !loading && (
             <div className="error-state">
               <p>{error}</p>
-              <button onClick={loadMatchingList} className="retry-button">
+              <button onClick={fetchMatching()} className="retry-button">
                 다시 시도
               </button>
             </div>
-          )}
+          )} */}
 
           {/* 매칭 리스트 */}
-          {!loading && !error && (
             <div className="matching-list">
               {matchingList.length === 0 ? (
                 <div className="empty-state">
@@ -332,7 +252,6 @@ const ManagerMatchingList = () => {
                 ))
               )}
             </div>
-          )}
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import {
   MANAGER_ACTION,
   CUSTOMER_ACTION,
 } from '../constants/matchingData';
+import { apiService } from '../../../store/api';
 
 // ⭐️ 실제 예약 API 호출을 위한 helper 함수 추가
 const apiCall = async (url, options = {}) => {
@@ -753,14 +754,11 @@ export const useServiceCheckIn = () => {
       // TODO: 실제 API 호출
       // const response = await fetch(API_ENDPOINTS.MATCHING_DETAIL(matchingId));
       // const data = await response.json();
+      const response = await apiService.reservation.getById(matchingId);
+      console.log('getServiceDetails api', response.data.data);
 
       // 더미 데이터 반환
-      return {
-        ...DUMMY_MATCHING_DATA,
-        matchingId,
-        customerName: '김고객',
-        address: '서울시 강남구 테헤란로 123',
-      };
+      return response.data.data;
     } catch (err) {
       setError(NOTIFICATION_MESSAGES.MATCHING.LOAD_ERROR);
       throw err;
