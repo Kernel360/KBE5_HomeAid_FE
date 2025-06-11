@@ -7,16 +7,14 @@ import { Contact } from '../features/misc/routes';
 import { Policy } from '../features/misc/routes';
 import { Terms } from '../features/misc/routes';
 import MainPage from '../features/main/MainPage';
-
-import BoardList from '../features/board/pages/BoardList';
-import BoardWrite from '../features/board/pages/BoardWrite';
-import BoardDetail from '../features/board/pages/BoardDetail';
-import EventList from '../features/main/EventList';
+import { useAuthStore } from '../stores/authStore';
 
 import ProtectedRoute from './ProtectedRoute';
 import { protectedAppRoutes } from './protectedAppRoutes.jsx';
 
 export const AppRoutes = () => {
+  const user = useAuthStore((state) => state.user);
+
   const commonRoutes = [
     { path: '/auth/*', element: <AuthRoutes /> },
     { path: '/404', element: <NotFound /> },
@@ -53,14 +51,31 @@ export const AppRoutes = () => {
       : undefined,
   }));
 
+  // 권한에 따른 리다이렉션 처리
+  const getRedirectPath = () => {
+    if (!user) return '/auth/login';
+
+    const role = user.role;
+    switch (role) {
+      case 'ROLE_CUSTOMER':
+        return '/customer/service-option';
+      case 'ROLE_MANAGER':
+        return '/manager/mypage';
+      case 'ROLE_ADMIN':
+        return '/admin';
+      default:
+        return '/main';
+    }
+  };
+
   const routes = useRoutes([
     {
       path: '/',
-      element: <MainPage />,
+      element: user ? <Navigate to={getRedirectPath()} /> : <MainPage />,
     },
     {
       path: '/main',
-      element: <MainPage />,
+      element: user ? <Navigate to={getRedirectPath()} /> : <MainPage />,
     },
     ...publicRoutes,
     ...routesWithProtection,

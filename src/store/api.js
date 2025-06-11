@@ -11,7 +11,7 @@ const apiClient = axios.create({
     },
     withCredentials: true
 });
-const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoibWFuYWdlcjFAZXhhbXBsZS5jb20iLCJyb2xlIjoiUk9MRV9NQU5BR0VSIiwiaWF0IjoxNzQ5MjgzNjA3LCJleHAiOjE3NDkyODcyMDd9.H81p9WvitIdg8ZOyqQU8M0rjHgTp_Dv1ZWN7i5BHbzI';
+const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEyLCJyb2xlIjoiUk9MRV9NQU5BR0VSIiwiaWF0IjoxNzQ5NDU1MTQyLCJleHAiOjE3NDk0NTg3NDJ9.FaGcbudvDA-yqwp-yXmjAJNrRQ5bCcU5akyRuQq4Fd0';
 // 요청 인터셉터 (토큰 자동 추가 등)
 apiClient.interceptors.request.use(
     (config) => {
@@ -141,7 +141,7 @@ export const apiService = {
     serviceOption: {
         getAll: () => api.get('/admin/service-option'),
         getById: (id) => api.get(`/service-option/${id}`),
-        create: (data) => api.post('/manager/profile', data),
+        create: (data) => api.post('/managers/profile', data),
         update: (id, data) => api.put(`/service-option/${id}`, data),
         delete: (id) => api.delete(`/service-option/${id}`)
     },

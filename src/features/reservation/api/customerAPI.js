@@ -284,6 +284,20 @@ export const createCustomerReservation = async (reservationData) => {
   };
 
   try {
+  try {
+    console.log('🔄 Spring Boot ReservationRequestDto 형식으로 변환');
+
+    // Spring Boot ReservationRequestDto에 정확히 맞는 구조
+    const springBootData = {
+      requestedDate: reservationData.reservationDate, // LocalDate (yyyy-MM-dd)
+      requestedTime: `${reservationData.reservationTime}:00`, // LocalTime (HH:mm:ss)
+      subOptionId: Number(reservationData.subOptionId), // Long으로 변환
+      latitude: reservationData.latitude ? Number(reservationData.latitude) : null, // Double로 변환
+      longitude: reservationData.longitude ? Number(reservationData.longitude) : null, // Double로 변환
+    };
+
+    console.log('📤 Spring Boot로 전송할 데이터:', springBootData);
+
     const response = await apiCall('/reservations', {
       method: 'POST',
       body: JSON.stringify(springBootData),
