@@ -15,7 +15,6 @@ import {
   CUSTOMER_ACTION,
   MATCHING_STATUS,
 } from '../constants/matchingData.js';
-} from '../constants/matchingData';
 import useReservationStore from '../store/useMatchingStore';
 import { apiService } from '../../../store/api';
 

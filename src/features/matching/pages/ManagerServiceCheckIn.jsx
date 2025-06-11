@@ -10,7 +10,6 @@ import {
   NOTIFICATION_MESSAGES,
   MATCHING_STATUS,
 } from '../constants/matchingData.js';
-} from '../constants/matchingData';
 import useReservationStore from '../store/useMatchingStore';
 
 // TODO: 파일 업로드 기능 추가 시 필요한 import

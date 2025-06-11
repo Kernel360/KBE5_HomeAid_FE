@@ -48,10 +48,7 @@ export const protectedAppRoutes = [
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)
   {
     path: '/manager',
-    element: <ManagerLayout />,
     allowedRoles: ['ROLE_MANAGER'],
-    index: true,
-    element: <ManagerMain />,
     children: [
       { path: 'mypage', element: <ManagerMypage /> },
       { path: 'additional-info', element: <ServiceRegistration /> },
