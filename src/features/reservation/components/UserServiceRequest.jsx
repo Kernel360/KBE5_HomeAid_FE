@@ -4,7 +4,8 @@ import './UserServiceRequest.css';
 import '../styles/common.css';
 import Footer from '../../../components/Footer';
 import Header from '../../../components/Header';
-import GoogleMapPicker from '../../../components/GoogleMapPicker';
+// TODO: 구글맵 연동 완료 후 활성화
+// import GoogleMapPicker from '../../../components/GoogleMapPicker';
 // import { usePaymentData } from '../hooks/useLocalStorage';
 import {
   useCustomerReservation,
@@ -110,6 +111,8 @@ const UserServiceRequest = () => {
     setFormData((prev) => ({ ...prev, selectedAddress: address }));
   };
 
+  // TODO: 구글맵 연동 완료 후 활성화
+  /*
   // 지도에서 위치 선택 시 처리하는 함수
   const handleMapLocationSelect = (locationData) => {
     let main, detail;
@@ -145,6 +148,7 @@ const UserServiceRequest = () => {
       locationData.source === 'current_location'
     );
   };
+  */
 
   const handleAddressSave = async () => {
     if (!formData.addressMethod.trim()) {
@@ -192,6 +196,14 @@ const UserServiceRequest = () => {
       return;
     }
 
+    // ⭐️ 사용자 ID 확인 (Spring Boot customerId 필수)
+    if (!user.userId) {
+      console.error('❌ 사용자 ID가 없습니다:', user);
+      alert('사용자 정보에 문제가 있습니다. 다시 로그인해주세요.');
+      navigate('/auth/signin');
+      return;
+    }
+
     // 필수 입력 검증
     if (!formData.date || !formData.startTime) {
       alert('날짜와 시간을 선택해주세요.');
@@ -200,6 +212,52 @@ const UserServiceRequest = () => {
 
     if (!formData.selectedAddress) {
       alert('주소를 선택해주세요.');
+      return;
+    }
+
+    // ⭐️ 중복 예약 확인 (같은 날짜, 시간에 이미 예약이 있는지 체크)
+    const { getAllReservations } = useReservationListStore.getState();
+    const allReservations = getAllReservations();
+
+    // 모든 활성 예약을 하나의 배열로 합치기
+    const activeReservations = [
+      ...(allReservations.pending || []),
+      ...(allReservations.completed || []),
+      ...(allReservations.visited || []),
+    ];
+
+    const duplicateReservation = activeReservations.find((reservation) => {
+      const reservationDate =
+        reservation.backendData?.requestedDate || reservation.date;
+      const reservationTimeStr =
+        reservation.backendData?.requestedTime || reservation.time;
+
+      // 시간 형식 정규화 (HH:mm 형식으로 변환)
+      let reservationTime = '';
+      if (reservationTimeStr.includes('~')) {
+        reservationTime = reservationTimeStr.split('~')[0];
+      } else if (reservationTimeStr.includes(':')) {
+        reservationTime = reservationTimeStr.substring(0, 5); // HH:mm:ss -> HH:mm
+      } else {
+        reservationTime = reservationTimeStr;
+      }
+
+      return (
+        reservationDate === formData.date &&
+        reservationTime === formData.startTime &&
+        (reservation.status === 'pending' ||
+          reservation.status === 'confirmed' ||
+          reservation.backendData?.status === 'REQUESTED' ||
+          reservation.backendData?.status === 'CONFIRMED')
+      );
+    });
+
+    if (duplicateReservation) {
+      alert(
+        '같은 날짜와 시간에 이미 예약이 있습니다.\n\n' +
+          `기존 예약: ${duplicateReservation.date} ${duplicateReservation.time}\n` +
+          '다른 날짜나 시간으로 예약해주세요.'
+      );
       return;
     }
 
@@ -235,33 +293,43 @@ const UserServiceRequest = () => {
       try {
         // ⭐️ 백엔드 API 호출을 위한 예약 데이터 준비
         const backendReservationData = {
-          // Spring Boot ReservationRequestDto에 정확히 맞는 구조
-          reservationDate: formData.date, // LocalDate용 (yyyy-MM-dd)
-          reservationTime: formData.startTime, // LocalTime용 (HH:mm -> HH:mm:ss로 변환됨)
+          // 🔧 Spring Boot Reservation 엔티티에 정확히 맞는 구조
+          requestedDate: formData.date, // LocalDate용 (yyyy-MM-dd)
+          requestedTime: `${formData.startTime}:00`, // LocalTime용 (HH:mm:ss 형식 필수)
           subOptionId: getSubOptionId(currentReservationData.selectedSubOption), // Long
-          latitude:
-            formData.selectedAddress.coordinates?.lat ||
-            formData.selectedAddress.coordinates?.latitude ||
-            null, // Double
-          longitude:
-            formData.selectedAddress.coordinates?.lng ||
-            formData.selectedAddress.coordinates?.longitude ||
-            null, // Double
+          customerId: user?.userId || null, // Long (필수)
+          // TODO: 구글맵 연동 완료 후 경도위도 추가
+          // latitude: formData.selectedAddress.coordinates?.lat || null, // Double
+          // longitude: formData.selectedAddress.coordinates?.lng || null, // Double
+          address: formData.selectedAddress.main || '', // String
+          addressDetail:
+            formData.detailAddress || formData.selectedAddress.detail || '', // String
+          totalPrice: currentReservationData.totalPrice || 0, // Integer
+          totalDuration: currentReservationData.totalDuration || 0, // Integer
+          customerMemo: currentReservationData.customerNote || '', // String (TEXT)
         };
 
-        // Spring Boot @NotNull 필드 검증 (requestedDate, requestedTime, subOptionId)
+        console.log(
+          '🔍 Spring Boot 엔티티에 맞는 백엔드 데이터:',
+          backendReservationData
+        );
+
+        // Spring Boot 필수 필드 검증
         const requiredFields = [
-          'reservationDate',
-          'reservationTime',
+          'requestedDate',
+          'requestedTime',
           'subOptionId',
+          'customerId',
         ];
         const missingFields = requiredFields.filter(
           (field) => !backendReservationData[field]
         );
 
         if (missingFields.length > 0) {
+          console.error('❌ Spring Boot 필수 필드 누락:', missingFields);
           alert(
-            `Spring Boot 필수 정보가 누락되었습니다: ${missingFields.join(', ')}`
+            `필수 정보가 누락되었습니다: ${missingFields.join(', ')}\n\n` +
+              '다시 로그인하고 모든 정보를 입력해주세요.'
           );
           return;
         }
@@ -287,25 +355,21 @@ const UserServiceRequest = () => {
         // ⭐️ 백엔드 성공 시 로컬 스토어에도 추가 (즉시 반영용)
         const { addReservation } = useReservationListStore.getState();
         const localReservationData = {
-          // 백엔드 응답 또는 원본 데이터를 로컬 형식으로 변환
-          id:
-            backendReservation.reservationId ||
-            backendReservation.id ||
-            Date.now(),
-          type: currentReservationData.selectedSubOption?.name || '서비스',
-          date: formData.date,
-          time: `${formData.startTime}~${endTime}`,
-          price: currentReservationData.totalPrice || 0,
-          icon: getServiceIcon(currentReservationData.selectedSubOption?.id),
-          status: 'pending', // 새로 생성된 예약은 REQUESTED 상태이므로 pending
+          // reservationListStore의 addReservation에서 기대하는 형식에 맞춤
+          serviceType:
+            currentReservationData.selectedSubOption?.name || '서비스',
+          selectedSubOption: currentReservationData.selectedSubOption,
+          reservationDate: formData.date,
+          reservationTime: formData.startTime,
+          endTime: endTime,
+          totalPrice: currentReservationData.totalPrice || 0,
           address: formData.selectedAddress.main,
           addressDetail:
             formData.detailAddress || formData.selectedAddress.detail || '',
           customerNote: currentReservationData.customerNote || '',
           selectedServices: currentReservationData.selectedServices || [],
           serviceDetails: currentReservationData.serviceDetails || [],
-          createdAt: new Date().toISOString(),
-          // 백엔드 응답 데이터도 보존 (Spring Boot 형식)
+          // 백엔드 응답 데이터도 포함
           backendData: {
             ...backendReservation,
             status: 'REQUESTED', // 새 예약의 기본 상태
@@ -314,6 +378,12 @@ const UserServiceRequest = () => {
             ),
             requestedDate: formData.date,
             requestedTime: `${formData.startTime}:00`,
+            customerId: user?.userId,
+            address: formData.selectedAddress.main || '',
+            addressDetail:
+              formData.detailAddress || formData.selectedAddress.detail || '',
+            totalPrice: currentReservationData.totalPrice || 0,
+            totalDuration: currentReservationData.totalDuration || 0,
           },
         };
 
@@ -335,7 +405,17 @@ const UserServiceRequest = () => {
         // ⭐️ 사용자에게 오류 메시지 표시 (로컬 저장 없음)
         let errorMessage = '예약 생성에 실패했습니다.';
 
-        if (backendError.message.includes('400')) {
+        // 중복 예약 요청 처리
+        if (
+          backendError.message.includes('이미 처리된 요청') ||
+          backendError.message.includes('duplicate')
+        ) {
+          errorMessage =
+            '이미 동일한 예약이 존재합니다.\n\n다음 사항을 확인해주세요:\n';
+          errorMessage += '• 같은 날짜와 시간에 이미 예약이 있는지 확인\n';
+          errorMessage += '• 이용내역에서 기존 예약을 확인하세요\n';
+          errorMessage += '• 다른 날짜나 시간으로 예약해주세요';
+        } else if (backendError.message.includes('400')) {
           errorMessage += '\n\n다음 사항을 확인해주세요:\n';
           errorMessage += '• 모든 필수 정보가 입력되었는지 확인\n';
           errorMessage += '• 날짜와 시간이 올바른지 확인\n';
@@ -359,43 +439,36 @@ const UserServiceRequest = () => {
 
       // ⭐️ 선택된 서브옵션에서 백엔드 API에 맞는 ID 추출 함수
       function getSubOptionId(selectedSubOption) {
+        console.log('🔍 getSubOptionId 입력:', selectedSubOption);
+
         if (!selectedSubOption || !selectedSubOption.id) {
-          console.warn('선택된 서브옵션이 없습니다. 기본값(1)을 사용합니다.');
-          return 1; // 기본값으로 빨래 ID 사용
+          console.warn(
+            '❌ 선택된 서브옵션이 없습니다. 기본값(2)을 사용합니다.'
+          );
+          return 2; // 기본값으로 청소 ID 사용 (로그상 청소가 선택됨)
         }
 
-        // 서브옵션 ID 매핑 (프론트엔드 ID -> 백엔드 ID)
+        // 서브옵션 ID 매핑 (프론트엔드 ID -> 백엔드 subOptionId)
+        // 🔧 Spring Boot ServiceSubOption 테이블의 실제 ID와 매핑
         const subOptionMapping = {
-          laundry: 1, // 빨래
-          cleaning: 2, // 청소
+          laundry: 1, // 빨래/세탁
+          cleaning: 2, // 청소 (로그에서 확인된 값)
           childcare: 3, // 육아
         };
 
         const backendId = subOptionMapping[selectedSubOption.id];
         if (!backendId) {
           console.warn(
-            `알 수 없는 서브옵션 ID: ${selectedSubOption.id}. 기본값(1)을 사용합니다.`
+            `❌ 알 수 없는 서브옵션 ID: ${selectedSubOption.id}. 기본값(2)을 사용합니다.`
           );
-          return 1;
+          return 2; // 청소 서비스로 기본값 설정
         }
 
         console.log(
-          '선택된 서브옵션:',
-          selectedSubOption.name,
-          '-> 백엔드 ID:',
-          backendId
+          '✅ 서브옵션 매핑 성공:',
+          `${selectedSubOption.name} (${selectedSubOption.id}) -> DB ID: ${backendId}`
         );
         return backendId;
-      }
-
-      // ⭐️ 서비스 아이콘 매핑 함수
-      function getServiceIcon(subOptionId) {
-        const iconMapping = {
-          laundry: 'laundry',
-          cleaning: 'cleaning',
-          childcare: 'childcare',
-        };
-        return iconMapping[subOptionId] || 'home';
       }
     } catch (error) {
       console.error('예약 생성 실패:', error);
@@ -624,7 +697,8 @@ const UserServiceRequest = () => {
           <div className="address-section">
             <h3 className="section-title">서비스 주소</h3>
 
-            {/* 구글 맵으로 위치 선택 */}
+            {/* TODO: 구글 맵 위치 선택 기능 - 백엔드 연동 완료 후 활성화 */}
+            {/* 
             <div style={{ marginTop: '16px', marginBottom: '24px' }}>
               <h4 className="section-title">지도에서 위치 선택</h4>
               <GoogleMapPicker
@@ -643,6 +717,7 @@ const UserServiceRequest = () => {
                 }
               />
             </div>
+            */}
 
             {/* 선택된 주소 표시 */}
             {formData.selectedAddress && (
