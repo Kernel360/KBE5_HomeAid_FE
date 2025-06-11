@@ -1,6 +1,19 @@
 /* eslint-env node */
-// Base API URL - Vite 프록시 사용 (CORS 문제 해결)
-const API_BASE_URL = '';
+// Base API URL - 환경변수 사용
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+
+// API 기본 URL 구성
+const getBaseUrl = () => {
+  const baseUrl = `${API_BASE_URL}/api/${API_VERSION}`;
+  console.log('🔧 API 기본 URL:', {
+    baseUrl,
+    environment: import.meta.env.MODE,
+    apiUrl: import.meta.env.VITE_API_URL,
+    version: import.meta.env.VITE_API_VERSION,
+  });
+  return baseUrl;
+};
 
 // JWT 토큰을 헤더에 추가하는 함수
 const getAuthHeaders = () => {
@@ -44,50 +57,83 @@ const getAuthHeaders = () => {
 
 // 기본 API 호출 함수
 const apiCall = async (url, options = {}) => {
-  const fullUrl = `${API_BASE_URL}${url}`;
+  // 전체 URL 구성
+  const fullUrl = `${getBaseUrl()}${url}`;
+
+  console.log('🌐 API 요청:', {
+    url: fullUrl,
+    method: options.method || 'GET',
+    environment: import.meta.env.MODE,
+    apiUrl: import.meta.env.VITE_API_URL,
+  });
+
   const requestOptions = {
     headers: getAuthHeaders(),
     ...options,
   };
 
-  const response = await fetch(fullUrl, requestOptions);
+  try {
+    const response = await fetch(fullUrl, requestOptions);
 
-  if (!response.ok) {
-    let errorData = null;
-    let errorText = '';
+    if (!response.ok) {
+      let errorData = null;
+      let errorText = '';
 
-    try {
-      errorText = await response.text();
-      errorData = JSON.parse(errorText);
-    } catch {
-      errorData = { message: errorText || `HTTP ${response.status}` };
-    }
+      try {
+        errorText = await response.text();
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText || `HTTP ${response.status}` };
+      }
+      try {
+        errorText = await response.text();
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText || `HTTP ${response.status}` };
+      }
 
-    // 400 에러의 경우 더 자세한 정보 제공
-    if (response.status === 400) {
-      const detailedMessage =
+      console.error('❌ API 에러 응답:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData: errorData,
+        responseText: errorText,
+        url: fullUrl,
+      });
+
+      // 400 에러의 경우 더 자세한 정보 제공
+      if (response.status === 400) {
+        const detailedMessage =
+          errorData?.message ||
+          errorData?.error ||
+          errorText ||
+          '요청 형식이 잘못되었습니다.';
+        throw new Error(`Bad Request (400): ${detailedMessage}`);
+      }
+
+      throw new Error(
         errorData?.message ||
-        errorData?.error ||
-        errorText ||
-        '요청 형식이 잘못되었습니다.';
-      throw new Error(`Bad Request (400): ${detailedMessage}`);
+          errorData?.error ||
+          `HTTP error! status: ${response.status}`
+      );
     }
 
-    throw new Error(
-      errorData?.message ||
-        errorData?.error ||
-        `HTTP error! status: ${response.status}`
-    );
+    const result = await response.json();
+
+    // Spring Boot CommonApiResponse 구조 처리
+    if (result && typeof result === 'object' && 'data' in result) {
+      return result.data;
+    }
+
+    return result;
+  } catch (error) {
+    console.error('❌ API 호출 실패:', {
+      error: error.message,
+      url: fullUrl,
+      environment: import.meta.env.MODE,
+      apiUrl: import.meta.env.VITE_API_URL,
+    });
+    throw error;
   }
-
-  const result = await response.json();
-
-  // Spring Boot CommonApiResponse 구조 처리
-  if (result && typeof result === 'object' && 'data' in result) {
-    return result.data;
-  }
-
-  return result;
 };
 
 // ==================== 서비스 관련 API ====================
@@ -234,7 +280,7 @@ export const createCustomerAddress = async (addressData) => {
 
 // 주소 삭제
 export const deleteCustomerAddress = async (addressId) => {
-  return apiCall(`/api/v1/customers/addresses/${addressId}`, {
+  return apiCall(`/customer/addresses/${addressId}`, {
     method: 'DELETE',
   });
 };
@@ -243,7 +289,7 @@ export const deleteCustomerAddress = async (addressId) => {
 
 // 고객의 예약 목록 조회 (페이징)
 export const getCustomerReservations = async (page = 0, size = 10) => {
-  return apiCall(`/api/v1/reservations/customer?page=${page}&size=${size}`);
+  return apiCall(`/reservations/customer?page=${page}&size=${size}`);
 };
 
 // 예약에 매니저 할당 (단순화된 방식)
@@ -252,7 +298,7 @@ export const assignManagerToReservation = async (reservationId, managerId) => {
     // 방법 1: 매니저 할당 전용 엔드포인트
     try {
       const response = await apiCall(
-        `/api/v1/reservations/${reservationId}/assign-manager`,
+        `/reservations/${reservationId}/assign-manager`,
         {
           method: 'POST',
           body: JSON.stringify({ managerId: managerId }),
@@ -263,7 +309,7 @@ export const assignManagerToReservation = async (reservationId, managerId) => {
       // 방법 2: 예약 상태 업데이트와 함께 매니저 할당
       try {
         const response = await apiCall(
-          `/api/v1/reservations/${reservationId}/status`,
+          `/reservations/${reservationId}/status`,
           {
             method: 'PATCH',
             body: JSON.stringify({
@@ -275,7 +321,7 @@ export const assignManagerToReservation = async (reservationId, managerId) => {
         return response;
       } catch {
         // 방법 3: 간단한 매니저 할당
-        const response = await apiCall(`/api/v1/managers/${managerId}/assign`, {
+        const response = await apiCall(`/managers/${managerId}/assign`, {
           method: 'POST',
           body: JSON.stringify({ reservationId: reservationId }),
         });
@@ -307,7 +353,7 @@ export const createCustomerReservation = async (reservationData) => {
 
     console.log('📤 Spring Boot로 전송할 데이터:', springBootData);
 
-    const response = await apiCall('/api/v1/reservations', {
+    const response = await apiCall('/reservations', {
       method: 'POST',
       body: JSON.stringify(springBootData),
     });
@@ -354,12 +400,12 @@ export const createCustomerReservation = async (reservationData) => {
 
 // 예약 완료 조회
 export const getCustomerReservation = async (reservationId) => {
-  return apiCall(`/api/v1/reservations/${reservationId}`);
+  return apiCall(`/reservations/${reservationId}`);
 };
 
 // 예약 취소
 export const cancelCustomerReservation = async (reservationId) => {
-  return apiCall(`/api/v1/reservations/${reservationId}/cancel`, {
+  return apiCall(`/reservations/${reservationId}/cancel`, {
     method: 'POST',
   });
 };
@@ -368,7 +414,7 @@ export const cancelCustomerReservation = async (reservationId) => {
 
 // 매니저 매칭 정보 조회
 export const getMatchedManagers = async (reservationId) => {
-  return apiCall(`/api/v1/reservations/${reservationId}/matching`);
+  return apiCall(`/reservations/${reservationId}/matching`);
 };
 
 // 매니저 상세 정보 조회
@@ -378,7 +424,7 @@ export const getManagerProfile = async (managerId) => {
 
 // 매니저 메모 전달
 export const sendManagerMemo = async (reservationId, memoData) => {
-  return apiCall(`/customers/reservations/${reservationId}/memo`, {
+  return apiCall(`/customer/reservations/${reservationId}/memo`, {
     method: 'PUT',
     body: JSON.stringify(memoData),
   });
@@ -388,7 +434,7 @@ export const sendManagerMemo = async (reservationId, memoData) => {
 
 // 결제 요청
 export const requestPayment = async (reservationId, paymentData) => {
-  return apiCall(`/api/v1/payments`, {
+  return apiCall(`/payments`, {
     method: 'POST',
     body: JSON.stringify(paymentData),
   });
@@ -430,53 +476,51 @@ export const handleApiError = (error) => {
 // 고객 서비스 API
 export const customerAPI = {
   // 서비스 목록 조회
-  getServices: () => apiCall('/api/v1/services'),
+  getServices: () => apiCall('/services'),
 
   // 서비스 세부 옵션 조회
-  getServiceOptions: (serviceId) =>
-    apiCall(`/api/v1/services/${serviceId}/options`),
+  getServiceOptions: (serviceId) => apiCall(`/services/${serviceId}/options`),
 
   // 서비스 추가 옵션 조회 (서브 옵션)
   getServiceSubOptions: (serviceId) =>
-    apiCall(`/api/v1/services/${serviceId}/sub-options`),
+    apiCall(`/services/${serviceId}/sub-options`),
 
   // 고객 주소 목록 조회
-  getCustomerAddresses: () => apiCall('/api/v1/customers/addresses'),
+  getCustomerAddresses: () => apiCall('/customer/addresses'),
 
   // 고객 주소 추가
   addCustomerAddress: (addressData) =>
-    apiCall('/api/v1/customers/addresses', {
+    apiCall('/customer/addresses', {
       method: 'POST',
       body: JSON.stringify(addressData),
     }),
 
   // 예약 생성 (Spring Boot 컨트롤러와 매칭)
   createReservation: (reservationData) =>
-    apiCall('/api/v1/reservations', {
+    apiCall('/reservations', {
       method: 'POST',
       body: JSON.stringify(reservationData),
     }),
 
   // 예약 목록 조회
-  getReservations: () => apiCall('/api/v1/reservations'),
+  getReservations: () => apiCall('/reservations'),
 
   // 특정 예약 조회
-  getReservation: (reservationId) =>
-    apiCall(`/api/v1/reservations/${reservationId}`),
+  getReservation: (reservationId) => apiCall(`/reservations/${reservationId}`),
 
   // 매니저 매칭 요청
   requestManagerMatching: (reservationId) =>
-    apiCall(`/api/v1/reservations/${reservationId}/matching`, {
+    apiCall(`/reservations/${reservationId}/matching`, {
       method: 'POST',
     }),
 
   // 결제 처리
   processPayment: (paymentData) =>
-    apiCall('/api/v1/payments', {
+    apiCall('/payments', {
       method: 'POST',
       body: JSON.stringify(paymentData),
     }),
 
   // 결제 상태 확인
-  getPaymentStatus: (paymentId) => apiCall(`/api/v1/payments/${paymentId}`),
+  getPaymentStatus: (paymentId) => apiCall(`/payments/${paymentId}`),
 };

@@ -395,8 +395,29 @@ const UserServiceRequest = () => {
           backendError
         );
 
-        // ⭐️ 로컬 저장 성공 시에도 이용내역 페이지로 이동
-        navigate('/customer/reservations');
+        // ⭐️ 사용자에게 오류 메시지 표시 (로컬 저장 없음)
+        let errorMessage = '예약 생성에 실패했습니다.';
+
+        if (backendError.message.includes('400')) {
+          errorMessage += '\n\n다음 사항을 확인해주세요:\n';
+          errorMessage += '• 모든 필수 정보가 입력되었는지 확인\n';
+          errorMessage += '• 날짜와 시간이 올바른지 확인\n';
+          errorMessage += '• 주소 정보가 정확한지 확인';
+        } else if (backendError.message.includes('401')) {
+          errorMessage += '\n\n로그인이 만료되었습니다. 다시 로그인해주세요.';
+        } else if (backendError.message.includes('403')) {
+          errorMessage += '\n\n접근 권한이 없습니다.';
+        } else if (backendError.message.includes('500')) {
+          errorMessage +=
+            '\n\n서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        } else {
+          errorMessage += '\n\n네트워크 연결을 확인하고 다시 시도해주세요.';
+        }
+
+        alert(errorMessage);
+
+        // ⭐️ 오류 발생 시에는 페이지 이동하지 않음
+        return;
       }
 
       // ⭐️ 선택된 서브옵션에서 백엔드 API에 맞는 ID 추출 함수

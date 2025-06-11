@@ -52,8 +52,8 @@ const SignInPage = () => {
         console.log('관리자 로그인 /admin으로 이동');
         navigate('/admin', { replace: true });
       } else if (data.role === 'ROLE_MANAGER') {
-        console.log('매니저 로그인 /matching/list로 이동');
-        navigate('/matching/list', { replace: true }); // 매니저는 직접 매칭 리스트로 이동
+        console.log('매니저 로그인 /manager/mypage로 이동');
+        navigate('/manager/mypage', { replace: true }); // 매니저는 직접 매칭 리스트로 이동
       } else {
         console.warn('알 수 없는 사용자 역할:', data.role);
         navigate('/', { replace: true }); // 기본 페이지로 이동

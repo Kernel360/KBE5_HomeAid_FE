@@ -8,6 +8,9 @@ import {
   CUSTOMER_ACTION,
 } from '../constants/matchingData';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+
 // ⭐️ 실제 예약 API 호출을 위한 helper 함수 추가
 const apiCall = async (url, options = {}) => {
   try {
@@ -57,7 +60,7 @@ const apiCall = async (url, options = {}) => {
     }
 
     // ⭐️ 백엔드 서버 직접 호출
-    const fullUrl = `http://localhost:8080${url}`;
+    const fullUrl = `${API_BASE_URL}${url}`;
 
     const requestOptions = {
       headers: {
@@ -675,7 +678,7 @@ export const useManagerMatching = () => {
           console.log('📋 백엔드 개발자에게 전달할 정보:');
           console.log('   🎯 문제: CORS 정책으로 인한 API 요청 차단');
           console.log(
-            '   🌐 Origin: http://localhost:3000 → http://localhost:8080'
+            '   🌐 Origin: http://localhost:3000 → ${API_BASE_URL}'
           );
           console.log('   📦 필요한 설정 (Spring Boot):');
           console.log('   ');

@@ -1,8 +1,12 @@
 // // src/features/user/api.js
 // import axios from 'axios';
 
-// // 환경변수로 API 서버 주소 관리 (Vite 기준)
-// const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+
+// const API_URL = `${API_BASE_URL}/api/${API_VERSION}`;
 
 // // axios 인스턴스 생성 (withCredentials 등 옵션은 상황에 따라 추가)
 // const api = axios.create({
