@@ -30,18 +30,55 @@ const UserServiceSubOption = () => {
 
   // ⭐️ 사용자 인사말 생성 함수
   const getUserGreeting = () => {
+    // 🔍 디버깅: 사용자 정보 상세 확인
+    console.log('🔍 UserServiceSubOption - 전체 사용자 정보:', user);
+    console.log('🔍 UserServiceSubOption - 사용자 이름 (name):', user?.name);
+    console.log(
+      '🔍 UserServiceSubOption - 사용자 이름 (username):',
+      user?.username
+    );
+    console.log('🔍 UserServiceSubOption - 사용자 전화번호:', user?.phone);
+    console.log('🔍 UserServiceSubOption - 사용자 ID:', user?.userId);
+    console.log('🔍 UserServiceSubOption - 사용자 역할:', user?.role);
+
     if (!user) {
       return '안녕하세요, 고객님!';
     }
 
-    let userName = user.name || user.phone || '고객';
+    // 🔧 백엔드에서 username 필드로 이름이 오므로 수정
+    let userName = user.username || user.name || user.phone || '고객';
 
     // 이미 "님"이 붙어있다면 제거하여 중복 방지
     if (userName.endsWith('님')) {
       userName = userName.slice(0, -1);
     }
 
-    return `${userName}님, 어떤 청소 서비스가 필요하신가요?`;
+    console.log('🔍 UserServiceSubOption - 최종 표시될 이름:', userName);
+    return `안녕하세요, ${userName}님!`;
+  };
+
+  // 개인화된 서비스 질문 메시지 생성 함수
+  const getPersonalizedServiceQuestion = () => {
+    // 🔍 디버깅: 개인화 질문에서 사용자 정보 확인
+    console.log('🔍 getPersonalizedServiceQuestion - 사용자 정보:', user);
+
+    if (!user) {
+      return '어떤 서비스가 필요하신가요?';
+    }
+
+    // 🔧 백엔드에서 username 필드로 이름이 오므로 수정
+    let userName = user.username || user.name || user.phone || '고객';
+
+    // 이미 "님"이 붙어있다면 제거하여 중복 방지
+    if (userName.endsWith('님')) {
+      userName = userName.slice(0, -1);
+    }
+
+    console.log(
+      '🔍 getPersonalizedServiceQuestion - 최종 사용자 이름:',
+      userName
+    );
+    return `${userName}님, 어떤 서비스가 필요하신가요?`;
   };
 
   // ⭐️ 하위 옵션 선택 핸들러
@@ -197,7 +234,7 @@ const UserServiceSubOption = () => {
           {/* 서비스 선택 메시지 섹션 */}
           <div className="service-message-section">
             <h2 className="service-message">
-              {SERVICE_DESCRIPTIONS.CLEANING_QUESTION}
+              {getPersonalizedServiceQuestion()}
             </h2>
             <p className="sub-message">원하는 청소 서비스를 선택해주세요.</p>
           </div>
