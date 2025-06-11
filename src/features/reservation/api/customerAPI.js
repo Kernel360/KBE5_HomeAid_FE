@@ -7,10 +7,32 @@ const getAuthHeaders = () => {
   // accessToken 키로 통일 (authService.js와 일치)
   let token = localStorage.getItem('accessToken');
 
-  // ⭐️ 테스트 환경에서 토큰이 없으면 임시 토큰 사용 (403 에러 방지)
+  // JWT 토큰 상태 확인
+  if (token && token.startsWith('eyJ')) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('🔍 JWT 토큰 내용:', payload);
+      console.log('🔍 토큰 발급 시간:', new Date(payload.iat * 1000));
+      console.log('🔍 토큰 만료 시간:', new Date(payload.exp * 1000));
+      console.log('🔍 현재 시간:', new Date());
+
+      const isExpired = payload.exp * 1000 < Date.now();
+      console.log('🔍 토큰 만료 여부:', isExpired ? '⚠️ 만료됨' : '✅ 유효함');
+
+      if (isExpired) {
+        console.warn('⚠️ 토큰이 만료되었습니다. 재로그인이 필요합니다.');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('auth-storage');
+        token = null;
+      }
+    } catch (error) {
+      console.warn('🔍 JWT 토큰 파싱 실패:', error.message);
+    }
+  }
+
+  // 토큰이 없으면 에러 발생
   if (!token) {
-    console.log('⚠️ 토큰이 없어서 테스트용 토큰 사용 (개발 환경)');
-    token = 'test-token-for-development'; // 백엔드에서 허용하는 테스트 토큰
+    throw new Error('인증 토큰이 없습니다. 로그인이 필요합니다.');
   }
 
   const headers = {
@@ -230,13 +252,17 @@ export const createCustomerReservation = async (reservationData) => {
   try {
     console.log('🔄 Spring Boot ReservationRequestDto 형식으로 변환');
 
-    // Spring Boot ReservationRequestDto에 정확히 맞는 구조
+    // ⭐️ UserServiceRequest.jsx에서 전송하는 데이터 구조 그대로 사용
     const springBootData = {
-      requestedDate: reservationData.reservationDate, // LocalDate (yyyy-MM-dd)
-      requestedTime: `${reservationData.reservationTime}:00`, // LocalTime (HH:mm:ss)
+      requestedDate: reservationData.requestedDate, // LocalDate (yyyy-MM-dd)
+      requestedTime: reservationData.requestedTime, // LocalTime (HH:mm:ss)
       subOptionId: reservationData.subOptionId, // Long
-      latitude: reservationData.latitude, // Double (nullable)
-      longitude: reservationData.longitude, // Double (nullable)
+      customerId: reservationData.customerId, // Long (필수)
+      address: reservationData.address, // String
+      addressDetail: reservationData.addressDetail, // String
+      totalPrice: reservationData.totalPrice, // Integer
+      totalDuration: reservationData.totalDuration, // Integer
+      customerMemo: reservationData.customerMemo || '', // String (TEXT)
     };
 
     console.log('📤 Spring Boot로 전송할 데이터:', springBootData);

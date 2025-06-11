@@ -57,7 +57,8 @@ const UserServiceOption = () => {
       userName = userName.slice(0, -1);
     }
 
-    return `${userName}님, 오늘 어떤 도움이 필요하신가요?`;
+    // return `${userName}님, 오늘 어떤 도움이 필요하신가요?`;
+    return `오늘 어떤 도움이 필요하신가요?`;
   };
 
   React.useEffect(() => {

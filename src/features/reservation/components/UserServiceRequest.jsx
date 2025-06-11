@@ -352,6 +352,8 @@ const UserServiceRequest = () => {
           backendReservationData
         );
 
+        console.log('✅ 백엔드 예약 성공:', backendReservation);
+
         // ⭐️ 백엔드 성공 시 로컬 스토어에도 추가 (즉시 반영용)
         const { addReservation } = useReservationListStore.getState();
         const localReservationData = {
@@ -372,7 +374,7 @@ const UserServiceRequest = () => {
           // 백엔드 응답 데이터도 포함
           backendData: {
             ...backendReservation,
-            status: 'REQUESTED', // 새 예약의 기본 상태
+            status: backendReservation.status || 'REQUESTED',
             subOptionId: getSubOptionId(
               currentReservationData.selectedSubOption
             ),
@@ -402,8 +404,22 @@ const UserServiceRequest = () => {
         // ⭐️ 이용내역 페이지로 이동
         navigate('/user/reservations');
       } catch (backendError) {
-        // ⭐️ 사용자에게 오류 메시지 표시 (로컬 저장 없음)
+        // ⭐️ 사용자에게 오류 메시지 표시
         let errorMessage = '예약 생성에 실패했습니다.';
+
+        // 403 권한 오류 처리
+        if (
+          backendError.message.includes('403') ||
+          backendError.message.includes('Forbidden')
+        ) {
+          errorMessage = '권한이 없습니다.\n\n';
+          errorMessage += '로그인이 만료되었을 수 있습니다.\n';
+          errorMessage += '다시 로그인해주세요.';
+
+          alert(errorMessage);
+          navigate('/auth/signin');
+          return;
+        }
 
         // 중복 예약 요청 처리
         if (
@@ -422,8 +438,8 @@ const UserServiceRequest = () => {
           errorMessage += '• 주소 정보가 정확한지 확인';
         } else if (backendError.message.includes('401')) {
           errorMessage += '\n\n로그인이 만료되었습니다. 다시 로그인해주세요.';
-        } else if (backendError.message.includes('403')) {
-          errorMessage += '\n\n접근 권한이 없습니다.';
+          navigate('/auth/signin');
+          return;
         } else if (backendError.message.includes('500')) {
           errorMessage +=
             '\n\n서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
