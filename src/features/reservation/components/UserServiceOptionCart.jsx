@@ -4,7 +4,7 @@ import './UserServiceOptionCart.css';
 import '../styles/common.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
-import { useCartData, usePaymentData } from '../hooks/useLocalStorage.js';
+import { useCartData } from '../hooks/useLocalStorage.js';
 
 const UserServiceOptionCart = () => {
   const navigate = useNavigate();
@@ -17,7 +17,6 @@ const UserServiceOptionCart = () => {
   });
 
   const { cartData, getTotalAmount } = useCartData();
-  const { updatePaymentData } = usePaymentData();
 
   const handleAllAgreement = (checked) => {
     setAgreements({
