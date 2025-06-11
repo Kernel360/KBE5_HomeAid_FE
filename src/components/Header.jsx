@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
 
 export default function Header({
   showBackButton = true,
@@ -7,6 +8,7 @@ export default function Header({
   isMainPage = false,
 }) {
   const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
 
   const handleBackClick = () => {
     if (onBackClick) {
@@ -22,6 +24,12 @@ export default function Header({
 
   const handleSignUpClick = () => {
     navigate('/auth/signup');
+  };
+
+  const handleLogoutClick = () => {
+    logout();
+    navigate('/');
+    window.location.reload(); // 상태 초기화를 위해 페이지 새로고침
   };
 
   return (
@@ -93,18 +101,36 @@ export default function Header({
       {/* 오른쪽: 메인 페이지일 때 로그인/회원가입 텍스트 */}
       {isMainPage && (
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleLoginClick}
-            className="px-3 py-1.5 text-sm text-black hover:text-gray-700 transition-colors duration-200"
-          >
-            로그인
-          </button>
-          <button
-            onClick={handleSignUpClick}
-            className="px-3 py-1.5 text-sm text-black hover:text-gray-700 transition-colors duration-200"
-          >
-            회원가입
-          </button>
+          {user ? (
+            // 로그인된 사용자용 버튼들
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-700">
+                {user.name || user.username}님
+              </span>
+              <button
+                onClick={handleLogoutClick}
+                className="px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors duration-200"
+              >
+                로그아웃
+              </button>
+            </div>
+          ) : (
+            // 비로그인 사용자용 버튼들
+            <>
+              <button
+                onClick={handleLoginClick}
+                className="px-3 py-1.5 text-sm text-black hover:text-gray-700 transition-colors duration-200"
+              >
+                로그인
+              </button>
+              <button
+                onClick={handleSignUpClick}
+                className="px-3 py-1.5 text-sm text-black hover:text-gray-700 transition-colors duration-200"
+              >
+                회원가입
+              </button>
+            </>
+          )}
         </div>
       )}
     </header>

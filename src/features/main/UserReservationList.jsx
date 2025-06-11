@@ -14,22 +14,42 @@ const UserReservationList = () => {
   const { user, accessToken } = useAuthStore();
 
   // 백엔드 API 훅
-  const {
-    reservations: apiReservations,
-    loading: apiLoading,
-    error: apiError,
-  } = useCustomerReservationList();
+  const { reservations: apiReservations, loadReservations } =
+    useCustomerReservationList();
 
   // 로컬 스토어 훅 (백업용)
   const { getAllReservations } = useReservationListStore();
 
   const [activeTab, setActiveTab] = useState('pending');
-  const [reservations] = useState({
+  const [reservations, setReservations] = useState({
     pending: [],
     completed: [],
     visited: [],
     cancelled: [],
   });
+
+  // ⭐️ 인증 상태 확인
+  useEffect(() => {
+    console.log('🔍 UserReservationList - 인증 상태 확인');
+    console.log('🔍 사용자 정보:', user);
+    console.log('🔍 액세스 토큰:', accessToken ? '있음' : '없음');
+    console.log('🔍 사용자 ID:', user?.userId);
+    console.log('🔍 사용자 역할:', user?.role);
+
+    if (!user || !accessToken) {
+      console.log('❌ 로그인 정보 없음 - 로그인 페이지로 이동');
+      navigate('/auth/signin');
+      return;
+    }
+
+    if (user.role !== 'ROLE_CUSTOMER') {
+      console.log('❌ 고객이 아닌 사용자 - 메인 페이지로 이동');
+      navigate('/');
+      return;
+    }
+
+    console.log('✅ 고객 인증 완료 - 예약 목록 로드 가능');
+  }, [user, accessToken, navigate]);
 
   // ⭐️ 페이징 상태 추가
   const [currentPage, setCurrentPage] = useState({
@@ -42,10 +62,62 @@ const UserReservationList = () => {
 
   // 데이터 새로고침 함수 - 의존성 최소화
   const refreshData = useCallback(async () => {
+    // ⭐️ 인증 확인 추가
     if (!user || !accessToken) {
+      console.log('❌ 인증 정보 없음 - 데이터 로드 중단');
       return false;
     }
-  }, []);
+
+    console.log('🔄 데이터 강제 새로고침...');
+    console.log(
+      '🔍 현재 로그인 사용자:',
+      user.userId,
+      user.name || user.username
+    );
+
+    try {
+      // 백엔드 API 시도
+      console.log('🌐 백엔드 API 호출 중...');
+      const backendData = await loadReservations();
+      console.log('✅ 백엔드 예약 데이터:', backendData);
+      console.log('📊 백엔드 데이터 상세:', {
+        pending: backendData.pending?.length || 0,
+        completed: backendData.completed?.length || 0,
+        visited: backendData.visited?.length || 0,
+      });
+      setReservations(backendData);
+      return true;
+    } catch (error) {
+      console.warn('❌ 백엔드 연결 실패, 로컬 데이터 사용:', error);
+
+      // JWT 토큰 관련 에러인 경우 재로그인 유도
+      if (
+        error.message.includes('401') ||
+        error.message.includes('JWT_INVALID')
+      ) {
+        console.log('🔍 JWT 토큰 문제 - 재로그인 필요');
+        alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+        navigate('/auth/signin');
+        return false;
+      }
+
+      // 백엔드 실패 시 로컬 스토어 사용
+      const localData = getAllReservations();
+      console.log('💾 로컬 예약 데이터:', localData);
+      console.log('📊 로컬 데이터 상세:', {
+        pending: localData.pending?.length || 0,
+        completed: localData.completed?.length || 0,
+        visited: localData.visited?.length || 0,
+      });
+      setReservations({
+        pending: localData.pending || [],
+        completed: localData.completed || [],
+        visited: localData.visited || [],
+        cancelled: localData.cancelled || [],
+      });
+      return false;
+    }
+  }, [loadReservations, getAllReservations, user, accessToken, navigate]);
 
   // 예약 데이터 로드 - 컴포넌트 마운트 시에만 실행
   useEffect(() => {
@@ -53,6 +125,50 @@ const UserReservationList = () => {
     if (!user || !accessToken) {
       console.log('❌ 인증 정보 없음 - 데이터 로드 건너뛰기');
       return;
+    }
+
+    console.log('🔄 예약 데이터 로드 시작...');
+    console.log('🔍 현재 사용자:', user);
+    console.log('🔍 API 예약 데이터:', apiReservations);
+
+    // ⭐️ 먼저 로컬 스토어 데이터 확인
+    const localData = getAllReservations();
+    console.log('💾 로컬 스토어 예약 데이터:', localData);
+    console.log('📊 로컬 데이터 개수:', {
+      pending: localData.pending?.length || 0,
+      completed: localData.completed?.length || 0,
+      visited: localData.visited?.length || 0,
+      cancelled: localData.cancelled || 0,
+    });
+
+    // ⭐️ 로컬 데이터가 있으면 먼저 표시
+    if (
+      localData &&
+      (localData.pending?.length > 0 ||
+        localData.completed?.length > 0 ||
+        localData.visited?.length > 0)
+    ) {
+      console.log('✅ 로컬 스토어에서 예약 데이터 발견 - 우선 표시');
+      setReservations({
+        pending: localData.pending || [],
+        completed: localData.completed || [],
+        visited: localData.visited || [],
+        cancelled: localData.cancelled || [],
+      });
+    }
+
+    // 백엔드 API 데이터가 있으면 사용
+    if (apiReservations) {
+      console.log('🌐 백엔드 API 데이터 사용:', apiReservations);
+      setReservations(apiReservations);
+    } else {
+      // 백엔드 데이터가 없으면 새로 로드 시도
+      console.log('🌐 백엔드 API 데이터 로드 시도...');
+      refreshData().then((success) => {
+        if (!success) {
+          console.log('⚠️ 백엔드 실패 - 로컬 데이터 계속 사용');
+        }
+      });
     }
   }, [apiReservations, refreshData, user, accessToken, getAllReservations]);
 
@@ -220,49 +336,6 @@ const UserReservationList = () => {
       <Header />
       <div className="page-content-wrapper">
         <div className="reservation-list-container">
-          {/* 새로고침 버튼 */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '16px 20px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px',
-              margin: '16px',
-            }}
-          >
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {/* 백엔드 API 로딩 중일 때 로딩 표시 */}
-              {apiLoading && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    color: '#666',
-                    fontSize: '14px',
-                  }}
-                >
-                  <span>📡 데이터 불러오는 중...</span>
-                </div>
-              )}
-
-              {/* 백엔드 API 에러 시 에러 표시 */}
-              {apiError && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    color: '#e74c3c',
-                    fontSize: '14px',
-                  }}
-                >
-                  <span>⚠️ 연결 오류</span>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* 탭 네비게이션 */}
           <div className="tab-navigation">
             {getTabData.map((tab) => (
@@ -284,6 +357,11 @@ const UserReservationList = () => {
             <div className="reservation-cards">
               {(() => {
                 const currentReservations = getCurrentTabReservations;
+                console.log(`🎯 ${activeTab} 탭 데이터:`, currentReservations);
+                console.log(
+                  `📊 ${activeTab} 탭 개수:`,
+                  currentReservations.length
+                );
 
                 if (currentReservations.length > 0) {
                   return currentReservations.map((reservation) => (

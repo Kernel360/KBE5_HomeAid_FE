@@ -1,7 +1,28 @@
 import Header from '../../components/Header.jsx';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../stores/authStore';
 
 // 메인 페이지 컴포넌트
 const MainPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+
+  const handleServiceClick = (servicePath) => {
+    if (user) {
+      // 로그인된 사용자는 바로 서비스로 이동
+      if (user.role === 'ROLE_CUSTOMER') {
+        navigate(servicePath);
+      } else if (user.role === 'ROLE_MANAGER') {
+        navigate('/manager/mypage');
+      } else if (user.role === 'ROLE_ADMIN') {
+        navigate('/admin');
+      }
+    } else {
+      // 비로그인 사용자는 로그인 페이지로 이동
+      navigate('/auth/signin');
+    }
+  };
+
   return (
     <div className="min-h-screen flex justify-center">
       <div className="w-full max-w-lg relative bg-white">
@@ -47,6 +68,69 @@ const MainPage = () => {
                 앤트워크 서비스 이용가능!
               </h2>
             </div>
+          </div>
+
+          {/* 서비스 바로가기 버튼들 */}
+          <div className="mb-8">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              {user
+                ? `${user.name || user.username}님, 어떤 서비스가 필요하세요?`
+                : '서비스 이용을 위해 로그인해주세요'}
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              <button
+                onClick={() => handleServiceClick('/customer/service-option')}
+                className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+              >
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
+                  🧹
+                </div>
+                <span className="text-sm font-medium text-gray-700">청소</span>
+              </button>
+
+              <button
+                onClick={() => handleServiceClick('/customer/service-option')}
+                className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+              >
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-2">
+                  👕
+                </div>
+                <span className="text-sm font-medium text-gray-700">빨래</span>
+              </button>
+
+              <button
+                onClick={() => handleServiceClick('/customer/service-option')}
+                className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+              >
+                <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-2">
+                  👶
+                </div>
+                <span className="text-sm font-medium text-gray-700">육아</span>
+              </button>
+            </div>
+
+            {/* 로그인된 고객 사용자를 위한 추가 메뉴 */}
+            {user && user.role === 'ROLE_CUSTOMER' && (
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => navigate('/customer/reservations')}
+                  className="flex items-center justify-center p-4 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors duration-200"
+                >
+                  <span className="text-sm font-medium text-blue-700">
+                    예약 내역
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/customer')}
+                  className="flex items-center justify-center p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors duration-200"
+                >
+                  <span className="text-sm font-medium text-gray-700">
+                    마이페이지
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 공지사항 리스트 */}

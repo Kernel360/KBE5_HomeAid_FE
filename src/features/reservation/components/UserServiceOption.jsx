@@ -9,9 +9,6 @@ import {
   SERVICE_DESCRIPTIONS,
   SERVICE_TYPES,
 } from '../constants/serviceData.js';
-import clean1 from '../../../assets/images/clean1.png';
-import housework2 from '../../../assets/images/housework2.png';
-import cook3 from '../../../assets/images/cook3.png';
 
 const UserServiceOption = () => {
   const navigate = useNavigate();
@@ -106,7 +103,10 @@ const UserServiceOption = () => {
               onClick={() => handleServiceClick(SERVICE_TYPES.CLEANING)}
             >
               <div className="service-icon">
-                <img src={clean1} alt="청소 서비스" className="service-image" />
+                <div className="emoji-icon-container blue-bg">
+                  <div className="emoji-icon">🧹</div>
+                </div>
+                <div className="service-label">청소</div>
               </div>
             </div>
             <div
@@ -114,11 +114,10 @@ const UserServiceOption = () => {
               onClick={() => handleServiceClick(SERVICE_TYPES.INTERIOR)}
             >
               <div className="service-icon">
-                <img
-                  src={housework2}
-                  alt="인테리어 서비스"
-                  className="service-image"
-                />
+                <div className="emoji-icon-container green-bg">
+                  <div className="emoji-icon">👕</div>
+                </div>
+                <div className="service-label">빨래</div>
               </div>
             </div>
             <div
@@ -126,7 +125,10 @@ const UserServiceOption = () => {
               onClick={() => handleServiceClick(SERVICE_TYPES.COOKING)}
             >
               <div className="service-icon">
-                <img src={cook3} alt="요리 서비스" className="service-image" />
+                <div className="emoji-icon-container pink-bg">
+                  <div className="emoji-icon">👶</div>
+                </div>
+                <div className="service-label">육아</div>
               </div>
             </div>
           </div>

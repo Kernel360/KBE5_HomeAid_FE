@@ -43,7 +43,7 @@ export const protectedAppRoutes = [
       { path: 'payment-complete', element: <UserPaymentComplete /> },
       { path: 'reservations', element: <UserReservationList /> },
       { path: 'reservations/:id', element: <UserReservationDetail /> },
-      { path: '', element: <MainPage /> }, // 기본 경로 (/customer)
+      // { path: '', element: <MainPage /> }, // 기본 경로 (/customer)
       { path: 'board/write', element: <BoardWrite /> },
       { path: 'event', element: <EventList /> },
       { path: 'board/list', element: <BoardList /> },
