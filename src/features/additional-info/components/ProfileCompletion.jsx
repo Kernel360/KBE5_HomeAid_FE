@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { Camera } from 'lucide-react';
 import { apiService } from '../../../store/api';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -66,6 +68,7 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
     apiService.serviceOption.create(allFormData)
       .then(response => {
         console.log('프로필 등록 성공:', response);
+        navigate('/manager/mypage');
         // 성공 후 처리 로직 (예: 다음 페이지로 이동)
       })
       .catch(error => {
