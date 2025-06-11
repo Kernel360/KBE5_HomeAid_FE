@@ -36,6 +36,102 @@ const SignInPage = () => {
       console.log('zus userId 확인 상태:', authStore.user.userId);
 
 
+      // ⭐️ 이름이 없는 경우 처리
+      // if (!auth.name) {
+      //   if (user.role === 'ROLE_CUSTOMER') {
+      //     user.name = '고객';
+      //     console.log('🔧 ROLE_CUSTOMER이므로 이름을 "고객"으로 설정');
+      //   } else if (user.role === 'ROLE_MANAGER') {
+      //     user.name = '매니저';
+      //     console.log('🔧 ROLE_MANAGER이므로 이름을 "매니저"로 설정');
+      //   } else if (user.role === 'ROLE_ADMIN') {
+      //     user.name = '관리자';
+      //     console.log('🔧 ROLE_ADMIN이므로 이름을 "관리자"로 설정');
+      //   } else {
+      //     // 임시로 전화번호 기반 이름 생성 (디버깅용)
+      //     user.name = `사용자_${phone.slice(-4)}`;
+      //     console.warn(
+      //       '🔧 임시로 전화번호 기반 이름을 생성했습니다:',
+      //       user.name
+      //     );
+      //     console.warn('🔍 백엔드 개발자에게 다음 정보를 전달하세요:');
+      //     console.warn('   - 사용자 이름을 어떤 필드로 제공해야 하는지');
+      //     console.warn('   - 현재 백엔드 응답:', data);
+      //   }
+      // }
+
+      // useAuthStore.getState().setUser(user);
+      // console.log('✅ authStore에 저장된 최종 사용자 정보:', user);
+
+      // // ⭐️ 사용자 이름이 제대로 없는 경우 별도 사용자 정보 조회 시도
+      // if (!user.name || user.name.startsWith('사용자_')) {
+      //   console.log('👤 사용자 상세 정보 조회 시도...');
+
+      //   // 여러 가능한 API 엔드포인트 시도
+      //   const profileEndpoints = [
+      //     '/api/v1/me',
+      //     '/api/v1/user/profile',
+      //     '/api/v1/users/profile',
+      //     `/api/v1/customers/${user.userId}`,
+      //     '/api/v1/auth/me',
+      //     '/api/v1/members/profile',
+      //   ];
+
+      //   for (const endpoint of profileEndpoints) {
+      //     try {
+      //       console.log(`🔍 API 엔드포인트 시도: ${endpoint}`);
+      //       const profileResponse = await fetch(
+      //         `http://localhost:8080${endpoint}`,
+      //         {
+      //           headers: {
+      //             Authorization: `Bearer ${token}`,
+      //             'Content-Type': 'application/json',
+      //           },
+      //         }
+      //       );
+
+      //       if (profileResponse.ok) {
+      //         const profileData = await profileResponse.json();
+      //         console.log(`✅ ${endpoint} 성공! 응답:`, profileData);
+
+      //         // 프로필에서 실제 이름 추출
+      //         const realName =
+      //           profileData.data?.name ||
+      //           profileData.name ||
+      //           profileData.data?.customerName ||
+      //           profileData.customerName ||
+      //           profileData.data?.realName ||
+      //           profileData.realName ||
+      //           profileData.data?.fullName ||
+      //           profileData.fullName ||
+      //           profileData.data?.memberName ||
+      //           profileData.memberName;
+
+      //         if (realName && realName !== '고객' && realName !== 'customer') {
+      //           user.name = realName;
+      //           useAuthStore.getState().setUser(user);
+      //           console.log('🎉 실제 사용자 이름을 찾았습니다:', realName);
+      //           break; // 성공하면 반복 중단
+      //         }
+      //       } else {
+      //         console.log(`❌ ${endpoint} 실패: ${profileResponse.status}`);
+      //       }
+      //     } catch (profileError) {
+      //       console.log(`❌ ${endpoint} 에러:`, profileError.message);
+      //     }
+      //   }
+
+      //   // 모든 API 시도 후에도 이름을 찾지 못한 경우
+      //   if (!user.name || user.name.startsWith('사용자_')) {
+      //     console.warn(
+      //       '⚠️ 모든 프로필 API 시도 실패. 백엔드 개발자에게 문의 필요'
+      //     );
+      //     console.warn('📞 백엔드 개발자에게 전달할 정보:');
+      //     console.warn('   - 사용자 ID:', user.userId);
+      //     console.warn('   - 필요한 기능: 사용자 실제 이름 조회 API');
+      //     console.warn('   - 현재 시도한 엔드포인트들:', profileEndpoints);
+      //   }
+      // }
 
       // 역할에 따른 페이지 이동
       if (authStore.user.role === 'ROLE_CUSTOMER') {
