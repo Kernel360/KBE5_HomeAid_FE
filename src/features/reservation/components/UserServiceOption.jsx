@@ -15,20 +15,9 @@ import cook3 from '../../../assets/images/cook3.png';
 
 const UserServiceOption = () => {
   const navigate = useNavigate();
-  const { user, accessToken } = useAuthStore();
+  const { user } = useAuthStore();
 
   const getUserGreeting = () => {
-    // 🔍 디버깅: 사용자 정보 상세 확인
-    console.log('🔍 UserServiceOption - 전체 사용자 정보:', user);
-    console.log('🔍 UserServiceOption - 사용자 이름 (name):', user?.name);
-    console.log(
-      '🔍 UserServiceOption - 사용자 이름 (username):',
-      user?.username
-    );
-    console.log('🔍 UserServiceOption - 사용자 전화번호:', user?.phone);
-    console.log('🔍 UserServiceOption - 사용자 ID:', user?.userId);
-    console.log('🔍 UserServiceOption - 사용자 역할:', user?.role);
-
     if (!user) {
       return '안녕하세요, 고객님!';
     }
@@ -41,7 +30,6 @@ const UserServiceOption = () => {
       userName = userName.slice(0, -1);
     }
 
-    console.log('🔍 UserServiceOption - 최종 표시될 이름:', userName);
     return `안녕하세요, ${userName}님!`;
   };
 
@@ -61,41 +49,10 @@ const UserServiceOption = () => {
     return `오늘 어떤 도움이 필요하신가요?`;
   };
 
-  React.useEffect(() => {
-    console.log('🔐 UserServiceOption - 현재 사용자 정보:', user);
-    console.log(
-      '🔑 UserServiceOption - 액세스 토큰:',
-      accessToken ? '있음' : '없음'
-    );
-
-    // 🔍 localStorage에서 직접 확인
-    const storedAuth = localStorage.getItem('auth-storage');
-    if (storedAuth) {
-      try {
-        const parsedAuth = JSON.parse(storedAuth);
-        console.log(
-          '🔍 UserServiceOption - localStorage auth-storage:',
-          parsedAuth
-        );
-        console.log(
-          '🔍 UserServiceOption - localStorage user:',
-          parsedAuth.state?.user
-        );
-      } catch (error) {
-        console.error('🔍 UserServiceOption - localStorage 파싱 오류:', error);
-      }
-    }
-
-    if (!user || !accessToken) {
-      console.log('로그인 정보가 없습니다. 로그인 페이지로 이동합니다.');
-      navigate('/auth/signin');
-    }
-  }, [user, accessToken, navigate]);
-
   const handleServiceClick = (serviceType) => {
     console.log(`${serviceType} 서비스 선택됨`);
     if (serviceType === SERVICE_TYPES.CLEANING) {
-      navigate('/user/service-sub-option');
+      navigate('/customer/service-sub-option');
     }
     // TODO: 다른 서비스 타입에 대한 로직 구현
   };
@@ -122,9 +79,6 @@ const UserServiceOption = () => {
             {user && (
               <div className="user-welcome-info">
                 <p className="welcome-message">오늘도 깔끔한 하루 되세요! ✨</p>
-                {/* {user.role === 'ROLE_CUSTOMER' && (
-                  <span className="user-badge">고객</span>
-                )} */}
               </div>
             )}
           </div>
@@ -198,7 +152,7 @@ const UserServiceOption = () => {
           </div>
         </div>
       </div>
-      <Footer current="/user/service-option" />
+      <Footer current="/customer/service-option" />
     </div>
   );
 };

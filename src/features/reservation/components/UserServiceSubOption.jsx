@@ -28,56 +28,18 @@ const UserServiceSubOption = () => {
   // ⭐️ 인증된 사용자 정보 가져오기
   const { user, accessToken } = useAuthStore();
 
-  // ⭐️ 사용자 인사말 생성 함수
-  const getUserGreeting = () => {
-    // 🔍 디버깅: 사용자 정보 상세 확인
-    console.log('🔍 UserServiceSubOption - 전체 사용자 정보:', user);
-    console.log('🔍 UserServiceSubOption - 사용자 이름 (name):', user?.name);
-    console.log(
-      '🔍 UserServiceSubOption - 사용자 이름 (username):',
-      user?.username
-    );
-    console.log('🔍 UserServiceSubOption - 사용자 전화번호:', user?.phone);
-    console.log('🔍 UserServiceSubOption - 사용자 ID:', user?.userId);
-    console.log('🔍 UserServiceSubOption - 사용자 역할:', user?.role);
-
-    if (!user) {
-      return '안녕하세요, 고객님!';
-    }
-
-    // 🔧 백엔드에서 username 필드로 이름이 오므로 수정
-    let userName = user.username || user.name || user.phone || '고객';
-
-    // 이미 "님"이 붙어있다면 제거하여 중복 방지
-    if (userName.endsWith('님')) {
-      userName = userName.slice(0, -1);
-    }
-
-    console.log('🔍 UserServiceSubOption - 최종 표시될 이름:', userName);
-    return `안녕하세요, ${userName}님!`;
-  };
-
   // 개인화된 서비스 질문 메시지 생성 함수
   const getPersonalizedServiceQuestion = () => {
-    // 🔍 디버깅: 개인화 질문에서 사용자 정보 확인
-    console.log('🔍 getPersonalizedServiceQuestion - 사용자 정보:', user);
-
     if (!user) {
       return '어떤 서비스가 필요하신가요?';
     }
 
-    // 🔧 백엔드에서 username 필드로 이름이 오므로 수정
     let userName = user.username || user.name || user.phone || '고객';
 
-    // 이미 "님"이 붙어있다면 제거하여 중복 방지
     if (userName.endsWith('님')) {
       userName = userName.slice(0, -1);
     }
 
-    console.log(
-      '🔍 getPersonalizedServiceQuestion - 최종 사용자 이름:',
-      userName
-    );
     return `${userName}님, 어떤 서비스가 필요하신가요?`;
   };
 
@@ -119,7 +81,7 @@ const UserServiceSubOption = () => {
       alert('서비스 옵션을 선택해주세요.');
       return;
     }
-    navigate('/user/service-request');
+    navigate('/customer/service-request');
   };
 
   // ⭐️ 로그인 상태 확인
@@ -216,7 +178,7 @@ const UserServiceSubOption = () => {
             </div>
           </div>
         </div>
-        <Footer current="/user/service-sub-option" />
+        <Footer current="/customer/service-sub-option" />
       </div>
     );
   }
@@ -226,11 +188,6 @@ const UserServiceSubOption = () => {
       <Header showBackButton={true} />
       <div className="page-content-wrapper">
         <div className="reservation-container" style={{ marginTop: '64px' }}>
-          {/* 인사말 섹션 */}
-          <div className="greeting-section">
-            <h1 className="greeting-text">{getUserGreeting()}</h1>
-          </div>
-
           {/* 서비스 선택 메시지 섹션 */}
           <div className="service-message-section">
             <h2 className="service-message">
@@ -391,7 +348,7 @@ const UserServiceSubOption = () => {
           </div>
         </div>
       </div>
-      <Footer current="/user/service-sub-option" />
+      <Footer current="/customer/service-sub-option" />
     </div>
   );
 };

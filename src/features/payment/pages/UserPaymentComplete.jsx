@@ -58,7 +58,7 @@ const UserPaymentComplete = () => {
 
   const handleViewReservation = () => {
     // 예약 상세 페이지로 이동 (추후 구현)
-    navigate('/user/reservations');
+    navigate('/customer/reservations');
   };
 
   return (
@@ -227,7 +227,7 @@ const UserPaymentComplete = () => {
           </p>
         </div>
       </div>
-      <Footer current="/user/payment-complete" />
+      <Footer current="/customer/payment-complete" />
     </div>
   );
 };

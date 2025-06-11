@@ -18,7 +18,7 @@ import ServiceRegistration from '../features/additional-info/pages';
 import CustomerLayout from '../layouts/CustomerLayout';
 import MainPage from '../features/main/MainPage';
 import Mypage from '../features/mypage/customer/pages/Mypage';
-import ManagerLayout from '../layouts/ManagerLayout'
+import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
 import ManagerMain from '../features/manager/pages/ManagerMainPage';
 
@@ -31,17 +31,16 @@ export const protectedAppRoutes = [
     allowedRoles: ['ROLE_CUSTOMER'],
     children: [
       { path: 'mypage', element: <Mypage /> },
-      { path: 'reservations', element: <UserReservationList /> },
-      {
-        path: 'reservation/:reservationId',
-        element: <UserReservationDetail />,
-      },
+      // 예약 관련 경로들 - 고객 권한 필요
       { path: 'service-option', element: <UserServiceOption /> },
       { path: 'service-sub-option', element: <UserServiceSubOption /> },
       { path: 'service-option-cart', element: <UserServiceOptionCart /> },
       { path: 'service-request', element: <UserServiceRequest /> },
       { path: 'payment', element: <UserPayment /> },
       { path: 'payment-complete', element: <UserPaymentComplete /> },
+      { path: 'reservations', element: <UserReservationList /> },
+      { path: 'reservations/:id', element: <UserReservationDetail /> },
+      { path: '', element: <MainPage /> }, // 기본 경로 (/customer)
     ],
   },
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)

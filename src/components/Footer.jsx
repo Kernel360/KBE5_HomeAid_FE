@@ -9,7 +9,7 @@ const navItems = [
   { label: '홈', icon: Home, to: '/' },
   { label: '게시판', icon: MessageCircle, to: '/board' },
   { label: '이벤트', icon: Star, to: '/event' },
-  { label: '이용내역', icon: ClipboardList, to: '/user/reservations' },
+  { label: '이용내역', icon: ClipboardList, to: '/customer/reservations' },
   { label: '더보기', icon: Menu, to: '/' },
 ];
 

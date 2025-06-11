@@ -58,7 +58,7 @@ const Footer = () => {
     { icon: Home, label: '홈', url: '/' },
     { icon: Search, label: '실시간 검색' },
     { icon: Heart, label: '이벤트' },
-    { icon: Users, label: '이용 내역', url: '/user/reservations' },
+    { icon: Users, label: '이용 내역', url: '/customer/reservations' },
     { icon: MoreHorizontal, label: '더보기', url: '/mypage' },
   ];
 

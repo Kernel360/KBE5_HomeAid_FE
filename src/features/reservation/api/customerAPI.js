@@ -11,16 +11,10 @@ const getAuthHeaders = () => {
   if (token && token.startsWith('eyJ')) {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('🔍 JWT 토큰 내용:', payload);
-      console.log('🔍 토큰 발급 시간:', new Date(payload.iat * 1000));
-      console.log('🔍 토큰 만료 시간:', new Date(payload.exp * 1000));
-      console.log('🔍 현재 시간:', new Date());
 
       const isExpired = payload.exp * 1000 < Date.now();
-      console.log('🔍 토큰 만료 여부:', isExpired ? '⚠️ 만료됨' : '✅ 유효함');
 
       if (isExpired) {
-        console.warn('⚠️ 토큰이 만료되었습니다. 재로그인이 필요합니다.');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('auth-storage');
         token = null;
@@ -40,7 +34,7 @@ const getAuthHeaders = () => {
     Authorization: `Bearer ${token}`,
   };
 
-  console.log('🔐 요청 헤더:', {
+  console.log('요청 헤더:', {
     hasToken: !!token,
     tokenPreview: token ? `${token.substring(0, 10)}...` : 'none',
   });
@@ -56,13 +50,6 @@ const apiCall = async (url, options = {}) => {
     ...options,
   };
 
-  console.log('🌐 API 호출:', {
-    url: fullUrl,
-    method: requestOptions.method || 'GET',
-    headers: requestOptions.headers,
-    body: requestOptions.body,
-  });
-
   const response = await fetch(fullUrl, requestOptions);
 
   if (!response.ok) {
@@ -75,13 +62,6 @@ const apiCall = async (url, options = {}) => {
     } catch {
       errorData = { message: errorText || `HTTP ${response.status}` };
     }
-
-    console.error('❌ API 에러 응답:', {
-      status: response.status,
-      statusText: response.statusText,
-      errorData: errorData,
-      responseText: errorText,
-    });
 
     // 400 에러의 경우 더 자세한 정보 제공
     if (response.status === 400) {
@@ -150,45 +130,106 @@ export const getCustomerServices = async () => {
 
 // ==================== 주소 관련 API ====================
 
-// 기존 주소 목록 조회 (임시 목업 데이터 포함)
+// 기존 주소 목록 조회 (백엔드에서만 가져오기)
 export const getCustomerAddresses = async () => {
-  // 📊 Mock 주소 데이터 - 백엔드 구현 전까지 사용
-  const mockAddresses = [
-    {
-      id: 1,
-      type: '집',
-      main: '서울시 강남구 테헤란로 123',
-      detail: '101동 202호',
-      isDefault: true,
-    },
-    {
-      id: 2,
-      type: '회사',
-      main: '서울시 서초구 서초대로 456',
-      detail: '5층',
-      isDefault: false,
-    },
-    {
-      id: 3,
-      type: '기타',
-      main: '서울시 마포구 홍대입구역 12번 출구',
-      detail: '2층 카페 앞',
-      isDefault: false,
-    },
-  ];
+  try {
+    console.log(
+      '현재 JWT 토큰:',
+      localStorage.getItem('accessToken') ? '있음' : '없음'
+    );
 
-  // 약간의 로딩 시뮬레이션
-  await new Promise((resolve) => setTimeout(resolve, 100));
+    // 실제 백엔드 API 호출
+    const response = await apiCall('/api/v1/customers/addresses');
 
-  return mockAddresses;
+    if (response && response.length > 0) {
+      // 백엔드 CustomerAddressResponseDto[]를 프론트엔드 형식으로 변환
+      const transformedAddresses = response.map((address, index) => {
+        const transformed = {
+          id: address.id,
+          type: index === 0 ? '집' : index === 1 ? '회사' : '기타', // 임시 타입 할당
+          main: address.address, // ⭐️ 백엔드 address 필드
+          detail: address.addressDetail || '', // ⭐️ 백엔드 addressDetail 필드
+          address: address.address, // 백업용 필드
+          addressDetail: address.addressDetail || '', // 백업용 필드
+          isDefault: index === 0, // 첫 번째 주소를 기본값으로 설정
+          fullAddress: address.fullAddress,
+          // 백엔드에서 위도/경도가 제외되어 있으므로 기본값 설정
+          coordinates: {
+            lat: null,
+            lng: null,
+          },
+        };
+
+        console.log(`✨ 변환된 주소 ${index + 1}:`, transformed);
+        return transformed;
+      });
+
+      return transformedAddresses;
+    } else {
+      return []; // ⭐️ Mock 데이터 대신 빈 배열 반환
+    }
+  } catch (error) {
+    // 토큰 관련 에러인지 확인
+    if (error.message.includes('403')) {
+      console.log('🔍 JWT 토큰 문제 가능성:');
+      const token = localStorage.getItem('accessToken');
+      console.log('- 토큰 존재 여부:', !!token);
+      if (token) {
+        console.log('- 토큰 미리보기:', token.substring(0, 20) + '...');
+      }
+    }
+
+    // ⭐️ 에러 시에도 Mock 데이터 대신 빈 배열 반환
+    return [];
+  }
 };
 
 // 주소 등록
 export const createCustomerAddress = async (addressData) => {
-  return apiCall('/api/v1/customers/addresses', {
-    method: 'POST',
-    body: JSON.stringify(addressData),
-  });
+  try {
+    // 백엔드 CustomerAddressSaveRequestDto 구조에 맞게 데이터 변환
+    const backendAddressData = {
+      address: addressData.main || addressData.address || '', // 기본 주소
+      addressDetail: addressData.detail || addressData.addressDetail || '', // 상세 주소
+      latitude: addressData.coordinates?.lat || addressData.latitude || null, // 위도
+      longitude: addressData.coordinates?.lng || addressData.longitude || null, // 경도
+    };
+
+    const response = await apiCall('/api/v1/customers/addresses', {
+      method: 'POST',
+      body: JSON.stringify(backendAddressData),
+    });
+
+    // 백엔드 CustomerAddressResponseDto를 프론트엔드 형식으로 변환
+    const transformedResponse = {
+      id: response.id,
+      type: '새 주소', // 기본 타입
+      main: response.address,
+      detail: response.addressDetail || '',
+      isDefault: false,
+      fullAddress: response.fullAddress,
+      // 위도/경도는 응답에서 제외되어 있지만 원본 데이터에서 가져옴
+      coordinates: {
+        lat: backendAddressData.latitude,
+        lng: backendAddressData.longitude,
+      },
+    };
+
+    return transformedResponse;
+  } catch (error) {
+    // 백엔드 연결 실패 시 상세 에러 메시지
+    if (error.message.includes('403')) {
+      throw new Error('주소 저장 권한이 없습니다. 로그인 상태를 확인해주세요.');
+    } else if (error.message.includes('400')) {
+      throw new Error(
+        '주소 정보가 올바르지 않습니다. 필수 정보를 확인해주세요.'
+      );
+    } else if (error.message.includes('409')) {
+      throw new Error('이미 동일한 주소가 저장되어 있습니다.');
+    } else {
+      throw new Error(`주소 저장에 실패했습니다: ${error.message}`);
+    }
+  }
 };
 
 // 주소 삭제
@@ -252,14 +293,13 @@ export const createCustomerReservation = async (reservationData) => {
   try {
     console.log('🔄 Spring Boot ReservationRequestDto 형식으로 변환');
 
-    // ⭐️ UserServiceRequest.jsx에서 전송하는 데이터 구조 그대로 사용
+    // ⭐️ CustomerAddress ID 방식으로 변경 (address, addressDetail 제거)
     const springBootData = {
       requestedDate: reservationData.requestedDate, // LocalDate (yyyy-MM-dd)
       requestedTime: reservationData.requestedTime, // LocalTime (HH:mm:ss)
       subOptionId: reservationData.subOptionId, // Long
       customerId: reservationData.customerId, // Long (필수)
-      address: reservationData.address, // String
-      addressDetail: reservationData.addressDetail, // String
+      addressId: reservationData.addressId, // Long (CustomerAddress 테이블의 ID)
       totalPrice: reservationData.totalPrice, // Integer
       totalDuration: reservationData.totalDuration, // Integer
       customerMemo: reservationData.customerMemo || '', // String (TEXT)
@@ -272,18 +312,39 @@ export const createCustomerReservation = async (reservationData) => {
       body: JSON.stringify(springBootData),
     });
 
-    console.log('✅ 백엔드 응답:', response);
     return response;
   } catch (error) {
     console.error('❌ Spring Boot DB 저장 실패:', error.message);
 
-    // 400 Bad Request의 구체적인 원인 분석
-    if (error.message.includes('400')) {
-      console.log('🔍 400 오류 원인 분석:');
-      console.log('- requestedDate 필드 확인 (yyyy-MM-dd 형식)');
-      console.log('- requestedTime 필드 확인 (HH:mm:ss 형식)');
-      console.log('- subOptionId 필드 확인 (Long 타입)');
-      console.log('📝 원본 데이터:', JSON.stringify(reservationData, null, 2));
+    // JWT 토큰 관련 에러 상세 처리
+    if (
+      error.message.includes('401') ||
+      error.message.includes('JWT_INVALID')
+    ) {
+      console.log('🔍 JWT 토큰 문제 진단:');
+      const token = localStorage.getItem('accessToken');
+
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log('🔍 토큰 만료 시간:', new Date(payload.exp * 1000));
+          console.log('🔍 현재 시간:', new Date());
+          console.log('🔍 토큰 만료됨:', payload.exp * 1000 < Date.now());
+        } catch (parseError) {
+          console.log('🔍 토큰 파싱 실패:', parseError.message);
+        }
+      }
+
+      throw new Error(
+        'JWT_TOKEN_INVALID: JWT 토큰이 유효하지 않습니다. 백엔드 JWT 설정을 확인해주세요.'
+      );
+    }
+
+    // 403 Forbidden 에러 처리
+    if (error.message.includes('403')) {
+      throw new Error(
+        'BACKEND_AUTH_ERROR: 백엔드 권한 설정에 문제가 있습니다. Spring Security 설정을 확인해주세요.'
+      );
     }
 
     // 실제 DB 저장 실패를 나타내는 에러를 다시 throw

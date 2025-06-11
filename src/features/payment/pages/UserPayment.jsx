@@ -403,7 +403,7 @@ const UserPayment = () => {
       );
 
       // 결제 완료 페이지로 이동
-      navigate('/user/payment-complete', {
+      navigate('/customer/payment-complete', {
         state: {
           paymentResult: paymentResult,
           serviceInfo: paymentData.serviceInfo,
@@ -883,7 +883,7 @@ const UserPayment = () => {
           </div>
         </div>
       </div>
-      <Footer current="/user/payment" />
+      <Footer current="/customer/payment" />
     </div>
   );
 };

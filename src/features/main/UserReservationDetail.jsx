@@ -16,7 +16,7 @@ const UserReservationDetail = () => {
     // 예약 정보가 없으면 목록으로 돌아가기
     if (!reservation) {
       console.warn('예약 정보가 없습니다. 목록으로 돌아갑니다.');
-      navigate('/user/reservations');
+      navigate('/customer/reservations');
       return;
     }
     setLoading(false);
@@ -73,7 +73,7 @@ const UserReservationDetail = () => {
 
   // 결제하기 버튼 클릭
   const handlePayment = () => {
-    navigate('/user/payment', {
+    navigate('/customer/payment', {
       state: {
         reservation: reservation,
         fromDetail: true,
@@ -90,7 +90,7 @@ const UserReservationDetail = () => {
             <div className="loading-spinner">로딩 중...</div>
           </div>
         </div>
-        <Footer current="/user/reservations" />
+        <Footer current="/customer/reservations" />
       </div>
     );
   }
@@ -102,12 +102,12 @@ const UserReservationDetail = () => {
         <div className="page-content-wrapper">
           <div className="error-container">
             <p>예약 정보를 찾을 수 없습니다.</p>
-            <button onClick={() => navigate('/user/reservations')}>
+            <button onClick={() => navigate('/customer/reservations')}>
               목록으로 돌아가기
             </button>
           </div>
         </div>
-        <Footer current="/user/reservations" />
+        <Footer current="/customer/reservations" />
       </div>
     );
   }
@@ -116,7 +116,7 @@ const UserReservationDetail = () => {
     <div className="reservation-detail-page">
       <Header
         showBackButton
-        onBackClick={() => navigate('/user/reservations')}
+        onBackClick={() => navigate('/customer/reservations')}
       />
       <div className="page-content-wrapper">
         <div className="reservation-detail-container">
@@ -290,7 +290,7 @@ const UserReservationDetail = () => {
           ) : null}
         </div>
       </div>
-      <Footer current="/user/reservations" />
+      <Footer current="/customer/reservations" />
     </div>
   );
 };

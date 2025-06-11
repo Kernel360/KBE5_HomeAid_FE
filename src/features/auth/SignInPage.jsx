@@ -46,8 +46,8 @@ const SignInPage = () => {
 
       // 역할에 따른 페이지 이동
       if (data.role === 'ROLE_CUSTOMER') {
-        console.log('고객 로그인 /user/service-option으로 이동');
-        navigate('/user/service-option', { replace: true });
+        console.log('고객 로그인 /customer/service-option으로 이동');
+        navigate('/customer/service-option', { replace: true });
       } else if (data.role === 'ROLE_ADMIN') {
         console.log('관리자 로그인 /admin으로 이동');
         navigate('/admin', { replace: true });
