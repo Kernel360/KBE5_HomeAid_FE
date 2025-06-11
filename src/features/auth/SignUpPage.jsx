@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 
 const SignUpPage = () => {
   const [userType, setUserType] = useState('customer');
@@ -14,26 +16,109 @@ const SignUpPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', minHeight: '100vh', background: '#f4f5f7', padding: '40px 20px' }}>
-      <div style={{ width: '100%', maxWidth: '360px', padding: '24px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', textAlign: 'left' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#222', marginBottom: '8px' }}>회원가입</h2>
-        <div style={{ fontSize: '15px', color: '#888', marginBottom: '24px' }}>회원 유형을 선택해주세요.</div>
+    <div
+      style={{
+        position: 'relative',
+        minHeight: '100vh',
+        overflow: 'x-hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      <Header showBackButton={true} />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', padding: '0' }}>
-          <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#247cff', borderRadius: '2px', marginRight: '2px' }}></div>
-          <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#ddd', borderRadius: '2px', marginRight: '2px' }}></div>
-          <div style={{ width: 'calc(33.33% - 2px)', height: '4px', background: '#ddd', borderRadius: '2px' }}></div>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '512px',
+          marginTop: '20px',
+          marginBottom: '10px',
+          minHeight: 'calc(100vh - 128px)', // Header + Footer 높이 제외
+          padding: '40px 20px',
+          boxSizing: 'border-box',
+          background: '#fff',
+        }}
+      >
+        <h2
+          style={{
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#222',
+            marginBottom: '8px',
+          }}
+        >
+          회원가입
+        </h2>
+        <div style={{ fontSize: '15px', color: '#888', marginBottom: '24px' }}>
+          회원 유형을 선택해주세요.
         </div>
 
-        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#222', marginBottom: '16px' }}>회원 유형</div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '32px',
+            padding: '0',
+          }}
+        >
+          <div
+            style={{
+              width: 'calc(33.33% - 2px)',
+              height: '4px',
+              background: '#247cff',
+              borderRadius: '2px',
+              marginRight: '2px',
+            }}
+          ></div>
+          <div
+            style={{
+              width: 'calc(33.33% - 2px)',
+              height: '4px',
+              background: '#ddd',
+              borderRadius: '2px',
+              marginRight: '2px',
+            }}
+          ></div>
+          <div
+            style={{
+              width: 'calc(33.33% - 2px)',
+              height: '4px',
+              background: '#ddd',
+              borderRadius: '2px',
+            }}
+          ></div>
+        </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+        <div
+          style={{
+            fontSize: '18px',
+            fontWeight: 'bold',
+            color: '#222',
+            marginBottom: '16px',
+          }}
+        >
+          회원 유형
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            marginBottom: '32px',
+          }}
+        >
           <label
             style={{
               display: 'flex',
               alignItems: 'center',
               padding: '20px',
-              border: userType === 'customer' ? '2px solid #247cff' : '1px solid #ddd',
+              border:
+                userType === 'customer'
+                  ? '2px solid #247cff'
+                  : '1px solid #ddd',
               borderRadius: '8px',
               cursor: 'pointer',
               background: userType === 'customer' ? '#f5faff' : '#fff',
@@ -53,7 +138,11 @@ const SignUpPage = () => {
                 height: '20px',
               }}
             />
-            <span style={{ fontSize: '18px', fontWeight: 'normal', color: '#333' }}>개인</span>
+            <span
+              style={{ fontSize: '18px', fontWeight: 'normal', color: '#333' }}
+            >
+              개인
+            </span>
           </label>
 
           <label
@@ -61,7 +150,8 @@ const SignUpPage = () => {
               display: 'flex',
               alignItems: 'center',
               padding: '20px',
-              border: userType === 'manager' ? '2px solid #247cff' : '1px solid #ddd',
+              border:
+                userType === 'manager' ? '2px solid #247cff' : '1px solid #ddd',
               borderRadius: '8px',
               cursor: 'pointer',
               background: userType === 'manager' ? '#f5faff' : '#fff',
@@ -81,7 +171,11 @@ const SignUpPage = () => {
                 height: '20px',
               }}
             />
-            <span style={{ fontSize: '18px', fontWeight: 'normal', color: '#333' }}>매니저</span>
+            <span
+              style={{ fontSize: '18px', fontWeight: 'normal', color: '#333' }}
+            >
+              매니저
+            </span>
           </label>
         </div>
 
@@ -106,13 +200,22 @@ const SignUpPage = () => {
 
         <div style={{ textAlign: 'center', fontSize: '15px', color: '#888' }}>
           이미 계정이 있으신가요?{' '}
-          <a href="/auth/signin" style={{ color: '#247cff', textDecoration: 'none', fontWeight: 'bold' }}>
+          <a
+            href="/auth/signin"
+            style={{
+              color: '#247cff',
+              textDecoration: 'none',
+              fontWeight: 'bold',
+            }}
+          >
             로그인
           </a>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };
 
-export default SignUpPage; 
+export default SignUpPage;

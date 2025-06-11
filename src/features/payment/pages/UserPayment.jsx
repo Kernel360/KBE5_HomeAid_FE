@@ -448,7 +448,7 @@ const UserPayment = () => {
 
   return (
     <div className="user-payment-page">
-      <Header />
+      <Header showBackButton={true} />
       <div className="page-content-wrapper">
         <div className="user-payment-container">
           {/* 제목 섹션 */}

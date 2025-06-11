@@ -162,7 +162,7 @@ const UserServiceSubOption = () => {
   if (loading && (!services || services.length === 0)) {
     return (
       <div className="reservation-page">
-        <Header />
+        <Header showBackButton={true} />
         <div className="page-content-wrapper">
           <div className="reservation-container">
             <div
@@ -186,9 +186,9 @@ const UserServiceSubOption = () => {
 
   return (
     <div className="reservation-page">
-      <Header />
+      <Header showBackButton={true} />
       <div className="page-content-wrapper">
-        <div className="reservation-container">
+        <div className="reservation-container" style={{ marginTop: '64px' }}>
           {/* 인사말 섹션 */}
           <div className="greeting-section">
             <h1 className="greeting-text">{getUserGreeting()}</h1>

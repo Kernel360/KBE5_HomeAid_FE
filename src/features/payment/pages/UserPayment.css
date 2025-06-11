@@ -11,29 +11,37 @@
 /* Header가 추가된 페이지의 콘텐츠 래퍼 */
 .page-content-wrapper {
   width: 100%;
-  max-width: 480px;
+  max-width: 512px; /* 헤더 너비에 맞춤 */
   box-sizing: border-box;
-  padding-top: 56px; /* Header 높이와 정확히 동일 */
-  padding-bottom: 104px; /* 푸터 높이(84px) + 여백(20px) */
+  padding-top: 80px; /* Header 높이 + 여백 */
+  padding-bottom: 100px; /* Footer 높이 + 여백 */
   padding-left: 16px;
   padding-right: 16px;
   min-height: 100vh;
+  margin: 0 auto; /* 중앙 정렬 */
 }
 
-/* Header 스타일 조정 */
-.user-payment-page header {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  width: 100%;
-  max-width: 480px;
-  background-color: white;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
+/* Header 강제 중앙 정렬 - 더 구체적인 선택자들 */
+.user-payment-page header,
+.user-payment-page > header,
+.user-payment-page header[class],
+.user-payment-page header[class*='fixed'],
+.user-payment-page header[class*='left-1/2'] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 50 !important;
+  width: 100% !important;
+  max-width: 512px !important;
+  background-color: white !important;
+  border-bottom: 1px solid #e9ecef !important;
+  box-shadow: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* 헤더 내부 버튼 스타일 강화 */
@@ -65,17 +73,18 @@
   display: block !important;
 }
 
+/* Footer 강제 중앙 정렬 */
 .user-payment-page .footer-container {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  z-index: 100;
-  background-color: white;
-  border-top: 1px solid #e9ecef;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 50 !important;
+  width: 100% !important;
+  max-width: 512px !important;
+  background-color: white !important;
+  border-top: 1px solid #e9ecef !important;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* 부드러운 스크롤 */
@@ -86,7 +95,7 @@ html {
 /* 메인 컨테이너 */
 .user-payment-container {
   width: 100%;
-  max-width: 480px;
+  max-width: 512px; /* 헤더 너비에 맞춤 */
   background-color: white;
   padding: 0 20px 24px 20px; /* 상단 패딩 제거 */
   font-family: sans-serif;
@@ -434,12 +443,13 @@ html {
 /* 모바일 반응형 */
 @media (max-width: 576px) {
   .page-content-wrapper {
-    padding-top: 56px; /* Header 높이(56px)와 동일 */
+    padding-top: 80px; /* Header 높이(64px) + 여백 */
     padding-left: 16px;
     padding-right: 16px;
   }
 
   .user-payment-container {
+    max-width: 512px;
     padding: 20px 16px;
   }
 
@@ -483,11 +493,13 @@ html {
 /* 매우 작은 화면 대응 */
 @media (max-width: 360px) {
   .page-content-wrapper {
+    padding-top: 76px;
     padding-left: 12px;
     padding-right: 12px;
   }
 
   .user-payment-container {
+    max-width: 512px;
     padding: 16px 12px;
   }
 
@@ -589,4 +601,37 @@ html {
   font-size: 13px !important;
   font-style: italic;
   margin-top: 16px !important;
+}
+
+/* 최종 헤더 중앙 정렬 강제 적용 - 최고 우선순위 */
+html body .user-payment-page header[class] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 50 !important;
+  width: 100% !important;
+  max-width: 512px !important;
+  background-color: white !important;
+  border-bottom: 1px solid #e9ecef !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+
+/* 브라우저별 호환성을 위한 추가 선택자 */
+html body div .user-payment-page header,
+html body div .user-payment-page > header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 50 !important;
+  width: 100% !important;
+  max-width: 512px !important;
+  background-color: white !important;
+  border-bottom: 1px solid #e9ecef !important;
+  box-shadow: none !important;
+  margin: 0 !important;
 }

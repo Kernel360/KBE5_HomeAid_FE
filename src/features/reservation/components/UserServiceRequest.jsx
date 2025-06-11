@@ -249,16 +249,6 @@ const UserServiceRequest = () => {
             null, // Double
         };
 
-        console.log('🚀 백엔드 예약 데이터:', backendReservationData);
-        console.log('📋 전송 전 상세 정보:');
-        console.log('- 사용자 정보:', user);
-        console.log(
-          '- 선택된 서브옵션:',
-          currentReservationData.selectedSubOption
-        );
-        console.log('- 총 금액:', currentReservationData.totalPrice);
-        console.log('- 선택된 주소:', formData.selectedAddress);
-
         // Spring Boot @NotNull 필드 검증 (requestedDate, requestedTime, subOptionId)
         const requiredFields = [
           'reservationDate',
@@ -270,7 +260,6 @@ const UserServiceRequest = () => {
         );
 
         if (missingFields.length > 0) {
-          console.error('❌ Spring Boot 필수 필드 누락:', missingFields);
           alert(
             `Spring Boot 필수 정보가 누락되었습니다: ${missingFields.join(', ')}`
           );
@@ -294,8 +283,6 @@ const UserServiceRequest = () => {
         const backendReservation = await createReservation(
           backendReservationData
         );
-
-        console.log('✅ 백엔드 예약 성공:', backendReservation);
 
         // ⭐️ 백엔드 성공 시 로컬 스토어에도 추가 (즉시 반영용)
         const { addReservation } = useReservationListStore.getState();
@@ -331,7 +318,6 @@ const UserServiceRequest = () => {
         };
 
         addReservation(localReservationData);
-        console.log('💾 로컬 스토어에도 예약 데이터 추가 완료');
 
         // ⭐️ 성공 메시지
         alert(
@@ -346,8 +332,6 @@ const UserServiceRequest = () => {
         // ⭐️ 이용내역 페이지로 이동
         navigate('/user/reservations');
       } catch (backendError) {
-        console.error('❌ 예약 생성 실패:', backendError);
-
         // ⭐️ 사용자에게 오류 메시지 표시 (로컬 저장 없음)
         let errorMessage = '예약 생성에 실패했습니다.';
 
@@ -428,9 +412,9 @@ const UserServiceRequest = () => {
   if (addressLoading) {
     return (
       <div className="reservation-page">
-        <Header />
+        <Header showBackButton={true} />
         <div className="page-content-wrapper">
-          <div className="reservation-container">
+          <div className="reservation-container" style={{ marginTop: '64px' }}>
             <div
               style={{
                 display: 'flex',
@@ -456,9 +440,9 @@ const UserServiceRequest = () => {
   if (addressError) {
     return (
       <div className="reservation-page">
-        <Header />
+        <Header showBackButton={true} />
         <div className="page-content-wrapper">
-          <div className="reservation-container">
+          <div className="reservation-container" style={{ marginTop: '64px' }}>
             <div
               style={{
                 display: 'flex',
@@ -496,9 +480,12 @@ const UserServiceRequest = () => {
   if (showAddressModal) {
     return (
       <div className="reservation-page">
-        <Header />
+        <Header showBackButton={true} />
         <div className="page-content-wrapper">
-          <div className="address-modal-container">
+          <div
+            className="address-modal-container"
+            style={{ marginTop: '64px' }}
+          >
             {/* 주소 입력 모달 */}
             <div className="title-section">
               <h1 className="page-title">주소 추가</h1>
@@ -552,9 +539,9 @@ const UserServiceRequest = () => {
 
   return (
     <div className="reservation-page">
-      <Header />
+      <Header showBackButton={true} />
       <div className="page-content-wrapper">
-        <div className="reservation-container">
+        <div className="reservation-container" style={{ marginTop: '64px' }}>
           {/* 제목 섹션 */}
           <div className="title-section">
             <h1 className="page-title">서비스 요청</h1>
