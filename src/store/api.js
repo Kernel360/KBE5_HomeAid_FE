@@ -80,6 +80,7 @@ const api = {
 export const apiService = {
     // 매니저 관련 API
     manager: {
+        getAllMatcings: () => api.get('/manager/matchings'),
         getAll: () => api.get('/manager/all'),
         getById: (id) => api.get(`/manager/${id}`),
         create: (data) => api.post('/manager', data),
@@ -140,6 +141,12 @@ export const apiService = {
         create: (data) => api.post('/manager/profile', data),
         update: (id, data) => api.put(`/service-option/${id}`, data),
         delete: (id) => api.delete(`/service-option/${id}`)
+    },
+    reservation: {
+        getById: (id) => api.get(`/reservations/${id}`)
+    },
+    matching: {
+        acceptMatching: (matchingId, data) => api.patch(`/manager/matchings/${matchingId}/to-customer`, data)
     }
 };
 

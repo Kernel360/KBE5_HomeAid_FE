@@ -18,36 +18,35 @@ import ServiceRegistration from '../features/additional-info/pages';
 import CustomerLayout from '../layouts/CustomerLayout';
 import MainPage from '../features/main/MainPage';
 import Mypage from '../features/mypage/customer/pages/Mypage';
-import ManagerLayout from '../features/mypage/manager/ManagerMypage';
+import ManagerLayout from '../layouts/ManagerLayout'
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
+import ManagerMain from '../features/manager/pages/ManagerMainPage';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
   // 고객(CUSTOMER) 권한이 필요한 라우트 (레이아웃 포함)
   {
-    path: '/',
+    path: '/customer',
     element: <CustomerLayout />,
     allowedRoles: ['ROLE_CUSTOMER'],
     children: [
-      { index: true, element: <MainPage /> }, // 고객 로그인 후 기본 페이지
       { path: 'mypage', element: <Mypage /> },
-      { path: 'user/reservations', element: <UserReservationList /> },
+      { path: 'reservations', element: <UserReservationList /> },
       {
-        path: 'user/reservation/:reservationId',
+        path: 'reservation/:reservationId',
         element: <UserReservationDetail />,
       },
-      { path: 'user/service-option', element: <UserServiceOption /> },
-      { path: 'user/service-sub-option', element: <UserServiceSubOption /> },
-      { path: 'user/service-option-cart', element: <UserServiceOptionCart /> },
-      { path: 'user/service-request', element: <UserServiceRequest /> },
-      { path: 'user/payment', element: <UserPayment /> },
-      { path: 'user/payment-complete', element: <UserPaymentComplete /> },
+      { path: 'service-option', element: <UserServiceOption /> },
+      { path: 'service-sub-option', element: <UserServiceSubOption /> },
+      { path: 'service-option-cart', element: <UserServiceOptionCart /> },
+      { path: 'service-request', element: <UserServiceRequest /> },
+      { path: 'payment', element: <UserPayment /> },
+      { path: 'payment-complete', element: <UserPaymentComplete /> },
     ],
   },
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)
   {
     path: '/manager',
-    element: <ManagerLayout />,
     allowedRoles: ['ROLE_MANAGER'],
     children: [
       { path: 'mypage', element: <ManagerMypage /> },

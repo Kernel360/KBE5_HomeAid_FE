@@ -9,6 +9,7 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import ManagerSignUpCompletionModal from './ManagerSignUpCompletionPage'; // 모달 컴포넌트 임포트
 
+
 // Step 2 유효성 검사 헬퍼 함수 (매니저)
 const validateManagerStep2Data = ({ career, experience }) => {
   if (!career || career.trim() === '') {

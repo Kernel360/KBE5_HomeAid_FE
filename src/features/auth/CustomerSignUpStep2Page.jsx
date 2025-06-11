@@ -7,6 +7,7 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import CustomerSignUpCompletionModal from './CustomerSignUpCompletionPage'; // 모달 컴포넌트 임포트
 
+
 // Step 2 유효성 검사 헬퍼 함수
 const validateCustomerStep2Data = ({ addressSearch, addressDetail }) => {
   if (!addressSearch || !addressDetail) {

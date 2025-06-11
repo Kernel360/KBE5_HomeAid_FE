@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
-import useReservationListStore from '../../stores/reservationListStore';
-import { useCustomerReservationList } from '../../features/reservation/hooks/useCustomerAPI';
+import Header from '../../components/Header.jsx';
+import Footer from '../../components/Footer.jsx';
+import useReservationListStore from '../../stores/reservationListStore.js';
+import { useCustomerReservationList } from '../../features/reservation/hooks/useCustomerAPI.js';
 import './UserReservationList.css';
 
 const UserReservationList = () => {

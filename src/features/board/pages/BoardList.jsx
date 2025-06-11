@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../../components/Header';
-import Footer from '../../../components/Footer';
-import { useAuthStore } from '../../../stores/authStore';
+import Header from '../../../components/Header.jsx';
+import Footer from '../../../components/Footer.jsx';
+import { useAuthStore } from '../../../stores/authStore.js';
 import './BoardList.css';
 
 const BoardList = () => {
