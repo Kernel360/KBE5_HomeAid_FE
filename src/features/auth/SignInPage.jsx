@@ -21,6 +21,7 @@ const SignInPage = () => {
     setError('');
 
     try {
+      console.log('zus user 새로 저장전', user);
       // 🔥 먼저 모든 상태 완전 초기화
       logout(); // 또는 setUser(null), setAccessToken(null)
       localStorage.removeItem('accessToken');
@@ -44,17 +45,18 @@ const SignInPage = () => {
       console.log('  - 사용자 ID:', user?.userId);
 
       // 역할에 따른 페이지 이동
-      if (user.role === 'ROLE_CUSTOMER') {
+      if (data.role === 'ROLE_CUSTOMER') {
         console.log('고객 로그인 /user/service-option으로 이동');
         navigate('/user/service-option', { replace: true });
-      } else if (user.role === 'ROLE_ADMIN') {
+      } else if (data.role === 'ROLE_ADMIN') {
         console.log('관리자 로그인 /admin으로 이동');
         navigate('/admin', { replace: true });
-      } else if (user.role === 'ROLE_MANAGER') {
+      } else if (data.role === 'ROLE_MANAGER') {
         console.log('매니저 로그인 /matching/list로 이동');
         navigate('/matching/list', { replace: true }); // 매니저는 직접 매칭 리스트로 이동
       } else {
         console.warn('알 수 없는 사용자 역할:', user.role);
+
         navigate('/', { replace: true }); // 기본 페이지로 이동
       }
     } catch (err) {
