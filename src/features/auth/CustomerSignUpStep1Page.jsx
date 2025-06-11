@@ -11,6 +11,7 @@ import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임�
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
+
 // Step 1 유효성 검사 헬퍼 함수
 const validateCustomerStep1Data = ({
   name,

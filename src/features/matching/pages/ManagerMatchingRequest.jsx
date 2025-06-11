@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ManagerMatchingRequest.css';
-import Footer from '../../../components/Footer';
-import Header from '../../../components/Header';
-import useMatchingStore from '../../../stores/matchingStore';
-import { useAuthStore } from '../../../stores/authStore';
+import Footer from '../../../components/Footer.jsx';
+import Header from '../../../components/Header.jsx';
+import useMatchingStore from '../../../stores/matchingStore.js';
+import { useAuthStore } from '../../../stores/authStore.js';
 import {
   useManagerMatching,
   useCustomerMatching,
-} from '../hooks/useManagerAPI';
+} from '../hooks/useManagerAPI.js';
 import {
   NOTIFICATION_MESSAGES,
   MANAGER_ACTION,
   CUSTOMER_ACTION,
   MATCHING_STATUS,
-} from '../constants/matchingData';
+} from '../constants/matchingData.js';
 
 const ManagerMatchingRequest = () => {
   const navigate = useNavigate();

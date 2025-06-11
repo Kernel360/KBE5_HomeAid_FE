@@ -2,14 +2,14 @@ import React, { useEffect } from 'react';
 // TODO: 매칭내역 확인 기능 구현 시 필요
 // import { useNavigate } from 'react-router-dom';
 import './ManagerServiceCheckIn.css';
-import Footer from '../../../components/Footer';
-import Header from '../../../components/Header';
-import useMatchingStore from '../../../stores/matchingStore';
-import { useServiceCheckIn } from '../hooks/useManagerAPI';
+import Footer from '../../../components/Footer.jsx';
+import Header from '../../../components/Header.jsx';
+import useMatchingStore from '../../../stores/matchingStore.js';
+import { useServiceCheckIn } from '../hooks/useManagerAPI.js';
 import {
   NOTIFICATION_MESSAGES,
   MATCHING_STATUS,
-} from '../constants/matchingData';
+} from '../constants/matchingData.js';
 
 // TODO: 파일 업로드 기능 추가 시 필요한 import
 // import React, { useState, useEffect } from 'react';

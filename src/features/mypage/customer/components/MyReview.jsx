@@ -1,5 +1,5 @@
 import { ArrowLeft, Star } from "lucide-react";
-import { apiService } from "../../../../store/api";
+import { apiService } from "../../../../store/api.js";
 import { useState, useEffect } from "react";
 
 const MyReview = ({ onBack })  => {

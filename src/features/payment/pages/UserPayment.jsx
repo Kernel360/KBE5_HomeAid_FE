@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './UserPayment.css';
-import Header from '../../../components/Header';
-import Footer from '../../../components/Footer';
-import useReservationStore from '../../../stores/reservationStore';
-import { usePaymentData } from '../../reservation/hooks/useLocalStorage';
+import Header from '../../../components/Header.jsx';
+import Footer from '../../../components/Footer.jsx';
+import useReservationStore from '../../../stores/reservationStore.js';
+import { usePaymentData } from '../../reservation/hooks/useLocalStorage.js';
 // TODO: 실제 백엔드 API 연동이 완성되면 아래 주석을 해제
 // import { customerAPI, assignManagerToReservation } from '../../reservation/api/customerAPI';
 import {
   customerAPI,
   assignManagerToReservation,
-} from '../../reservation/api/customerAPI';
+} from '../../reservation/api/customerAPI.js';
 
 const UserPayment = () => {
   const navigate = useNavigate();
