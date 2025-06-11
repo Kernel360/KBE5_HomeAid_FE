@@ -260,9 +260,9 @@ export const createCustomerReservation = async (reservationData) => {
     const springBootData = {
       requestedDate: reservationData.reservationDate, // LocalDate (yyyy-MM-dd)
       requestedTime: `${reservationData.reservationTime}:00`, // LocalTime (HH:mm:ss)
-      subOptionId: reservationData.subOptionId, // Long
-      latitude: reservationData.latitude, // Double (nullable)
-      longitude: reservationData.longitude, // Double (nullable)
+      subOptionId: Number(reservationData.subOptionId), // Long으로 변환
+      latitude: reservationData.latitude ? Number(reservationData.latitude) : null, // Double로 변환
+      longitude: reservationData.longitude ? Number(reservationData.longitude) : null, // Double로 변환
     };
 
     console.log('📤 Spring Boot로 전송할 데이터:', springBootData);
