@@ -271,29 +271,37 @@ export const assignManagerToReservation = async (reservationId, managerId) => {
 
 // 서비스 예약
 export const createCustomerReservation = async (reservationData) => {
-  // ⭐️ CustomerAddress ID 방식으로 변경 (address, addressDetail 제거)
-  const springBootData = {
-    requestedDate: reservationData.requestedDate, // LocalDate (yyyy-MM-dd)
-    requestedTime: reservationData.requestedTime, // LocalTime (HH:mm:ss)
-    subOptionId: reservationData.subOptionId, // Long
-    customerId: reservationData.customerId, // Long (필수)
-    addressId: reservationData.addressId, // Long (CustomerAddress 테이블의 ID)
-    totalPrice: reservationData.totalPrice, // Integer
-    totalDuration: reservationData.totalDuration, // Integer
-    customerMemo: reservationData.customerMemo || '', // String (TEXT)
-  };
+  // // ⭐️ CustomerAddress ID 방식으로 변경 (address, addressDetail 제거)
+  // const springBootData = {
+  //   requestedDate: reservationData.requestedDate, // LocalDate (yyyy-MM-dd)
+  //   requestedTime: reservationData.requestedTime, // LocalTime (HH:mm:ss)
+  //   subOptionId: reservationData.subOptionId, // Long
+  //   customerId: reservationData.customerId, // Long (필수)
+  //   addressId: reservationData.addressId, // Long (CustomerAddress 테이블의 ID)
+  //   totalPrice: reservationData.totalPrice, // Integer
+  //   totalDuration: reservationData.totalDuration, // Integer
+  //   customerMemo: reservationData.customerMemo || '', // String (TEXT)
+  // };
 
-  try {
   try {
     console.log('🔄 Spring Boot ReservationRequestDto 형식으로 변환');
 
     // Spring Boot ReservationRequestDto에 정확히 맞는 구조
     const springBootData = {
-      requestedDate: reservationData.reservationDate, // LocalDate (yyyy-MM-dd)
-      requestedTime: `${reservationData.reservationTime}:00`, // LocalTime (HH:mm:ss)
+      requestedDate:
+        reservationData.requestedDate || reservationData.reservationDate, // LocalDate (yyyy-MM-dd)
+      requestedTime:
+        reservationData.requestedTime ||
+        (reservationData.reservationTime
+          ? `${reservationData.reservationTime}:00`
+          : undefined), // LocalTime (HH:mm:ss)
       subOptionId: Number(reservationData.subOptionId), // Long으로 변환
-      latitude: reservationData.latitude ? Number(reservationData.latitude) : null, // Double로 변환
-      longitude: reservationData.longitude ? Number(reservationData.longitude) : null, // Double로 변환
+      latitude: reservationData.latitude
+        ? Number(reservationData.latitude)
+        : null, // Double로 변환
+      longitude: reservationData.longitude
+        ? Number(reservationData.longitude)
+        : null, // Double로 변환
     };
 
     console.log('📤 Spring Boot로 전송할 데이터:', springBootData);

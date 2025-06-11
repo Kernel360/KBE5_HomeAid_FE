@@ -316,29 +316,22 @@ const UserServiceRequest = () => {
         const coordinates = formData.selectedAddress.coordinates;
         if (coordinates && coordinates.lat && coordinates.lng) {
           try {
-            // ⭐️ 위도/경도를 주소 문자열로 사용 (임시 처리)
-            const coordinateAddress = `위도: ${coordinates.lat.toFixed(6)}, 경도: ${coordinates.lng.toFixed(6)}`;
-
-            // ⭐️ 백엔드 API 호출을 위한 예약 데이터 준비 (주소 문자열 방식)
+            // ⭐️ 백엔드 ReservationRequestDto 형식에 맞춰서 데이터 구성
             const backendReservationData = {
-              requestedDate: formData.date,
-              requestedTime: `${formData.startTime}:00`,
+              requestedDate: formData.date, // LocalDate (yyyy-MM-dd)
+              requestedTime: `${formData.startTime}:00`, // LocalTime (HH:mm:ss)
               subOptionId: getSubOptionId(
                 currentReservationData.selectedSubOption
-              ),
-              customerId: user?.userId || null,
-              // ⭐️ 주소 ID 대신 주소 문자열 직접 전달 (Google Maps 선택 시)
-              address: selectedAddressMain || coordinateAddress,
-              addressDetail:
-                selectedAddressDetail ||
-                `위도: ${coordinates.lat}, 경도: ${coordinates.lng}`,
-              totalPrice: currentReservationData.totalPrice || 0,
-              totalDuration: currentReservationData.totalDuration || 0,
-              customerMemo: currentReservationData.customerNote || '',
-              // ⭐️ 좌표 정보도 추가로 전달
-              latitude: coordinates.lat,
-              longitude: coordinates.lng,
+              ), // Long
+              latitude: coordinates.lat, // Double
+              longitude: coordinates.lng, // Double
+              // ⭐️ customerId는 JWT 토큰에서 자동으로 처리되므로 제외
             };
+
+            console.log(
+              '🗺️ Google Maps 선택 위치로 예약 생성:',
+              backendReservationData
+            );
 
             // ⭐️ 실제 백엔드 API 호출
             const backendReservation = await createReservation(
@@ -347,6 +340,8 @@ const UserServiceRequest = () => {
 
             // ⭐️ 성공 시 로컬 스토어에 추가
             const { addReservation } = useReservationListStore.getState();
+            const coordinateAddress = `위도: ${coordinates.lat.toFixed(6)}, 경도: ${coordinates.lng.toFixed(6)}`;
+
             const localReservationData = {
               serviceType:
                 currentReservationData.selectedSubOption?.name || '서비스',
@@ -378,6 +373,7 @@ const UserServiceRequest = () => {
             navigate('/customer/reservations');
             return; // Google Maps 처리 완료, 함수 종료
           } catch (mapError) {
+            console.error('Google Maps 예약 생성 실패:', mapError);
             alert(
               `Google Maps 위치로 예약 생성에 실패했습니다: ${mapError.message}`
             );
