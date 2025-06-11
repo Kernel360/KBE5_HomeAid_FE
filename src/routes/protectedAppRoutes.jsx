@@ -16,11 +16,14 @@ import UserReservationList from '../features/main/UserReservationList';
 import UserReservationDetail from '../features/main/UserReservationDetail';
 import ServiceRegistration from '../features/additional-info/pages';
 import CustomerLayout from '../layouts/CustomerLayout';
-import MainPage from '../features/main/MainPage';
 import Mypage from '../features/mypage/customer/pages/Mypage';
-import ManagerLayout from '../layouts/ManagerLayout'
+import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
 import ManagerMain from '../features/manager/pages/ManagerMainPage';
+import BoardWrite from '../features/board/pages/BoardWrite';
+import BoardList from '../features/board/pages/BoardList';
+import BoardDetail from '../features/board/pages/BoardDetail';
+import EventList from '../features/main/EventList';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -42,11 +45,17 @@ export const protectedAppRoutes = [
       { path: 'service-request', element: <UserServiceRequest /> },
       { path: 'payment', element: <UserPayment /> },
       { path: 'payment-complete', element: <UserPaymentComplete /> },
+      { path: 'board/write', element: <BoardWrite /> },
+      { path: 'event', element: <EventList /> },
+      { path: 'board/list', element: <BoardList /> },
+      { path: 'board/notice/:id', element: <BoardDetail /> },
+      { path: 'board/inquiry/:id', element: <BoardDetail /> },
     ],
   },
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)
   {
     path: '/manager',
+    element: <ManagerLayout />,
     allowedRoles: ['ROLE_MANAGER'],
     children: [
       { path: 'mypage', element: <ManagerMypage /> },
@@ -56,6 +65,8 @@ export const protectedAppRoutes = [
         path: 'matching/matching-request',
         element: <ManagerMatchingRequest />,
       },
+      { path: 'payment', element: <UserPayment /> },
+      { path: 'payment-complete', element: <UserPaymentComplete /> },
     ],
   },
 
@@ -81,25 +92,23 @@ export const protectedAppRoutes = [
     path: '/admin',
     element: <AdminDashboardPage />,
     allowedRoles: ['ROLE_ADMIN'],
-  },
-  {
-    path: '/admin/users',
-    element: <AdminUserManagement />,
-    allowedRoles: ['ROLE_ADMIN'],
-  },
-  {
-    path: '/admin/matchingsystem',
-    element: <MatchingSystemPage />,
-    allowedRoles: ['ROLE_ADMIN'],
-  },
-  {
-    path: '/admin/matchingsystem/:managerId',
-    element: <MatchingSystemActionPage />,
-    allowedRoles: ['ROLE_ADMIN'],
-  },
-  {
-    path: '/admin/managers',
-    element: <MatchingManagerList />,
-    allowedRoles: ['ROLE_ADMIN'],
+    children: [
+      {
+        path: 'users',
+        element: <AdminUserManagement />,
+      },
+      {
+        path: 'matchingsystem',
+        element: <MatchingSystemPage />,
+      },
+      {
+        path: 'matchingsystem/:managerId',
+        element: <MatchingSystemActionPage />,
+      },
+      {
+        path: 'managers',
+        element: <MatchingManagerList />,
+      }
+    ],
   },
 ];

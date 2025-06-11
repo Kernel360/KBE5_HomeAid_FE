@@ -330,7 +330,7 @@ const UserServiceRequest = () => {
         );
 
         // ⭐️ 이용내역 페이지로 이동
-        navigate('/user/reservations');
+        navigate('/customer/reservations');
       } catch (backendError) {
         // ⭐️ 사용자에게 오류 메시지 표시 (로컬 저장 없음)
         let errorMessage = '예약 생성에 실패했습니다.';
@@ -431,7 +431,7 @@ const UserServiceRequest = () => {
             </div>
           </div>
         </div>
-        <Footer current="/user/service-request" />
+        <Footer current="/customer/service-request" />
       </div>
     );
   }
@@ -472,7 +472,7 @@ const UserServiceRequest = () => {
             </div>
           </div>
         </div>
-        <Footer current="/user/service-request" />
+        <Footer current="/customer/service-request" />
       </div>
     );
   }
@@ -532,7 +532,7 @@ const UserServiceRequest = () => {
             </div>
           </div>
         </div>
-        <Footer current="/user/service-request" />
+        <Footer current="/customer/service-request" />
       </div>
     );
   }
@@ -739,7 +739,7 @@ const UserServiceRequest = () => {
           </div>
         </div>
       </div>
-      <Footer current="/user/service-request" />
+      <Footer current="/customer/service-request" />
     </div>
   );
 };

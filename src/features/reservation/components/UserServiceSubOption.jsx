@@ -82,7 +82,7 @@ const UserServiceSubOption = () => {
       alert('서비스 옵션을 선택해주세요.');
       return;
     }
-    navigate('/user/service-request');
+    navigate('/customer/service-request');
   };
 
   // ⭐️ 로그인 상태 확인
@@ -179,7 +179,7 @@ const UserServiceSubOption = () => {
             </div>
           </div>
         </div>
-        <Footer current="/user/service-sub-option" />
+        <Footer current="/customer/service-sub-option" />
       </div>
     );
   }
@@ -354,7 +354,7 @@ const UserServiceSubOption = () => {
           </div>
         </div>
       </div>
-      <Footer current="/user/service-sub-option" />
+      <Footer current="/customer/service-sub-option" />
     </div>
   );
 };

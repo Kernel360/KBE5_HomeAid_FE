@@ -44,7 +44,7 @@ const UserServiceOption = () => {
   const handleServiceClick = (serviceType) => {
     console.log(`${serviceType} 서비스 선택됨`);
     if (serviceType === SERVICE_TYPES.CLEANING) {
-      navigate('/user/service-sub-option');
+      navigate('/customer/service-sub-option');
     }
     // TODO: 다른 서비스 타입에 대한 로직 구현
   };

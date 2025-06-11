@@ -189,7 +189,7 @@ export const getCustomerAddresses = async () => {
 
 // 주소 등록
 export const createCustomerAddress = async (addressData) => {
-  return apiCall('/customers/addresses', {
+  return apiCall('/customer/addresses', {
     method: 'POST',
     body: JSON.stringify(addressData),
   });
@@ -197,7 +197,7 @@ export const createCustomerAddress = async (addressData) => {
 
 // 주소 삭제
 export const deleteCustomerAddress = async (addressId) => {
-  return apiCall(`/customers/addresses/${addressId}`, {
+  return apiCall(`/customer/addresses/${addressId}`, {
     method: 'DELETE',
   });
 };
@@ -317,7 +317,7 @@ export const getManagerProfile = async (managerId) => {
 
 // 매니저 메모 전달
 export const sendManagerMemo = async (reservationId, memoData) => {
-  return apiCall(`/customers/reservations/${reservationId}/memo`, {
+  return apiCall(`/customer/reservations/${reservationId}/memo`, {
     method: 'PUT',
     body: JSON.stringify(memoData),
   });
@@ -380,11 +380,11 @@ export const customerAPI = {
     apiCall(`/services/${serviceId}/sub-options`),
 
   // 고객 주소 목록 조회
-  getCustomerAddresses: () => apiCall('/customers/addresses'),
+  getCustomerAddresses: () => apiCall('/customer/addresses'),
 
   // 고객 주소 추가
   addCustomerAddress: (addressData) =>
-    apiCall('/customers/addresses', {
+    apiCall('/customer/addresses', {
       method: 'POST',
       body: JSON.stringify(addressData),
     }),

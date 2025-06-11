@@ -5,7 +5,6 @@ import '../styles/common.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
 import { useCartData, usePaymentData } from '../hooks/useLocalStorage.js';
-import { PRICING } from '../constants/serviceData.js';
 
 const UserServiceOptionCart = () => {
   const navigate = useNavigate();
@@ -71,7 +70,7 @@ const UserServiceOptionCart = () => {
       updatePaymentData(paymentData);
 
       // 서비스 요청 페이지로 이동
-      navigate('/user/service-request');
+      navigate('/customer/service-request');
     }
   };
 
@@ -215,7 +214,7 @@ const UserServiceOptionCart = () => {
           </div>
         </div>
       </div>
-      <Footer current="/user/service-option-cart" />
+      <Footer current="/customer/service-option-cart" />
     </div>
   );
 };
