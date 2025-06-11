@@ -13,7 +13,7 @@ const SignInPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
- const { user, accessToken, setUser, setAccessToken, logout} = useAuthStore();
+  const { user, accessToken, setUser, setAccessToken, logout } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +31,7 @@ const SignInPage = () => {
 
       // localStorage에서 토큰 꺼내 zustand에도 저장
       const token = localStorage.getItem('accessToken');
-      
+
       // Zustand store에 사용자 정보와 토큰 저장
       setUser(data);
       setAccessToken(token);
@@ -54,7 +54,7 @@ const SignInPage = () => {
         console.log('매니저 로그인 /matching/list로 이동');
         navigate('/matching/list', { replace: true }); // 매니저는 직접 매칭 리스트로 이동
       } else {
-        console.warn('알 수 없는 사용자 역할:', authStore.user.role);
+        console.warn('알 수 없는 사용자 역할:', user.role);
         navigate('/', { replace: true }); // 기본 페이지로 이동
       }
     } catch (err) {
