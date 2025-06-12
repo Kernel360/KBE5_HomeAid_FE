@@ -3,6 +3,7 @@ import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
 import MatchingSystemPage from '../features/admin/pages/MatchingSystemPage';
 import MatchingSystemActionPage from '../features/admin/pages/MatchingSystemActionPage';
 import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
+import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
 import ManagerServiceCheckIn from '../features/matching/pages/ManagerServiceCheckIn';
 import ManagerMatchingRequest from '../features/matching/pages/ManagerMatchingRequest';
 import ManagerMatchingList from '../features/matching/pages/ManagerMatchingList';
@@ -19,11 +20,11 @@ import CustomerLayout from '../layouts/CustomerLayout';
 import Mypage from '../features/mypage/customer/pages/Mypage';
 import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
-import ManagerMain from '../features/manager/pages/ManagerMainPage';
 import BoardWrite from '../features/board/pages/BoardWrite';
 import BoardList from '../features/board/pages/BoardList';
 import BoardDetail from '../features/board/pages/BoardDetail';
 import EventList from '../features/main/EventList';
+import AdminLayoutPage from '../features/admin/pages/AdminLayoutPage';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -90,9 +91,13 @@ export const protectedAppRoutes = [
   // 관리자(ADMIN) 권한이 필요한 라우트
   {
     path: '/admin',
-    element: <AdminDashboardPage />,
+    element: <AdminLayoutPage />,
     allowedRoles: ['ROLE_ADMIN'],
     children: [
+      {
+        index: true,
+        element: <AdminDashboardPage />,
+      },
       {
         path: 'users',
         element: <AdminUserManagement />,
@@ -108,7 +113,11 @@ export const protectedAppRoutes = [
       {
         path: 'managers',
         element: <MatchingManagerList />,
-      }
+      },
+      {
+        path: 'manager-approval',
+        element: <AdminManagerApproval />,
+      },
     ],
   },
 ];

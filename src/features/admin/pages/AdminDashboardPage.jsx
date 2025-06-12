@@ -1,66 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React from 'react';
+import { useNavigate, Outlet } from 'react-router-dom';
 import './AdminDashboardPage.css';
 
 function AdminDashboardPage() {
   const navigate = useNavigate();
 
-  // 실시간 현황 state
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    activeManagers: 0,
-    todayReservations: 0,
-    pendingApprovals: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // 실시간 현황 state - 임시 데이터로 설정
+  const stats = {
+    totalUsers: 1247,
+    activeManagers: 89,
+    todayReservations: 156,
+    pendingApprovals: 23,
+  };
 
-  // 현황 데이터 API 연동
-  useEffect(() => {
-    axios
-      .get('/api/v1/admin/dashboard-stats')
-      .then((res) => {
-        // 방어: data가 undefined면 기존 stats(초기값)를 유지
-        if (res.data && res.data.data) {
-          setStats(res.data.data);
-        } else {
-          setStats({
-            totalUsers: 0,
-            activeManagers: 0,
-            todayReservations: 0,
-            pendingApprovals: 0,
-          });
-        }
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('현황 데이터를 불러올 수 없습니다.');
-        setLoading(false);
-      });
-  }, []);
+  
 
-  const handleMatchingManagementClick = () => navigate('/admin/matchingsystem');
-  const handleManagerSettlementClick = () =>
-    navigate('/admin/manager-settlement');
-
-  if (loading) return <div>로딩 중...</div>;
-  if (error) return <div>{error}</div>;
-
-  // import React from 'react';
-  // import { useNavigate } from 'react-router-dom';
-  // import './AdminDashboardPage.css';
-
-  // function AdminDashboardPage() {
-  //   const navigate = useNavigate();
-
-  //   const handleMatchingManagementClick = () => {
-  //     navigate('/admin/matchingsystem');
-  //   };
-
-  //   const handleManagerSettlementClick = () => {
-  //     navigate('/admin/manager-settlement');
-  //   };
+  const handleMatchingManagementClick = () => navigate('matchingsystem');
+  const handleManagerSettlementClick = () => navigate('manager-settlement');
 
   return (
     <div className="admin-dashboard-container">
@@ -96,10 +52,7 @@ function AdminDashboardPage() {
                   />
                 </svg>
               </div>
-              <div
-                className="admin-header-profile-text"
-                style={{ minWidth: 0 }}
-              >
+              <div className="admin-header-profile-text" style={{ minWidth: 0 }}>
                 <p>관리자</p>
                 <p>시스템 관리자</p>
               </div>
@@ -140,24 +93,20 @@ function AdminDashboardPage() {
           <p className="section-title">실시간 현황</p>
           <div className="status-cards-row">
             <div className="status-card users">
-              {/* <p>1,247</p> */}
               <p>{stats.totalUsers.toLocaleString()}</p>
               <p>총 사용자</p>
             </div>
             <div className="status-card managers">
-              {/* <p>89</p> */}
               <p>{stats.activeManagers.toLocaleString()}</p>
               <p>활성 매니저</p>
             </div>
           </div>
           <div className="status-cards-row">
             <div className="status-card reservations">
-              {/* <p>156</p> */}
               <p>{stats.todayReservations.toLocaleString()}</p>
               <p>오늘 예약</p>
             </div>
             <div className="status-card pending">
-              {/* <p>23</p> */}
               <p>{stats.pendingApprovals.toLocaleString()}</p>
               <p>승인 대기</p>
             </div>
@@ -170,7 +119,7 @@ function AdminDashboardPage() {
           <div className="quick-action-buttons-row">
             <div
               className="quick-action-button"
-              onClick={() => navigate('/admin/users')}
+              onClick={() => navigate('users')}
             >
               <div className="quick-action-button-icon users-bg">
                 <svg
@@ -217,7 +166,7 @@ function AdminDashboardPage() {
             </div>
             <div
               className="quick-action-button"
-              onClick={() => navigate('/admin/manager-approval')}
+              onClick={() => navigate('manager-approval')}
             >
               <div className="quick-action-button-icon managers-bg">
                 <svg
@@ -313,7 +262,7 @@ function AdminDashboardPage() {
             </div>
             <div
               className="quick-action-button"
-              onClick={() => navigate('/admin/analytics')}
+              onClick={() => navigate('analytics')}
             >
               <div className="quick-action-button-icon analytics-bg">
                 <svg
@@ -437,7 +386,7 @@ function AdminDashboardPage() {
             </div>
             <div
               className="quick-action-button"
-              onClick={() => navigate('/admin/mypage')}
+              onClick={() => navigate('mypage')}
             >
               <div className="quick-action-button-icon mypage-bg">
                 <svg
@@ -501,6 +450,10 @@ function AdminDashboardPage() {
             </div>
           </div>
         </div>
+      </div>
+      {/* 자식 라우트를 렌더링하기 위한 Outlet */}
+      <div className="admin-dashboard-content">
+        <Outlet />
       </div>
     </div>
   );
