@@ -5,6 +5,13 @@ import Footer from '../../components/Footer.jsx';
 import './UserReservationDetail.css';
 import { useCustomerReservation } from '../reservation/hooks/useCustomerAPI.js';
 
+// API 기본 URL 구성
+const getBaseUrl = () => {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+  return `${API_BASE_URL}/api/${API_VERSION}`;
+};
+
 const UserReservationDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -17,6 +24,9 @@ const UserReservationDetail = () => {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectMemo, setRejectMemo] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const loadReservationDetail = async () => {
@@ -274,6 +284,76 @@ const UserReservationDetail = () => {
     }
 
     return 50000; // 기본값
+  };
+
+  // 매칭 응답 처리
+  const handleMatchingResponse = async (action) => {
+    if (action === 'REJECT') {
+      setShowRejectModal(true);
+      return;
+    }
+
+    await submitMatchingResponse(action);
+  };
+
+  // 매칭 응답 제출
+  const submitMatchingResponse = async (action, memo = '') => {
+    if (!reservationId) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('로그인이 필요합니다');
+        navigate('/auth/signin');
+        return;
+      }
+
+      const response = await fetch(
+        `${getBaseUrl()}/customer/matchings/${reservationId}/to-manager`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: action,
+            memo: memo
+          })
+        }
+      );
+
+      if (response.status === 401) {
+        setError('인증이 만료되었습니다. 다시 로그인해주세요.');
+        localStorage.removeItem('accessToken');
+        navigate('/auth/signin');
+        return;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '매칭 응답 처리에 실패했습니다.');
+      }
+
+      // 성공 시 예약 정보 새로고침
+      const updatedReservation = await getReservationById(reservationId);
+      setReservation(updatedReservation);
+      
+      // 모달 닫기
+      setShowRejectModal(false);
+      setRejectMemo('');
+
+      // 성공 메시지
+      alert(action === 'CONFIRM' ? '매칭이 확인되었습니다.' : '매칭이 거절되었습니다.');
+    } catch (error) {
+      console.error('매칭 응답 처리 실패:', error);
+      setError(error.message || '매칭 응답 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -552,15 +632,78 @@ const UserReservationDetail = () => {
           reservation?.status === 'MATCHING' ? (
             <div className="waiting-section">
               <div className="waiting-info">
-                <p className="waiting-notice">
-                  ⏳ 매니저 매칭을 기다리고 있습니다...
-                </p>
-                <p className="waiting-description">
-                  매니저가 배정되면 결제를 진행할 수 있습니다.
-                </p>
+                {reservation?.backendData?.matchingStatus === 'ACCEPTED' ? (
+                  <>
+                    <p className="waiting-notice">
+                      🎉 매니저가 매칭되었습니다!
+                    </p>
+                    <p className="waiting-description">
+                      매니저의 매칭을 확인해주세요.
+                    </p>
+                    <div className="matching-actions">
+                      <button 
+                        className="accept-btn" 
+                        onClick={() => handleMatchingResponse('CONFIRM')}
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? '처리 중...' : '확인'}
+                      </button>
+                      <button 
+                        className="reject-btn" 
+                        onClick={() => handleMatchingResponse('REJECT')}
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? '처리 중...' : '거절'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="waiting-notice">
+                      ⏳ 매니저 매칭을 기다리고 있습니다...
+                    </p>
+                    <p className="waiting-description">
+                      매니저가 배정되면 결제를 진행할 수 있습니다.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           ) : null}
+
+          {/* 거절 메모 모달 */}
+          {showRejectModal && (
+            <div className="modal-overlay">
+              <div className="modal-content">
+                <h3>매칭 거절 사유</h3>
+                <textarea
+                  value={rejectMemo}
+                  onChange={(e) => setRejectMemo(e.target.value)}
+                  placeholder="거절 사유를 입력해주세요 (선택사항)"
+                  rows={4}
+                />
+                <div className="modal-actions">
+                  <button 
+                    className="cancel-btn"
+                    onClick={() => {
+                      setShowRejectModal(false);
+                      setRejectMemo('');
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    취소
+                  </button>
+                  <button 
+                    className="submit-btn"
+                    onClick={() => submitMatchingResponse('REJECT', rejectMemo)}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? '처리 중...' : '확인'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ⭐️ 서비스 완료 상태 안내 */}
           {(reservation?.status === 'COMPLETED' ||

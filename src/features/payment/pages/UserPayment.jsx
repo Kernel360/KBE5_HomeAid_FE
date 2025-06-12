@@ -71,7 +71,7 @@ const UserPayment = () => {
         dateTime:
           // 1. 예약 상세에서 전달받은 데이터 우선 사용
           reservationFromDetail
-            ? `${reservationFromDetail.date} ${reservationFromDetail.time.split('~')[0]}`
+            ? `${reservationFromDetail.date} ${reservationFromDetail.time ? reservationFromDetail.time.split('~')[0] : ''}`
             : reservationData.reservationDate && reservationData.reservationTime
               ? `${reservationData.reservationDate} ${reservationData.reservationTime}`
               : savedPaymentData?.serviceInfo?.date &&
