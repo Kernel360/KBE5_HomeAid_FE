@@ -1,7 +1,7 @@
 /* Page wrapper */
 .user-reservation-list-page {
   min-height: 100vh;
-  background-color: #f3f4f6;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -246,79 +246,37 @@
   overflow-x: auto;
 }
 
-/* ⭐️ 모든 상태에서 색상 고정 - 최고 우선순위 */
-.reservation-list-container .tab-navigation .tab-button,
-.reservation-list-container .tab-navigation button.tab-button,
-button.tab-button {
-  flex: 1 !important;
-  background: none !important;
-  background-color: transparent !important;
-  border: none !important;
-  padding: 16px 8px !important;
-  cursor: pointer !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  color: #666 !important;
-  border-bottom: 2px solid transparent !important;
-  transition: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 4px !important;
-  min-width: 90px !important;
-  outline: none !important;
-  box-shadow: none !important;
+.tab-button {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 16px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 90px;
 }
 
-.reservation-list-container .tab-navigation .tab-button:hover,
-.reservation-list-container .tab-navigation .tab-button:active,
-.reservation-list-container .tab-navigation .tab-button:focus,
-.reservation-list-container .tab-navigation .tab-button:visited,
-.reservation-list-container .tab-navigation button.tab-button:hover,
-.reservation-list-container .tab-navigation button.tab-button:active,
-.reservation-list-container .tab-navigation button.tab-button:focus,
-.reservation-list-container .tab-navigation button.tab-button:visited,
-button.tab-button:hover,
-button.tab-button:active,
-button.tab-button:focus,
-button.tab-button:visited {
-  color: #666 !important;
-  background: none !important;
-  background-color: transparent !important;
-  outline: none !important;
-  transform: none !important;
-  box-shadow: none !important;
-  border-color: transparent !important;
+.tab-button:hover {
+  color: #4285f4;
+  background-color: transparent;
 }
 
-/* ⭐️ active 상태만 파란색 유지 */
-.reservation-list-container .tab-navigation .tab-button.active,
-.reservation-list-container .tab-navigation button.tab-button.active,
-button.tab-button.active {
-  color: #4285f4 !important;
-  border-bottom-color: #4285f4 !important;
-  background: none !important;
-  background-color: transparent !important;
+.tab-button.active {
+  color: #4285f4;
+  border-bottom-color: #4285f4;
+  background-color: transparent;
 }
 
-.reservation-list-container .tab-navigation .tab-button.active:hover,
-.reservation-list-container .tab-navigation .tab-button.active:active,
-.reservation-list-container .tab-navigation .tab-button.active:focus,
-.reservation-list-container .tab-navigation .tab-button.active:visited,
-.reservation-list-container .tab-navigation button.tab-button.active:hover,
-.reservation-list-container .tab-navigation button.tab-button.active:active,
-.reservation-list-container .tab-navigation button.tab-button.active:focus,
-.reservation-list-container .tab-navigation button.tab-button.active:visited,
-button.tab-button.active:hover,
-button.tab-button.active:active,
-button.tab-button.active:focus,
-button.tab-button.active:visited {
-  color: #4285f4 !important;
-  background: none !important;
-  background-color: transparent !important;
-  outline: none !important;
-  transform: none !important;
-  box-shadow: none !important;
+.tab-button.active:hover {
+  background-color: transparent;
 }
 
 .tab-label {

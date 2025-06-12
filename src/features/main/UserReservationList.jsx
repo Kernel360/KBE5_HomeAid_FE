@@ -251,10 +251,21 @@ const UserReservationList = () => {
   );
 
   return (
-    <div className="user-reservation-list-page">
-      <Header />
-      <div className="page-content-wrapper">
-        <div className="reservation-list-container">
+    <div className="min-h-screen bg-gray-100">
+      <div
+        className="w-full bg-white h-screen flex flex-col"
+        style={{
+          maxWidth: '512px',
+          margin: '0 auto',
+          position: 'relative',
+        }}
+      >
+        <Header />
+
+        <main
+          className="px-6 py-6 flex-1 overflow-y-auto"
+          style={{ paddingBottom: '100px', paddingTop: '80px' }}
+        >
           {/* 탭 네비게이션 */}
           <div className="tab-navigation">
             {getTabData.map((tab) => (
@@ -344,9 +355,10 @@ const UserReservationList = () => {
               </div>
             )}
           </div>
-        </div>
+        </main>
+
+        <Footer current="/customer/reservations" />
       </div>
-      <Footer current="/customer/reservations" />
     </div>
   );
 };

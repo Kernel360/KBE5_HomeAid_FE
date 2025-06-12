@@ -316,13 +316,13 @@ const UserReservationDetail = () => {
         {
           method: 'PATCH',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             action: action,
-            memo: memo
-          })
+            memo: memo,
+          }),
         }
       );
 
@@ -341,16 +341,23 @@ const UserReservationDetail = () => {
       // 성공 시 예약 정보 새로고침
       const updatedReservation = await getReservationById(reservationId);
       setReservation(updatedReservation);
-      
+
       // 모달 닫기
       setShowRejectModal(false);
       setRejectMemo('');
 
       // 성공 메시지
-      alert(action === 'CONFIRM' ? '매칭이 확인되었습니다.' : '매칭이 거절되었습니다.');
+      alert(
+        action === 'CONFIRM'
+          ? '매칭이 확인되었습니다.'
+          : '매칭이 거절되었습니다.'
+      );
     } catch (error) {
       console.error('매칭 응답 처리 실패:', error);
-      setError(error.message || '매칭 응답 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setError(
+        error.message ||
+          '매칭 응답 처리에 실패했습니다. 잠시 후 다시 시도해주세요.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -641,15 +648,15 @@ const UserReservationDetail = () => {
                       매니저의 매칭을 확인해주세요.
                     </p>
                     <div className="matching-actions">
-                      <button 
-                        className="accept-btn" 
+                      <button
+                        className="accept-btn"
                         onClick={() => handleMatchingResponse('CONFIRM')}
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? '처리 중...' : '확인'}
                       </button>
-                      <button 
-                        className="reject-btn" 
+                      <button
+                        className="reject-btn"
                         onClick={() => handleMatchingResponse('REJECT')}
                         disabled={isSubmitting}
                       >
@@ -683,7 +690,7 @@ const UserReservationDetail = () => {
                   rows={4}
                 />
                 <div className="modal-actions">
-                  <button 
+                  <button
                     className="cancel-btn"
                     onClick={() => {
                       setShowRejectModal(false);
@@ -693,7 +700,7 @@ const UserReservationDetail = () => {
                   >
                     취소
                   </button>
-                  <button 
+                  <button
                     className="submit-btn"
                     onClick={() => submitMatchingResponse('REJECT', rejectMemo)}
                     disabled={isSubmitting}

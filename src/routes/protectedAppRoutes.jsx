@@ -20,6 +20,8 @@ import CustomerLayout from '../layouts/CustomerLayout';
 import Mypage from '../features/mypage/customer/pages/Mypage';
 import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
+import MyAddress from '../features/mypage/manager/components/MyAddress';
+import AddressRegister from '../features/mypage/manager/components/AddressRegister';
 import BoardWrite from '../features/board/pages/BoardWrite';
 import BoardList from '../features/board/pages/BoardList';
 import BoardDetail from '../features/board/pages/BoardDetail';
@@ -63,6 +65,8 @@ export const protectedAppRoutes = [
     allowedRoles: ['ROLE_MANAGER'],
     children: [
       { path: 'mypage', element: <ManagerMypage /> },
+      { path: 'mypage/address', element: <MyAddress /> },
+      { path: 'mypage/address/register', element: <AddressRegister /> },
       { path: 'additional-info', element: <ServiceRegistration /> },
       { path: 'matching/service-checkin', element: <ManagerServiceCheckIn /> },
       {
@@ -128,7 +132,6 @@ export const protectedAppRoutes = [
         path: 'manager-approval',
         element: <AdminManagerApproval />,
       },
-
     ],
   },
 ];
