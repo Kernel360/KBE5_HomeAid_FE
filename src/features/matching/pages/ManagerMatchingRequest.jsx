@@ -56,6 +56,10 @@ const ManagerMatchingRequest = () => {
 
   // 매칭 거절
   const handleReject = async () => {
+    if (rejectReason === '') {
+      alert('거절 사유는 필수 입니다')
+      return;
+    }
     console.log('스토어 매칭아이템 확인', matchingItem)
     const data = {
       action: 'REJECT',

@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from 'react';
-// TODO: 매칭내역 확인 기능 구현 시 필요
-// import { useNavigate } from 'react-router-dom';
 import './ManagerServiceCheckIn.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
 import useReservationStore from '../store/reservationStore.js';
 import { apiService } from '../../../store/api.js';
 
-// TODO: 파일 업로드 기능 추가 시 필요한 import
-// import React, { useState, useEffect } from 'react';
-
 const ManagerServiceCheckIn = () => {
-  const reservationId = useReservationStore.getState().reservationId;
   const workLog = useReservationStore.getState().workLog;
   const reservationStore = useReservationStore();
   const [reservation, setReservation] = useState({});
@@ -19,14 +13,7 @@ const ManagerServiceCheckIn = () => {
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
   const matchingItem = useReservationStore((state) => state.matching);
 
-  console.log(reservationId);
   console.log('workLog State ', workLog);
-  console.log('workLog State ', workLog.status);
-
-  console.log('reservationStore 타입:', typeof reservationStore);
-  console.log('reservationStore 내용:', reservationStore);
-  console.log('setWorkLog 타입:', typeof reservationStore.setWorkLog);
-
 
   const fetchReservation = async () => {
     const response = await apiService.reservation.getById(matchingItem.reservationId);
@@ -111,87 +98,14 @@ const ManagerServiceCheckIn = () => {
 
   };
 
-  // TODO: 파일 업로드 기능 구현 예정
-
-  // 버튼 활성화 상태 계산
-  // const { isCheckInButtonEnabled, isCheckOutButtonEnabled } = getButtonStates();
-
-  // 로딩 상태
-  // if (!matchingRequest.customerName) {
-  //   return (
-  //     <div className="manager-service-page">
-  //       <Header />
-  //       <div className="page-content-wrapper">
-  //         <div className="manager-service-checkin-container">
-  //           <div className="loading-container">
-  //             <p>{NOTIFICATION_MESSAGES.GENERAL.LOADING}</p>
-  //           </div>
-  //         </div>
-  //       </div>
-  //       <Footer current="/matching/service-checkin" />
-  //     </div>
-  //   );
-  // }
-
-  // 에러 상태
-  // if (error && !matchingRequest.customerName) {
-  //   return (
-  //     <div className="manager-service-page">
-  //       <Header />
-  //       <div className="page-content-wrapper">
-  //         <div className="manager-service-checkin-container">
-  //           <div className="error-container">
-  //             <p>{error}</p>
-  //             <button
-  //               onClick={() => window.location.reload()}
-  //               className="retry-button"
-  //             >
-  //               새로고침
-  //             </button>
-  //           </div>
-  //         </div>
-  //       </div>
-  //       <Footer current="/matching/service-checkin" />
-  //     </div>
-  //   );
-  // }
-
   return (
     <div className="manager-service-page">
       <Header />
       <div className="page-content-wrapper">
         <div className="manager-service-checkin-container">
-          {/* TODO: 매칭내역 확인 기능 - 현재 주석처리
-          <div className="matching-details">
-            <button
-              className="matching-history-button"
-              onClick={handleMatchingHistoryClick}
-            >
-              매칭 내역 확인
-            </button>
-          </div>
-          */}
-
-          {/* Map 영역 */}
-          {/* <div className="service-map">
-            <div className="map-placeholder">
-              <i className="fas fa-map-marker-alt"></i>
-              <p>지도가 표시될 영역</p>
-              <small>{reservation.address}</small>
-            </div>
-          </div> */}
-
           <div className="service-progress">
             <h2>서비스 진행</h2>
-            {/* <span className="status-badge">
-              {getCurrentStatus()}
-            </span> */}
-
             <div className="details-card">
-              <div className="detail-item">
-                {/* <span className="label">매칭 ID</span>
-                <span className="value">#{reservation.matchingId}</span> */}
-              </div>
               <div className="detail-item">
                 <span className="label">고객명</span>
                 <span className="value">{reservation.customerName}</span>
@@ -217,83 +131,6 @@ const ManagerServiceCheckIn = () => {
                 <span className="value">{reservation.address} {reservation.addressDetail}</span>
               </div>
             </div>
-
-            {/* 체크인/체크아웃 상태 표시 */}
-            <div className="checkin-status-section">
-              {/* <h3>서비스 진행 상태</h3> */}
-              {/* <div className="status-items">
-                <div className="status-item">
-                  <div className="status-icon">
-                    <span
-                      className={`icon ${matchingRequest.status === 'COMPLETED' ? 'completed' : 'pending'}`}
-                    >
-                      {matchingRequest.status === 'COMPLETED'
-                        ? '✓'
-                        : '○'}
-                    </span>
-                  </div>
-                  <div className="status-details">
-                    <span className="status-label">체크인</span>
-                    <span
-                      className={`status-value ${matchingRequest.status === 'MATCHED' ? 'completed' : 'pending'}`}
-                    >
-                      {matchingRequest.status === 'MATCHED'
-                        ? '완료'
-                        : '대기 중'}
-                    </span>
-                    {serviceProgress.checkInTime && (
-                      <span className="status-time">
-                        {new Date(serviceProgress.checkInTime).toLocaleString(
-                          'ko-KR',
-                          {
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          }
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="status-item">
-                  <div className="status-icon">
-                    <span
-                      className={`icon ${matchingRequest.status === 'COMPLETED' ? 'completed' : 'pending'}`}
-                    >
-                      {matchingRequest.status === 'COMPLETED'
-                        ? '✓'
-                        : '○'}
-                    </span>
-                  </div>
-                  <div className="status-details">
-                    <span className="status-label">체크아웃</span>
-                    <span
-                      className={`status-value ${matchingRequest.status === 'COMPLETED' ? 'completed' : 'pending'}`}
-                    >
-                      {matchingRequest.status === 'COMPLETED'
-                        ? '완료'
-                        : '대기 중'}
-                    </span>
-                    {serviceProgress.checkOutTime && (
-                      <span className="status-time">
-                        {new Date(serviceProgress.checkOutTime).toLocaleString(
-                          'ko-KR',
-                          {
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          }
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div> */}
-            </div>
-
             <div className="action-buttons">
               <button
                 className={`action-button checkin-button ${workLog.status !== 'PENDING' ? 'disabled' : ''}`}
@@ -302,10 +139,8 @@ const ManagerServiceCheckIn = () => {
                 style={{
                   backgroundColor: workLog.status === 'PENDING' ? '#4caf50' : '#e0e0e0',
                   color: workLog.status === 'PENDING' ? 'white' : '#9e9e9e',
-                  // cursor: workLog.status !== 'PENDING' ? 'pointer' : 'not-allowed'
                 }}
               >
-                {/* {workLog.status == 'PENDING' ? '처리 중...' : '체크인'} */}
                 체크인
               </button>
 
@@ -314,49 +149,9 @@ const ManagerServiceCheckIn = () => {
                 onClick={handleCheckOut}
                  disabled={workLog.status === 'PENDING' || 'CHECKOUT'}
               >
-                {/* {reservation ? '처리 중...' : '체크아웃'} */}
                 체크아웃
               </button>
             </div>
-
-            {/* TODO: 파일 업로드 섹션 구현 예정 */}
-            {/* 파일 업로드 섹션 (현재 주석 처리)
-            {showFileUpload && (
-              <div className="file-upload-section">
-                <h3>서비스 완료 사진 업로드</h3>
-                <p className="upload-note">체크아웃을 완료하려면 서비스 완료 사진을 업로드해주세요.</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="file-input"
-                />
-                {selectedFile && (
-                  <p className="selected-file">
-                    선택된 파일: {selectedFile.name}
-                  </p>
-                )}
-                <div className="file-upload-buttons">
-                  <button
-                    onClick={() => {
-                      setShowFileUpload(false);
-                      setSelectedFile(null);
-                    }}
-                    className="cancel-upload-button"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={handleFileUploadAndCheckout}
-                    disabled={!selectedFile || loading}
-                    className="upload-button"
-                  >
-                    {loading ? '업로드 중...' : '파일 업로드 & 체크아웃'}
-                  </button>
-                </div>
-              </div>
-            )}
-            */}
           </div>
 
           {/* Check-in Confirmation Modal */}
@@ -372,9 +167,7 @@ const ManagerServiceCheckIn = () => {
                   <button
                     onClick={confirmCheckIn}
                     className="confirm-button"
-                  // disabled={loading}
                   >
-                    {/* {true ? '처리 중...' : '확인'} */}
                     확인
                   </button>
                 </div>
@@ -397,7 +190,6 @@ const ManagerServiceCheckIn = () => {
                     className="confirm-button"
                   // disabled={loading}
                   >
-                    {/* {true ? '처리 중...' : '체크아웃'} */}
                     체크아웃
                   </button>
                 </div>

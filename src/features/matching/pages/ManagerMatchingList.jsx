@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './ManagerMatchingList.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
@@ -10,10 +10,10 @@ import {
 } from '../constants/matchingData.js';
 import { apiService } from '../../../store/api';
 import reservationStore from '../store/reservationStore.js';
+import { formatKoreanDate, formatKoreanTime } from '../../../util/dateTimeUtils.js';
 
 const ManagerMatchingList = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [activeTab, setActiveTab] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -261,7 +261,7 @@ const ManagerMatchingList = () => {
                       </div>
                       <div className="info-row">
                         <span className="label">일시</span>
-                        <span className="value">{item.reservedDate}{item.reservedTime}</span>
+                        <span className="value">{formatKoreanDate(item.reservedDate)} {formatKoreanTime(item.reservedTime)}</span>
                       </div>
                       <div className="info-row">
                         <span className="label">서비스 시간</span>
@@ -327,8 +327,8 @@ const ManagerMatchingList = () => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">일시</span>
-                  <span className="detail-value">{selectedItem.requestDate}</span>
-                  <span className="detail-value">{selectedItem.requestTime}</span>
+                  <span className="detail-value">{formatKoreanDate(selectedItem.requestedDate)}</span>
+                  <span className="detail-value">{formatKoreanTime(selectedItem.requestedTime)}</span>
                 </div>
                 {selectedItem.totalDuration && (
                   <div className="detail-row">
