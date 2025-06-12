@@ -77,8 +77,8 @@ const MainPage = () => {
           className={`px-6 py-6 min-h-screen flex flex-col ${user ? 'pb-24' : ''}`}
           style={{ marginTop: '64px' }}
         >
-          {/* 매니저용 반갑습니다 텍스트 */}
-          {user?.role === 'ROLE_MANAGER' && (
+          {/* 로그인 사용자용 반갑습니다 텍스트 */}
+          {user && (
             <div className="text-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900">
                 {user.name || user.username}님, 반갑습니다
@@ -159,6 +159,13 @@ const MainPage = () => {
 
           {/* 서비스 바로가기 버튼들 */}
           <div className="mb-8">
+            {/* 비로그인 사용자와 고객을 위한 안내 텍스트 */}
+            {(!user || user?.role === 'ROLE_CUSTOMER') && (
+              <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
+                서비스를 선택해주세요
+              </h3>
+            )}
+
             {/* 매니저가 아닌 경우에만 서비스 버튼들 표시 */}
             {user?.role !== 'ROLE_MANAGER' && (
               <div className="grid grid-cols-3 gap-4">
