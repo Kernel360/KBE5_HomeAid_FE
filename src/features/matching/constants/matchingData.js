@@ -9,7 +9,7 @@ export const MATCHING_STATUS = {
   // 매니저가 거절
   REJECTED_BY_MANAGER: 'REJECTED',
   // 고객이 거절
-  REJECTED_BY_CUSTOMER: 'REJECTED',
+  REJECTED_BY_CUSTOMER: 'CANCELLED',
 };
 
 // 매니저 액션

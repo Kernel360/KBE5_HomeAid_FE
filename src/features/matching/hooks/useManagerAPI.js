@@ -7,6 +7,7 @@ import {
   MANAGER_ACTION,
   CUSTOMER_ACTION,
 } from '../constants/matchingData';
+import { apiService } from '../../../store/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
@@ -756,14 +757,11 @@ export const useServiceCheckIn = () => {
       // TODO: 실제 API 호출
       // const response = await fetch(API_ENDPOINTS.MATCHING_DETAIL(matchingId));
       // const data = await response.json();
+      const response = await apiService.reservation.getById(matchingId);
+      console.log('getServiceDetails api', response.data.data);
 
       // 더미 데이터 반환
-      return {
-        ...DUMMY_MATCHING_DATA,
-        matchingId,
-        customerName: '김고객',
-        address: '서울시 강남구 테헤란로 123',
-      };
+      return response.data.data;
     } catch (err) {
       setError(NOTIFICATION_MESSAGES.MATCHING.LOAD_ERROR);
       throw err;

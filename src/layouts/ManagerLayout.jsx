@@ -3,7 +3,7 @@ import ManagerHeader from '../features/manager/components/ManagerHeader';
 import Footer from '../layouts/components/Footer';
 import { useLocation } from 'react-router-dom';
 
-function ManagerLayout() {
+function    ManagerLayout() {
     const location = useLocation();
 
      const hideFooter = location.pathname.includes('/additional-info');
