@@ -64,7 +64,7 @@ const ManagerServiceCheckIn = () => {
         reservationId: matchingItem.reservationId
       }
       const response = await apiService.workLog.checkIn(requestData);
-      console.log('체크인 결과 데이터', response.data.data)
+      console.log('체크인 결과 데이터', response.data)
       reservationStore.setWorkLog(response.data.data)
       toggleCheckInModal();
     } catch (error) {
@@ -296,9 +296,9 @@ const ManagerServiceCheckIn = () => {
 
             <div className="action-buttons">
               <button
-                className={`action-button checkin-button ${workLog.status !== 'PENDING' ? 'disabled' : ''}`}
+                className={`action-button checkin-button ${workLog.status === 'CHECKIN' || workLog.status === 'CHECKOUT' ? 'disabled' : ''}`}
                 onClick={handleCheckIn}
-                disabled={workLog.status !== 'PENDING'}
+                disabled={workLog.status === 'CHECKIN'}
                 style={{
                   backgroundColor: workLog.status === 'PENDING' ? '#4caf50' : '#e0e0e0',
                   color: workLog.status === 'PENDING' ? 'white' : '#9e9e9e',
@@ -312,7 +312,7 @@ const ManagerServiceCheckIn = () => {
               <button
                 className={`action-button checkout-button ${workLog.status === 'CHECKOUT' ? 'disabled' : ''}`}
                 onClick={handleCheckOut}
-                 disabled={workLog.status === 'PENDING' || 'CHECKOUT'}
+                 disabled={workLog.status === 'PENDING' || workLog.status === 'CHECKOUT'}
               >
                 {/* {reservation ? '처리 중...' : '체크아웃'} */}
                 체크아웃
