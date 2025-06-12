@@ -296,6 +296,9 @@ export const createCustomerReservation = async (reservationData) => {
           ? `${reservationData.reservationTime}:00`
           : undefined), // LocalTime (HH:mm:ss)
       subOptionId: Number(reservationData.subOptionId), // Long으로 변환
+      totalPrice: reservationData.totalPrice || 0, // Integer
+      totalDuration: reservationData.totalDuration || 0, // Integer
+      customerMemo: reservationData.customerMemo || '', // String
       latitude: reservationData.latitude
         ? Number(reservationData.latitude)
         : null, // Double로 변환
