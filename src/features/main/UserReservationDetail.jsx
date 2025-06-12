@@ -365,12 +365,25 @@ const UserReservationDetail = () => {
 
   if (loading) {
     return (
-      <div className="reservation-detail-page">
+      <div
+        className="min-h-screen bg-white flex flex-col"
+        style={{ maxWidth: '512px', margin: '0 auto' }}
+      >
         <Header
           showBackButton
           onBackClick={() => navigate('/customer/reservations')}
         />
-        <div className="page-content-wrapper">
+        <div
+          style={{
+            width: '100%',
+            paddingTop: '80px',
+            paddingBottom: '100px',
+            padding: '80px 16px 100px 16px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <div className="loading-container">
             <div className="loading-spinner">예약 정보를 불러오는 중...</div>
             <p
@@ -387,12 +400,25 @@ const UserReservationDetail = () => {
 
   if (error) {
     return (
-      <div className="reservation-detail-page">
+      <div
+        className="min-h-screen bg-white flex flex-col"
+        style={{ maxWidth: '512px', margin: '0 auto' }}
+      >
         <Header
           showBackButton
           onBackClick={() => navigate('/customer/reservations')}
         />
-        <div className="page-content-wrapper">
+        <div
+          style={{
+            width: '100%',
+            paddingTop: '80px',
+            paddingBottom: '100px',
+            padding: '80px 16px 100px 16px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <div className="error-container">
             <p>{error}</p>
             <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
@@ -428,12 +454,25 @@ const UserReservationDetail = () => {
   }
 
   return (
-    <div className="reservation-detail-page">
+    <div
+      className="min-h-screen bg-white flex flex-col"
+      style={{ maxWidth: '512px', margin: '0 auto' }}
+    >
       <Header
         showBackButton
         onBackClick={() => navigate('/customer/reservations')}
       />
-      <div className="page-content-wrapper">
+      <div
+        style={{
+          width: '100%',
+          paddingTop: '80px',
+          paddingBottom: '100px',
+          padding: '80px 16px 100px 16px',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <div className="reservation-detail-container">
           {/* 예약 상태 배지 */}
           <div className="status-section">
