@@ -2,7 +2,8 @@ import { Home, MoreHorizontal, Search, Heart, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const FooterItem = ({ icon: Icon, label, isActive, onClick, url }) => {
+// eslint-disable-next-line no-unused-vars
+const FooterItem = ({ icon: IconComponent, label, isActive, onClick, url }) => {
   const [isPressed, setIsPressed] = useState(false);
   const navigate = useNavigate();
 
@@ -33,7 +34,7 @@ const FooterItem = ({ icon: Icon, label, isActive, onClick, url }) => {
       onMouseLeave={handleMouseUp}
       onClick={handleClick}
     >
-      <Icon
+      <IconComponent
         className={`
                     w-6 h-6 mb-1 transition-colors duration-150
                     ${isActive ? 'text-gray-900' : 'text-gray-500'}
@@ -53,23 +54,23 @@ const FooterItem = ({ icon: Icon, label, isActive, onClick, url }) => {
 
 const Footer = () => {
   const [activeTab, setActiveTab] = useState('홈');
+  const navigate = useNavigate();
 
   const footerItems = [
     { icon: Home, label: '홈', url: '/' },
     { icon: Search, label: '실시간 검색' },
     { icon: Heart, label: '이벤트' },
-    { icon: Users, label: '이용 내역', url: '/user/reservations' },
+    { icon: Users, label: '이용 내역', url: '/customer/reservations' },
     { icon: MoreHorizontal, label: '더보기', url: '/mypage' },
   ];
 
-  const handleTabClick = (tabName) => {
-    setActiveTab(tabName);
-    // 여기에 라우팅 로직이나 다른 동작을 추가할 수 있습니다
-    console.log(`${tabName} 탭이 클릭되었습니다`);
+  const handleTabClick = (tab) => {
+    setActiveTab(tab.label);
+    navigate(tab.url);
   };
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+    <footer className="">
       <div className="flex justify-around items-center py-1 px-2 max-w-md mx-auto">
         {footerItems.map((item) => (
           <FooterItem

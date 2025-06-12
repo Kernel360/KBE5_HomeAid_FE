@@ -34,6 +34,18 @@ const UserPayment = () => {
   // URL state에서 예약 정보 가져오기 (예약 상세에서 전달받은 경우)
   const reservationFromDetail = location.state?.reservation || null;
 
+  // 결제 데이터가 없으면 홈으로 리다이렉트
+  useEffect(() => {
+    if (
+      !savedPaymentData &&
+      reservationData.selectedServices.length === 0 &&
+      !reservationFromDetail
+    ) {
+      alert('결제 정보가 없습니다.');
+      navigate('/');
+    }
+  }, [savedPaymentData, reservationData, navigate, reservationFromDetail]);
+
   // ⭐️ 디버깅용: 전달받은 데이터 확인
   useEffect(() => {
     console.log('🔍 UserPayment 페이지 데이터 확인:');
@@ -51,18 +63,6 @@ const UserPayment = () => {
     selectedServices,
     savedPaymentData,
   ]);
-
-  // 결제 데이터가 없으면 홈으로 리다이렉트
-  useEffect(() => {
-    if (
-      !savedPaymentData &&
-      reservationData.selectedServices.length === 0 &&
-      !reservationFromDetail
-    ) {
-      alert('결제 정보가 없습니다.');
-      navigate('/');
-    }
-  }, [savedPaymentData, reservationData, navigate, reservationFromDetail]);
 
   // ⭐️ 결제 데이터 생성 (useMemo로 최적화)
   const paymentData = useMemo(
@@ -144,14 +144,6 @@ const UserPayment = () => {
     try {
       // ⭐️ 인증 상태 확인 (403 에러 디버깅)
       const accessToken = localStorage.getItem('accessToken');
-      const userInfo = localStorage.getItem('userInfo');
-
-      console.log('🔐 인증 상태 확인:', {
-        hasToken: !!accessToken,
-        tokenLength: accessToken ? accessToken.length : 0,
-        hasUserInfo: !!userInfo,
-        userInfo: userInfo ? JSON.parse(userInfo) : null,
-      });
 
       // 토큰이 없으면 로그인 페이지로 리다이렉트
       if (!accessToken) {
@@ -159,8 +151,6 @@ const UserPayment = () => {
         const isDevEnvironment = import.meta.env.DEV;
 
         if (isDevEnvironment) {
-          console.log('🔧 개발 환경: 임시 사용자 로그인 처리...');
-
           // 테스트용 사용자 정보 생성
           const testUser = {
             id: 1,
@@ -175,7 +165,6 @@ const UserPayment = () => {
           localStorage.setItem('accessToken', testToken);
           localStorage.setItem('userInfo', JSON.stringify(testUser));
 
-          console.log('✅ 임시 로그인 완료:', testUser);
           alert(
             '💡 개발 환경에서 임시 로그인으로 결제를 진행합니다.\n실제 운영에서는 로그인이 필요합니다.'
           );
@@ -185,13 +174,6 @@ const UserPayment = () => {
           return;
         }
       }
-
-      // ⭐️ 디버깅: 현재 데이터 상태 확인
-      console.log('🔍 현재 결제 데이터 상태:', {
-        paymentData: paymentData,
-        reservationData: reservationData,
-        savedPaymentData: savedPaymentData,
-      });
 
       // ⭐️ reservationId 확인 및 실제 값 설정
       let actualReservationId = null;
@@ -210,31 +192,18 @@ const UserPayment = () => {
       }
       // 4. 테스트용 기본값 (실제 환경에서는 예약 생성 후 사용)
       else {
-        console.warn('⚠️ 실제 reservationId를 찾을 수 없어 테스트용 ID 사용');
         actualReservationId = 1;
       }
 
-      console.log('🔍 결제 진행할 예약 ID:', actualReservationId);
-
       // ⭐️ STEP 0: 매니저 할당 (결제 전 필수 단계)
-      console.log('💼 매니저 할당 중...');
-
       try {
         // 매니저 ID 10으로 할당
-        const managerAssignResult = await assignManagerToReservation(
-          actualReservationId,
-          10
-        );
-        console.log('✅ 매니저 할당 성공:', managerAssignResult);
+        await assignManagerToReservation(actualReservationId, 10);
 
         // 잠시 대기 (백엔드 처리 시간 확보)
         await new Promise((resolve) => setTimeout(resolve, 1000));
-      } catch (managerAssignError) {
-        console.log(
-          '⚠️ 매니저 할당 실패, 계속 진행:',
-          managerAssignError.message
-        );
-        // 매니저 할당 실패해도 결제는 계속 진행 (이미 할당되어 있을 수 있음)
+      } catch {
+        // 매니저 할당 실패해도 결제는 계속 진행
       }
 
       // TODO: 백엔드 예약 상태 관리 시스템이 완성되면 아래 주석을 해제하여 실제 상태 확인 로직을 사용
@@ -314,8 +283,6 @@ const UserPayment = () => {
       */
 
       // ⭐️ STEP 2: 결제 진행 (매니저 할당 후) - 실제 백엔드 API 호출
-      console.log('💳 결제 요청 준비 중...');
-
       // ⭐️ 백엔드 PaymentRequestDto에 맞는 결제 요청 데이터 준비
       const paymentRequestData = {
         reservationId: parseInt(actualReservationId), // Long 타입으로 확실하게 변환
@@ -326,46 +293,23 @@ const UserPayment = () => {
         // status는 백엔드에서 자동 설정되도록 제거 (Optional이므로)
       };
 
-      console.log(
-        '💳 최종 결제 요청 데이터:',
-        JSON.stringify(paymentRequestData, null, 2)
-      );
-      console.log('📊 데이터 타입 확인:', {
-        reservationId: typeof paymentRequestData.reservationId,
-        amount: typeof paymentRequestData.amount,
-        paymentMethod: typeof paymentRequestData.paymentMethod,
-        managerId: typeof paymentRequestData.managerId,
-      });
-
       let paymentResult;
 
       try {
         // ⭐️ 실제 Spring Boot 결제 API 호출 (DB에 저장)
-        console.log('🌐 백엔드 결제 API 호출 중...');
         paymentResult = await customerAPI.processPayment(paymentRequestData);
-        console.log('✅ 실제 결제 API 성공:', paymentResult);
       } catch (apiError) {
-        console.error('❌ 백엔드 결제 API 실패:', apiError);
-
         // 403 에러인 경우 인증 문제 알림
         if (apiError.message.includes('403')) {
-          console.log('🔐 403 인증 에러 - 백엔드 서버 확인 필요:');
-          console.log('1. 백엔드 서버가 8080 포트에서 실행 중인지 확인');
-          console.log('2. 결제 API 엔드포인트에 인증이 필요한지 확인');
-          console.log('3. CORS 설정이 올바른지 확인');
-
           // ⭐️ 임시 해결책: 매니저 할당만이라도 저장하기 위해 시도
           try {
-            console.log('🔄 매니저 할당 정보만 저장 시도...');
             await assignManagerToReservation(actualReservationId, 10);
-            console.log('✅ 매니저 할당은 성공');
-          } catch (managerError) {
-            console.log('❌ 매니저 할당도 실패:', managerError.message);
+          } catch {
+            // 매니저 할당도 실패
           }
         }
 
         // 백엔드 API 실패시 시뮬레이션으로 fallback (UI 테스트용)
-        console.log('🎭 백엔드 실패로 인한 결제 시뮬레이션 fallback');
         paymentResult = {
           id: Math.floor(Math.random() * 1000) + 1, // 랜덤 결제 ID
           reservationId: actualReservationId,
@@ -375,8 +319,6 @@ const UserPayment = () => {
           paidAt: new Date().toISOString(),
           managerId: 10,
         };
-
-        console.log('⚠️ Fallback 시뮬레이션 결과:', paymentResult);
 
         // 사용자에게 상황 설명
         if (apiError.message.includes('403')) {
@@ -403,7 +345,7 @@ const UserPayment = () => {
       );
 
       // 결제 완료 페이지로 이동
-      navigate('/user/payment-complete', {
+      navigate('/customer/payment-complete', {
         state: {
           paymentResult: paymentResult,
           serviceInfo: paymentData.serviceInfo,
@@ -412,33 +354,31 @@ const UserPayment = () => {
         },
       });
     } catch (error) {
-      console.error('❌ 결제 실패:', error);
-      console.error('🔍 에러 상세 정보:', {
-        message: error.message,
-        stack: error.stack,
-      });
-
       // 에러 메시지 상세화
       let errorMessage = '결제에 실패했습니다.';
 
       if (error.message.includes('400')) {
         errorMessage =
           '결제 정보가 올바르지 않습니다.\n다음을 확인해주세요:\n- 예약 정보가 올바른지\n- 결제 금액이 올바른지\n- 매니저가 할당되었는지';
-        console.error(
-          '💡 400 에러 해결 방법:\n1. 실제 예약이 생성되었는지 확인\n2. reservationId가 유효한지 확인\n3. 매니저 ID가 할당되었는지 확인\n4. 백엔드 서버가 정상 동작하는지 확인'
-        );
+      } else if (error.message.includes('401')) {
+        errorMessage = '인증에 실패했습니다.\n다시 로그인한 후 시도해주세요.';
+      } else if (error.message.includes('403')) {
+        errorMessage =
+          '결제 권한이 없습니다.\n고객 계정으로 로그인했는지 확인해주세요.';
       } else if (error.message.includes('404')) {
-        errorMessage = '예약 정보를 찾을 수 없습니다.';
+        errorMessage =
+          '예약 정보를 찾을 수 없습니다.\n예약이 정상적으로 생성되었는지 확인해주세요.';
       } else if (error.message.includes('500')) {
-        errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-      } else if (
-        error.message.includes('network') ||
-        error.message.includes('fetch')
-      ) {
-        errorMessage = '네트워크 연결을 확인하고 다시 시도해주세요.';
+        errorMessage = '서버 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.';
+      } else if (error.message.includes('network')) {
+        errorMessage =
+          '네트워크 연결에 문제가 있습니다.\n인터넷 연결을 확인하고 다시 시도해주세요.';
       }
 
-      alert(errorMessage);
+      alert(
+        `❌ ${errorMessage}\n\n오류가 지속되면 고객센터로 문의해주세요.\n\n` +
+          `🔍 개발자 정보:\n에러 메시지: ${error.message}`
+      );
     }
   };
 
@@ -883,7 +823,7 @@ const UserPayment = () => {
           </div>
         </div>
       </div>
-      <Footer current="/user/payment" />
+      <Footer current="/customer/payment" />
     </div>
   );
 };

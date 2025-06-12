@@ -9,9 +9,9 @@
 /* Header가 추가된 페이지의 콘텐츠 래퍼 */
 .page-content-wrapper {
   min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
-  padding: 16px;
-  padding-top: 0; /* 패딩 제거하여 헤더와 바로 붙임 */
-  display: block; /* flex에서 block으로 변경 */
+  padding: 0 16px 16px 16px; /* 상단 패딩 완전 제거, 좌우하단만 유지 */
+  margin-top: 56px; /* Header 높이만큼 상단 마진 */
+  display: block;
   width: 100%;
   box-sizing: border-box;
 }
@@ -86,28 +86,25 @@ html {
   width: 100%;
   max-width: 480px;
   background-color: white;
-  padding: 0 20px; /* 상단 패딩 제거 */
-  padding-bottom: 120px; /* Footer 높이 + 여유 공간 (84px + 36px) */
+  padding: 0 20px 120px 20px; /* 상단 패딩 완전 제거 */
   font-family: sans-serif;
   box-sizing: border-box;
-  min-height: calc(
-    100vh - 172px
-  ); /* Header(56px) + Footer(84px) + 패딩(32px) */
+  min-height: calc(100vh - 172px);
   position: relative;
-  z-index: 1; /* Footer보다 낮은 z-index */
-  margin: 0 auto; /* 중앙 정렬 */
+  z-index: 1;
+  margin: 0 auto;
 }
 
 /* 인사말 섹션 */
 .greeting-section {
-  margin-top: 0; /* 상단 여백 제거 */
+  /* margin-top: 20px; */
   margin-bottom: 50px;
   text-align: left;
-  padding-top: 0; /* 패딩도 제거하여 헤더에 완전히 붙임 */
+  padding-top: 0;
 }
 
 .greeting-text {
-  font-size: 20px;
+  font-size: 30px;
   font-weight: 500;
   color: #333;
   margin: 0 0 12px 0;
@@ -193,30 +190,30 @@ html {
 .service-options {
   display: flex;
   justify-content: center;
-  gap: 25px;
+  gap: 30px;
   margin-bottom: 50px;
   padding: 0 20px;
 }
 
 .service-option {
-  width: 100px;
-  height: 100px;
-  border: 2px solid #e0e0e0;
+  width: 130px;
+  height: 130px;
+  border: none;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .service-option:hover {
   /* border-color: #4285f4; */
-  background-color: #f8f9ff;
+  background-color: transparent;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
 }
 
 .service-option:active {
@@ -224,15 +221,61 @@ html {
 }
 
 .service-icon {
-  font-size: 32px;
-  color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+.emoji-icon {
+  font-size: 60px;
+  margin-bottom: 6px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emoji-icon-container {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.emoji-icon-container .emoji-icon {
+  font-size: 36px;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.service-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .service-image {
   width: 60px;
   height: 60px;
   object-fit: contain;
-  transition: transform 0.2s ease;
 }
 
 .service-option:hover .service-icon {

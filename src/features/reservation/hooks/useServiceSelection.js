@@ -16,7 +16,6 @@ export const useServiceSelection = () => {
   });
 
   const handleSubOptionClick = (optionType) => {
-    console.log(`${optionType} 하위 옵션 선택됨`);
     setSelectedSubOption(optionType);
   };
 

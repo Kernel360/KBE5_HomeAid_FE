@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { Camera } from 'lucide-react';
 import { apiService } from '../../../store/api';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -26,14 +28,47 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
 
   const handleInputChange = (field, value) => {
     setAllFormData(prev => ({ ...prev, [field]: value })); // ✅ allFormData 업데이트
+    console.log(`입력 변경: ${field} = ${value}`); // ✅ 입력 변경 로그
+    console.log('현재 전체 데이터:', allFormData); // ✅ 현재 전체 데이터 출력
   };
 
+  function validateFormData() {
+    const { preferenceIds, area, availableDays, startTime, endTime } = allFormData;
+    if (!preferenceIds || preferenceIds.length === 0) {
+      alert('제공 가능 서비스 선택해주세요.');
+      throw new Error('제공 가능 서비스를 선택해주세요.');
+    }
+    if (!area) {
+      alert('활동 지역을 선택해주세요.');
+      throw new Error('활동 지역을 선택해주세요.');
+    }
+    if (!availableDays || availableDays.length === 0) {
+      alert('근무 요일을 선택해주세요.');
+      throw new Error('근무 요일을 선택해주세요.');
+    }
+    if (!startTime || !endTime) {
+      alert('근무 시간을 설정해주세요.');
+      throw new Error('근무 시간을 설정해주세요.');
+    }
+    if (startTime >= endTime) {
+      alert('근무 시작 시간이 종료 시간보다 늦을 수 없습니다.');
+      throw new Error('근무 시작 시간이 종료 시간보다 늦을 수 없습니다.');
+    }
+    console.log('폼 데이터 유효성 검사 통과'); // ✅ 유효성 검사 통과 로그
+    return true; // 유효성 검사 통과
+  }
+
   const handleSubmit = () => {
+    if (!validateFormData()) {
+      console.error('폼 데이터 유효성 검사 실패'); // ✅ 유효성 검사 실패 로그
+      return; // 유효성 검사 실패 시 종료
+    } // ✅ 폼 데이터 유효성 검사
     console.log('🎯 최종 전체 데이터:', allFormData); // ✅ 전체 데이터 출력
     // API 호출 로직
     apiService.serviceOption.create(allFormData)
       .then(response => {
         console.log('프로필 등록 성공:', response);
+        navigate('/manager/mypage');
         // 성공 후 처리 로직 (예: 다음 페이지로 이동)
       })
       .catch(error => {
@@ -41,6 +76,22 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
         // 에러 처리 로직
       });
     // 완료 후 이전 단계로 돌아가기
+  };
+
+   // 서버용 -> 표시용 매핑
+  const reverseDayMapping = {
+    1: '월',
+    2: '화',
+    3: '수',
+    4: '목',
+    5: '금',
+    6: '토',
+    7: '일'
+  };
+
+    // 서버에서 오는 숫자 데이터를 표시용 한글로 변환
+  const getDisplayDays = () => {
+    return allFormData.availableDays.map(dayNum => reverseDayMapping[dayNum]).filter(Boolean);
   };
 
   return (
@@ -62,7 +113,7 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Profile Image */}
-          <div>
+          {/* <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">프로필 사진</h2>
             <div className="flex items-center gap-4">
               <div
@@ -93,44 +144,44 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
                 className="hidden"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Introduction */}
-          <div>
+          {/* <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">자기소개</h2>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <textarea
-                value={allFormData.introduction || '안녕하세요, 청소 전문가입니다.\n꼼꼼하고 깔끔한 청소로 고객님의 공간을\n쾌적하게 만들어 드리겠습니다.'} // ✅ allFormData 사용
+                value={allFormData.introduction} // ✅ allFormData 사용
                 onChange={(e) => handleInputChange('introduction', e.target.value)}
                 placeholder="자기소개를 입력해주세요"
                 rows={6}
                 className="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-700 placeholder-gray-500 leading-relaxed"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Specialties */}
-          <div>
+          {/* <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">특기 사항</h2>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <textarea
-                value={allFormData.specialties || '찌든 때 제거, 욕실 청소, 주방 기름때 제거 전문'} // ✅ allFormData 사용
-                onChange={(e) => handleInputChange('specialties', e.target.value)}
+                value={allFormData.specialties} // ✅ allFormData 사용
+                onChange={(e) => handleInputChange('experience', e.target.value)}
                 placeholder="특기나 전문 분야를 입력해주세요"
                 rows={3}
                 className="w-full bg-transparent border-none outline-none resize-none text-sm text-gray-700 placeholder-gray-500"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* 이전 단계 데이터 미리보기 (선택사항) */}
           <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
             <h4 className="text-sm font-medium text-blue-800 mb-2">입력된 정보 요약</h4>
             <p className="text-xs text-blue-700">
-              선택한 서비스: {allFormData.preferenceIds?.length || 0}개<br />
+              제공 서비스: {allFormData.preferenceIds?.length || 0}개<br />
               활동 지역: {allFormData.area}<br />
-              근무 요일: {allFormData.availableDays?.join(', ') || '없음'}요일<br />
-              근무 시간: {allFormData.workingHours?.startTime} - {allFormData.workingHours?.endTime}
+              근무 요일: {getDisplayDays().join(', ') || '없음'}요일<br />
+              근무 시간: {allFormData.startTime} - {allFormData.endTime}
             </p>
           </div>
         </div>

@@ -28,20 +28,19 @@ const UserServiceSubOption = () => {
   // ⭐️ 인증된 사용자 정보 가져오기
   const { user, accessToken } = useAuthStore();
 
-  // ⭐️ 사용자 인사말 생성 함수
-  const getUserGreeting = () => {
+  // 개인화된 서비스 질문 메시지 생성 함수
+  const getPersonalizedServiceQuestion = () => {
     if (!user) {
-      return '안녕하세요, 고객님!';
+      return '어떤 서비스가 필요하신가요?';
     }
 
-    let userName = user.name || user.phone || '고객';
+    let userName = user.username || user.name || user.phone || '고객';
 
-    // 이미 "님"이 붙어있다면 제거하여 중복 방지
     if (userName.endsWith('님')) {
       userName = userName.slice(0, -1);
     }
 
-    return `${userName}님, 어떤 청소 서비스가 필요하신가요?`;
+    return `${userName}님, 어떤 서비스가 필요하신가요?`;
   };
 
   // ⭐️ 하위 옵션 선택 핸들러
@@ -82,7 +81,7 @@ const UserServiceSubOption = () => {
       alert('서비스 옵션을 선택해주세요.');
       return;
     }
-    navigate('/user/service-request');
+    navigate('/customer/service-request');
   };
 
   // ⭐️ 로그인 상태 확인
@@ -179,7 +178,7 @@ const UserServiceSubOption = () => {
             </div>
           </div>
         </div>
-        <Footer current="/user/service-sub-option" />
+        <Footer current="/customer/service-sub-option" />
       </div>
     );
   }
@@ -189,15 +188,10 @@ const UserServiceSubOption = () => {
       <Header showBackButton={true} />
       <div className="page-content-wrapper">
         <div className="reservation-container" style={{ marginTop: '64px' }}>
-          {/* 인사말 섹션 */}
-          <div className="greeting-section">
-            <h1 className="greeting-text">{getUserGreeting()}</h1>
-          </div>
-
           {/* 서비스 선택 메시지 섹션 */}
           <div className="service-message-section">
             <h2 className="service-message">
-              {SERVICE_DESCRIPTIONS.CLEANING_QUESTION}
+              {getPersonalizedServiceQuestion()}
             </h2>
             <p className="sub-message">원하는 청소 서비스를 선택해주세요.</p>
           </div>
@@ -354,7 +348,7 @@ const UserServiceSubOption = () => {
           </div>
         </div>
       </div>
-      <Footer current="/user/service-sub-option" />
+      <Footer current="/customer/service-sub-option" />
     </div>
   );
 };

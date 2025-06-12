@@ -5,22 +5,24 @@ import '../styles/common.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
 import { useAuthStore } from '../../../stores/authStore.js';
-import { SERVICE_DESCRIPTIONS, SERVICE_TYPES } from '../constants/serviceData.js';
-import clean1 from '../../../assets/images/clean1.png';
-import housework2 from '../../../assets/images/housework2.png';
-import cook3 from '../../../assets/images/cook3.png';
+import {
+  SERVICE_DESCRIPTIONS,
+  SERVICE_TYPES,
+} from '../constants/serviceData.js';
 
 const UserServiceOption = () => {
   const navigate = useNavigate();
-  const { user, accessToken } = useAuthStore();
+  const { user } = useAuthStore();
 
   const getUserGreeting = () => {
     if (!user) {
       return '안녕하세요, 고객님!';
     }
 
-    let userName = user.name || user.phone || '고객';
+    // 🔧 백엔드에서 username 필드로 이름이 오므로 수정
+    let userName = user.username || user.name || user.phone || '고객';
 
+    // 이미 "님"이 붙어있다면 제거하여 중복 방지
     if (userName.endsWith('님')) {
       userName = userName.slice(0, -1);
     }
@@ -28,42 +30,39 @@ const UserServiceOption = () => {
     return `안녕하세요, ${userName}님!`;
   };
 
-  React.useEffect(() => {
-    console.log('🔐 UserServiceOption - 현재 사용자 정보:', user);
-    console.log(
-      '🔑 UserServiceOption - 액세스 토큰:',
-      accessToken ? '있음' : '없음'
-    );
-
-    if (!user || !accessToken) {
-      console.log('로그인 정보가 없습니다. 로그인 페이지로 이동합니다.');
-      navigate('/auth/signin');
+  const getPersonalizedQuestion = () => {
+    if (!user) {
+      return SERVICE_DESCRIPTIONS.MAIN_QUESTION;
     }
-  }, [user, accessToken, navigate]);
+
+    // 🔧 백엔드에서 username 필드로 이름이 오므로 수정
+    let userName = user.username || user.name || user.phone || '고객';
+
+    if (userName.endsWith('님')) {
+      userName = userName.slice(0, -1);
+    }
+
+    // return `${userName}님, 오늘 어떤 도움이 필요하신가요?`;
+    return `오늘 어떤 도움이 필요하신가요?`;
+  };
 
   const handleServiceClick = (serviceType) => {
-    console.log(`${serviceType} 서비스 선택됨`);
-    if (serviceType === SERVICE_TYPES.CLEANING) {
-      navigate('/user/service-sub-option');
-    }
-    // TODO: 다른 서비스 타입에 대한 로직 구현
+    navigate('/customer/service-sub-option', { state: { serviceType } });
   };
 
   const handleReservationClick = () => {
-    console.log('365일 24시간 서비스 예약 버튼 클릭');
-    // TODO: 예약 페이지로 이동하는 로직 구현
+    navigate('/customer/service-sub-option');
   };
 
-  const handleEventClick = () => {
-    console.log('이벤트 또는 공지사항 클릭');
-    // TODO: 이벤트/공지사항 페이지로 이동하는 로직 구현
-  };
+  // const handleEventClick = () => {
+  //   navigate('/customer/event');
+  // };
 
   return (
     <div className="reservation-page">
       <Header showBackButton={true} />
       <div className="page-content-wrapper">
-        <div className="reservation-container" style={{ marginTop: '64px' }}>
+        <div className="reservation-container">
           {/* 인사말 섹션 */}
           <div className="greeting-section">
             <h1 className="greeting-text">{getUserGreeting()}</h1>
@@ -71,9 +70,6 @@ const UserServiceOption = () => {
             {user && (
               <div className="user-welcome-info">
                 <p className="welcome-message">오늘도 깔끔한 하루 되세요! ✨</p>
-                {/* {user.role === 'ROLE_CUSTOMER' && (
-                  <span className="user-badge">고객</span>
-                )} */}
               </div>
             )}
           </div>
@@ -91,9 +87,7 @@ const UserServiceOption = () => {
 
           {/* 질문 섹션 */}
           <div className="question-section">
-            <h2 className="question-text">
-              {SERVICE_DESCRIPTIONS.MAIN_QUESTION}
-            </h2>
+            <h2 className="question-text">{getPersonalizedQuestion()}</h2>
           </div>
 
           {/* 서비스 옵션 섹션 */}
@@ -103,7 +97,10 @@ const UserServiceOption = () => {
               onClick={() => handleServiceClick(SERVICE_TYPES.CLEANING)}
             >
               <div className="service-icon">
-                <img src={clean1} alt="청소 서비스" className="service-image" />
+                <div className="emoji-icon-container blue-bg">
+                  <div className="emoji-icon">🧹</div>
+                </div>
+                <div className="service-label">청소</div>
               </div>
             </div>
             <div
@@ -111,11 +108,10 @@ const UserServiceOption = () => {
               onClick={() => handleServiceClick(SERVICE_TYPES.INTERIOR)}
             >
               <div className="service-icon">
-                <img
-                  src={housework2}
-                  alt="인테리어 서비스"
-                  className="service-image"
-                />
+                <div className="emoji-icon-container green-bg">
+                  <div className="emoji-icon">👕</div>
+                </div>
+                <div className="service-label">빨래</div>
               </div>
             </div>
             <div
@@ -123,7 +119,10 @@ const UserServiceOption = () => {
               onClick={() => handleServiceClick(SERVICE_TYPES.COOKING)}
             >
               <div className="service-icon">
-                <img src={cook3} alt="요리 서비스" className="service-image" />
+                <div className="emoji-icon-container pink-bg">
+                  <div className="emoji-icon">👶</div>
+                </div>
+                <div className="service-label">육아</div>
               </div>
             </div>
           </div>
@@ -142,14 +141,14 @@ const UserServiceOption = () => {
           </div>
 
           {/* 이벤트/공지사항 섹션 */}
-          <div className="event-section">
+          {/* <div className="event-section">
             <div className="event-box" onClick={handleEventClick}>
               <span className="event-text">이벤트 또는 공지사항 영역</span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
-      <Footer current="/user/service-option" />
+      <Footer current="/customer/service-option" />
     </div>
   );
 };
