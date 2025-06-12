@@ -10,7 +10,7 @@ const navItems = [
   { label: '게시판', icon: MessageCircle, to: '/board' },
   { label: '이벤트', icon: Star, to: '/event' },
   { label: '이용내역', icon: ClipboardList, to: '/customer/reservations' },
-  { label: '더보기', icon: Menu, to: '/' },
+  { label: '더보기', icon: Menu, to: '/customer/mypage' },
 ];
 
 export default function Footer({ current = '/' }) {
