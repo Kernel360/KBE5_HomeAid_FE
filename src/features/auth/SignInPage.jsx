@@ -41,7 +41,7 @@ const SignInPage = () => {
       } else if (data.role === 'ROLE_ADMIN') {
         navigate('/admin', { replace: true });
       } else if (data.role === 'ROLE_MANAGER') {
-        navigate('/manager/mypage', { replace: true }); // 매니저는 직접 매칭 리스트로 이동
+        navigate('/matching/list', { replace: true }); // 매니저는 매칭내역 페이지로 이동
       } else {
         navigate('/', { replace: true }); // 기본 페이지로 이동
       }
