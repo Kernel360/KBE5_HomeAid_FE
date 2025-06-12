@@ -1,14 +1,173 @@
 import { ArrowLeft, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '../../../../stores/authStore';
+import { apiService } from '../../../../store/api';
+import Footer from '../../../../components/Footer.jsx';
 
 // 내 정보 수정 페이지
 const MyProfile = ({ onBack }) => {
+  const { user, updateUser } = useAuthStore();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // 컴포넌트 마운트 시 사용자 정보로 폼 초기화
+  useEffect(() => {
+    if (user) {
+      // 백엔드 API 호출 대신 기존 사용자 정보로 초기화
+      console.log('=== 사용자 정보로 폼 초기화 ===');
+      console.log('현재 사용자:', user);
+
+      setFormData({
+        name: user.name || user.username || '',
+        email: user.email || '', // 사용자가 직접 입력해야 함
+        phone: user.phone || '', // 사용자가 직접 입력해야 함
+      });
+
+      // 백엔드 API 호출은 403 에러로 인해 임시 비활성화
+      // fetchUserProfile();
+    }
+  }, [user]);
+
+  // 전화번호 포맷팅 함수
+  const formatPhoneNumber = (value) => {
+    // 숫자만 추출
+    const numbers = value.replace(/[^\d]/g, '');
+
+    // 길이에 따른 포맷팅
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else if (numbers.length <= 11) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+    } else {
+      // 11자리 초과시 11자리까지만 사용
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
+  // 입력 필드 변경 핸들러
+  const handleInputChange = (field, value) => {
+    let formattedValue = value;
+
+    // 전화번호 필드인 경우 자동 포맷팅
+    if (field === 'phone') {
+      formattedValue = formatPhoneNumber(value);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [field]: formattedValue,
+    }));
+    // 에러/성공 메시지 초기화
+    setError('');
+    setSuccess('');
+  };
+
+  // 저장 버튼 클릭 핸들러
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+
+      // 유효성 검사
+      if (!formData.name.trim()) {
+        setError('이름을 입력해주세요.');
+        return;
+      }
+      if (!formData.email.trim()) {
+        setError('이메일을 입력해주세요.');
+        return;
+      }
+      if (!formData.phone.trim()) {
+        setError('전화번호를 입력해주세요.');
+        return;
+      }
+
+      // 이메일 형식 검사
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        setError('올바른 이메일 형식을 입력해주세요.');
+        return;
+      }
+
+      // 전화번호 형식 검사 (하이픈 포함된 한국 전화번호)
+      const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/; // 하이픈 포함된 한국 휴대폰 번호 형식
+      if (!phoneRegex.test(formData.phone)) {
+        setError('올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678)');
+        return;
+      }
+
+      // 사용자 ID 확인
+      if (!user?.userId && !user?.id) {
+        setError('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+        return;
+      }
+
+      // UserUpdateRequestDto 구조에 맞춰 데이터 준비
+      const updateData = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone, // 하이픈 포함된 형태로 백엔드로 전송
+      };
+
+      // API 호출로 프로필 업데이트 (userId 포함)
+      const userId = user.userId || user.id;
+      await apiService.user.updateProfile(userId, updateData);
+
+      // 성공 시 AuthStore의 사용자 정보도 업데이트
+      updateUser({
+        ...user,
+        name: updateData.name,
+        email: updateData.email,
+        phone: updateData.phone, // 하이픈 포함된 전화번호로 업데이트
+      });
+
+      setSuccess('프로필이 성공적으로 업데이트되었습니다.');
+
+      // 2초 후 성공 메시지 자동 제거
+      setTimeout(() => {
+        setSuccess('');
+      }, 2000);
+    } catch (err) {
+      console.error('프로필 업데이트 실패:', err);
+
+      // 백엔드 에러 메시지 처리
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.status === 404) {
+        setError('사용자를 찾을 수 없습니다.');
+      } else if (err.response?.status === 400) {
+        setError('입력 정보가 올바르지 않습니다. 다시 확인해주세요.');
+      } else {
+        setError('프로필 업데이트에 실패했습니다. 다시 시도해주세요.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div
+      className="min-h-screen bg-gray-50"
+      style={{
+        paddingBottom: '80px',
+        maxWidth: '512px',
+        margin: '0 auto',
+      }}
+    >
       <header className="bg-white px-6 py-4 border-b border-gray-200 flex items-center">
         <button onClick={onBack} className="mr-4">
           <ArrowLeft className="w-6 h-6 text-gray-900" />
         </button>
-        <h1 className="text-xl font-bold text-gray-900">내 정보 수정</h1>
+        <h1 className="text-lg font-bold text-gray-900">내 정보 수정</h1>
       </header>
 
       <main className="px-6 py-6">
@@ -20,6 +179,24 @@ const MyProfile = ({ onBack }) => {
           <button className="text-blue-600 text-sm">사진 업데이트</button>
         </div>
 
+        {/* 에러/성공 메시지 */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-xl text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-xl text-sm">
+            {success}
+          </div>
+        )}
+
+        {/* 안내 메시지 */}
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl text-sm">
+          <p className="font-medium mb-1">📝 프로필 정보 입력</p>
+          <p>이메일과 전화번호를 입력하여 프로필을 완성해주세요.</p>
+        </div>
+
         {/* 폼 입력 */}
         <div className="space-y-4">
           <div>
@@ -28,7 +205,9 @@ const MyProfile = ({ onBack }) => {
             </label>
             <input
               type="text"
-              placeholder="홍길동"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              placeholder="이름을 입력하세요"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -39,7 +218,9 @@ const MyProfile = ({ onBack }) => {
             </label>
             <input
               type="email"
-              placeholder="hong@example.com"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              placeholder="이메일을 입력하세요"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -50,6 +231,8 @@ const MyProfile = ({ onBack }) => {
             </label>
             <input
               type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
               placeholder="010-1234-5678"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -61,11 +244,16 @@ const MyProfile = ({ onBack }) => {
           <button
             onClick={onBack}
             className="flex-1 py-3 px-6 border border-gray-300 rounded-xl text-gray-700 font-medium"
+            disabled={loading}
           >
             취소
           </button>
-          <button className="flex-1 py-3 px-6 bg-blue-600 text-white rounded-xl font-medium">
-            저장
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="flex-1 py-3 px-6 bg-blue-600 text-black rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? '저장 중...' : '저장'}
           </button>
         </div>
 
@@ -77,6 +265,8 @@ const MyProfile = ({ onBack }) => {
           <button className="text-red-500 text-sm block">회원 탈퇴</button>
         </div>
       </main>
+
+      <Footer current="/customer/mypage" />
     </div>
   );
 };

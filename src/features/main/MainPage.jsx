@@ -111,7 +111,8 @@ const MainPage = () => {
             </div>
 
             {/* 로그인된 고객 사용자를 위한 추가 메뉴 */}
-            {user && user.role === 'ROLE_CUSTOMER' && (
+            {/* TODO: 예약내역과 마이페이지 버튼 기능 구현 예정 */}
+            {/* {user && user.role === 'ROLE_CUSTOMER' && (
               <div className="mt-6 grid grid-cols-2 gap-4">
                 <button
                   onClick={() => navigate('/customer/reservations')}
@@ -131,7 +132,7 @@ const MainPage = () => {
                   </span>
                 </button>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* 공지사항 리스트 */}
