@@ -3,7 +3,9 @@
   position: relative;
   min-height: 100vh;
   width: 100%;
-  background-color: #f3f4f6;
+  max-width: 512px;
+  margin: 0 auto;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -105,6 +107,47 @@
   flex-shrink: 0;
 }
 
+/* 카테고리 배지 스타일 (FAQ용) */
+.category-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.category-예약 {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.category-결제 {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.category-서비스 {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.category-포인트 {
+  background-color: #fce7f3;
+  color: #be185d;
+}
+
+.category-쿠폰 {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.category-평가 {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+}
+
 .post-meta {
   display: flex;
   justify-content: space-between;
@@ -195,4 +238,21 @@
   .board-container {
     padding: 12px;
   }
+}
+
+/* Empty state 스타일 */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.empty-state p {
+  color: #6b7280;
+  font-size: 16px;
+  margin-bottom: 16px;
+  line-height: 1.5;
 }

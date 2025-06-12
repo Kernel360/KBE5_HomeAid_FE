@@ -45,7 +45,7 @@ export default function MyPage() {
   const pointsHistory = [
     {
       id: 1,
-      date: '2025-01-15',
+      date: '2025-05-15',
       type: '적립',
       amount: '+500',
       reason: '서비스 이용 적립',
@@ -53,7 +53,7 @@ export default function MyPage() {
     },
     {
       id: 2,
-      date: '2025-01-10',
+      date: '2025-05-10',
       type: '사용',
       amount: '-300',
       reason: '할인 쿠폰 구매',
@@ -61,7 +61,7 @@ export default function MyPage() {
     },
     {
       id: 3,
-      date: '2025-01-05',
+      date: '2025-05-05',
       type: '적립',
       amount: '+800',
       reason: '신규 가입 보너스',
@@ -69,7 +69,7 @@ export default function MyPage() {
     },
     {
       id: 4,
-      date: '2025-01-01',
+      date: '2025-05-01',
       type: '적립',
       amount: '+250',
       reason: '리뷰 작성 적립',
@@ -86,7 +86,7 @@ export default function MyPage() {
       name: '신규 회원 20% 할인',
       discount: '20%',
       minAmount: 30000,
-      expiry: '2025-02-28',
+      expiry: '2025-10-28',
       status: 'available',
     },
     {
@@ -94,7 +94,7 @@ export default function MyPage() {
       name: '청소 서비스 5,000원 할인',
       discount: '5,000원',
       minAmount: 40000,
-      expiry: '2025-03-15',
+      expiry: '2025-10-15',
       status: 'available',
     },
     {

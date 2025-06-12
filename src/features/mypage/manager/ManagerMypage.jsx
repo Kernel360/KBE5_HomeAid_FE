@@ -208,7 +208,7 @@ export default function ManagerMypage() {
     // 이번 주 (2025-01-13 ~ 2025-01-19)
     {
       id: 1,
-      date: '2025-01-15',
+      date: '2025-05-15',
       service: '청소 서비스',
       amount: 60000,
       commission: 12000,
@@ -217,7 +217,7 @@ export default function ManagerMypage() {
     },
     {
       id: 2,
-      date: '2025-01-14',
+      date: '2025-05-14',
       service: '설치 서비스',
       amount: 100000,
       commission: 20000,
@@ -226,7 +226,7 @@ export default function ManagerMypage() {
     },
     {
       id: 3,
-      date: '2025-01-13',
+      date: '2025-05-13',
       service: '수리 서비스',
       amount: 45000,
       commission: 9000,
@@ -237,7 +237,7 @@ export default function ManagerMypage() {
     // 지난 주 (2025-01-06 ~ 2025-01-12)
     {
       id: 4,
-      date: '2025-01-12',
+      date: '2025-05-12',
       service: '청소 서비스',
       amount: 70000,
       commission: 14000,
@@ -246,7 +246,7 @@ export default function ManagerMypage() {
     },
     {
       id: 5,
-      date: '2025-01-10',
+      date: '2025-05-10',
       service: '정리 서비스',
       amount: 35000,
       commission: 7000,
@@ -255,7 +255,7 @@ export default function ManagerMypage() {
     },
     {
       id: 6,
-      date: '2025-01-08',
+      date: '2025-05-08',
       service: '설치 서비스',
       amount: 85000,
       commission: 17000,
@@ -264,7 +264,7 @@ export default function ManagerMypage() {
     },
     {
       id: 7,
-      date: '2025-01-07',
+      date: '2025-05-07',
       service: '수리 서비스',
       amount: 55000,
       commission: 11000,
@@ -275,7 +275,7 @@ export default function ManagerMypage() {
     // 2주 전 (2024-12-30 ~ 2025-01-05)
     {
       id: 8,
-      date: '2025-01-05',
+      date: '2025-05-05',
       service: '청소 서비스',
       amount: 50000,
       commission: 10000,
@@ -284,7 +284,7 @@ export default function ManagerMypage() {
     },
     {
       id: 9,
-      date: '2025-01-03',
+      date: '2025-05-03',
       service: '정리 서비스',
       amount: 40000,
       commission: 8000,
@@ -293,7 +293,7 @@ export default function ManagerMypage() {
     },
     {
       id: 10,
-      date: '2025-01-01',
+      date: '2025-05-01',
       service: '설치 서비스',
       amount: 90000,
       commission: 18000,
@@ -311,21 +311,21 @@ export default function ManagerMypage() {
       totalCommission: 41000,
       netEarnings: 164000,
       serviceCount: 3,
-      period: '2025-01-13 ~ 2025-01-19',
+      period: '2025-05-13 ~ 2025-05-19',
     },
     lastWeek: {
       totalEarnings: 245000,
       totalCommission: 49000,
       netEarnings: 196000,
       serviceCount: 4,
-      period: '2025-01-06 ~ 2025-01-12',
+      period: '2025-05-06 ~ 2025-05-12',
     },
     twoWeeksAgo: {
       totalEarnings: 180000,
       totalCommission: 36000,
       netEarnings: 144000,
       serviceCount: 3,
-      period: '2024-12-30 ~ 2025-01-05',
+      period: '2025-04-30 ~ 2025-05-05',
     },
   };
 
