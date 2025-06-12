@@ -1,153 +1,142 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './MatchingSystemPage.css';
 import MatchingSystemCard from '../components/MatchingSystemCard';
 
+// API 기본 URL 구성
+const getBaseUrl = () => {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+
+  const baseUrl = `${API_BASE_URL}/api/${API_VERSION}`;
+  console.log('🔧 API 기본 URL:', {
+    baseUrl,
+    environment: import.meta.env.MODE,
+    apiUrl: import.meta.env.VITE_API_URL,
+    version: import.meta.env.VITE_API_VERSION
+  });
+  return baseUrl;
+};
+
 function MatchingSystemPage() {
-  // 임시 데이터: 매니저 상태(status) 필드 추가 및 일부 데이터 조정
-  const managers = useMemo(
-    () => [
-      {
-        id: 5001,
-        name: '김고객',
-        managerName: '홍길동', // 매니저명 필드 추가
-        userId: 1001,
-        phone: '010-1234-5678',
-        email: 'kim@example.com',
-        date: '2023-06-15 14:00', // 일시 필드 이름 변경
-        service: '대청소',
-        area: '서울시 강남구',
-        status: 'service_completed', // '서비스 완료' 상태 추가
-        price: '80,000', // 금액 필드 추가
-      },
-      {
-        id: 5002,
-        name: '이고객',
-        managerName: '김매니저', // 매니저명 필드 추가
-        userId: 1003,
-        phone: '010-3456-7890',
-        email: 'park@example.com',
-        date: '2023-06-20 10:00', // 일시 필드 이름 변경
-        service: '일반 청소',
-        area: '서울시 강남구',
-        status: 'match_completed', // '매칭 완료' 상태 추가
-        price: '60,000', // 금액 필드 추가
-      },
-      {
-        id: 5003,
-        name: '박고객',
-        managerName: '-', // 매니저명 아직 없음
-        userId: 1004,
-        phone: '010-5678-1234',
-        email: 'lee@example.com',
-        date: '2023-06-25 14:00', // 희망 일시
-        service: '일반 청소',
-        area: '서울시 서초구',
-        status: 'pending', // '매칭 대기' 상태 유지
-        price: null, // 매칭 대기는 금액 없음
-      },
-      // Add more dummy data as needed to match image quantity/statuses
-      {
-        id: 5004,
-        name: '최고객',
-        managerName: '이매니저',
-        userId: 1005,
-        phone: '010-8765-4321',
-        email: 'kim2@example.com',
-        date: '2023-07-01 09:00',
-        service: '사무실 청소',
-        area: '서울시 송파구',
-        status: 'service_completed', // '서비스 완료'
-        price: '100,000',
-      },
-      {
-        id: 5005,
-        name: '정고객',
-        managerName: '강매니저',
-        userId: 1006,
-        phone: '010-2468-1357',
-        email: 'kang@example.com',
-        date: '2023-07-05 11:00',
-        service: '입주 청소',
-        area: '서울시 강동구',
-        status: 'match_completed', // '매칭 완료'
-        price: '200,000',
-      },
-    ],
-    []
-  );
+  const navigate = useNavigate();
+  
+  // 페이지네이션 관련 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [reservations, setReservations] = useState([]);
+  const [error, setError] = useState(null);
+
+  // 필터 상태 관리
+const [filter, setFilter] = useState('전체');
+
+
+  // API 호출 함수
+  const fetchReservations = async (page, size, status) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const baseUrl = getBaseUrl();
+      const url = new URL(`${baseUrl}/reservations`);
+      url.searchParams.append('page', page - 1);
+      url.searchParams.append('size', size);
+      if (status) {
+        url.searchParams.append('status', status);
+      }
+
+      console.log('API 요청 URL:', url.toString());
+
+      // 토큰 가져오기
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('로그인이 필요합니다');
+        navigate('/auth/signin');
+        return;
+      }
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // 응답 상태 코드에 따른 처리
+      if (response.status === 401) {
+        setError('인증이 만료되었습니다. 다시 로그인해주세요.');
+        localStorage.removeItem('accessToken');
+        navigate('/auth/signin');
+        return;
+      }
+
+      if (response.status === 403) {
+        setError('접근 권한이 없습니다.');
+        navigate('/403');
+        return;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API 응답 에러:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('API 응답:', result);
+      
+      if (result.success === false) {
+        setError(result.message || '데이터를 불러오는데 실패했습니다');
+        return;
+      }
+
+      // API 응답 형식에 맞게 데이터 처리
+      const { content, totalPages: total, totalElements: totalCount } = result.data;
+      
+      setReservations(content);
+      setTotalPages(total);
+      setTotalElements(totalCount);
+    } catch (error) {
+      console.error('예약 목록을 불러오는데 실패했습니다:', error);
+      setError('예약 목록을 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 필터가 변경될 때마다 API 호출
+  useEffect(() => {
+    const status = filter === '전체' ? null : 
+                  filter === '매칭 대기' ? 'REQUESTED' :
+                  filter === '매칭 중' ? 'MATCHING' :
+                  filter === '매칭 완료' ? 'MATCHED' : 'COMPLETED';
+    
+    fetchReservations(currentPage, pageSize, status);
+  }, [currentPage, pageSize, filter]);
 
   // 매칭 현황 카운트 계산
-  const totalMatches = managers.length;
-  const inProgressMatches = managers.filter(
-    (manager) =>
-      manager.status === 'match_completed' ||
-      manager.status === 'service_completed'
-  ).length; // '매칭 완료' 또는 '서비스 완료'를 진행 중으로 간주
-  const pendingMatches = managers.filter(
-    (manager) => manager.status === 'pending'
+  const totalMatches = totalElements;
+  const inProgressMatches = reservations.filter(
+    (reservation) =>
+      reservation.status === 'MATCHING' ||
+      reservation.status === 'MATCHED'
+  ).length;
+  const pendingMatches = reservations.filter(
+    (reservation) => reservation.status === 'REQUESTED'
   ).length;
 
-  // 필터 및 검색어 상태 관리
-  // 필터 값은 이미지의 버튼 텍스트와 일치시킵니다.
-  const [filter, setFilter] = useState('전체'); // 기본 필터: 전체
-  const [searchTerm, setSearchTerm] = useState(''); // 검색어 상태
-
-  // 페이지네이션 상태 관리
-  const [currentPage, setCurrentPage] = useState(1); // 현재 페이지
-  const [managersPerPage] = useState(3); // 페이지당 매니저 수 (이미지 기준 3개)
-
-  // 검색어 및 필터에 따라 매니저 목록 필터링
-  const filteredManagers = useMemo(() => {
-    let currentManagers = managers;
-
-    // Apply Search
-    if (searchTerm) {
-      currentManagers = currentManagers.filter((manager) => {
-        // Search across relevant fields
-        const searchFields = [
-          manager.name,
-          manager.managerName, // Search by manager name
-          manager.phone,
-          manager.email,
-          manager.service,
-          manager.area,
-          manager.id.toString(), // Search by booking number
-        ];
-        return searchFields.some(
-          (field) =>
-            field &&
-            field.toString().toLowerCase().includes(searchTerm.toLowerCase())
-        ); // Case-insensitive search
-      });
-    }
-
-    // Apply Filter based on button text
-    if (filter !== '전체') {
-      currentManagers = currentManagers.filter((manager) => {
-        if (filter === '매칭 대기') return manager.status === 'pending';
-        if (filter === '매칭 완료') return manager.status === 'match_completed';
-        if (filter === '서비스 완료')
-          return manager.status === 'service_completed';
-        return true; // Should not reach here if filters are correctly handled
-      });
-    }
-
-    return currentManagers;
-  }, [managers, searchTerm, filter]); // managers, searchTerm, filter가 변경될 때만 다시 계산
-
-  // 현재 페이지에 해당하는 매니저 목록 계산
-  const indexOfLastManager = currentPage * managersPerPage;
-  const indexOfFirstManager = indexOfLastManager - managersPerPage;
-  const currentManagers = filteredManagers.slice(
-    indexOfFirstManager,
-    indexOfLastManager
-  );
-
-  // 총 페이지 수 계산
-  const totalPages = Math.ceil(filteredManagers.length / managersPerPage);
-
   // 페이지 변경 함수
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   return (
     <div className="matching-management-container">
@@ -159,11 +148,17 @@ function MatchingSystemPage() {
         </p>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          <p>{error}</p>
+        </div>
+      )}
+
       {/* Matching Status Overview */}
       <div className="matching-status-overview">
         <div className="status-overview-header">
-          <i className="fas fa-users"></i>{' '}
-          {/* Placeholder icon, replace with actual icon if needed */}
+          <i className="fas fa-users"></i>
           <span>매칭 현황 관리</span>
         </div>
         <div className="status-cards-row">
@@ -188,7 +183,7 @@ function MatchingSystemPage() {
           className={`filter-button ${filter === '전체' ? 'active' : ''}`}
           onClick={() => {
             setFilter('전체');
-            setCurrentPage(1); // 필터 변경 시 1페이지로 이동
+            setCurrentPage(1);
           }}
         >
           전체
@@ -197,16 +192,25 @@ function MatchingSystemPage() {
           className={`filter-button ${filter === '매칭 대기' ? 'active' : ''}`}
           onClick={() => {
             setFilter('매칭 대기');
-            setCurrentPage(1); // 필터 변경 시 1페이지로 이동
+            setCurrentPage(1);
           }}
         >
           매칭 대기
         </button>
         <button
+          className={`filter-button ${filter === '매칭 중' ? 'active' : ''}`}
+          onClick={() => {
+            setFilter('매칭 중');
+            setCurrentPage(1);
+          }}
+        >
+          매칭 중
+        </button>
+        <button
           className={`filter-button ${filter === '매칭 완료' ? 'active' : ''}`}
           onClick={() => {
             setFilter('매칭 완료');
-            setCurrentPage(1); // 필터 변경 시 1페이지로 이동
+            setCurrentPage(1);
           }}
         >
           매칭 완료
@@ -215,47 +219,54 @@ function MatchingSystemPage() {
           className={`filter-button ${filter === '서비스 완료' ? 'active' : ''}`}
           onClick={() => {
             setFilter('서비스 완료');
-            setCurrentPage(1); // 필터 변경 시 1페이지로 이동
+            setCurrentPage(1);
           }}
         >
           서비스 완료
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="search-bar">
-        <input
-          type="text"
-          placeholder="고객명 또는 매니저명 검색"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1); // 검색어 변경 시 1페이지로 이동
-          }}
-        />
-        {/* Add search icon here if needed */}
-      </div>
+      {/* Loading State */}
+      {isLoading && (
+        <div className="loading-state">
+          <p>로딩 중...</p>
+        </div>
+      )}
 
       {/* Manager List (Matching System Cards) */}
       <div className="manager-list">
-        {currentManagers.map((manager) => (
-          <MatchingSystemCard key={manager.id} manager={manager} />
+        {reservations.map((reservation) => (
+          <MatchingSystemCard 
+            key={reservation.reservationId} 
+            reservation={reservation} 
+          />
         ))}
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && ( // Only show pagination if there's more than one page
+      {totalPages > 1 && (
         <div className="pagination">
-          {/* 페이지 번호 버튼을 동적으로 생성 */}
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            이전
+          </button>
           {[...Array(totalPages)].map((_, index) => (
             <button
               key={index + 1}
-              onClick={() => paginate(index + 1)}
-              className={currentPage === index + 1 ? 'active' : ''} // 현재 페이지 버튼에 active 클래스 적용
+              onClick={() => handlePageChange(index + 1)}
+              className={currentPage === index + 1 ? 'active' : ''}
             >
               {index + 1}
             </button>
           ))}
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            다음
+          </button>
         </div>
       )}
     </div>
