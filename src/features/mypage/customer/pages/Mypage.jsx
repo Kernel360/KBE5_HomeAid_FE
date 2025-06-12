@@ -49,7 +49,7 @@ export default function MyPage() {
         margin: '0 auto',
       }}
     >
-      <Header showBackButton={false} />
+      <Header showBackButton={true} />
 
       {/* 페이지 제목 */}
       <div className="px-6 py-4">
@@ -144,7 +144,12 @@ export default function MyPage() {
         />
       );
     case 'createInquiry':
-      return <CreateInquiry onBack={() => setCurrentView('inquiry')} onInquiryCreated={handleInquiryCreated} />;
+      return (
+        <CreateInquiry
+          onBack={() => setCurrentView('inquiry')}
+          onInquiryCreated={handleInquiryCreated}
+        />
+      );
     case 'inquiryDetail':
       return (
         <InquiryDetail

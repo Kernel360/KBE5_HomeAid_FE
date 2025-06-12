@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import Footer from '../../../../components/Footer.jsx';
 
 const CreateInquiry = ({ onBack, onInquiryCreated }) => {
   const [title, setTitle] = useState('');
@@ -8,25 +9,26 @@ const CreateInquiry = ({ onBack, onInquiryCreated }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSave = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await axios.post('/api/v1/boards', {
-        title,
-        content,
-      }, {
-        // You will need to include authentication headers here.
-        // For example, if you are using a token from localStorage:
-        headers: {
-           Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-         },
-      });
+      const response = await axios.post(
+        '/api/v1/boards',
+        {
+          title,
+          content,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        }
+      );
       console.log('문의글 작성 성공:', response.data);
       if (onInquiryCreated) {
-        onInquiryCreated(); // Notify parent to refresh list or navigate
+        onInquiryCreated();
       }
     } catch (err) {
       setError('문의글 작성에 실패했습니다.');
@@ -38,7 +40,7 @@ const CreateInquiry = ({ onBack, onInquiryCreated }) => {
 
   return (
     <div
-      className="min-h-screen bg-gray-50"
+      className="min-h-screen bg-white"
       style={{
         paddingBottom: '80px',
         maxWidth: '512px',
@@ -46,50 +48,83 @@ const CreateInquiry = ({ onBack, onInquiryCreated }) => {
       }}
     >
       <header className="bg-white px-6 py-4 border-b border-gray-200 flex items-center">
-        <button onClick={onBack} className="mr-4">
+        <button
+          onClick={onBack}
+          className="mr-4 p-2 rounded-full bg-white hover:bg-gray-50 transition-colors"
+        >
           <ArrowLeft className="w-6 h-6 text-gray-900" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">문의글 작성</h1>
+        <h2 className="text-lg font-bold text-gray-900">문의글 작성</h2>
       </header>
 
       <main className="px-6 py-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">제목</label>
+            <label
+              htmlFor="title"
+              className="block text-base font-semibold text-gray-800 mb-2"
+            >
+              제목
+            </label>
             <input
               type="text"
               id="title"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-lg py-3 px-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="문의 제목을 입력해주세요"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              style={{ height: '50px' }}
             />
           </div>
+
           <div>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700">내용</label>
+            <label
+              htmlFor="content"
+              className="block text-base font-semibold text-gray-800 mb-2"
+            >
+              내용
+            </label>
             <textarea
               id="content"
-              rows="6"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              rows="12"
+              className="w-full border border-gray-300 rounded-lg py-3 px-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+              placeholder="문의 내용을 자세히 작성해주세요"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required
+              style={{ minHeight: '300px' }}
             ></textarea>
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-red-600 text-sm font-medium">{error}</p>
+            </div>
+          )}
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium text-base hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            disabled={loading}
-          >
-            {loading ? '작성 중...' : '문의글 작성'}
-          </button>
-        </form>
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={handleSave}
+              style={{
+                backgroundColor:
+                  loading || !title.trim() || !content.trim()
+                    ? '#9ca3af'
+                    : '#10b981',
+                color: 'white',
+              }}
+              className="px-6 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-colors disabled:cursor-not-allowed"
+              disabled={loading || !title.trim() || !content.trim()}
+            >
+              {loading ? '저장 중...' : '저장하기'}
+            </button>
+          </div>
+        </div>
       </main>
+
+      <Footer current="/customer/mypage" />
     </div>
   );
 };
 
-export default CreateInquiry; 
+export default CreateInquiry;

@@ -37,19 +37,20 @@
 /* 탭 스타일링 */
 .board-tabs {
   display: flex;
-  gap: 1px;
-  background-color: #e5e7eb;
+  gap: 2px;
+  background-color: white;
   border-radius: 8px;
-  padding: 4px;
+  padding: 2px;
   margin-bottom: 24px;
+  border: 1px solid #e5e7eb;
 }
 
 .tab-button {
   flex: 1;
-  padding: 14px 12px;
+  padding: 8px 8px;
   border: none;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   background-color: transparent;
   color: #6b7280;
@@ -58,8 +59,8 @@
 }
 
 .tab-button.active {
-  background-color: white;
-  color: #4f6ef7;
+  background-color: #4f6ef7;
+  color: white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -110,6 +111,63 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* 상태 메시지 스타일 */
+.empty-state,
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 40px 20px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.empty-state p,
+.loading-state p,
+.error-state p {
+  color: #6b7280;
+  font-size: 16px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.empty-state p:last-child {
+  margin-bottom: 0;
+}
+
+.login-button,
+.retry-button {
+  background-color: #4f6ef7;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 8px;
+}
+
+.login-button:hover,
+.retry-button:hover {
+  background-color: #3f5ad7;
+}
+
+.retry-button {
+  background-color: #10b981;
+}
+
+.retry-button:hover {
+  background-color: #059669;
+}
+
+.loading-state p {
+  color: #4b5563;
+  font-style: italic;
 }
 
 .post-item {
@@ -298,7 +356,7 @@
   }
 
   .tab-button {
-    padding: 12px 8px;
+    padding: 8px 8px;
     font-size: 14px;
   }
 
@@ -365,8 +423,8 @@
   }
 
   .tab-button {
-    padding: 10px 6px;
-    font-size: 13px;
+    padding: 8px 8px;
+    font-size: 14px;
   }
 
   .post-item {
