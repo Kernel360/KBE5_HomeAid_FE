@@ -2,11 +2,53 @@ import Header from '../../components/Header.jsx';
 import Footer from '../../components/Footer.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useState, useEffect } from 'react';
 
 // 메인 페이지 컴포넌트
 const MainPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // 슬라이드 데이터
+  const slides = [
+    {
+      id: 1,
+      title: '365일 24시간 어디서든',
+      subtitle: '앤트워크 서비스 이용가능!',
+      badge: '공지',
+      bgGradient: 'from-blue-500 to-purple-600',
+      iconBg: 'bg-orange-400',
+      iconInnerBg: 'bg-orange-500',
+    },
+    {
+      id: 2,
+      title: '전문 매니저가',
+      subtitle: '최고의 서비스를 제공합니다!',
+      badge: '서비스',
+      bgGradient: 'from-green-500 to-teal-600',
+      iconBg: 'bg-yellow-400',
+      iconInnerBg: 'bg-yellow-500',
+    },
+    {
+      id: 3,
+      title: '신규 가입하면',
+      subtitle: '첫 서비스 30% 할인!',
+      badge: '이벤트',
+      bgGradient: 'from-pink-500 to-rose-600',
+      iconBg: 'bg-red-400',
+      iconInnerBg: 'bg-red-500',
+    },
+  ];
+
+  // 자동 슬라이드 기능
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 3000); // 3초마다 슬라이드 변경
+
+    return () => clearInterval(interval);
+  }, [slides.length]);
 
   const handleServiceClick = (servicePath) => {
     if (user) {
@@ -35,6 +77,15 @@ const MainPage = () => {
           className={`px-6 py-6 min-h-screen flex flex-col ${user ? 'pb-24' : ''}`}
           style={{ marginTop: '64px' }}
         >
+          {/* 매니저용 반갑습니다 텍스트 */}
+          {user?.role === 'ROLE_MANAGER' && (
+            <div className="text-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {user.name || user.username}님, 반갑습니다
+              </h2>
+            </div>
+          )}
+
           {/* 인사말 */}
           <div className="mb-8">
             <h1
@@ -45,70 +96,109 @@ const MainPage = () => {
             </h1>
           </div>
 
-          {/* 광고 배너 */}
-          <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl p-8 text-white overflow-hidden mb-8">
-            {/* 배경 장식 */}
-            <div className="absolute top-4 right-4 text-white/20">
-              <div className="text-xs bg-white/20 px-2 py-1 rounded-full">
-                2 / 3
-              </div>
+          {/* 슬라이드쇼 배너 */}
+          <div className="relative mb-8 overflow-hidden rounded-3xl">
+            <div
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {slides.map((slide, index) => (
+                <div
+                  key={slide.id}
+                  className={`w-full flex-shrink-0 relative bg-gradient-to-r ${slide.bgGradient} rounded-3xl p-8 text-white overflow-hidden`}
+                >
+                  {/* 슬라이드 인디케이터 */}
+                  <div className="absolute top-4 right-4 text-white/20">
+                    <div className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                      {index + 1} / {slides.length}
+                    </div>
+                  </div>
+
+                  {/* 아이콘 */}
+                  <div className="absolute top-6 right-12">
+                    <div
+                      className={`w-16 h-16 ${slide.iconBg} rounded-full flex items-center justify-center transform rotate-12`}
+                    >
+                      <div
+                        className={`w-8 h-8 ${slide.iconInnerBg} rounded-full`}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="relative z-10">
+                    <p className="text-sm font-medium mb-2 opacity-90">
+                      {slide.badge}
+                    </p>
+                    <h2 className="text-2xl font-bold mb-4 leading-tight">
+                      {slide.title}
+                      <br />
+                      {slide.subtitle}
+                    </h2>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            {/* 벨 아이콘 */}
-            <div className="absolute top-6 right-12">
-              <div className="w-16 h-16 bg-orange-400 rounded-full flex items-center justify-center transform rotate-12">
-                <div className="w-8 h-8 bg-orange-500 rounded-full"></div>
-              </div>
-            </div>
-
-            <div className="relative z-10">
-              <p className="text-sm font-medium mb-2 opacity-90">공지</p>
-              <h2 className="text-2xl font-bold mb-4 leading-tight">
-                365일 24시간 어디서든
-                <br />
-                앤트워크 서비스 이용가능!
-              </h2>
+            {/* 슬라이드 점 인디케이터 */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`rounded-full transition-all duration-300 ${
+                    currentSlide === index ? 'bg-white' : 'bg-white/50'
+                  }`}
+                  style={{
+                    width: '2px',
+                    height: '2px',
+                  }}
+                />
+              ))}
             </div>
           </div>
 
           {/* 서비스 바로가기 버튼들 */}
           <div className="mb-8">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
-              {user
-                ? `${user.name || user.username}님, 어떤 서비스가 필요하세요?`
-                : '서비스 이용을 위해 로그인해주세요'}
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <button
-                onClick={() => handleServiceClick('/customer/service-option')}
-                className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
-                  🧹
-                </div>
-                <span className="text-sm font-medium text-gray-700">청소</span>
-              </button>
+            {/* 매니저가 아닌 경우에만 서비스 버튼들 표시 */}
+            {user?.role !== 'ROLE_MANAGER' && (
+              <div className="grid grid-cols-3 gap-4">
+                <button
+                  onClick={() => handleServiceClick('/customer/service-option')}
+                  className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+                >
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
+                    🧹
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    청소
+                  </span>
+                </button>
 
-              <button
-                onClick={() => handleServiceClick('/customer/service-option')}
-                className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-2">
-                  👕
-                </div>
-                <span className="text-sm font-medium text-gray-700">빨래</span>
-              </button>
+                <button
+                  onClick={() => handleServiceClick('/customer/service-option')}
+                  className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+                >
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-2">
+                    👕
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    빨래
+                  </span>
+                </button>
 
-              <button
-                onClick={() => handleServiceClick('/customer/service-option')}
-                className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-2">
-                  👶
-                </div>
-                <span className="text-sm font-medium text-gray-700">육아</span>
-              </button>
-            </div>
+                <button
+                  onClick={() => handleServiceClick('/customer/service-option')}
+                  className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+                >
+                  <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-2">
+                    👶
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    육아
+                  </span>
+                </button>
+              </div>
+            )}
 
             {/* 로그인된 고객 사용자를 위한 추가 메뉴 */}
             {/* TODO: 예약내역과 마이페이지 버튼 기능 구현 예정 */}
@@ -133,56 +223,6 @@ const MainPage = () => {
                 </button>
               </div>
             )} */}
-          </div>
-
-          {/* 공지사항 리스트 */}
-          <div className="space-y-3 flex-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded font-medium mr-3">
-                  공지
-                </span>
-                <span className="text-gray-600 text-sm">앤트워크 이용안내</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="bg-red-100 text-red-600 text-xs px-2 py-1 rounded font-medium mr-3">
-                  이벤트
-                </span>
-                <span className="text-gray-600 text-sm">
-                  에어컨 청소 오픈 기념 할인 이벤트
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded font-medium mr-3">
-                  공지
-                </span>
-                <span className="text-gray-600 text-sm">앤트워크 이용안내</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded font-medium mr-3">
-                  공지
-                </span>
-                <span className="text-gray-600 text-sm">앤트워크 이용안내</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded font-medium mr-3">
-                  공지
-                </span>
-                <span className="text-gray-600 text-sm">앤트워크 이용안내</span>
-              </div>
-            </div>
           </div>
         </main>
 
