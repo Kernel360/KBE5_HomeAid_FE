@@ -290,7 +290,16 @@ export const createCustomerReservation = async (reservationData) => {
         (reservationData.reservationTime
           ? `${reservationData.reservationTime}:00`
           : undefined), // LocalTime (HH:mm:ss)
-      subOptionId: Number(reservationData.subOptionId) || 2, // Long으로 변환, 기본값 2 (청소)
+      subOptionId: Number(reservationData.subOptionId) || 2, // Long으로 변환
+      totalPrice: reservationData.totalPrice || 0, // Integer
+      totalDuration: reservationData.totalDuration || 0, // Integer
+      customerMemo: reservationData.customerMemo || '', // String
+      latitude: reservationData.latitude
+        ? Number(reservationData.latitude)
+        : null, // Double로 변환
+      longitude: reservationData.longitude
+        ? Number(reservationData.longitude)
+        : null, // Double로 변환
     };
 
     // 위도/경도가 있는 경우 추가 (Google Maps 선택 시)
