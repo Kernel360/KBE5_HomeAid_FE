@@ -26,6 +26,9 @@ import BoardDetail from '../features/board/pages/BoardDetail';
 import EventList from '../features/main/EventList';
 import AdminLayoutPage from '../features/admin/pages/AdminLayoutPage';
 import ManagerMain from '../features/manager/pages/ManagerMainPage';
+import ReservationHistoryPage from '../features/review/pages/ReservationHistoryPage';
+import ReservationDetailPage from '../features/review/pages/ReservationDetailPage';
+import ReviewWritePage from '../features/review/pages/ReviewWritePage';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -45,6 +48,12 @@ export const protectedAppRoutes = [
       { path: 'payment-complete', element: <UserPaymentComplete /> },
       { path: 'reservations', element: <UserReservationList /> },
       { path: 'reservations/:id', element: <UserReservationDetail /> },
+      { path: 'review/history', element: <ReservationHistoryPage /> },
+      {
+        path: 'review/detail/:reservationId',
+        element: <ReservationDetailPage />,
+      },
+      { path: 'review/write', element: <ReviewWritePage /> },
     ],
   },
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)
@@ -62,6 +71,12 @@ export const protectedAppRoutes = [
       },
       { path: 'payment', element: <UserPayment /> },
       { path: 'payment-complete', element: <UserPaymentComplete /> },
+      { path: 'review/history', element: <ReservationHistoryPage /> },
+      {
+        path: 'review/detail/:reservationId',
+        element: <ReservationDetailPage />,
+      },
+      { path: 'review/write', element: <ReviewWritePage /> },
     ],
   },
 

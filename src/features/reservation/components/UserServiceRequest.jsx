@@ -311,21 +311,25 @@ const UserServiceRequest = () => {
         selectedAddressId === 'current-location' ||
         selectedAddressId === 'map-selected'
       ) {
-        // TODO: 향후 Google Maps 선택 위치를 주소 테이블에 자동 등록하는 기능 추가
-        // TODO: 현재는 임시로 위도/경도를 주소 문자열로 변환해서 전달
         const coordinates = formData.selectedAddress.coordinates;
         if (coordinates && coordinates.lat && coordinates.lng) {
           try {
-            // ⭐️ 백엔드 ReservationRequestDto 형식에 맞춰서 데이터 구성
+            // ⭐️ Google Maps 선택 위치용 예약 데이터
             const backendReservationData = {
               requestedDate: formData.date, // LocalDate (yyyy-MM-dd)
               requestedTime: `${formData.startTime}:00`, // LocalTime (HH:mm:ss)
               subOptionId: getSubOptionId(
                 currentReservationData.selectedSubOption
               ), // Long
-              latitude: coordinates.lat, // Double
-              longitude: coordinates.lng, // Double
-              // ⭐️ customerId는 JWT 토큰에서 자동으로 처리되므로 제외
+              latitude: Number(coordinates.lat), // Double
+              longitude: Number(coordinates.lng), // Double
+              address:
+                selectedAddressMain ||
+                `위도: ${coordinates.lat.toFixed(6)}, 경도: ${coordinates.lng.toFixed(6)}`, // String
+              addressDetail: selectedAddressDetail || `지도에서 선택한 위치`, // String
+              customerMemo: currentReservationData.customerNote || '', // String
+              totalPrice: currentReservationData.totalPrice || 0, // Integer
+              totalDuration: currentReservationData.totalDuration || 180, // Integer (분)
             };
 
             console.log(
@@ -370,10 +374,26 @@ const UserServiceRequest = () => {
             };
 
             addReservation(localReservationData);
+            alert('✅ 예약이 성공적으로 생성되었습니다!');
             navigate('/customer/reservations');
             return; // Google Maps 처리 완료, 함수 종료
           } catch (mapError) {
             console.error('Google Maps 예약 생성 실패:', mapError);
+
+            // 인증 에러인 경우 로그인 페이지로 리다이렉트
+            if (
+              mapError.message.includes('JWT_TOKEN_INVALID') ||
+              mapError.message.includes('BACKEND_AUTH_ERROR') ||
+              mapError.message.includes('401') ||
+              mapError.message.includes('403')
+            ) {
+              alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('auth-storage');
+              navigate('/auth/signin');
+              return;
+            }
+
             alert(
               `Google Maps 위치로 예약 생성에 실패했습니다: ${mapError.message}`
             );
@@ -387,39 +407,25 @@ const UserServiceRequest = () => {
         }
       }
 
-      // ⭐️ 기존 저장된 주소 사용 시 백엔드 API 호출을 위한 예약 데이터 준비
+      // ⭐️ 기존 저장된 주소 사용 시 예약 데이터 준비
       const backendReservationData = {
-        // 🔧 Spring Boot Reservation 엔티티에 정확히 맞는 구조
-        requestedDate: formData.date, // LocalDate용 (yyyy-MM-dd)
-        requestedTime: `${formData.startTime}:00`, // LocalTime용 (HH:mm:ss 형식 필수)
+        requestedDate: formData.date, // LocalDate (yyyy-MM-dd)
+        requestedTime: `${formData.startTime}:00`, // LocalTime (HH:mm:ss)
         subOptionId: getSubOptionId(currentReservationData.selectedSubOption), // Long
-        customerId: user?.userId || null, // Long (필수)
-        // ⭐️ 주소 문자열 대신 CustomerAddress ID 전송
-        addressId: selectedAddressId, // Long (CustomerAddress 테이블의 ID)
-        // 📝 참고: address, addressDetail은 제거 (별도 테이블에 저장됨)
-        totalPrice: currentReservationData.totalPrice || 0, // Integer
-        totalDuration: currentReservationData.totalDuration || 0, // Integer
-        customerMemo: currentReservationData.customerNote || '', // String (TEXT)
+        customerMemo: currentReservationData.customerNote || '', // String
       };
 
-      // Spring Boot 필수 필드 검증
-      const requiredFields = [
-        'requestedDate',
-        'requestedTime',
-        'subOptionId',
-        'customerId',
-      ];
-      const missingFields = requiredFields.filter(
-        (field) => !backendReservationData[field]
-      );
-
-      if (missingFields.length > 0) {
-        alert(
-          `필수 정보가 누락되었습니다: ${missingFields.join(', ')}\n\n` +
-            '다시 로그인하고 모든 정보를 입력해주세요.'
-        );
-        return;
+      // 주소 정보 추가 방식 결정
+      if (typeof selectedAddressId === 'number') {
+        // 실제 DB에 저장된 주소인 경우 addressId 사용
+        backendReservationData.addressId = Number(selectedAddressId);
+      } else {
+        // 임시 주소인 경우 문자열로 전송
+        backendReservationData.address = selectedAddressMain;
+        backendReservationData.addressDetail = selectedAddressDetail;
       }
+
+      console.log('🏠 기존 주소로 예약 생성:', backendReservationData);
 
       // ⭐️ 실제 백엔드 API 호출
       const backendReservation = await createReservation(
@@ -429,27 +435,23 @@ const UserServiceRequest = () => {
       // ⭐️ 백엔드 성공 시 로컬 스토어에도 추가 (즉시 반영용)
       const { addReservation } = useReservationListStore.getState();
       const localReservationData = {
-        // reservationListStore의 addReservation에서 기대하는 형식에 맞춤
         serviceType: currentReservationData.selectedSubOption?.name || '서비스',
         selectedSubOption: currentReservationData.selectedSubOption,
         reservationDate: formData.date,
         reservationTime: formData.startTime,
         endTime: endTime,
         totalPrice: currentReservationData.totalPrice || 0,
-        address: selectedAddressMain, // ⭐️ 원본 주소 사용 (백엔드 null 대신)
-        addressDetail: selectedAddressDetail, // ⭐️ 원본 상세주소 사용 (백엔드 null 대신)
+        address: selectedAddressMain,
+        addressDetail: selectedAddressDetail,
         customerNote: currentReservationData.customerNote || '',
         selectedServices: currentReservationData.selectedServices || [],
         serviceDetails: currentReservationData.serviceDetails || [],
-        // 백엔드 응답 데이터도 포함 (하지만 주소는 원본 사용)
         backendData: {
           ...backendReservation,
           status: backendReservation.status || 'REQUESTED',
           subOptionId: getSubOptionId(currentReservationData.selectedSubOption),
           requestedDate: formData.date,
           requestedTime: `${formData.startTime}:00`,
-          customerId: user?.userId,
-          // ⭐️ 백엔드에서 null로 온 주소 대신 원본 주소 정보 보존
           address: backendReservation.address || selectedAddressMain,
           addressDetail:
             backendReservation.addressDetail || selectedAddressDetail,
@@ -465,10 +467,25 @@ const UserServiceRequest = () => {
       };
 
       addReservation(localReservationData);
-
-      // ⭐️ 이용내역 페이지로 이동
+      alert('✅ 예약이 성공적으로 생성되었습니다!');
       navigate('/customer/reservations');
     } catch (error) {
+      console.error('예약 생성 실패:', error);
+
+      // 인증 에러인 경우 로그인 페이지로 리다이렉트
+      if (
+        error.message.includes('JWT_TOKEN_INVALID') ||
+        error.message.includes('BACKEND_AUTH_ERROR') ||
+        error.message.includes('401') ||
+        error.message.includes('403')
+      ) {
+        alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('auth-storage');
+        navigate('/auth/signin');
+        return;
+      }
+
       alert(`예약 생성에 실패했습니다: ${error.message}`);
       // ⭐️ 실패 시 ref 초기화 (재시도 가능하도록)
       submissionRef.current = false;

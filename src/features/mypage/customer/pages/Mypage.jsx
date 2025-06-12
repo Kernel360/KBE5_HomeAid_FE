@@ -1,5 +1,6 @@
 import { User, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../../stores/authStore';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
@@ -15,6 +16,7 @@ export default function MyPage() {
   const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry', 'createInquiry', 'inquiryDetail'
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
   const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   const handleNavigateToCreate = () => {
     setCurrentView('createInquiry');
@@ -47,7 +49,7 @@ export default function MyPage() {
         margin: '0 auto',
       }}
     >
-      <Header showBackButton={false} />
+      <Header showBackButton={true} />
 
       {/* 페이지 제목 */}
       <div className="px-6 py-4">
@@ -91,7 +93,7 @@ export default function MyPage() {
           </button>
 
           <button
-            onClick={() => setCurrentView('review')}
+            onClick={() => navigate('/customer/review/history')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
             <span className="text-gray-900">리뷰 관리</span>
@@ -142,7 +144,12 @@ export default function MyPage() {
         />
       );
     case 'createInquiry':
-      return <CreateInquiry onBack={() => setCurrentView('inquiry')} onInquiryCreated={handleInquiryCreated} />;
+      return (
+        <CreateInquiry
+          onBack={() => setCurrentView('inquiry')}
+          onInquiryCreated={handleInquiryCreated}
+        />
+      );
     case 'inquiryDetail':
       return (
         <InquiryDetail

@@ -140,7 +140,44 @@ const UserPayment = () => {
     [reservationFromDetail, reservationData, savedPaymentData, selectedServices]
   );
 
+  // 약관 동의 상태 관리
+  const [agreements, setAgreements] = useState({
+    terms: false,
+    service: false,
+    privacy: false,
+    marketing: false,
+  });
+
+  // 모두선택 상태 계산
+  const allRequired =
+    agreements.terms && agreements.service && agreements.privacy;
+  const allSelected = allRequired && agreements.marketing;
+
+  // 개별 체크박스 변경 핸들러
+  const handleAgreementChange = (key) => {
+    setAgreements((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  // 모두선택 핸들러
+  const handleSelectAll = () => {
+    const newValue = !allSelected;
+    setAgreements({
+      terms: newValue,
+      service: newValue,
+      privacy: newValue,
+      marketing: newValue,
+    });
+  };
+
   const handlePayment = async () => {
+    // 필수 약관 동의 확인 (버튼이 비활성화되어 있으므로 이 체크는 불필요하지만 안전장치로 유지)
+    if (!allRequired) {
+      return;
+    }
+
     try {
       // ⭐️ 인증 상태 확인 (403 에러 디버깅)
       const accessToken = localStorage.getItem('accessToken');
@@ -806,7 +843,16 @@ const UserPayment = () => {
             */}
 
             {/* ⭐️ 임시 결제 버튼 (항상 활성화 - TODO: 백엔드 상태 관리 완성 후 제거) */}
-            <button className="payment-button" onClick={handlePayment}>
+            <button
+              className="payment-button"
+              onClick={handlePayment}
+              disabled={!allRequired}
+              style={{
+                backgroundColor: allRequired ? '#007bff' : '#cccccc',
+                cursor: allRequired ? 'pointer' : 'not-allowed',
+                opacity: allRequired ? 1 : 0.6,
+              }}
+            >
               {paymentData.totalAmount.toLocaleString()}원 결제하기
             </button>
 
@@ -820,6 +866,222 @@ const UserPayment = () => {
             <p className="notice-text">
               매칭 확정 후에는 취소 시 수수료가 발생할 수 있습니다.
             </p>
+          </div>
+
+          {/* 하단 이미지 섹션 */}
+          <div
+            className="bottom-image-section"
+            style={{
+              marginTop: '30px',
+              marginBottom: '20px',
+              textAlign: 'left',
+              padding: '20px',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid #e0e0e0',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '15px',
+              }}
+            >
+              {/* 제목 */}
+              <h3
+                style={{
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  color: '#333',
+                  margin: '0 0 20px 0',
+                }}
+              >
+                약관 전체 동의
+              </h3>
+
+              {/* 약관전체동의 체크박스 */}
+              <div
+                style={{
+                  width: '100%',
+                  paddingBottom: '15px',
+                  borderBottom: '1px solid #e0e0e0',
+                  marginBottom: '15px',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    color: '#333',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleSelectAll}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer',
+                      accentColor: '#007bff',
+                    }}
+                  />
+                  <span>약관전체동의</span>
+                </label>
+              </div>
+
+              {/* 약관 동의 체크박스들 */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '15px',
+                  width: '100%',
+                  fontSize: '14px',
+                  color: '#666',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={agreements.terms}
+                    onChange={() => handleAgreementChange('terms')}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer',
+                      accentColor: '#007bff',
+                    }}
+                  />
+                  <span>(필수) 홈에이드 이용약관 동의</span>
+                  <span
+                    style={{
+                      marginLeft: 'auto',
+                      color: '#999',
+                      fontSize: '12px',
+                    }}
+                  >
+                    보기
+                  </span>
+                </label>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={agreements.service}
+                    onChange={() => handleAgreementChange('service')}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer',
+                      accentColor: '#007bff',
+                    }}
+                  />
+                  <span>(필수) 서비스 이용약관 동의</span>
+                  <span
+                    style={{
+                      marginLeft: 'auto',
+                      color: '#999',
+                      fontSize: '12px',
+                    }}
+                  >
+                    보기
+                  </span>
+                </label>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={agreements.privacy}
+                    onChange={() => handleAgreementChange('privacy')}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer',
+                      accentColor: '#007bff',
+                    }}
+                  />
+                  <span>(필수) 개인정보 수집 및 이용 동의</span>
+                  <span
+                    style={{
+                      marginLeft: 'auto',
+                      color: '#999',
+                      fontSize: '12px',
+                    }}
+                  >
+                    보기
+                  </span>
+                </label>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={agreements.marketing}
+                    onChange={() => handleAgreementChange('marketing')}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer',
+                      accentColor: '#007bff',
+                    }}
+                  />
+                  <span>(선택) 광고성 정보 수신 동의</span>
+                  <span
+                    style={{
+                      marginLeft: 'auto',
+                      color: '#999',
+                      fontSize: '12px',
+                    }}
+                  >
+                    보기
+                  </span>
+                </label>
+              </div>
+
+              {/* 안내 텍스트 */}
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: '#999',
+                  textAlign: 'left',
+                  lineHeight: '1.4',
+                  marginTop: '15px',
+                }}
+              >
+                위의 약관에 동의하시면 서비스 이용이 가능합니다. 자세한 내용은
+                각 약관을 확인해 주세요.
+              </p>
+            </div>
           </div>
         </div>
       </div>

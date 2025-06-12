@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
 import { useAuthStore } from '../../../stores/authStore.js';
+import axios from 'axios';
 import './BoardList.css';
 
 const BoardList = () => {
@@ -20,6 +21,11 @@ const BoardList = () => {
   const { user, accessToken } = useAuthStore();
   const isLoggedIn = user && accessToken;
   const isAdmin = user && user.role === 'ROLE_ADMIN';
+
+  // 문의글 상태 관리
+  const [inquiries, setInquiries] = useState([]);
+  const [loadingInquiries, setLoadingInquiries] = useState(false);
+  const [inquiryError, setInquiryError] = useState(null);
 
   // 임시 공지사항 데이터 (6개로 확장)
   const [notices, setNotices] = useState([
@@ -73,57 +79,58 @@ const BoardList = () => {
     },
   ]);
 
-  // 임시 문의글 데이터 (6개로 확장)
-  const inquiries = [
-    {
-      id: 1,
-      title: '서비스 시간 변경 문의',
-      author: '김매니저',
-      date: '2024-03-20',
-      status: '답변완료',
-      isPrivate: true,
-    },
-    {
-      id: 2,
-      title: '청소도구 지원 관련 문의',
-      author: '이매니저',
-      date: '2024-03-19',
-      status: '답변대기',
-      isPrivate: false,
-    },
-    {
-      id: 3,
-      title: '고객 응대 관련 문의드립니다',
-      author: '박매니저',
-      date: '2024-03-18',
-      status: '답변완료',
-      isPrivate: true,
-    },
-    {
-      id: 4,
-      title: '업무 일정 조정 문의',
-      author: '최매니저',
-      date: '2024-03-17',
-      status: '답변대기',
-      isPrivate: false,
-    },
-    {
-      id: 5,
-      title: '서비스 지역 확대 문의',
-      author: '정매니저',
-      date: '2024-03-16',
-      status: '답변완료',
-      isPrivate: true,
-    },
-    {
-      id: 6,
-      title: '매니저 교육 프로그램 문의',
-      author: '한매니저',
-      date: '2024-03-15',
-      status: '답변대기',
-      isPrivate: false,
-    },
-  ];
+  // 사용자 문의글 가져오기
+  const fetchUserInquiries = async () => {
+    if (!isLoggedIn) {
+      setInquiries([]);
+      return;
+    }
+
+    setLoadingInquiries(true);
+    setInquiryError(null);
+
+    try {
+      const response = await axios.get('/api/v1/boards', {
+        params: {
+          page: 0,
+          size: 100, // 충분히 큰 수로 설정하여 모든 게시글 가져오기
+          sortBy: 'createdAt',
+          sortDirection: 'desc',
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.data.success) {
+        const userInquiries = response.data.data.content.map((inquiry) => ({
+          id: inquiry.id,
+          title: inquiry.title,
+          author: user?.name || user?.username || '사용자',
+          date: new Date(inquiry.createdAt).toLocaleDateString(),
+          status: inquiry.isAnswered ? '답변완료' : '답변대기',
+          isPrivate: false, // API에서 제공하지 않는 경우 기본값
+        }));
+        setInquiries(userInquiries);
+      } else {
+        throw new Error('문의글을 불러오는데 실패했습니다.');
+      }
+    } catch (err) {
+      console.error('Failed to fetch user inquiries:', err);
+      setInquiryError('문의글을 불러오는데 실패했습니다.');
+      // 에러 시 빈 배열로 설정
+      setInquiries([]);
+    } finally {
+      setLoadingInquiries(false);
+    }
+  };
+
+  // 로그인 상태나 탭 변경 시 문의글 가져오기
+  useEffect(() => {
+    if (activeTab === 'inquiry') {
+      fetchUserInquiries();
+    }
+  }, [activeTab, isLoggedIn, accessToken]);
 
   // 페이징 처리 함수
   const getCurrentPageData = (data, page) => {
@@ -147,6 +154,10 @@ const BoardList = () => {
 
   // 탭 변경 시 페이지 초기화
   const handleTabChange = (tab) => {
+    if (tab === 'inquiry') {
+      alert('준비중입니다');
+      return;
+    }
     setActiveTab(tab);
     setCurrentPage((prev) => ({
       ...prev,
@@ -293,33 +304,67 @@ const BoardList = () => {
                   {isLoggedIn ? '문의글 작성' : '로그인 후 문의글 작성'}
                 </button>
               </div>
-              {paginatedData.map((inquiry) => (
-                <div
-                  key={inquiry.id}
-                  className="post-item"
-                  onClick={() => handlePostClick(inquiry.id, 'inquiry')}
-                >
-                  <div className="post-main">
-                    <h2 className="post-title">
-                      {inquiry.isPrivate && (
-                        <span className="private-badge">비공개</span>
-                      )}
-                      {inquiry.title}
-                    </h2>
-                    <div className="post-info">
-                      <span className="post-author">{inquiry.author}</span>
-                      <span className="post-date">{inquiry.date}</span>
+
+              {/* 로그인하지 않은 경우 */}
+              {!isLoggedIn ? (
+                <div className="empty-state">
+                  <p>문의글을 확인하려면 로그인이 필요합니다.</p>
+                  <button
+                    className="login-button"
+                    onClick={() => navigate('/auth/signin')}
+                  >
+                    로그인하러 가기
+                  </button>
+                </div>
+              ) : loadingInquiries ? (
+                /* 로딩 중 */
+                <div className="loading-state">
+                  <p>문의글을 불러오는 중...</p>
+                </div>
+              ) : inquiryError ? (
+                /* 에러 발생 */
+                <div className="error-state">
+                  <p>{inquiryError}</p>
+                  <button className="retry-button" onClick={fetchUserInquiries}>
+                    다시 시도
+                  </button>
+                </div>
+              ) : paginatedData.length === 0 ? (
+                /* 문의글이 없는 경우 */
+                <div className="empty-state">
+                  <p>작성한 문의글이 없습니다.</p>
+                  <p>궁금한 것이 있으시면 문의글을 작성해보세요!</p>
+                </div>
+              ) : (
+                /* 문의글 목록 표시 */
+                paginatedData.map((inquiry) => (
+                  <div
+                    key={inquiry.id}
+                    className="post-item"
+                    onClick={() => handlePostClick(inquiry.id, 'inquiry')}
+                  >
+                    <div className="post-main">
+                      <h2 className="post-title">
+                        {inquiry.isPrivate && (
+                          <span className="private-badge">비공개</span>
+                        )}
+                        {inquiry.title}
+                      </h2>
+                      <div className="post-info">
+                        <span className="post-author">{inquiry.author}</span>
+                        <span className="post-date">{inquiry.date}</span>
+                      </div>
+                    </div>
+                    <div className="post-status">
+                      <span
+                        className={`status-badge ${inquiry.status === '답변완료' ? 'completed' : 'pending'}`}
+                      >
+                        {inquiry.status}
+                      </span>
                     </div>
                   </div>
-                  <div className="post-status">
-                    <span
-                      className={`status-badge ${inquiry.status === '답변완료' ? 'completed' : 'pending'}`}
-                    >
-                      {inquiry.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           )}
 
