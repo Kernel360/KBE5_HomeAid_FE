@@ -200,7 +200,7 @@ const ManagerMatchingRequest = () => {
 
           {/* 액션 버튼들 */}
           <div className="action-section">
-            {reservation.status === 'REQUESTED' && (
+            {reservation.status === 'MATCHING' && (
               <div className="button-group">
                 <button
                   onClick={handleAccept}

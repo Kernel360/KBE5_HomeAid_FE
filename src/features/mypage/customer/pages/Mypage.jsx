@@ -9,11 +9,35 @@ import MyAddress from '../components/MyAddress.jsx';
 import MyReview from '../components/MyReview.jsx';
 import InquiryBoard from '../components/InquiryBoard.jsx';
 import AddressRegister from '../components/AddressRegister.jsx';
+import CreateInquiry from '../components/CreateInquiry.jsx';
+import InquiryDetail from '../components/InquiryDetail.jsx';
 
 export default function MyPage() {
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry', 'createInquiry', 'inquiryDetail'
+  const [selectedInquiryId, setSelectedInquiryId] = useState(null);
   const { user } = useAuthStore();
   const navigate = useNavigate();
+
+  const handleNavigateToCreate = () => {
+    setCurrentView('createInquiry');
+  };
+
+  const handleNavigateToDetail = (id) => {
+    setSelectedInquiryId(id);
+    setCurrentView('inquiryDetail');
+  };
+
+  const handleInquiryCreated = () => {
+    setCurrentView('inquiry'); // Back to inquiry list after creation
+  };
+
+  const handleInquiryUpdated = () => {
+    setCurrentView('inquiry'); // Back to inquiry list after update
+  };
+
+  const handleInquiryDeleted = () => {
+    setCurrentView('inquiry'); // Back to inquiry list after deletion
+  };
 
   const MainView = () => (
     <div
@@ -112,7 +136,24 @@ export default function MyPage() {
     case 'review':
       return <MyReview onBack={() => setCurrentView('main')} />;
     case 'inquiry':
-      return <InquiryBoard onBack={() => setCurrentView('main')} />;
+      return (
+        <InquiryBoard
+          onBack={() => setCurrentView('main')}
+          onNavigateToCreate={handleNavigateToCreate}
+          onNavigateToDetail={handleNavigateToDetail}
+        />
+      );
+    case 'createInquiry':
+      return <CreateInquiry onBack={() => setCurrentView('inquiry')} onInquiryCreated={handleInquiryCreated} />;
+    case 'inquiryDetail':
+      return (
+        <InquiryDetail
+          boardId={selectedInquiryId}
+          onBack={() => setCurrentView('inquiry')}
+          onInquiryDeleted={handleInquiryDeleted}
+          onInquiryUpdated={handleInquiryUpdated}
+        />
+      );
 
     default:
       return <MainView />;
