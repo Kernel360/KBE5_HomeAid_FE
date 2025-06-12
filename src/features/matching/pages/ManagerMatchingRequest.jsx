@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import './ManagerMatchingRequest.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
-import { useAuthStore } from '../../../stores/authStore.js';
 import { apiService } from '../../../store/api';
 import reservationStore from '../store/reservationStore.js';
 
@@ -11,11 +10,11 @@ const ManagerMatchingRequest = () => {
 
   const navigate = useNavigate();
   const [rejectReason, setRejectReason] = useState('');
-  const activematching = reservationStore((state) => state.activeMatching);
+  const reservationId = reservationStore((state) => state.reservationId);
   const [reservation, setReservation] = useState({});
+  const [openModal, setOpenModal] = useState(false);
+  const matchingItem = reservationStore((state) => state.matching);
 
-  // ⭐️ 인증 정보 확인
-  const { user, accessToken } = useAuthStore();
 
   const fetchReservation = async (reservationId) => {
     const response = await apiService.reservation.getById(reservationId)
@@ -25,20 +24,25 @@ const ManagerMatchingRequest = () => {
   }
 
   useEffect(() => {
-    fetchReservation(activematching.reservationId);
-  }, [activematching.reservationId])
+    fetchReservation(reservationId);
+  }, [reservationId])
 
   const fetchMatchAccept = async () => {
+    console.log('matchingItem', matchingItem);
+    console.log('matching id', matchingItem.matchingId);
     const request = {
       action: 'ACCEPT',
     }
-    const response = await apiService.matching.acceptMatching(activematching.matchingId, request);
+    const response = await apiService.matching.acceptMatching(matchingItem.matchingId, request);
     return response.data.success;
   }
 
 
   // 매칭 수락
   const handleAccept = async () => {
+    if (!confirm('해당 예약 건의 수락 하시겠습니까?')) {
+      return;
+    }
     try {
       const acceptResult =  await fetchMatchAccept();
       if (acceptResult) {
@@ -47,21 +51,33 @@ const ManagerMatchingRequest = () => {
       }
     } catch (error) {
       console.error('매칭 수락 실패:', error);
-      alert(NOTIFICATION_MESSAGES.MATCHING.ACCEPT_ERROR);
     }
   };
 
   // 매칭 거절
   const handleReject = async () => {
+    console.log('스토어 매칭아이템 확인', matchingItem)
+    const data = {
+      action: 'REJECT',
+      memo: rejectReason,
+    }
+    const response = await apiService.matching.acceptMatching(matchingItem.matchingId, data);
+    console.log('매니저 매칭 거절 요청', response.data)
+    if (response.data.success) {
+      alert('해당 매칭을 거절하였습니다.')
+      handleBack();
+    }
   };
 
   const handleRejectCancel = () => {
-    toggleRejectModal();
+    setOpenModal(false);
     setRejectReason('');
   };
 
   const handleRejectModalOpen = () => {
-    toggleRejectModal();
+    if (confirm('해당 매칭을 거절하시겠습니까?')) {
+      setOpenModal(true);
+    }
   };
 
   // 뒤로가기
@@ -70,44 +86,44 @@ const ManagerMatchingRequest = () => {
   };
 
   // 로딩 상태
-  if ((managerLoading || customerLoading) && !matchingRequest.customerName) {
-    return (
-      <div className="manager-matching-page">
-        <Header />
-        <div className="page-content-wrapper">
-          <div className="manager-matching-request-container">
-            <div className="loading-container">
-              <p>{NOTIFICATION_MESSAGES.GENERAL.LOADING}</p>
-            </div>
-          </div>
-        </div>
-        <Footer current="/matching/matching-request" />
-      </div>
-    );
-  }
+  // if ((managerLoading || customerLoading) && !matchingRequest.customerName) {
+  //   return (
+  //     <div className="manager-matching-page">
+  //       <Header />
+  //       <div className="page-content-wrapper">
+  //         <div className="manager-matching-request-container">
+  //           <div className="loading-container">
+  //             <p>{NOTIFICATION_MESSAGES.GENERAL.LOADING}</p>
+  //           </div>
+  //         </div>
+  //       </div>
+  //       <Footer current="/matching/matching-request" />
+  //     </div>
+  //   );
+  // }
 
   // 에러 상태
-  if (managerError && !matchingRequest.customerName) {
-    return (
-      <div className="manager-matching-page">
-        <Header />
-        <div className="page-content-wrapper">
-          <div className="manager-matching-request-container">
-            <div className="error-container">
-              <p>{managerError}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="retry-button"
-              >
-                새로고침
-              </button>
-            </div>
-          </div>
-        </div>
-        <Footer current="/matching/matching-request" />
-      </div>
-    );
-  }
+  // if (managerError && !matchingRequest.customerName) {
+  //   return (
+  //     <div className="manager-matching-page">
+  //       <Header />
+  //       <div className="page-content-wrapper">
+  //         <div className="manager-matching-request-container">
+  //           <div className="error-container">
+  //             <p>{managerError}</p>
+  //             <button
+  //               onClick={() => window.location.reload()}
+  //               className="retry-button"
+  //             >
+  //               새로고침
+  //             </button>
+  //           </div>
+  //         </div>
+  //       </div>
+  //       <Footer current="/matching/matching-request" />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="manager-matching-page">
@@ -126,18 +142,14 @@ const ManagerMatchingRequest = () => {
             </div> */}
             <div className="status-item">
               <span className="status-label">현재 상태</span>
-              <span className={`status-badge ${matchingRequest.status}`}>
-                {matchingRequest.status ===
-                  MATCHING_STATUS.PENDING_MANAGER_RESPONSE &&
+              <span className={`status-badge `}>
+                {reservation.status === 'test' &&
                   '매니저 응답 대기'}
-                {matchingRequest.status ===
-                  MATCHING_STATUS.PENDING_CUSTOMER_RESPONSE && '고객 응답 대기'}
-                {matchingRequest.status === MATCHING_STATUS.CONFIRMED &&
+                {reservation.status === 'test' && '고객 응답 대기'}
+                {reservation.status === 'test' &&
                   '매칭 완료'}
-                {matchingRequest.status ===
-                  MATCHING_STATUS.REJECTED_BY_MANAGER && '매니저 거절'}
-                {matchingRequest.status ===
-                  MATCHING_STATUS.REJECTED_BY_CUSTOMER && '고객 거절'}
+                {reservation.status === 'test' && '매니저 거절'}
+                {reservation.status === 'test' && '고객 거절'}
               </span>
             </div>
           </div>
@@ -163,11 +175,11 @@ const ManagerMatchingRequest = () => {
               </div>
               <div className="info-item">
                 <span className="label">날짜</span>
-                <span className="value">{reservation.requestDate}</span>
+                <span className="value">{reservation.requestedDate}</span>
               </div>
               <div className="info-item">
                 <span className="label">시간</span>
-                <span className="value">{reservation.requestTime}</span>
+                <span className="value">{reservation.requestedTime}</span>
               </div>
               <div className="info-item">
                 <span className="label">예상 소요시간</span>
@@ -177,63 +189,56 @@ const ManagerMatchingRequest = () => {
               </div>
               <div className="info-item">
                 <span className="label">위치</span>
-                <span className="value">{reservation.address}</span>
+                <span className="value">{reservation.address}{reservation.addressDetail}</span>
               </div>
-            </div>
-          </div>
-
-          {/* 고객 요청사항 */}
-          <div className="section">
-            <h2 className="section-title">고객 요청사항</h2>
-            <div className="request-card">
-              <p>{reservation.customerMemo}</p>
+               <div className="info-item">
+                <span className="label">요청사항</span>
+                <span className="value">{reservation.customerMemo}</span>
+              </div>
             </div>
           </div>
 
           {/* 액션 버튼들 */}
           <div className="action-section">
-            {matchingRequest.status ===
-              MATCHING_STATUS.PENDING_MANAGER_RESPONSE && (
+            {reservation.status === 'REQUESTED' && (
               <div className="button-group">
                 <button
                   onClick={handleAccept}
                   className="accept-button"
-                  disabled={managerLoading}
+                  // disabled={managerLoading}
                 >
-                  {managerLoading ? '처리 중...' : '수락'}
+                  {/* {reservation ? '처리 중...' : '수락'} */}
+                  수락
                 </button>
                 <button
                   onClick={handleRejectModalOpen}
                   className="reject-button"
-                  disabled={managerLoading}
                 >
                   거절
                 </button>
               </div>
             )}
 
-            {matchingRequest.status ===
-              MATCHING_STATUS.PENDING_CUSTOMER_RESPONSE && (
+            {reservation.status === 'test' && (
               <div className="waiting-message">
                 <p>고객의 응답을 기다리고 있습니다...</p>
               </div>
             )}
 
-            {matchingRequest.status === MATCHING_STATUS.CONFIRMED && (
+            {reservation.status ===  'teste' && (
               <div className="success-message">
                 <p>매칭이 완료되었습니다!</p>
                 <button
                   onClick={() => navigate('/matching/service-checkin')}
                   className="service-start-button"
-                >
+                >z
                   서비스 시작하기
                 </button>
               </div>
             )}
 
-            {(matchingRequest.status === MATCHING_STATUS.REJECTED_BY_MANAGER ||
-              matchingRequest.status ===
-                MATCHING_STATUS.REJECTED_BY_CUSTOMER) && (
+            {(reservation.status === 'tetes' ||
+              reservation.status === 'testes' ) && (
               <div className="rejected-message">
                 <p>매칭이 거절되었습니다.</p>
                 <button onClick={handleBack} className="back-button">
@@ -244,7 +249,7 @@ const ManagerMatchingRequest = () => {
           </div>
 
           {/* 거절 사유 입력 모달 */}
-          {uiState.showRejectModal && (
+          { openModal && (
             <div className="modal-overlay">
               <div className="modal-content">
                 <h3>거절 사유 입력</h3>
@@ -264,9 +269,10 @@ const ManagerMatchingRequest = () => {
                   <button
                     onClick={handleReject}
                     className="confirm-button"
-                    disabled={!rejectReason.trim() || managerLoading}
+                    // disabled={!rejectReason.trim() || managerLoading}
                   >
-                    {managerLoading ? '처리 중...' : '확인'}
+                    {/* {managerLoading ? '처리 중...' : '확인'} */}
+                    확인
                   </button>
                 </div>
               </div>

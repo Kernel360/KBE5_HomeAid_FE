@@ -6,6 +6,7 @@ const reservationStore = create((set) => ({
   workLog: {
     status: 'PENDING'
   },
+  matching: {},
   
   // 예약 ID 설정
   setReservationId: (reservationId) => 
@@ -15,7 +16,11 @@ const reservationStore = create((set) => ({
     set({ activeReservation: null }),
 
   setWorkLog: (workLog) =>
-    set({ workLog })
+    set({ workLog }),
+
+  //매칭 수락하기에서 선택한 매칭 아이템 스토어
+  setMatching: (matching) => 
+    set( {matching} ),
 }));
 
 export default reservationStore;

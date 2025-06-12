@@ -18,7 +18,8 @@ const ManagerMatchingList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState({});
-  const setReservationId = reservationStore().setReservationId
+  const setReservationId = reservationStore().setReservationId;
+  const setMatching = reservationStore().setMatching;
 
   // 매칭 목록 상태
   const [matchingList, setMatchingList] = useState([]);
@@ -30,7 +31,7 @@ const ManagerMatchingList = () => {
 
   const fetchMatching = async () => {
     const response = await apiService.manager.getAllMatcings();
-    
+
     setMatchingList(response.data.data.content)
     console.log('매칭 리스트', matchingList)
     console.log('매칭 리스트 백 원본', response.data.data)
@@ -40,12 +41,10 @@ const ManagerMatchingList = () => {
     fetchMatching();
   }, []);
 
-  const fetchReservation = async (reservationId) => {
-    const response = await apiService.reservation.getById(reservationId);
-    console.log('단건 예약 정보', response.data.data);
-
+  const fetchReservation = async (item) => {
+    const response = await apiService.reservation.getById(item.reservationId);
+    console.log(item.reservationId,'예약건 정보', response.data.data);
     setSelectedItem(response.data.data)
-    // return response.data.data;
   }
 
   // 탭별 필터링
@@ -71,9 +70,9 @@ const ManagerMatchingList = () => {
   };
 
   // 상세보기 버튼 클릭
-  const handleDetailView = (reservationId) => {
-    console.log('예약건 상세보기 ', reservationId)
-    fetchReservation(reservationId);
+  const handleDetailView = (item) => {
+    console.log('예약건 상세보기 예약 id ', item.reservationId)
+    fetchReservation(item);
     setShowDetailModal(true);
   };
 
@@ -84,14 +83,16 @@ const ManagerMatchingList = () => {
   };
 
   // 청소하기 버튼 클릭 (매칭 완료 상태)
-  const handleServiceStart = (reservationId) => {
-    setReservationId(reservationId);
+  const handleServiceStart = (matchingItem) => {
+    setMatching(matchingItem);
     navigate('/matching/service-checkin');
   };
 
   // 매칭하기 버튼 클릭 (매칭 대기 상태)
-  const handleMatching = (matching) => {
-    console.log('매칭하기 버튼', matching);
+  const handleMatching = (matchingItem) => {
+    console.log('수락하기 버튼 클릭', matchingItem.reservationId);
+    setReservationId(matchingItem.reservationId);
+    setMatching(matchingItem);
     navigate('/matching/matching-request');
   };
 
@@ -112,13 +113,13 @@ const ManagerMatchingList = () => {
           <div className="button-group">
             <button
               className="action-button detail-button"
-              onClick={() => handleDetailView(item.reservationId)}
+              onClick={() => handleDetailView(item)}
             >
               상세보기
             </button>
             <button
               className="action-button service-button"
-              onClick={() => handleServiceStart(item.reservationId)}
+              onClick={() => handleServiceStart(item)}
             >
               청소하기
             </button>
@@ -128,16 +129,25 @@ const ManagerMatchingList = () => {
         return (
           <button
             className="action-button detail-button"
-            onClick={() => handleDetailView(item.reservationId)}
+            onClick={() => handleDetailView(item)}
           >
             상세보기
           </button>
         );
-      case 'REJECTED': // CONFIREMD이 안되고 고객이 거절한 상태
+      case 'REJECTED': // 매니저거 거절한 상태
         return (
           <button
             className="action-button detail-button"
-            onClick={() => handleDetailView(item.reservationId)}
+            onClick={() => handleDetailView(item)}
+          >
+            상세보기
+          </button>
+        );
+      case 'CANCELLED': // 매니저거 거절한 상태
+        return (
+          <button
+            className="action-button detail-button"
+            onClick={() => handleDetailView(item)}
           >
             상세보기
           </button>
@@ -148,9 +158,28 @@ const ManagerMatchingList = () => {
     }
   };
 
+  // 백엔드 상태를 프론트엔드 상태로 매핑
+  const mapBackendStatusToFrontend = (backendStatus) => {
+    const statusMap = {
+      'REQUESTED': MATCHING_STATUS.PENDING_MANAGER_RESPONSE,
+      'ACCEPTED': MATCHING_STATUS.PENDING_CUSTOMER_RESPONSE,
+      'CONFIRMED': MATCHING_STATUS.CONFIRMED,
+      'REJECTED': MATCHING_STATUS.REJECTED_BY_MANAGER,
+      'CANCELLED': MATCHING_STATUS.REJECTED_BY_CUSTOMER
+    };
+    return statusMap[backendStatus] || backendStatus;
+  };
+
+  // 백엔드 상태를 한글 라벨로 변환
+  const getStatusLabel = (backendStatus) => {
+    const frontendStatus = mapBackendStatusToFrontend(backendStatus);
+    return MATCHING_STATUS_LABELS[frontendStatus] || backendStatus;
+  };
+
   // 상태별 배지 색상
   const getStatusBadgeClass = (status) => {
-    return `status-badge ${MATCHING_STATUS_COLORS[status]}`;
+    const frontendStatus = mapBackendStatusToFrontend(status);
+    return `status-badge ${MATCHING_STATUS_COLORS[frontendStatus]}`;
   };
 
   return (
@@ -205,53 +234,57 @@ const ManagerMatchingList = () => {
           )} */}
 
           {/* 매칭 리스트 */}
-            <div className="matching-list">
-              {matchingList.length === 0 ? (
-                <div className="empty-state">
-                  <p>매칭 내역이 없습니다.</p>
-                </div>
-              ) : (
-                matchingList.map((item) => (
-                  <div key={item.matchingId} className="matching-item">
-                    <div className="item-header">
-                      <span className="item-id">#{item.matchingId}</span>
-                      <span className={getStatusBadgeClass(item.status)}>
-                        {item.statusDisplay}
-                      </span>
-                    </div>
+          <div className="matching-list">
+            {matchingList.length === 0 ? (
+              <div className="empty-state">
+                <p>매칭 내역이 없습니다.</p>
+              </div>
+            ) : (
+              matchingList.map((item) => (
+                <div key={item.matchingId} className="matching-item">
+                  <div className="item-header">
+                    <span className="item-id">#{item.matchingId}</span>
+                    <span className={getStatusBadgeClass(item.status)}>
+                      {getStatusLabel(item.status)}
+                    </span>
+                  </div>
 
-                    <div className="item-content">
-                      <div className="item-info">
-                        <div className="info-row">
+                  <div className="item-content">
+                    <div className="item-info">
+                      {/* <div className="info-row">
                           <span className="label">고객명,현재는아이디</span>
                           <span className="value">{item.customerId}</span>
-                        </div>
-                        <div className="info-row">
-                          <span className="label">서비스 유형</span>
-                          <span className="value">{item.subOptionName}</span>
-                        </div>
-                        <div className="info-row">
-                          <span className="label">일시</span>
-                          <span className="value">{item.scheduleDateTime}</span>
-                        </div>
-                        {item.price && (
-                          <div className="info-row">
-                            <span className="label">금액</span>
-                            <span className="value price">
-                              {item.price.toLocaleString()}원
-                            </span>
-                          </div>
-                        )}
+                        </div> */}
+                      <div className="info-row">
+                        <span className="label">서비스 유형</span>
+                        <span className="value">{item.serviceType}</span>
                       </div>
+                      <div className="info-row">
+                        <span className="label">일시</span>
+                        <span className="value">{item.reservedDate}{item.reservedTime}</span>
+                      </div>
+                      <div className="info-row">
+                        <span className="label">서비스 시간</span>
+                        <span className="value">{item.estimatedDuration}</span>
+                      </div>
+                      {item.price && (
+                        <div className="info-row">
+                          <span className="label">금액</span>
+                          <span className="value price">
+                            {item.price.toLocaleString()}원
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-                      <div className="item-actions">
-                        {renderActionButtons(item)}
-                      </div>
+                    <div className="item-actions">
+                      {renderActionButtons(item)}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
@@ -344,7 +377,7 @@ const ManagerMatchingList = () => {
                   청소하기
                 </button>
               )}
-              {selectedItem.status === 'REQUESTED' && (
+              {selectedItem.status !== 'REQUESTED' && (
                 <button
                   className="modal-button matching-button"
                   onClick={() => {

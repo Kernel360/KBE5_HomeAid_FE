@@ -17,6 +17,7 @@ const ManagerServiceCheckIn = () => {
   const [reservation, setReservation] = useState({});
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
+  const matchingItem = useReservationStore((state) => state.matching);
 
   console.log(reservationId);
   console.log('workLog State ', workLog);
@@ -28,7 +29,7 @@ const ManagerServiceCheckIn = () => {
 
 
   const fetchReservation = async () => {
-    const response = await apiService.reservation.getById(reservationId);
+    const response = await apiService.reservation.getById(matchingItem.reservationId);
     console.log('fetchReservation back data', response.data.data);
     setReservation(response.data.data)
   }
@@ -60,9 +61,10 @@ const ManagerServiceCheckIn = () => {
         lat: '123.123',
         lng: '111.11',
         managerId: '1',
-        reservationId: reservationId
+        reservationId: matchingItem.reservationId
       }
       const response = await apiService.workLog.checkIn(requestData);
+      console.log('체크인 결과 데이터', response.data.data)
       reservationStore.setWorkLog(response.data.data)
       toggleCheckInModal();
     } catch (error) {
@@ -78,7 +80,7 @@ const ManagerServiceCheckIn = () => {
         lat: '123.123',
         lng: '111.11',
         managerId: '1',
-        reservationId: reservationId,
+        reservationId: matchingItem.reservationId,
         workLogId: workLog.workLogId || 4,
       }
       const response = await apiService.workLog.checkOut(requestData);
@@ -110,37 +112,6 @@ const ManagerServiceCheckIn = () => {
   };
 
   // TODO: 파일 업로드 기능 구현 예정
-  /*
-  const handleFileSelect = (event) => {
-    const file = event.target.files ? event.target.files[0] : null;
-    setSelectedFile(file);
-  };
-
-  // 파일 업로드로 체크아웃 완료
-  const handleFileUploadAndCheckout = async () => {
-    if (!selectedFile) {
-      alert(NOTIFICATION_MESSAGES.SERVICE.FILE_REQUIRED);
-      return;
-    }
-
-    try {
-      const serviceId = 1; // TODO: 실제 서비스 ID 사용
-      
-      // 파일 업로드
-      await uploadServiceFile(serviceId, selectedFile);
-      
-      // 체크아웃 처리
-      await performCheckOut(serviceId);
-      
-      alert('파일 업로드 및 체크아웃이 완료되었습니다.');
-      setShowFileUpload(false);
-      setSelectedFile(null);
-    } catch (error) {
-      console.error('파일 업로드 또는 체크아웃 실패:', error);
-      alert('파일 업로드 또는 체크아웃 중 오류가 발생했습니다.');
-    }
-  };
-  */
 
   // 버튼 활성화 상태 계산
   // const { isCheckInButtonEnabled, isCheckOutButtonEnabled } = getButtonStates();
@@ -202,13 +173,13 @@ const ManagerServiceCheckIn = () => {
           */}
 
           {/* Map 영역 */}
-          <div className="service-map">
+          {/* <div className="service-map">
             <div className="map-placeholder">
               <i className="fas fa-map-marker-alt"></i>
               <p>지도가 표시될 영역</p>
               <small>{reservation.address}</small>
             </div>
-          </div>
+          </div> */}
 
           <div className="service-progress">
             <h2>서비스 진행</h2>
@@ -238,18 +209,18 @@ const ManagerServiceCheckIn = () => {
               <div className="detail-item">
                 <span className="label">예상 소요시간</span>
                 <span className="value">
-                  {reservation.estimatedDuration}시간
+                  {reservation.totalDuration} 시간
                 </span>
               </div>
               <div className="detail-item">
                 <span className="label">주소</span>
-                <span className="value">{reservation.address}</span>
+                <span className="value">{reservation.address} {reservation.addressDetail}</span>
               </div>
             </div>
 
             {/* 체크인/체크아웃 상태 표시 */}
             <div className="checkin-status-section">
-              <h3>서비스 진행 상태</h3>
+              {/* <h3>서비스 진행 상태</h3> */}
               {/* <div className="status-items">
                 <div className="status-item">
                   <div className="status-icon">
@@ -329,8 +300,8 @@ const ManagerServiceCheckIn = () => {
                 onClick={handleCheckIn}
                 disabled={workLog.status !== 'PENDING'}
                 style={{
-                  backgroundColor: workLog.status !== 'PENDING' ? '#4caf50' : '#e0e0e0',
-                  color: workLog.status !== 'PENDING' ? 'white' : '#9e9e9e',
+                  backgroundColor: workLog.status === 'PENDING' ? '#4caf50' : '#e0e0e0',
+                  color: workLog.status === 'PENDING' ? 'white' : '#9e9e9e',
                   // cursor: workLog.status !== 'PENDING' ? 'pointer' : 'not-allowed'
                 }}
               >
@@ -341,7 +312,7 @@ const ManagerServiceCheckIn = () => {
               <button
                 className={`action-button checkout-button ${workLog.status === 'CHECKOUT' ? 'disabled' : ''}`}
                 onClick={handleCheckOut}
-                 disabled={workLog.status === 'CHECKOUT'}
+                 disabled={workLog.status === 'PENDING' || 'CHECKOUT'}
               >
                 {/* {reservation ? '처리 중...' : '체크아웃'} */}
                 체크아웃
