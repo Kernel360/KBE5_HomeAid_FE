@@ -16,6 +16,15 @@ const MyProfile = ({ onBack }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // 백엔드에서 받은 전화번호에 하이픈 추가하는 함수
+  const addHyphensToPhone = (phone) => {
+    if (!phone) return '';
+    // 이미 하이픈이 있으면 그대로 반환
+    if (phone.includes('-')) return phone;
+    // 숫자만 있으면 하이픈 추가
+    return formatPhoneNumber(phone);
+  };
+
   // 컴포넌트 마운트 시 사용자 정보로 폼 초기화
   useEffect(() => {
     if (user) {
@@ -26,7 +35,13 @@ const MyProfile = ({ onBack }) => {
       setFormData({
         name: user.name || user.username || '',
         email: user.email || '', // 사용자가 직접 입력해야 함
-        phone: user.phone || '', // 사용자가 직접 입력해야 함
+        phone: addHyphensToPhone(user.phone) || '', // 백엔드에서 받은 전화번호에 하이픈 추가
+      });
+
+      console.log('초기화된 폼 데이터:', {
+        name: user.name || user.username || '',
+        email: user.email || '',
+        phone: addHyphensToPhone(user.phone) || '',
       });
 
       // 백엔드 API 호출은 403 에러로 인해 임시 비활성화
@@ -115,8 +130,10 @@ const MyProfile = ({ onBack }) => {
       const updateData = {
         name: formData.name.trim(),
         email: formData.email.trim(),
-        phone: formData.phone, // 하이픈 포함된 형태로 백엔드로 전송
+        phone: formData.phone, // 하이픈 포함된 형태로 백엔드에 전송 (백엔드 validation 수정됨)
       };
+
+      console.log('백엔드로 전송할 데이터 (하이픈 포함):', updateData);
 
       // API 호출로 프로필 업데이트 (userId 포함)
       const userId = user.userId || user.id;
@@ -127,7 +144,13 @@ const MyProfile = ({ onBack }) => {
         ...user,
         name: updateData.name,
         email: updateData.email,
-        phone: updateData.phone, // 하이픈 포함된 전화번호로 업데이트
+        phone: formData.phone, // 하이픈 포함된 형태로 AuthStore에 저장 (화면 표시용)
+      });
+
+      console.log('AuthStore 업데이트 완료:', {
+        name: updateData.name,
+        email: updateData.email,
+        phone: formData.phone,
       });
 
       setSuccess('프로필이 성공적으로 업데이트되었습니다.');
