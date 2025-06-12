@@ -54,15 +54,15 @@ const UserServiceOption = () => {
     navigate('/customer/service-sub-option');
   };
 
-  const handleEventClick = () => {
-    navigate('/customer/event');
-  };
+  // const handleEventClick = () => {
+  //   navigate('/customer/event');
+  // };
 
   return (
     <div className="reservation-page">
       <Header showBackButton={true} />
       <div className="page-content-wrapper">
-        <div className="reservation-container" style={{ marginTop: '64px' }}>
+        <div className="reservation-container">
           {/* 인사말 섹션 */}
           <div className="greeting-section">
             <h1 className="greeting-text">{getUserGreeting()}</h1>
@@ -141,11 +141,11 @@ const UserServiceOption = () => {
           </div>
 
           {/* 이벤트/공지사항 섹션 */}
-          <div className="event-section">
+          {/* <div className="event-section">
             <div className="event-box" onClick={handleEventClick}>
               <span className="event-text">이벤트 또는 공지사항 영역</span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
       <Footer current="/customer/service-option" />
