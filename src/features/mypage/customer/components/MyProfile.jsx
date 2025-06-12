@@ -101,10 +101,13 @@ const MyProfile = ({ onBack }) => {
         setError('이메일을 입력해주세요.');
         return;
       }
+      // 전화번호 수정 기능 비활성화로 인한 주석처리
+      /*
       if (!formData.phone.trim()) {
         setError('전화번호를 입력해주세요.');
         return;
       }
+      */
 
       // 이메일 형식 검사
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -113,12 +116,17 @@ const MyProfile = ({ onBack }) => {
         return;
       }
 
+      // 전화번호 수정 기능 비활성화로 인한 주석처리
+      /*
       // 전화번호 형식 검사 (하이픈 포함된 한국 전화번호)
       const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/; // 하이픈 포함된 한국 휴대폰 번호 형식
       if (!phoneRegex.test(formData.phone)) {
-        setError('올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678)');
+        setError(
+          '올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678)'
+        );
         return;
       }
+      */
 
       // 사용자 ID 확인
       if (!user?.userId && !user?.id) {
@@ -126,31 +134,23 @@ const MyProfile = ({ onBack }) => {
         return;
       }
 
-      // UserUpdateRequestDto 구조에 맞춰 데이터 준비
+      // UserUpdateRequestDto 구조에 맞춰 데이터 준비 (전화번호 제외)
       const updateData = {
         name: formData.name.trim(),
         email: formData.email.trim(),
-        phone: formData.phone, // 하이픈 포함된 형태로 백엔드에 전송 (백엔드 validation 수정됨)
+        // phone: formData.phone, // 전화번호 수정 기능 비활성화로 인한 주석처리
       };
-
-      console.log('백엔드로 전송할 데이터 (하이픈 포함):', updateData);
 
       // API 호출로 프로필 업데이트 (userId 포함)
       const userId = user.userId || user.id;
       await apiService.user.updateProfile(userId, updateData);
 
-      // 성공 시 AuthStore의 사용자 정보도 업데이트
+      // 성공 시 AuthStore의 사용자 정보도 업데이트 (전화번호 제외)
       updateUser({
         ...user,
         name: updateData.name,
         email: updateData.email,
-        phone: formData.phone, // 하이픈 포함된 형태로 AuthStore에 저장 (화면 표시용)
-      });
-
-      console.log('AuthStore 업데이트 완료:', {
-        name: updateData.name,
-        email: updateData.email,
-        phone: formData.phone,
+        // phone: formData.phone, // 전화번호는 수정하지 않으므로 기존 값 유지
       });
 
       setSuccess('프로필이 성공적으로 업데이트되었습니다.');
@@ -175,6 +175,11 @@ const MyProfile = ({ onBack }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 회원탈퇴 버튼 클릭 핸들러
+  const handleWithdrawal = () => {
+    alert('관리자에게 문의 바랍니다.');
   };
 
   return (
@@ -215,10 +220,13 @@ const MyProfile = ({ onBack }) => {
         )}
 
         {/* 안내 메시지 */}
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl text-sm">
-          <p className="font-medium mb-1">📝 프로필 정보 입력</p>
-          <p>이메일과 전화번호를 입력하여 프로필을 완성해주세요.</p>
-        </div>
+        {/* <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl text-sm">
+          <p className="font-medium mb-1">📝 프로필 정보 수정</p>
+          <p>
+            이름과 이메일을 수정할 수 있습니다. 전화번호는 보안상의 이유로
+            수정이 제한됩니다.
+          </p>
+        </div> */}
 
         {/* 폼 입력 */}
         <div className="space-y-4">
@@ -255,10 +263,15 @@ const MyProfile = ({ onBack }) => {
             <input
               type="tel"
               value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
+              readOnly
+              disabled
               placeholder="010-1234-5678"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-500 cursor-not-allowed"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              전화번호는 보안상의 이유로 수정할 수 없습니다. 관리자에게
+              문의바랍니다.
+            </p>
           </div>
         </div>
 
@@ -282,10 +295,15 @@ const MyProfile = ({ onBack }) => {
 
         {/* 추가 옵션 */}
         <div className="mt-8 pt-8 border-t border-gray-200">
-          <button className="text-blue-600 text-sm mb-4 block">
+          {/* <button className="text-blue-600 text-sm mb-4 block">
             비밀번호 변경
+          </button> */}
+          <button
+            onClick={handleWithdrawal}
+            className="text-red-500 text-sm block"
+          >
+            회원 탈퇴
           </button>
-          <button className="text-red-500 text-sm block">회원 탈퇴</button>
         </div>
       </main>
 
