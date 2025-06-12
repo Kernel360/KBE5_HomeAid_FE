@@ -285,7 +285,7 @@ export default function ManagerMypage() {
             </button>
 
             <button
-              onClick={() => navigate('/manager/review')}
+              onClick={() => navigate('/manager/review/history')}
               className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
             >
               <span className="text-gray-900">리뷰 관리</span>

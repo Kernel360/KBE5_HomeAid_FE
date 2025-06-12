@@ -3,6 +3,9 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
 
+// authStore import 추가
+import { useAuthStore } from '../../../stores/authStore';
+
 // API 기본 URL 구성
 const getBaseUrl = () => {
   const baseUrl = `${API_BASE_URL}/api/${API_VERSION}`;
@@ -11,19 +14,25 @@ const getBaseUrl = () => {
 
 // JWT 토큰을 헤더에 추가하는 함수
 const getAuthHeaders = () => {
-  // accessToken 키로 통일 (authService.js와 일치)
-  let token = localStorage.getItem('accessToken');
+  // 1. localStorage에서 토큰 가져오기
+  const localStorageToken = localStorage.getItem('accessToken');
+
+  // 2. authStore에서 토큰 가져오기
+  const authStoreToken = useAuthStore.getState().accessToken;
+
+  // 3. 우선순위: localStorage > authStore
+  let token = localStorageToken || authStoreToken;
 
   // JWT 토큰 상태 확인
   if (token && token.startsWith('eyJ')) {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-
       const isExpired = payload.exp * 1000 < Date.now();
 
       if (isExpired) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('auth-storage');
+        useAuthStore.getState().logout();
         token = null;
       }
     } catch (error) {
@@ -46,7 +55,6 @@ const getAuthHeaders = () => {
 
 // 기본 API 호출 함수
 const apiCall = async (url, options = {}) => {
-  // 전체 URL 구성
   const fullUrl = `${getBaseUrl()}${url}`;
 
   const requestOptions = {
@@ -72,6 +80,7 @@ const apiCall = async (url, options = {}) => {
       const detailedMessage =
         errorData?.message ||
         errorData?.error ||
+        errorData?.details ||
         errorText ||
         '요청 형식이 잘못되었습니다.';
       throw new Error(`Bad Request (400): ${detailedMessage}`);
@@ -271,21 +280,7 @@ export const assignManagerToReservation = async (reservationId, managerId) => {
 
 // 서비스 예약
 export const createCustomerReservation = async (reservationData) => {
-  // // ⭐️ CustomerAddress ID 방식으로 변경 (address, addressDetail 제거)
-  // const springBootData = {
-  //   requestedDate: reservationData.requestedDate, // LocalDate (yyyy-MM-dd)
-  //   requestedTime: reservationData.requestedTime, // LocalTime (HH:mm:ss)
-  //   subOptionId: reservationData.subOptionId, // Long
-  //   customerId: reservationData.customerId, // Long (필수)
-  //   addressId: reservationData.addressId, // Long (CustomerAddress 테이블의 ID)
-  //   totalPrice: reservationData.totalPrice, // Integer
-  //   totalDuration: reservationData.totalDuration, // Integer
-  //   customerMemo: reservationData.customerMemo || '', // String (TEXT)
-  // };
-
   try {
-    console.log('🔄 Spring Boot ReservationRequestDto 형식으로 변환');
-
     // Spring Boot ReservationRequestDto에 정확히 맞는 구조
     const springBootData = {
       requestedDate:
@@ -295,16 +290,65 @@ export const createCustomerReservation = async (reservationData) => {
         (reservationData.reservationTime
           ? `${reservationData.reservationTime}:00`
           : undefined), // LocalTime (HH:mm:ss)
-      subOptionId: Number(reservationData.subOptionId), // Long으로 변환
-      latitude: reservationData.latitude
-        ? Number(reservationData.latitude)
-        : null, // Double로 변환
-      longitude: reservationData.longitude
-        ? Number(reservationData.longitude)
-        : null, // Double로 변환
+      subOptionId: Number(reservationData.subOptionId) || 2, // Long으로 변환, 기본값 2 (청소)
     };
 
-    console.log('📤 Spring Boot로 전송할 데이터:', springBootData);
+    // 위도/경도가 있는 경우 추가 (Google Maps 선택 시)
+    if (reservationData.latitude && reservationData.longitude) {
+      springBootData.latitude = Number(reservationData.latitude);
+      springBootData.longitude = Number(reservationData.longitude);
+    }
+
+    // 기존 주소 ID가 있는 경우 추가 (저장된 주소 선택 시)
+    if (
+      reservationData.addressId &&
+      typeof reservationData.addressId === 'number'
+    ) {
+      springBootData.addressId = Number(reservationData.addressId);
+    }
+
+    // 주소 문자열이 있는 경우 추가 (백엔드가 문자열도 받는 경우)
+    if (reservationData.address) {
+      springBootData.address = reservationData.address;
+    }
+    if (reservationData.addressDetail) {
+      springBootData.addressDetail = reservationData.addressDetail;
+    }
+
+    // 고객 메모가 있는 경우 추가
+    if (reservationData.customerMemo) {
+      springBootData.customerMemo = reservationData.customerMemo;
+    }
+
+    // 백엔드에서 필요할 수 있는 추가 필드들
+    if (reservationData.totalPrice) {
+      springBootData.totalPrice = Number(reservationData.totalPrice);
+    }
+    if (reservationData.totalDuration) {
+      springBootData.totalDuration = Number(reservationData.totalDuration);
+    }
+
+    // 필수 필드 검증
+    if (!springBootData.requestedDate) {
+      throw new Error('예약 날짜가 필요합니다.');
+    }
+    if (!springBootData.requestedTime) {
+      throw new Error('예약 시간이 필요합니다.');
+    }
+    if (!springBootData.subOptionId) {
+      throw new Error('서비스 옵션이 필요합니다.');
+    }
+
+    // 위치 정보 검증 (위도/경도 또는 주소 중 하나는 있어야 함)
+    const hasCoordinates = springBootData.latitude && springBootData.longitude;
+    const hasAddressId = springBootData.addressId;
+    const hasAddressString = springBootData.address;
+
+    if (!hasCoordinates && !hasAddressId && !hasAddressString) {
+      throw new Error(
+        '위치 정보가 필요합니다. 지도에서 위치를 선택하거나 주소를 입력해주세요.'
+      );
+    }
 
     const response = await apiCall('/reservations', {
       method: 'POST',
@@ -313,25 +357,46 @@ export const createCustomerReservation = async (reservationData) => {
 
     return response;
   } catch (error) {
+    console.error('예약 생성 실패:', error);
+
     // JWT 토큰 관련 에러 상세 처리
     if (
       error.message.includes('401') ||
       error.message.includes('JWT_INVALID')
     ) {
       throw new Error(
-        'JWT_TOKEN_INVALID: JWT 토큰이 유효하지 않습니다. 백엔드 JWT 설정을 확인해주세요.'
+        'JWT_TOKEN_INVALID: JWT 토큰이 유효하지 않습니다. 다시 로그인해주세요.'
       );
     }
 
     // 403 Forbidden 에러 처리
     if (error.message.includes('403')) {
       throw new Error(
-        'BACKEND_AUTH_ERROR: 백엔드 권한 설정에 문제가 있습니다. Spring Security 설정을 확인해주세요.'
+        'BACKEND_AUTH_ERROR: 백엔드 권한 설정에 문제가 있습니다. 관리자에게 문의하세요.'
+      );
+    }
+
+    // 400 Bad Request 에러 처리
+    if (error.message.includes('400')) {
+      // 상세한 400 에러 정보 추출
+      let detailMessage = error.message;
+      if (error.message.includes('Bad Request (400):')) {
+        detailMessage = error.message.split('Bad Request (400):')[1].trim();
+      }
+
+      // 백엔드 검증 에러 메시지 개선
+      if (detailMessage.includes('validation')) {
+        detailMessage +=
+          '\n\n가능한 원인:\n- 날짜/시간 형식 오류\n- 필수 필드 누락\n- 데이터 타입 불일치';
+      }
+
+      throw new Error(
+        `요청 데이터 형식 오류: ${detailMessage}\n\n전송된 데이터를 확인해주세요.`
       );
     }
 
     // 실제 DB 저장 실패를 나타내는 에러를 다시 throw
-    throw new Error(`Spring Boot DB 저장 실패: ${error.message}`);
+    throw new Error(`예약 생성 실패: ${error.message}`);
   }
 };
 

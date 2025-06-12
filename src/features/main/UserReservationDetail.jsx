@@ -573,6 +573,39 @@ const UserReservationDetail = () => {
                 <p className="service-completed-description">
                   서비스를 이용해 주셔서 감사합니다.
                 </p>
+                {/* 리뷰 쓰기 버튼 추가 */}
+                <button
+                  className="review-btn"
+                  onClick={() => {
+                    const targetReservationId =
+                      reservation?.id || reservationId;
+                    console.log(
+                      '리뷰 쓰기 버튼 클릭 - reservationId:',
+                      targetReservationId
+                    );
+                    console.log(
+                      '리뷰 쓰기 이동 URL:',
+                      `/customer/review/write?reservationId=${targetReservationId}`
+                    );
+                    navigate(
+                      `/customer/review/write?reservationId=${targetReservationId}`
+                    );
+                  }}
+                  style={{
+                    marginTop: '15px',
+                    padding: '12px 24px',
+                    backgroundColor: '#000',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    width: '100%',
+                  }}
+                >
+                  리뷰 쓰기
+                </button>
               </div>
             </div>
           )}
