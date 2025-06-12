@@ -25,6 +25,7 @@ import BoardList from '../features/board/pages/BoardList';
 import BoardDetail from '../features/board/pages/BoardDetail';
 import EventList from '../features/main/EventList';
 import AdminLayoutPage from '../features/admin/pages/AdminLayoutPage';
+import ManagerMain from '../features/manager/pages/ManagerMainPage';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -35,22 +36,15 @@ export const protectedAppRoutes = [
     allowedRoles: ['ROLE_CUSTOMER'],
     children: [
       { path: 'mypage', element: <Mypage /> },
-      { path: 'reservations', element: <UserReservationList /> },
-      {
-        path: 'reservation/:reservationId',
-        element: <UserReservationDetail />,
-      },
+      // 예약 관련 경로들 - 고객 권한 필요
       { path: 'service-option', element: <UserServiceOption /> },
       { path: 'service-sub-option', element: <UserServiceSubOption /> },
       { path: 'service-option-cart', element: <UserServiceOptionCart /> },
       { path: 'service-request', element: <UserServiceRequest /> },
       { path: 'payment', element: <UserPayment /> },
       { path: 'payment-complete', element: <UserPaymentComplete /> },
-      { path: 'board/write', element: <BoardWrite /> },
-      { path: 'event', element: <EventList /> },
-      { path: 'board/list', element: <BoardList /> },
-      { path: 'board/notice/:id', element: <BoardDetail /> },
-      { path: 'board/inquiry/:id', element: <BoardDetail /> },
+      { path: 'reservations', element: <UserReservationList /> },
+      { path: 'reservations/:id', element: <UserReservationDetail /> },
     ],
   },
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)
@@ -114,10 +108,12 @@ export const protectedAppRoutes = [
         path: 'managers',
         element: <MatchingManagerList />,
       },
+
       {
         path: 'manager-approval',
         element: <AdminManagerApproval />,
       },
+
     ],
   },
 ];

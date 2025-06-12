@@ -9,18 +9,21 @@ export const authService = {
   // 로그인
   signIn: async (phone, password) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/${API_VERSION}/auth/signin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          Accept: 'application/json; charset=utf-8',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          phone,
-          password,
-        }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/${API_VERSION}/auth/signin`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            Accept: 'application/json; charset=utf-8',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            phone,
+            password,
+          }),
+        }
+      );
 
       console.log(
         '🌐 로그인 API 호출:',
@@ -160,7 +163,10 @@ export const authService = {
 
   // 회원가입 단계별 데이터 저장 (예시)
   saveSignUpStep: async (step, data) => {
-    const response = await api.post(`/api/${API_VERSION}/users/signup/step/${step}`, data);
+    const response = await api.post(
+      `/api/${API_VERSION}/users/signup/step/${step}`,
+      data
+    );
     return response.data;
   },
 };
