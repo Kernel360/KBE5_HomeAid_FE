@@ -216,7 +216,7 @@ const UserServiceSubOption = () => {
             <h2 className="service-message">
               {getPersonalizedServiceQuestion()}
             </h2>
-            <p className="sub-message">원하는 청소 서비스를 선택해주세요.</p>
+            <p className="sub-message">원하는 청소 옵션을 선택해주세요.</p>
           </div>
 
           {/* 하위 서비스 옵션 섹션 */}

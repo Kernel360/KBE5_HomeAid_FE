@@ -195,7 +195,7 @@ const MyProfile = ({ onBack }) => {
         <button onClick={onBack} className="mr-4">
           <ArrowLeft className="w-6 h-6 text-gray-900" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">내 정보 수정</h1>
+        <h2 className="text-lg font-bold text-gray-900">내 정보 수정</h2>
       </header>
 
       <main className="px-6 py-6">

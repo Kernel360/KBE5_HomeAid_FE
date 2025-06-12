@@ -32,7 +32,7 @@ const MyAddress = ({ onBack, onAddAddress }) => {
           <button onClick={onBack} className="mr-4">
             <ArrowLeft className="w-6 h-6 text-gray-900" />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">주소 관리</h1>
+          <h2 className="text-lg font-bold text-gray-900">주소 관리</h2>
         </div>
         <button onClick={onAddAddress}>
           <Plus className="w-6 h-6 text-blue-600" />
