@@ -4,12 +4,18 @@ import { Home, WashingMachine, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns'; // 날짜 포맷팅 (npm install date-fns)
 import { ko } from 'date-fns/locale'; // 한국어 로케일 임포트
 import { getCustomerReservations } from '../ReservationApi';
+import Header from '../../../components/Header.jsx';
+import Footer from '../../../components/Footer.jsx';
 
 const ReservationHistoryPage = () => {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate('/customer/mypage');
+  };
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -114,7 +120,7 @@ const ReservationHistoryPage = () => {
   };
 
   const handleItemClick = (reservationId) => {
-    // 리뷰 상세 페이지로 이동
+    // 리뷰 상세 페이지로 이동 (수요자 경로로 수정)
     navigate(`/customer/review/detail/${reservationId}`);
   };
 
@@ -127,237 +133,107 @@ const ReservationHistoryPage = () => {
 
   return (
     <div
+      className="min-h-screen bg-gray-50"
       style={{
-        padding: '20px',
-        maxWidth: '720px',
+        paddingBottom: '80px',
+        maxWidth: '512px',
         margin: '0 auto',
-        fontFamily: 'Arial, sans-serif',
-        background: '#f8f8f8',
-        minHeight: '100vh',
       }}
     >
-      <h2
-        style={{
-          fontSize: '24px',
-          fontWeight: 'bold',
-          marginBottom: '30px',
-          textAlign: 'left',
-          color: '#333',
-        }}
-      >
-        이용 내역
-      </h2>
+      <Header showBackButton={true} onBackClick={handleBack} />
 
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          예약 내역을 불러오는 중...
+      <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
+        {/* 페이지 제목 */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">리뷰 관리</h2>
         </div>
-      )}
-      {error && (
-        <div
-          style={{
-            backgroundColor: '#ffe6e6',
-            color: '#cc0000',
-            padding: '10px',
-            borderRadius: '5px',
-            marginBottom: '20px',
-            textAlign: 'center',
-          }}
-        >
-          {error}
-        </div>
-      )}
-      {!loading && reservations.length === 0 && !error && (
-        <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-          이용 내역이 없습니다.
-        </div>
-      )}
 
-      {pendingReservations.length > 0 && (
-        <div style={{ marginBottom: '40px' }}>
-          <h3
-            style={{
-              fontSize: '18px',
-              fontWeight: 'bold',
-              marginBottom: '20px',
-              color: '#333',
-            }}
-          >
-            예약 완료
-          </h3>
-          {pendingReservations.map((reservation) => (
-            <div
-              key={reservation.id}
-              style={{
-                background: '#fff',
-                borderRadius: '12px',
-                padding: '20px',
-                marginBottom: '15px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-              }}
-              onClick={() => handleItemClick(reservation.id)}
-            >
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div
-                  style={{
-                    width: '50px',
-                    height: '50px',
-                    background: '#e0f0ff',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '15px',
-                  }}
-                >
-                  <Home size={28} color="#247cff" />
-                </div>
-                <div>
-                  <p
-                    style={{
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: '#333',
-                      marginBottom: '5px',
-                    }}
-                  >
-                    {reservation.subOptionName || '서비스 이름 없음'}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: '14px',
-                      color: '#666',
-                      marginBottom: '5px',
-                    }}
-                  >
-                    {formatDateTime(
-                      reservation.requestedDate,
-                      reservation.requestedTime,
-                      reservation.totalDuration
-                    )}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: '#222',
-                    }}
-                  >
-                    {formatPrice(reservation.totalPrice)}
-                  </p>
-                </div>
-              </div>
+        {loading && (
+          <div className="text-center py-6">예약 내역을 불러오는 중...</div>
+        )}
+        {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded-xl text-sm mb-6">
+            {error}
+          </div>
+        )}
+        {!loading && reservations.length === 0 && !error && (
+          <div className="text-center py-6 text-gray-600">
+            이용 내역이 없습니다.
+          </div>
+        )}
+
+        {pendingReservations.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">예약 완료</h3>
+            {pendingReservations.map((reservation) => (
               <div
-                style={{
-                  textAlign: 'right',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                }}
+                key={reservation.id}
+                onClick={() => handleItemClick(reservation.id)}
+                className="bg-white rounded-xl p-5 mb-4 shadow-sm flex items-center justify-between cursor-pointer"
               >
-                <ChevronRight size={20} color="#888" />
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mr-4">
+                    <Home className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 mb-1">
+                      {reservation.subOptionName || '서비스 이름 없음'}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      {formatDateTime(
+                        reservation.requestedDate,
+                        reservation.requestedTime,
+                        reservation.totalDuration
+                      )}
+                    </p>
+                    <p className="font-bold text-gray-900">
+                      {formatPrice(reservation.totalPrice)}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {completedReservations.length > 0 && (
-        <div>
-          <h3
-            style={{
-              fontSize: '18px',
-              fontWeight: 'bold',
-              marginBottom: '20px',
-              color: '#333',
-            }}
-          >
-            방문 완료
-          </h3>
-          {completedReservations.map((reservation) => (
-            <div
-              key={reservation.id}
-              style={{
-                background: '#fff',
-                borderRadius: '12px',
-                padding: '20px',
-                marginBottom: '15px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-              }}
-              onClick={() => handleItemClick(reservation.id)}
-            >
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div
-                  style={{
-                    width: '50px',
-                    height: '50px',
-                    background: '#e0f0ff',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '15px',
-                  }}
-                >
-                  <WashingMachine size={28} color="#247cff" />
-                </div>
-                <div>
-                  <p
-                    style={{
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: '#333',
-                      marginBottom: '5px',
-                    }}
-                  >
-                    {reservation.subOptionName || '서비스 이름 없음'}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: '14px',
-                      color: '#666',
-                      marginBottom: '5px',
-                    }}
-                  >
-                    {formatDateTime(
-                      reservation.requestedDate,
-                      reservation.requestedTime,
-                      reservation.totalDuration
-                    )}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: '#222',
-                    }}
-                  >
-                    {formatPrice(reservation.totalPrice)}
-                  </p>
-                </div>
-              </div>
+        {completedReservations.length > 0 && (
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">이용 완료</h3>
+            {completedReservations.map((reservation) => (
               <div
-                style={{
-                  textAlign: 'right',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                }}
+                key={reservation.id}
+                onClick={() => handleItemClick(reservation.id)}
+                className="bg-white rounded-xl p-5 mb-4 shadow-sm flex items-center justify-between cursor-pointer"
               >
-                <ChevronRight size={20} color="#888" />
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mr-4">
+                    <WashingMachine className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 mb-1">
+                      {reservation.subOptionName || '서비스 이름 없음'}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      {formatDateTime(
+                        reservation.requestedDate,
+                        reservation.requestedTime,
+                        reservation.totalDuration
+                      )}
+                    </p>
+                    <p className="font-bold text-gray-900">
+                      {formatPrice(reservation.totalPrice)}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </main>
+
+      <Footer current="/customer/mypage" />
     </div>
   );
 };

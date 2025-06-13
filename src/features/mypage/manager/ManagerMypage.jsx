@@ -820,6 +820,11 @@ export default function ManagerMypage() {
           className="px-6 py-6 flex-1 overflow-y-auto"
           style={{ paddingBottom: '100px', paddingTop: '80px' }}
         >
+          {/* 페이지 제목 */}
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-900">마이페이지</h2>
+          </div>
+
           {/* 프로필 정보 */}
           <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
             <div className="flex items-center mb-4">
