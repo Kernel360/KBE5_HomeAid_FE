@@ -3,7 +3,12 @@
   position: relative;
   width: 100%;
   min-height: 100vh;
-  background-color: #f3f4f6;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 512px;
+  margin: 0 auto;
 }
 
 /* Header 스타일링 */
@@ -13,8 +18,8 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 480px;
-  height: 56px;
+  max-width: 512px;
+  height: 64px;
   background-color: white;
   z-index: 100;
   border-bottom: 1px solid #e5e7eb;
@@ -30,7 +35,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 480px;
+  max-width: 512px;
   height: 84px;
   background-color: white;
   z-index: 100;
@@ -39,15 +44,20 @@
 
 /* 콘텐츠 영역 */
 .page-content-wrapper {
-  max-width: 480px;
+  width: 100%;
+  max-width: 512px;
   margin: 0 auto;
   background-color: white;
+  padding-top: 84px; /* 헤더 높이 + 여백 */
+  padding-bottom: 100px; /* 푸터 높이 + 여백 */
+  min-height: calc(100vh - 148px); /* 헤더 + 푸터 높이 제외 */
 }
 
 /* 실제 콘텐츠 컨테이너 */
-.manager-service-checkin-container {
-  padding: 30px 20px 30px;
+.manager-matching-request-container {
+  padding: 20px;
   background-color: white;
+  min-height: calc(100vh - 148px);
 }
 
 .page-title {
