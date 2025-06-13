@@ -7,6 +7,7 @@ import Header from '../../../components/Header.jsx';
 import useReservationStore from '../store/reservationStore.js';
 import { apiService } from '../../../store/api.js';
 
+import useMatchingStore from '../../../stores/matchingStore.js';
 // TODO: 파일 업로드 기능 추가 시 필요한 import
 // import React, { useState, useEffect } from 'react';
 
@@ -19,6 +20,8 @@ const ManagerServiceCheckIn = () => {
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
   const matchingItem = useReservationStore((state) => state.matching);
   const [currentLocation, setCurrentLocation] = useState(null);
+
+    const { matchingRequest } = useMatchingStore();
 
   console.log(reservationId);
   console.log('workLog State ', workLog);
@@ -55,7 +58,7 @@ const ManagerServiceCheckIn = () => {
   }, []);
 
   const fetchReservation = async () => {
-    const response = await apiService.reservation.getById(matchingItem.reservationId);
+    const response = await apiService.reservation.getById(matchingRequest.reservationId);
     console.log('fetchReservation back data', response.data.data);
     setReservation(response.data.data)
   }
@@ -106,7 +109,7 @@ const ManagerServiceCheckIn = () => {
       const requestData = {
         lat: currentLocation.lat,
         lng: currentLocation.lng,
-        reservationId: matchingItem.reservationId
+        reservationId: matchingRequest.reservationId
       }
 
       console.log('체크인 요청 데이터:', requestData);
@@ -133,7 +136,7 @@ const ManagerServiceCheckIn = () => {
       }
 
       console.log('체크아웃 요청 데이터:', requestData);
-      const response = await apiService.workLog.checkOut(matchingItem.reservationId, requestData);
+      const response = await apiService.workLog.checkOut(matchingRequest.reservationId, requestData);
       console.log('체크아웃 결과 데이터', response.data);
       
       if (response.data.success) {
