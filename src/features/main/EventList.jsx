@@ -105,7 +105,7 @@ const EventList = () => {
                     {event.isNew && <span className="new-badge">NEW</span>}
                   </div>
                   <div className="event-content">
-                    <div className="event-header-info">
+                    <div className="event-title-wrapper flex justify-between items-center mb-2">
                       <h3 className="event-title">{event.title}</h3>
                       <span className={`status-badge ${event.status}`}>
                         {event.status === 'ongoing' ? '진행예정' : '종료'}
