@@ -18,6 +18,7 @@ const ManagerServiceCheckIn = () => {
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
   const matchingItem = useReservationStore((state) => state.matching);
+  const [currentLocation, setCurrentLocation] = useState(null);
 
   console.log(reservationId);
   console.log('workLog State ', workLog);
@@ -27,6 +28,31 @@ const ManagerServiceCheckIn = () => {
   console.log('reservationStore 내용:', reservationStore);
   console.log('setWorkLog 타입:', typeof reservationStore.setWorkLog);
 
+  // 현재 위치 가져오기
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('이 브라우저에서는 위치 정보를 지원하지 않습니다.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCurrentLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+
+      },
+      (error) => {
+        console.error('위치 정보 에러:', error);
+        alert('위치 정보를 가져오는데 실패했습니다.');
+      }
+    );
+  };
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
 
   const fetchReservation = async () => {
     const response = await apiService.reservation.getById(matchingItem.reservationId);
@@ -48,56 +74,80 @@ const ManagerServiceCheckIn = () => {
 
 
   const handleCheckIn = () => {
+    if (!currentLocation) {
+      alert('위치 정보를 가져오는 중입니다. 잠시만 기다려주세요.');
+      return;
+    }
+    console.log('현재 위치 정보:', {
+      위도: currentLocation.lat,
+      경도: currentLocation.lng
+    });
     toggleCheckInModal();
   };
 
   const handleCheckOut = () => {
+    if (!currentLocation) {
+      alert('위치 정보를 가져오는 중입니다. 잠시만 기다려주세요.');
+      return;
+    }
+    console.log('체크아웃 위치 정보:', {
+      위도: currentLocation.lat,
+      경도: currentLocation.lng
+    });
     toggleCheckOutModal();
   };
 
   const confirmCheckIn = async () => {
     try {
+      if (!currentLocation) {
+        throw new Error('위치 정보를 가져오는데 실패했습니다.');
+      }
+
       const requestData = {
-        lat: '123.123',
-        lng: '111.11',
-        managerId: '1',
+        lat: currentLocation.lat,
+        lng: currentLocation.lng,
         reservationId: matchingItem.reservationId
       }
+
+      console.log('체크인 요청 데이터:', requestData);
       const response = await apiService.workLog.checkIn(requestData);
       console.log('체크인 결과 데이터', response.data.data)
       reservationStore.setWorkLog(response.data.data)
       toggleCheckInModal();
     } catch (error) {
       console.error('체크인 실패:', error);
-      alert(error.response.data.message);
+      alert(error.response?.data?.message || '체크인에 실패했습니다.');
       cancelCheckIn();
     }
   };
 
   const confirmCheckOut = async () => {
     try {
-      const requestData = {
-        lat: '123.123',
-        lng: '111.11',
-        managerId: '1',
-        reservationId: matchingItem.reservationId,
-        workLogId: workLog.workLogId || 4,
+      if (!currentLocation) {
+        throw new Error('위치 정보를 가져오는데 실패했습니다.');
       }
-      const response = await apiService.workLog.checkOut(requestData);
-      console.log('체크아웃 백엔드 결과', response.data);
-      const isCheckOutSuccess = response.data.success;
-      if (isCheckOutSuccess) {
-        reservationStore.setWorkLog({  // 이방식 하거나  useReservationStore.getState().setWorkLog({
+
+      const requestData = {
+        lat: currentLocation.lat,
+        lng: currentLocation.lng
+      }
+
+      console.log('체크아웃 요청 데이터:', requestData);
+      const response = await apiService.workLog.checkOut(matchingItem.reservationId, requestData);
+      console.log('체크아웃 결과 데이터', response.data);
+      
+      if (response.data.success) {
+        reservationStore.setWorkLog({
           ...workLog,
-          status: 'CHECKOUT'
-        })
-        console.log('성공시 체크아웃 상태 변화', workLog)
+          workType: 'CHECKOUT'
+        });
+        alert('체크아웃이 완료되었습니다.');
       }
 
       toggleCheckOutModal();
     } catch (error) {
       console.error('체크아웃 실패:', error);
-      alert(error.response.data.message);
+      alert(error.response?.data?.message || '체크아웃에 실패했습니다.');
     }
   };
 
@@ -296,25 +346,26 @@ const ManagerServiceCheckIn = () => {
 
             <div className="action-buttons">
               <button
-                className={`action-button checkin-button ${workLog.status !== 'PENDING' ? 'disabled' : ''}`}
+                className={`action-button checkin-button ${workLog.workType === 'CHECKIN' ? 'disabled' : ''}`}
                 onClick={handleCheckIn}
-                disabled={workLog.status !== 'PENDING'}
+                disabled={workLog.workType === 'CHECKIN'}
                 style={{
-                  backgroundColor: workLog.status === 'PENDING' ? '#4caf50' : '#e0e0e0',
-                  color: workLog.status === 'PENDING' ? 'white' : '#9e9e9e',
-                  // cursor: workLog.status !== 'PENDING' ? 'pointer' : 'not-allowed'
+                  backgroundColor: workLog.workType === 'CHECKIN' ? '#e0e0e0' : '#4caf50',
+                  color: workLog.workType === 'CHECKIN' ? '#9e9e9e' : 'white',
                 }}
               >
-                {/* {workLog.status == 'PENDING' ? '처리 중...' : '체크인'} */}
                 체크인
               </button>
 
               <button
-                className={`action-button checkout-button ${workLog.status === 'CHECKOUT' ? 'disabled' : ''}`}
+                className={`action-button checkout-button ${workLog.workType === 'CHECKOUT' ? 'disabled' : ''}`}
                 onClick={handleCheckOut}
-                 disabled={workLog.status === 'PENDING' || 'CHECKOUT'}
+                disabled={workLog.workType === 'CHECKOUT'}
+                style={{
+                  backgroundColor: workLog.workType === 'CHECKOUT' ? '#e0e0e0' : '#4caf50',
+                  color: workLog.workType === 'CHECKOUT' ? '#9e9e9e' : 'white',
+                }}
               >
-                {/* {reservation ? '처리 중...' : '체크아웃'} */}
                 체크아웃
               </button>
             </div>
