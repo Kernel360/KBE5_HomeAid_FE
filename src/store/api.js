@@ -107,6 +107,9 @@ const api = {
   },
 };
 
+// API 기본 URL 설정
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
 // 사용 예시 함수들
 export const apiService = {
   // 매니저 관련 API
@@ -187,7 +190,7 @@ export const apiService = {
   },
   workLog: {
     checkIn: (data) => api.post('/managers/work-logs', data),
-    checkOut: (data) => api.patch('/managers/work-logs', data),
+    checkOut: (reservationId, data) => api.patch(`/managers/work-logs/${reservationId}`, data)
   },
 };
 
