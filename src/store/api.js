@@ -114,7 +114,8 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 export const apiService = {
   // 매니저 관련 API
   manager: {
-    getAllMatcings: () => api.get('/manager/matchings'),
+    getAllMatcings: (page = 0, size = 10) => api.get(`/manager/matchings?page=${page}&size=${size}`),
+    getMatching: (matchingId) => api.get(`/manager/matchings/${matchingId}`),
     getAll: () => api.get('/manager/all'),
     getById: (id) => api.get(`/manager/${id}`),
     create: (data) => api.post('/manager', data),
