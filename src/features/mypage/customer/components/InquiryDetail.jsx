@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import axios from 'axios';
+import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
 const InquiryDetail = ({
@@ -61,7 +62,7 @@ const InquiryDetail = ({
       setInquiry(response.data.data);
       setIsEditing(false);
       if (onInquiryUpdated) {
-        onInquiryUpdated(); // Notify parent to refresh list
+        onInquiryUpdated();
       }
     } catch (err) {
       setError('문의글 수정에 실패했습니다.');
@@ -83,7 +84,7 @@ const InquiryDetail = ({
         });
         alert('문의글이 삭제되었습니다.');
         if (onInquiryDeleted) {
-          onInquiryDeleted(); // Notify parent to refresh list and navigate back
+          onInquiryDeleted();
         }
       } catch (err) {
         setError('문의글 삭제에 실패했습니다.');
@@ -104,7 +105,7 @@ const InquiryDetail = ({
           margin: '0 auto',
         }}
       >
-        {/* <p className="text-center text-gray-600 mt-8">불러오는 중...</p> */}
+        <Header showBackButton={true} onBackClick={onBack} />
         <Footer current="/customer/mypage" />
       </div>
     );
@@ -120,6 +121,7 @@ const InquiryDetail = ({
           margin: '0 auto',
         }}
       >
+        <Header showBackButton={true} onBackClick={onBack} />
         <p className="text-center text-red-500 mt-8">{error}</p>
         <Footer current="/customer/mypage" />
       </div>
@@ -136,6 +138,7 @@ const InquiryDetail = ({
           margin: '0 auto',
         }}
       >
+        <Header showBackButton={true} onBackClick={onBack} />
         <p className="text-center text-gray-600 mt-8">
           문의글을 찾을 수 없습니다.
         </p>
@@ -153,19 +156,16 @@ const InquiryDetail = ({
         margin: '0 auto',
       }}
     >
-      <header className="bg-white px-6 py-4 border-b border-gray-200 flex items-center">
-        <button
-          onClick={onBack}
-          className="mr-4 p-2 rounded-full bg-white hover:bg-gray-50 transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6 text-gray-900" />
-        </button>
-        <h2 className="text-lg font-bold text-gray-900">
-          {isEditing ? '문의글 수정' : '문의글 상세'}
-        </h2>
-      </header>
+      <Header showBackButton={true} onBackClick={onBack} />
 
-      <main className="px-6 py-6">
+      <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
+        {/* 페이지 제목 */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">
+            {isEditing ? '문의글 수정' : '문의글 상세'}
+          </h2>
+        </div>
+
         {isEditing ? (
           <div className="space-y-4">
             <div>
@@ -198,28 +198,19 @@ const InquiryDetail = ({
                 onChange={(e) => setEditedContent(e.target.value)}
               />
             </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={handleUpdate}
-                style={{
-                  backgroundColor: loading ? '#9ca3af' : '#10b981',
-                  color: 'white',
-                }}
-                className="px-6 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-colors disabled:cursor-not-allowed"
-                disabled={loading}
-              >
-                {loading ? '저장 중...' : '저장하기'}
-              </button>
+            <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setIsEditing(false)}
-                style={{
-                  backgroundColor: '#e5e7eb',
-                  color: '#dc2626',
-                }}
-                className="px-6 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-colors"
-                disabled={loading}
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors shadow-sm"
               >
-                취소하기
+                취소
+              </button>
+              <button
+                onClick={handleUpdate}
+                className="px-6 py-2 bg-blue-600 text-black rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+                disabled={!editedTitle.trim() || !editedContent.trim()}
+              >
+                저장
               </button>
             </div>
           </div>

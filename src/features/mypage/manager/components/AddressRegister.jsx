@@ -1,6 +1,8 @@
 import { ArrowLeft, MapPin, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from '../../../../components/Header.jsx';
+import Footer from '../../../../components/Footer.jsx';
 
 const AddressRegister = () => {
   const navigate = useNavigate();
@@ -12,27 +14,32 @@ const AddressRegister = () => {
   });
 
   const handleBack = () => {
-    navigate('/manager/mypage');
+    navigate('/manager/mypage/address');
   };
 
   const handleSubmit = () => {
     // TODO: API 호출로 주소 저장
     console.log('주소 저장:', formData);
     // 저장 후 마이페이지로 돌아가기
-    navigate('/manager/mypage');
+    navigate('/manager/mypage/address');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-white px-6 py-4 border-b border-gray-200 flex items-center">
-        <button onClick={handleBack} className="mr-4">
-          <ArrowLeft className="w-6 h-6 text-gray-900" />
-        </button>
-        <h1 className="text-xl font-bold text-gray-900">주소 상세</h1>
-      </header>
+    <div
+      className="min-h-screen bg-gray-50"
+      style={{
+        paddingBottom: '80px',
+        maxWidth: '512px',
+        margin: '0 auto',
+      }}
+    >
+      <Header showBackButton={true} onBackClick={handleBack} />
 
-      <main className="px-6 py-6">
+      <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
         <div className="space-y-6">
+          {/* 페이지 제목 추가 */}
+          <h2 className="text-xl font-bold text-gray-900">주소 상세등록</h2>
+
           {/* 주소 등록 */}
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -132,13 +139,16 @@ const AddressRegister = () => {
           <button
             type="button"
             onClick={handleSubmit}
-            className="w-full bg-blue-600 text-blue py-4 rounded-xl font-medium"
+            className="w-full bg-blue-600 text-black py-4 rounded-xl font-medium"
           >
             주소 저장하기
           </button>
         </div>
       </main>
+
+      <Footer current="/manager/mypage" />
     </div>
   );
 };
+
 export default AddressRegister;

@@ -36,6 +36,11 @@ const ProfileEditView = ({
         className="px-6 py-6 flex-1"
         style={{ paddingBottom: '100px', paddingTop: '80px' }}
       >
+        {/* 페이지 제목 */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">내 정보 수정</h2>
+        </div>
+
         {/* 프로필 사진 */}
         <div className="text-center mb-8">
           <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -905,7 +910,7 @@ export default function ManagerMypage() {
             </button>
 
             <button
-              onClick={() => navigate('/board')}
+              onClick={() => navigate('/manager/mypage/inquiry')}
               className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
             >
               <span className="text-gray-900">문의 게시판</span>

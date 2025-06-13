@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
 const CreateInquiry = ({ onBack, onInquiryCreated }) => {
@@ -47,17 +48,13 @@ const CreateInquiry = ({ onBack, onInquiryCreated }) => {
         margin: '0 auto',
       }}
     >
-      <header className="bg-white px-6 py-4 border-b border-gray-200 flex items-center">
-        <button
-          onClick={onBack}
-          className="mr-4 p-2 rounded-full bg-white hover:bg-gray-50 transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6 text-gray-900" />
-        </button>
-        <h2 className="text-lg font-bold text-gray-900">문의글 작성</h2>
-      </header>
+      <Header showBackButton={true} onBackClick={onBack} />
 
-      <main className="px-6 py-6">
+      <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">문의글 작성</h2>
+        </div>
+
         <div className="space-y-6">
           <div>
             <label

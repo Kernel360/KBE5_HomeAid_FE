@@ -2,6 +2,7 @@ import { ArrowLeft, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../../../stores/authStore';
 import { apiService } from '../../../../store/api';
+import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
 // 내 정보 수정 페이지
@@ -191,14 +192,14 @@ const MyProfile = ({ onBack }) => {
         margin: '0 auto',
       }}
     >
-      <header className="bg-white px-6 py-4 border-b border-gray-200 flex items-center">
-        <button onClick={onBack} className="mr-4">
-          <ArrowLeft className="w-6 h-6 text-gray-900" />
-        </button>
-        <h2 className="text-lg font-bold text-gray-900">내 정보 수정</h2>
-      </header>
+      <Header showBackButton={true} onBackClick={onBack} />
 
-      <main className="px-6 py-6">
+      <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
+        {/* 페이지 제목 */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">내 정보 수정</h2>
+        </div>
+
         {/* 프로필 사진 */}
         <div className="text-center mb-8">
           <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">

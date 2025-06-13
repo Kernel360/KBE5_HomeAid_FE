@@ -1,10 +1,13 @@
 import { ArrowLeft, Search, Plus } from 'lucide-react';
-import Footer from '../../../../components/Footer.jsx';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Assuming axios is installed
+import axios from 'axios';
+import Header from '../../../../components/Header.jsx';
+import Footer from '../../../../components/Footer.jsx';
 
 // 문의 게시판 페이지
-const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
+const InquiryBoard = () => {
+  const navigate = useNavigate();
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,17 +20,13 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
     setLoading(true);
     setError(null);
     try {
-      // Assuming a base URL for the API
       const response = await axios.get('/api/v1/boards', {
         params: {
           keyword: keyword,
           page: page,
-          size: 10, // Assuming 10 items per page
+          size: 10,
           sortBy: 'createdAt',
           sortDirection: 'desc',
-          // Backend API currently does not support filtering by isAnswered.
-          // If needed, this would require backend modification or client-side filtering.
-          // For now, the filter buttons are purely for UI.
         },
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
@@ -45,22 +44,28 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
 
   useEffect(() => {
     fetchInquiries();
-  }, [keyword, page, activeFilter]); // Refetch when keyword, page, or activeFilter changes
+  }, [keyword, page, activeFilter]);
 
   const handleSearchChange = (e) => {
     setKeyword(e.target.value);
-    setPage(0); // Reset to first page on new search
+    setPage(0);
   };
 
   const handleFilterClick = (filter) => {
     setActiveFilter(filter);
-    setPage(0); // Reset page on filter change
+    setPage(0);
+  };
+
+  const handleBack = () => {
+    navigate('/manager/mypage');
+  };
+
+  const handleCreateInquiry = () => {
+    navigate('/manager/mypage/inquiry/create');
   };
 
   const handleInquiryClick = (id) => {
-    if (onNavigateToDetail) {
-      onNavigateToDetail(id);
-    }
+    navigate(`/manager/mypage/inquiry/${id}`);
   };
 
   // Helper function to format date
@@ -74,41 +79,28 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
 
   return (
     <div
-      className="min-h-screen bg-white"
+      className="min-h-screen bg-gray-50"
       style={{
         paddingBottom: '80px',
         maxWidth: '512px',
         margin: '0 auto',
       }}
     >
-      {/* Figma Header - Back button not in Figma, but keeping it for navigation */}
-      <header className="bg-white px-6 py-4 border-b border-gray-200 flex items-center">
-        <button
-          onClick={onBack}
-          className="mr-4 p-2 rounded-full bg-white hover:bg-gray-50 transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6 text-gray-900" />
-        </button>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">문의 게시판</h2>{' '}
-          {/* style_OVUXUL */}
-          <p className="text-sm text-gray-600">
-            질문이나 상담을 남겨주세요
-          </p>{' '}
-          {/* style_XJ9LWZ */}
-        </div>
-      </header>
+      <Header showBackButton={true} onBackClick={handleBack} />
 
-      <main className="px-6 py-6">
-        {/* Search and New Post Section (Figma Filter frame) */}
+      <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
+        {/* 페이지 제목과 설명 */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">문의 게시판</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            질문이나 상담내용을 남겨주세요
+          </p>
+        </div>
+
+        {/* Search and New Post Section */}
         <div className="mb-6 flex items-center space-x-3">
-          {' '}
-          {/* layout_67YMWQ */}
           <div className="relative flex-grow">
-            {' '}
-            {/* layout_02J353, flex-grow to fill available space */}
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />{' '}
-            {/* stroke_P69H1I */}
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               placeholder="검색"
@@ -119,7 +111,7 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
             />
           </div>
           <button
-            onClick={onNavigateToCreate}
+            onClick={handleCreateInquiry}
             className="bg-blue-600 text-black flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md"
             style={{ height: '40px', minWidth: '90px' }}
           >
@@ -130,8 +122,6 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
 
         {/* Status Filter */}
         <div className="mb-6 flex justify-between space-x-2">
-          {' '}
-          {/* layout_BIMCNT */}
           <button
             onClick={() => handleFilterClick('all')}
             className={`flex-grow px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform text-slate-700 ${
@@ -167,19 +157,15 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
           </button>
         </div>
 
-        {/* {loading && <p className="text-center text-gray-600">불러오는 중...</p>} */}
         {error && <p className="text-center text-red-500">{error}</p>}
         {!loading && !error && inquiries.length === 0 && (
           <p className="text-center text-gray-600">문의글이 없습니다.</p>
         )}
 
-        {/* Inquiry List (Figma Posts) */}
+        {/* Inquiry List */}
         <div className="space-y-3">
-          {' '}
-          {/* gap: 12px */}
           {inquiries
             .filter((inquiry) => {
-              // Client-side filtering based on activeFilter for UI purposes
               if (activeFilter === 'all') return true;
               if (activeFilter === 'waiting') return !inquiry.isAnswered;
               if (activeFilter === 'completed') return inquiry.isAnswered;
@@ -188,46 +174,27 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
             .map((inquiry) => (
               <div
                 key={inquiry.id}
-                className="bg-gray-50 rounded-lg p-4 shadow-sm cursor-pointer border border-gray-100 hover:bg-gray-100 hover:border-gray-200 transition-all duration-200" // fill_B02V81, stroke_EHRQHW, borderRadius: 8px, padding: 16px, shadow-sm
+                className="bg-gray-50 rounded-lg p-4 shadow-sm cursor-pointer border border-gray-100 hover:bg-gray-100 hover:border-gray-200 transition-all duration-200"
                 onClick={() => handleInquiryClick(inquiry.id)}
               >
                 <div className="flex items-center justify-between mb-2">
-                  {' '}
-                  {/* layout_ANADNR, gap: 12px */}
                   <h3 className="font-extrabold text-gray-900 text-base">
-                    {' '}
-                    {/* style_90DHTN (fontWeight: 900, fontSize: 16) */}
                     {inquiry.title}
                   </h3>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       inquiry.isAnswered
-                        ? 'bg-green-100 text-green-700' // fill_MOA2B6, fill_E8KKCL
-                        : 'bg-amber-100 text-amber-700' // fill_5XO40Y, fill_SYTTLO
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-amber-100 text-amber-700'
                     }`}
                   >
-                    {inquiry.isAnswered ? '답변 완료' : '답변 대기'}{' '}
-                    {/* style_7OG6E1 */}
+                    {inquiry.isAnswered ? '답변 완료' : '답변 대기'}
                   </span>
                 </div>
-                {/* Figma has content snippet here, but UserBoardListResponseDto does not. Removing placeholder. */}
-                {/* <p className="text-gray-600 text-sm mb-3">
-                청소 서비스 지원 범위에 대해 궁금한 점이 있으시면 언제든지
-                문의해주세요.
-              </p> */}
                 <div className="flex items-center justify-between mt-3">
-                  {' '}
-                  {/* layout_ANADNR */}
                   <span className="text-xs text-gray-500">
-                    {' '}
-                    {/* style_UZ2H56, fill_LAYRNN */}
                     {formatDate(inquiry.createdAt)}
                   </span>
-                  {/* Figma has comments icon with count, but backend DTO does not. Omitting. */}
-                  {/* <div className="flex items-center space-x-1 text-xs text-gray-500">
-                  <MessageCircle className="w-4 h-4 text-gray-400" />
-                  <span>2</span>
-                </div> */}
                 </div>
               </div>
             ))}
@@ -259,7 +226,7 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
         )}
       </main>
 
-      <Footer current="/customer/mypage" />
+      <Footer current="/manager/mypage" />
     </div>
   );
 };
