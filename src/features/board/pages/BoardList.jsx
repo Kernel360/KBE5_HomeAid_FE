@@ -1,34 +1,103 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
 import { useAuthStore } from '../../../stores/authStore.js';
-import axios from 'axios';
 import './BoardList.css';
 
 const BoardList = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('notice'); // 'notice' or 'inquiry'
+  const [activeTab, setActiveTab] = useState('notice'); // 'notice' or 'faq'
 
   // 페이징 상태 관리
   const [currentPage, setCurrentPage] = useState({
     notice: 1,
-    inquiry: 1,
+    faq: 1,
   });
   const itemsPerPage = 5;
 
   // ⭐️ 인증 상태 및 권한 확인
-  const { user, accessToken } = useAuthStore();
-  const isLoggedIn = user && accessToken;
+  const { user } = useAuthStore();
   const isAdmin = user && user.role === 'ROLE_ADMIN';
 
-  // 문의글 상태 관리
-  const [inquiries, setInquiries] = useState([]);
-  const [loadingInquiries, setLoadingInquiries] = useState(false);
-  const [inquiryError, setInquiryError] = useState(null);
+  // FAQ 데이터 (하드코딩)
+  const [faqs] = useState([
+    {
+      id: 1,
+      question: '서비스 예약은 어떻게 하나요?',
+      answer:
+        '홈페이지에서 원하는 서비스를 선택하고, 날짜와 시간을 지정하여 예약할 수 있습니다. 결제까지 완료하면 예약이 확정됩니다.',
+      category: '예약',
+      views: 145,
+      date: '2024-03-20',
+    },
+    {
+      id: 2,
+      question: '서비스 취소나 변경은 가능한가요?',
+      answer:
+        '서비스 24시간 전까지는 무료로 취소/변경이 가능합니다. 24시간 이내 취소 시에는 취소 수수료가 발생할 수 있습니다.',
+      category: '예약',
+      views: 128,
+      date: '2024-03-19',
+    },
+    {
+      id: 3,
+      question: '결제 방법은 무엇이 있나요?',
+      answer:
+        '신용카드, 체크카드, 카카오페이, 네이버페이 등 다양한 결제 수단을 지원합니다. 현금 결제는 지원하지 않습니다.',
+      category: '결제',
+      views: 98,
+      date: '2024-03-18',
+    },
+    {
+      id: 4,
+      question: '서비스 이용 중 문제가 발생하면 어떻게 하나요?',
+      answer:
+        '서비스 이용 중 문제가 발생하면 즉시 고객센터(1588-1234)로 연락주시거나 앱 내 채팅 기능을 이용해주세요. 신속하게 처리해드리겠습니다.',
+      category: '서비스',
+      views: 87,
+      date: '2024-03-17',
+    },
+    {
+      id: 5,
+      question: '포인트는 어떻게 적립되나요?',
+      answer:
+        '서비스 이용 완료 후 자동으로 포인트가 적립됩니다. 적립률은 결제 금액의 3%이며, 적립된 포인트는 다음 결제 시 사용 가능합니다.',
+      category: '포인트',
+      views: 76,
+      date: '2024-03-16',
+    },
+    {
+      id: 6,
+      question: '매니저 변경 요청은 가능한가요?',
+      answer:
+        '서비스 시작 전까지는 매니저 변경 요청이 가능합니다. 고객센터로 연락주시면 가능한 범위 내에서 조치해드리겠습니다.',
+      category: '서비스',
+      views: 65,
+      date: '2024-03-15',
+    },
+    {
+      id: 7,
+      question: '쿠폰은 어떻게 사용하나요?',
+      answer:
+        '결제 페이지에서 보유한 쿠폰을 선택하여 사용할 수 있습니다. 쿠폰은 중복 사용이 불가하며, 최소 결제 금액 조건을 만족해야 합니다.',
+      category: '쿠폰',
+      views: 54,
+      date: '2024-03-14',
+    },
+    {
+      id: 8,
+      question: '서비스 평가는 언제 작성하나요?',
+      answer:
+        '서비스 완료 후 24시간 내에 평가를 작성할 수 있습니다. 평가를 작성하면 추가 포인트를 적립해드립니다.',
+      category: '평가',
+      views: 43,
+      date: '2024-03-13',
+    },
+  ]);
 
   // 임시 공지사항 데이터 (6개로 확장)
-  const [notices, setNotices] = useState([
+  const [notices] = useState([
     {
       id: 1,
       title: '[공지] 서비스 이용 안내',
@@ -79,59 +148,6 @@ const BoardList = () => {
     },
   ]);
 
-  // 사용자 문의글 가져오기
-  const fetchUserInquiries = async () => {
-    if (!isLoggedIn) {
-      setInquiries([]);
-      return;
-    }
-
-    setLoadingInquiries(true);
-    setInquiryError(null);
-
-    try {
-      const response = await axios.get('/api/v1/boards', {
-        params: {
-          page: 0,
-          size: 100, // 충분히 큰 수로 설정하여 모든 게시글 가져오기
-          sortBy: 'createdAt',
-          sortDirection: 'desc',
-        },
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.data.success) {
-        const userInquiries = response.data.data.content.map((inquiry) => ({
-          id: inquiry.id,
-          title: inquiry.title,
-          author: user?.name || user?.username || '사용자',
-          date: new Date(inquiry.createdAt).toLocaleDateString(),
-          status: inquiry.isAnswered ? '답변완료' : '답변대기',
-          isPrivate: false, // API에서 제공하지 않는 경우 기본값
-        }));
-        setInquiries(userInquiries);
-      } else {
-        throw new Error('문의글을 불러오는데 실패했습니다.');
-      }
-    } catch (err) {
-      console.error('Failed to fetch user inquiries:', err);
-      setInquiryError('문의글을 불러오는데 실패했습니다.');
-      // 에러 시 빈 배열로 설정
-      setInquiries([]);
-    } finally {
-      setLoadingInquiries(false);
-    }
-  };
-
-  // 로그인 상태나 탭 변경 시 문의글 가져오기
-  useEffect(() => {
-    if (activeTab === 'inquiry') {
-      fetchUserInquiries();
-    }
-  }, [activeTab, isLoggedIn, accessToken]);
-
   // 페이징 처리 함수
   const getCurrentPageData = (data, page) => {
     const startIndex = (page - 1) * itemsPerPage;
@@ -154,10 +170,6 @@ const BoardList = () => {
 
   // 탭 변경 시 페이지 초기화
   const handleTabChange = (tab) => {
-    if (tab === 'inquiry') {
-      alert('준비중입니다');
-      return;
-    }
     setActiveTab(tab);
     setCurrentPage((prev) => ({
       ...prev,
@@ -165,36 +177,10 @@ const BoardList = () => {
     }));
   };
 
-  // ⭐️ 조회수 증가 함수
-  const increaseViews = (postId, type) => {
-    if (type === 'notice') {
-      setNotices((prevNotices) =>
-        prevNotices.map((notice) =>
-          notice.id === postId ? { ...notice, views: notice.views + 1 } : notice
-        )
-      );
-    }
-    // 실제 구현 시에는 여기서 API 호출하여 서버에 조회수 증가 요청
-    // await updatePostViews(postId, type);
-  };
-
-  // ⭐️ 게시글 클릭 핸들러 (조회수 증가 포함)
+  // ⭐️ 게시글 클릭 핸들러
   const handlePostClick = (postId, type) => {
-    // 조회수 증가
-    increaseViews(postId, type);
     // 상세 페이지로 이동
     navigate(`/board/${type}/${postId}`);
-  };
-
-  // ⭐️ 문의글 작성 핸들러
-  const handleInquiryWriteClick = () => {
-    // ⭐️ 문의글 작성 시 로그인 체크
-    if (!isLoggedIn) {
-      alert('문의글 작성은 로그인이 필요합니다.\n로그인 후 이용해주세요.');
-      navigate('/auth/signin');
-      return;
-    }
-    navigate('/board/write?type=inquiry');
   };
 
   // ⭐️ 공지사항 작성 핸들러 (관리자만)
@@ -207,7 +193,7 @@ const BoardList = () => {
   };
 
   // 현재 탭에 따른 데이터와 페이지 정보
-  const currentData = activeTab === 'notice' ? notices : inquiries;
+  const currentData = activeTab === 'notice' ? notices : faqs;
 
   // 공지사항의 경우 중요도에 따라 정렬 (중요 공지사항이 상단에)
   const sortedData =
@@ -247,10 +233,10 @@ const BoardList = () => {
               공지사항
             </button>
             <button
-              className={`tab-button ${activeTab === 'inquiry' ? 'active' : ''}`}
-              onClick={() => handleTabChange('inquiry')}
+              className={`tab-button ${activeTab === 'faq' ? 'active' : ''}`}
+              onClick={() => handleTabChange('faq')}
             >
-              문의하기
+              FAQ
             </button>
           </div>
 
@@ -293,74 +279,35 @@ const BoardList = () => {
               ))}
             </div>
           ) : (
-            <div className="inquiry-list">
-              <div className="write-button-container">
-                <button
-                  className="write-button"
-                  onClick={handleInquiryWriteClick}
-                  disabled={!isLoggedIn}
-                  title={!isLoggedIn ? '로그인이 필요합니다' : ''}
-                >
-                  {isLoggedIn ? '문의글 작성' : '로그인 후 문의글 작성'}
-                </button>
-              </div>
-
-              {/* 로그인하지 않은 경우 */}
-              {!isLoggedIn ? (
+            <div className="faq-list">
+              {paginatedData.length === 0 ? (
+                /* FAQ가 없는 경우 */
                 <div className="empty-state">
-                  <p>문의글을 확인하려면 로그인이 필요합니다.</p>
-                  <button
-                    className="login-button"
-                    onClick={() => navigate('/auth/signin')}
-                  >
-                    로그인하러 가기
-                  </button>
-                </div>
-              ) : loadingInquiries ? (
-                /* 로딩 중 */
-                <div className="loading-state">
-                  <p>문의글을 불러오는 중...</p>
-                </div>
-              ) : inquiryError ? (
-                /* 에러 발생 */
-                <div className="error-state">
-                  <p>{inquiryError}</p>
-                  <button className="retry-button" onClick={fetchUserInquiries}>
-                    다시 시도
-                  </button>
-                </div>
-              ) : paginatedData.length === 0 ? (
-                /* 문의글이 없는 경우 */
-                <div className="empty-state">
-                  <p>작성한 문의글이 없습니다.</p>
-                  <p>궁금한 것이 있으시면 문의글을 작성해보세요!</p>
+                  <p>등록된 자주묻는질문이 없습니다.</p>
                 </div>
               ) : (
-                /* 문의글 목록 표시 */
-                paginatedData.map((inquiry) => (
+                /* FAQ 목록 표시 */
+                paginatedData.map((faq) => (
                   <div
-                    key={inquiry.id}
-                    className="post-item"
-                    onClick={() => handlePostClick(inquiry.id, 'inquiry')}
+                    key={faq.id}
+                    className="post-item faq-item"
+                    onClick={() => handlePostClick(faq.id, 'faq')}
                   >
                     <div className="post-main">
-                      <h2 className="post-title">
-                        {inquiry.isPrivate && (
-                          <span className="private-badge">비공개</span>
-                        )}
-                        {inquiry.title}
-                      </h2>
+                      <div className="post-title-container">
+                        <span
+                          className={`category-badge category-${faq.category}`}
+                        >
+                          {faq.category}
+                        </span>
+                        <h2 className="post-title">{faq.question}</h2>
+                      </div>
                       <div className="post-info">
-                        <span className="post-author">{inquiry.author}</span>
-                        <span className="post-date">{inquiry.date}</span>
+                        <span className="post-date">{faq.date}</span>
                       </div>
                     </div>
-                    <div className="post-status">
-                      <span
-                        className={`status-badge ${inquiry.status === '답변완료' ? 'completed' : 'pending'}`}
-                      >
-                        {inquiry.status}
-                      </span>
+                    <div className="post-stats">
+                      <span className="post-views">조회 {faq.views}</span>
                     </div>
                   </div>
                 ))

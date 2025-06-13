@@ -1,7 +1,7 @@
 /* Page wrapper */
 .board-page {
   min-height: 100vh;
-  background-color: #f3f4f6;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -107,7 +107,8 @@
 
 /* 게시글 목록 */
 .notice-list,
-.inquiry-list {
+.inquiry-list,
+.faq-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -467,4 +468,56 @@
   .next-btn {
     font-size: 14px;
   }
+}
+
+/* FAQ 아이템 스타일 */
+.faq-item {
+  background-color: #f8feff;
+  border-color: #06b6d4;
+}
+
+.faq-item:hover {
+  background-color: #ecfeff;
+  border-color: #0891b2;
+}
+
+/* 카테고리 배지 스타일 */
+.category-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.category-예약 {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.category-결제 {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.category-서비스 {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.category-포인트 {
+  background-color: #fce7f3;
+  color: #be185d;
+}
+
+.category-쿠폰 {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.category-평가 {
+  background-color: #f3e8ff;
+  color: #6b21a8;
 }

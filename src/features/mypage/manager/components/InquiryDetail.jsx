@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
-const InquiryDetail = ({
-  boardId,
-  onBack,
-  onInquiryDeleted,
-  onInquiryUpdated,
-}) => {
+const InquiryDetail = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
   const [inquiry, setInquiry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,7 +20,7 @@ const InquiryDetail = ({
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`/api/v1/boards/${boardId}`, {
+        const response = await axios.get(`/api/v1/boards/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
           },
@@ -38,17 +36,21 @@ const InquiryDetail = ({
       }
     };
 
-    if (boardId) {
+    if (id) {
       fetchInquiry();
     }
-  }, [boardId]);
+  }, [id]);
+
+  const handleBack = () => {
+    navigate('/manager/mypage/inquiry');
+  };
 
   const handleUpdate = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await axios.put(
-        `/api/v1/boards/${boardId}`,
+        `/api/v1/boards/${id}`,
         {
           title: editedTitle,
           content: editedContent,
@@ -61,9 +63,7 @@ const InquiryDetail = ({
       );
       setInquiry(response.data.data);
       setIsEditing(false);
-      if (onInquiryUpdated) {
-        onInquiryUpdated();
-      }
+      navigate('/manager/mypage/inquiry');
     } catch (err) {
       setError('문의글 수정에 실패했습니다.');
       console.error('Failed to update inquiry:', err);
@@ -77,15 +77,13 @@ const InquiryDetail = ({
       setLoading(true);
       setError(null);
       try {
-        await axios.delete(`/api/v1/boards/${boardId}`, {
+        await axios.delete(`/api/v1/boards/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
           },
         });
         alert('문의글이 삭제되었습니다.');
-        if (onInquiryDeleted) {
-          onInquiryDeleted();
-        }
+        navigate('/manager/mypage/inquiry');
       } catch (err) {
         setError('문의글 삭제에 실패했습니다.');
         console.error('Failed to delete inquiry:', err);
@@ -105,8 +103,8 @@ const InquiryDetail = ({
           margin: '0 auto',
         }}
       >
-        <Header showBackButton={true} onBackClick={onBack} />
-        <Footer current="/customer/mypage" />
+        <Header showBackButton={true} onBackClick={handleBack} />
+        <Footer current="/manager/mypage" />
       </div>
     );
   }
@@ -121,9 +119,9 @@ const InquiryDetail = ({
           margin: '0 auto',
         }}
       >
-        <Header showBackButton={true} onBackClick={onBack} />
+        <Header showBackButton={true} onBackClick={handleBack} />
         <p className="text-center text-red-500 mt-8">{error}</p>
-        <Footer current="/customer/mypage" />
+        <Footer current="/manager/mypage" />
       </div>
     );
   }
@@ -138,11 +136,11 @@ const InquiryDetail = ({
           margin: '0 auto',
         }}
       >
-        <Header showBackButton={true} onBackClick={onBack} />
+        <Header showBackButton={true} onBackClick={handleBack} />
         <p className="text-center text-gray-600 mt-8">
           문의글을 찾을 수 없습니다.
         </p>
-        <Footer current="/customer/mypage" />
+        <Footer current="/manager/mypage" />
       </div>
     );
   }
@@ -156,48 +154,47 @@ const InquiryDetail = ({
         margin: '0 auto',
       }}
     >
-      <Header showBackButton={true} onBackClick={onBack} />
+      <Header showBackButton={true} onBackClick={handleBack} />
 
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
-        {/* 페이지 제목 */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900">
-            {isEditing ? '문의글 수정' : '문의글 상세'}
-          </h2>
-        </div>
-
         {isEditing ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <label
-                htmlFor="editTitle"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                htmlFor="title"
+                className="block text-base font-semibold text-gray-800 mb-2"
               >
                 제목
               </label>
               <input
                 type="text"
-                id="editTitle"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                id="title"
+                className="w-full border border-gray-300 rounded-lg py-3 px-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
+                required
+                style={{ height: '50px' }}
               />
             </div>
+
             <div>
               <label
-                htmlFor="editContent"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                htmlFor="content"
+                className="block text-base font-semibold text-gray-800 mb-2"
               >
                 내용
               </label>
               <textarea
-                id="editContent"
-                rows="8"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                id="content"
+                rows="12"
+                className="w-full border border-gray-300 rounded-lg py-3 px-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}
-              />
+                required
+                style={{ minHeight: '300px' }}
+              ></textarea>
             </div>
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setIsEditing(false)}
@@ -263,7 +260,7 @@ const InquiryDetail = ({
         )}
       </main>
 
-      <Footer current="/customer/mypage" />
+      <Footer current="/manager/mypage" />
     </div>
   );
 };

@@ -1,23 +1,28 @@
 /* 이벤트 페이지 전체 레이아웃 */
 .event-page {
   min-height: 100vh;
-  background-color: #f3f4f6;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  max-width: 512px;
+  margin: 0 auto;
+  position: relative;
 }
 
 /* 콘텐츠 래퍼 - 헤더와 푸터 사이에 위치 */
 .page-content-wrapper {
   width: 100%;
-  max-width: 512px; /* 헤더/푸터와 동일한 너비 */
+  max-width: 512px;
   box-sizing: border-box;
   padding: 20px 16px;
-  margin-top: 64px; /* Header 높이 */
-  margin-bottom: 100px; /* Footer 높이 + 여백 */
+  padding-top: 84px; /* Header 높이 + 여백 */
+  padding-bottom: 100px; /* Footer 높이 + 여백 */
   flex: 1;
   display: flex;
   flex-direction: column;
+  background-color: #ffffff;
 }
 
 /* 메인 컨테이너 */
@@ -30,14 +35,14 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 0;
 }
 
 /* 페이지 헤더 */
 .event-header {
   text-align: center;
   margin-bottom: 24px;
-  padding-bottom: 20px;
+  padding: 0 20px 20px;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -156,14 +161,10 @@
 .event-content {
   flex: 1;
   min-width: 0;
-}
-
-.event-header-info {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
+  position: relative; /* 상태 뱃지의 기준점 */
 }
 
 .event-title {
@@ -172,11 +173,13 @@
   color: #111827;
   margin: 0;
   line-height: 1.4;
-  flex: 1;
+  padding-right: 70px; /* 상태 뱃지 공간 확보 */
 }
 
 .status-badge {
-  flex-shrink: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
@@ -197,12 +200,8 @@
 .event-description {
   font-size: 14px;
   color: #6b7280;
-  margin: 0 0 12px 0;
+  margin: 0;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
 }
 
 .event-period {
@@ -211,14 +210,6 @@
   gap: 6px;
   font-size: 13px;
   color: #9ca3af;
-}
-
-.period-icon {
-  font-size: 12px;
-}
-
-.period-text {
-  line-height: 1;
 }
 
 /* 빈 상태 */
@@ -252,16 +243,27 @@
 }
 
 /* 모바일 반응형 */
-@media (max-width: 480px) {
+@media (max-width: 512px) {
+  .event-page {
+    width: 100%;
+  }
+
   .page-content-wrapper {
-    padding: 16px 12px;
-    margin-top: 64px;
-    margin-bottom: 96px; /* Footer 높이 + 여백 */
+    padding: 84px 16px 100px;
   }
 
   .event-container {
-    padding: 16px;
-    border-radius: 8px;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content-wrapper {
+    padding: 74px 12px 90px;
+  }
+
+  .event-container {
+    padding: 0;
   }
 
   .page-title {
@@ -291,8 +293,13 @@
     font-size: 28px;
   }
 
+  .event-content {
+    gap: 6px;
+  }
+
   .event-title {
     font-size: 15px;
+    padding-right: 65px; /* 상태 뱃지 공간 조정 */
   }
 
   .event-description {
@@ -322,9 +329,7 @@
 
 @media (max-width: 360px) {
   .page-content-wrapper {
-    padding: 12px 8px;
-    margin-top: 60px;
-    margin-bottom: 92px; /* Footer 높이 + 여백 */
+    padding: 64px 8px 80px;
   }
 
   .event-container {
@@ -345,8 +350,13 @@
     font-size: 24px;
   }
 
+  .event-content {
+    gap: 4px;
+  }
+
   .event-title {
     font-size: 14px;
+    padding-right: 60px; /* 상태 뱃지 공간 조정 */
   }
 
   .event-description {

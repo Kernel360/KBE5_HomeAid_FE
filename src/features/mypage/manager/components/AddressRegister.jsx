@@ -14,14 +14,14 @@ const AddressRegister = () => {
   });
 
   const handleBack = () => {
-    navigate('/customer/mypage/address');
+    navigate('/manager/mypage/address');
   };
 
   const handleSubmit = () => {
     // TODO: API 호출로 주소 저장
     console.log('주소 저장:', formData);
-    // 저장 후 주소 목록으로 돌아가기
-    navigate('/customer/mypage/address');
+    // 저장 후 마이페이지로 돌아가기
+    navigate('/manager/mypage/address');
   };
 
   return (
@@ -146,7 +146,7 @@ const AddressRegister = () => {
         </div>
       </main>
 
-      <Footer current="/customer/mypage" />
+      <Footer current="/manager/mypage" />
     </div>
   );
 };

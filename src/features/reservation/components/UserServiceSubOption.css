@@ -140,7 +140,7 @@ html {
 
 /* 서비스 선택 메시지 섹션 */
 .service-message-section {
-  margin-bottom: 60px;
+  margin-bottom: 40px;
   text-align: left;
 }
 
@@ -163,7 +163,7 @@ html {
   justify-content: center;
   gap: 15px;
   margin-bottom: 40px;
-  padding: 0 10px;
+  padding: 0;
 }
 
 .sub-service-option {
@@ -459,80 +459,76 @@ html {
 
 /* 기본 서비스 섹션 */
 .basic-service-section {
-  background-color: #f5f5f5;
+  background-color: white;
   border-radius: 16px;
   padding: 20px;
-  margin-bottom: 50px; /* UserServiceOption의 service-options와 동일 */
-  overflow: hidden; /* 박스 밖으로 나가는 내용 방지 */
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .service-header {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .service-icon-small {
   width: 40px;
   height: 40px;
-  background-color: white;
+  background-color: #e3f2fd;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0; /* 아이콘 크기 고정 */
+  margin-right: 12px;
 }
 
 .clock-icon {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .service-title {
-  flex: 1; /* 나머지 공간 사용 */
+  flex: 1;
 }
 
 .service-title h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
   margin: 0 0 4px 0;
+  font-size: 18px;
+  color: #333;
+  font-weight: 600;
 }
 
 .service-duration {
-  font-size: 14px;
   color: #666;
+  font-size: 14px;
 }
 
 .service-checklist {
-  margin-bottom: 15px;
+  margin-bottom: 16px;
 }
 
 .checklist-item {
   margin-bottom: 12px;
-  width: 100%; /* 전체 너비 사용 */
 }
 
 .checklist-item:last-child {
   margin-bottom: 0;
 }
 
-/* 서비스 체크박스 스타일 */
 .service-checkbox-label {
   display: flex;
   align-items: center;
-  cursor: pointer;
-  font-size: 15px;
-  color: #333;
-  line-height: 1.5;
+  cursor: default;
+  padding: 8px 0;
   position: relative;
-  padding-left: 30px;
-  width: 100%;
-  min-height: 24px; /* 최소 높이 보장 */
-  box-sizing: border-box; /* padding 포함한 크기 계산 */
+  border-bottom: 1px solid #f0f0f0;
 }
 
+.service-checkbox-label:last-child {
+  border-bottom: none;
+}
+
+/* 서비스 체크박스 스타일 */
 .service-checkbox-label input[type='checkbox'] {
   position: absolute;
   opacity: 0;
@@ -602,13 +598,13 @@ html {
   line-height: 1.4;
 }
 
-/* 총 가격 표시 섹션 */
+/* 총 가격 섹션 */
 .total-price-section {
-  background-color: #e8f4fd;
-  border: 1px solid #4285f4;
-  border-radius: 8px;
+  background-color: #f8f9ff;
+  border-radius: 12px;
   padding: 16px;
-  margin: 20px 0 15px 0;
+  margin-bottom: 16px;
+  border: 1px solid #e3f2fd;
 }
 
 .total-price-item {
@@ -619,39 +615,38 @@ html {
 
 .total-label {
   font-size: 16px;
-  font-weight: 600;
   color: #333;
+  font-weight: 500;
 }
 
 .total-amount {
   font-size: 18px;
-  font-weight: 700;
   color: #4285f4;
+  font-weight: 700;
 }
 
-/* 예약 버튼 섹션 */
+/* 예약 섹션 */
 .reservation-section {
-  padding: 0 20px;
-  margin-bottom: 40px; /* UserServiceOption의 reservation-section과 동일 */
+  margin-top: 20px;
 }
 
 .reservation-button {
   width: 100%;
-  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+  color: white;
   border: none;
   border-radius: 12px;
-  padding: 16px 24px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-  font-size: 18px;
-  font-weight: 600;
-  color: white;
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
 }
 
 .reservation-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
 }
 
 .reservation-button:active:not(:disabled) {
@@ -659,7 +654,8 @@ html {
 }
 
 .reservation-button:disabled {
-  background: #d1d5db;
+  background: #e0e0e0;
+  color: #999;
   cursor: not-allowed;
   box-shadow: none;
 }

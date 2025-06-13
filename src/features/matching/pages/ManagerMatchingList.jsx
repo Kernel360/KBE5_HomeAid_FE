@@ -32,7 +32,7 @@ const ManagerMatchingList = () => {
   const [pageSize] = useState(10);
 
   // 탭 정의 (백엔드 상태에 맞게 수정)
-  const tabs = ['전체', '매칭 대기', '고객 응답 대기', '매칭 완료', '거절됨'];
+  const tabs = ['전체', '매칭 대기', '응답 대기', '매칭 완료', '거절'];
 
   // 백엔드 상태를 탭 이름으로 매핑
   const getTabNameFromStatus = (status) => {
@@ -122,7 +122,7 @@ const ManagerMatchingList = () => {
           address: `${item.latitude}, ${item.longitude}`,
           reservationId: item.reservationId,
           managerStatus: item.managerStatus,
-          customerStatus: item.customerStatus
+          customerStatus: item.customerStatus,
         };
 
         console.log(
@@ -202,7 +202,7 @@ const ManagerMatchingList = () => {
   const handleMatching = (matchingItem) => {
     console.log('🔄 매칭 요청 페이지로 이동:', {
       matchingId: matchingItem.id,
-      status: matchingItem.originalStatus
+      status: matchingItem.originalStatus,
     });
 
     // 매칭 정보를 스토어에 저장하고 매칭 요청 페이지로 이동
@@ -215,13 +215,13 @@ const ManagerMatchingList = () => {
       estimatedDuration: matchingItem.estimatedDuration,
       address: matchingItem.address,
       customerRequest: matchingItem.customerRequest,
-      status: matchingItem.originalStatus
+      status: matchingItem.originalStatus,
     });
 
     navigate('/matching/matching-request', {
       state: {
-        matchingId: matchingItem.id
-      }
+        matchingId: matchingItem.id,
+      },
     });
   };
 

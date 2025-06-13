@@ -20,6 +20,8 @@ import CustomerLayout from '../layouts/CustomerLayout';
 import Mypage from '../features/mypage/customer/pages/Mypage';
 import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
+import MyAddress from '../features/mypage/manager/components/MyAddress';
+import AddressRegister from '../features/mypage/manager/components/AddressRegister';
 import BoardWrite from '../features/board/pages/BoardWrite';
 import BoardList from '../features/board/pages/BoardList';
 import BoardDetail from '../features/board/pages/BoardDetail';
@@ -29,6 +31,11 @@ import ManagerMain from '../features/manager/pages/ManagerMainPage';
 import ReservationHistoryPage from '../features/review/pages/ReservationHistoryPage';
 import ReservationDetailPage from '../features/review/pages/ReservationDetailPage';
 import ReviewWritePage from '../features/review/pages/ReviewWritePage';
+import InquiryBoard from '../features/mypage/manager/components/InquiryBoard';
+import InquiryDetail from '../features/mypage/manager/components/InquiryDetail';
+import CreateInquiry from '../features/mypage/manager/components/CreateInquiry';
+import CustomerMyAddress from '../features/mypage/customer/components/MyAddress';
+import CustomerAddressRegister from '../features/mypage/customer/components/AddressRegister';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -39,6 +46,8 @@ export const protectedAppRoutes = [
     allowedRoles: ['ROLE_CUSTOMER'],
     children: [
       { path: 'mypage', element: <Mypage /> },
+      { path: 'mypage/address', element: <CustomerMyAddress /> },
+      { path: 'mypage/address/register', element: <CustomerAddressRegister /> },
       // 예약 관련 경로들 - 고객 권한 필요
       { path: 'service-option', element: <UserServiceOption /> },
       { path: 'service-sub-option', element: <UserServiceSubOption /> },
@@ -63,6 +72,11 @@ export const protectedAppRoutes = [
     allowedRoles: ['ROLE_MANAGER'],
     children: [
       { path: 'mypage', element: <ManagerMypage /> },
+      { path: 'mypage/address', element: <MyAddress /> },
+      { path: 'mypage/address/register', element: <AddressRegister /> },
+      { path: 'mypage/inquiry', element: <InquiryBoard /> },
+      { path: 'mypage/inquiry/create', element: <CreateInquiry /> },
+      { path: 'mypage/inquiry/:id', element: <InquiryDetail /> },
       { path: 'additional-info', element: <ServiceRegistration /> },
       { path: 'matching/service-checkin', element: <ManagerServiceCheckIn /> },
       {
@@ -128,7 +142,6 @@ export const protectedAppRoutes = [
         path: 'manager-approval',
         element: <AdminManagerApproval />,
       },
-
     ],
   },
 ];

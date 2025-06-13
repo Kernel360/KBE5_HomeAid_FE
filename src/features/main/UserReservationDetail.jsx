@@ -316,13 +316,13 @@ const UserReservationDetail = () => {
         {
           method: 'PATCH',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             action: action,
-            memo: memo
-          })
+            memo: memo,
+          }),
         }
       );
 
@@ -341,16 +341,23 @@ const UserReservationDetail = () => {
       // 성공 시 예약 정보 새로고침
       const updatedReservation = await getReservationById(reservationId);
       setReservation(updatedReservation);
-      
+
       // 모달 닫기
       setShowRejectModal(false);
       setRejectMemo('');
 
       // 성공 메시지
-      alert(action === 'CONFIRM' ? '매칭이 확인되었습니다.' : '매칭이 거절되었습니다.');
+      alert(
+        action === 'CONFIRM'
+          ? '매칭이 확인되었습니다.'
+          : '매칭이 거절되었습니다.'
+      );
     } catch (error) {
       console.error('매칭 응답 처리 실패:', error);
-      setError(error.message || '매칭 응답 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setError(
+        error.message ||
+          '매칭 응답 처리에 실패했습니다. 잠시 후 다시 시도해주세요.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -358,12 +365,25 @@ const UserReservationDetail = () => {
 
   if (loading) {
     return (
-      <div className="reservation-detail-page">
+      <div
+        className="min-h-screen bg-white flex flex-col"
+        style={{ maxWidth: '512px', margin: '0 auto' }}
+      >
         <Header
           showBackButton
           onBackClick={() => navigate('/customer/reservations')}
         />
-        <div className="page-content-wrapper">
+        <div
+          style={{
+            width: '100%',
+            paddingTop: '80px',
+            paddingBottom: '100px',
+            padding: '80px 16px 100px 16px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <div className="loading-container">
             <div className="loading-spinner">예약 정보를 불러오는 중...</div>
             <p
@@ -380,12 +400,25 @@ const UserReservationDetail = () => {
 
   if (error) {
     return (
-      <div className="reservation-detail-page">
+      <div
+        className="min-h-screen bg-white flex flex-col"
+        style={{ maxWidth: '512px', margin: '0 auto' }}
+      >
         <Header
           showBackButton
           onBackClick={() => navigate('/customer/reservations')}
         />
-        <div className="page-content-wrapper">
+        <div
+          style={{
+            width: '100%',
+            paddingTop: '80px',
+            paddingBottom: '100px',
+            padding: '80px 16px 100px 16px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <div className="error-container">
             <p>{error}</p>
             <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
@@ -421,12 +454,25 @@ const UserReservationDetail = () => {
   }
 
   return (
-    <div className="reservation-detail-page">
+    <div
+      className="min-h-screen bg-white flex flex-col"
+      style={{ maxWidth: '512px', margin: '0 auto' }}
+    >
       <Header
         showBackButton
         onBackClick={() => navigate('/customer/reservations')}
       />
-      <div className="page-content-wrapper">
+      <div
+        style={{
+          width: '100%',
+          paddingTop: '80px',
+          paddingBottom: '100px',
+          padding: '80px 16px 100px 16px',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <div className="reservation-detail-container">
           {/* 예약 상태 배지 */}
           <div className="status-section">
@@ -641,15 +687,15 @@ const UserReservationDetail = () => {
                       매니저의 매칭을 확인해주세요.
                     </p>
                     <div className="matching-actions">
-                      <button 
-                        className="accept-btn" 
+                      <button
+                        className="accept-btn"
                         onClick={() => handleMatchingResponse('CONFIRM')}
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? '처리 중...' : '확인'}
                       </button>
-                      <button 
-                        className="reject-btn" 
+                      <button
+                        className="reject-btn"
                         onClick={() => handleMatchingResponse('REJECT')}
                         disabled={isSubmitting}
                       >
@@ -683,7 +729,7 @@ const UserReservationDetail = () => {
                   rows={4}
                 />
                 <div className="modal-actions">
-                  <button 
+                  <button
                     className="cancel-btn"
                     onClick={() => {
                       setShowRejectModal(false);
@@ -693,7 +739,7 @@ const UserReservationDetail = () => {
                   >
                     취소
                   </button>
-                  <button 
+                  <button
                     className="submit-btn"
                     onClick={() => submitMatchingResponse('REJECT', rejectMemo)}
                     disabled={isSubmitting}

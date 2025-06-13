@@ -16,12 +16,12 @@ const UserPayment = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('bank');
-  // const [cardInfo, setCardInfo] = useState({
-  //   number: '',
-  //   expiry: '',
-  //   cvc: '',
-  //   name: '',
-  // });
+  const [cardInfo, setCardInfo] = useState({
+    number: '',
+    expiry: '',
+    cvc: '',
+    name: '',
+  });
 
   // zustand store에서 예약 데이터 가져오기
   const { reservationData, getSelectedServicesWithDetails } =
@@ -63,6 +63,37 @@ const UserPayment = () => {
     selectedServices,
     savedPaymentData,
   ]);
+
+  // Card formatting functions
+  const formatCardNumber = (value) => {
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    const matches = v.match(/\d{4,16}/g);
+    const match = (matches && matches[0]) || '';
+    const parts = [];
+    for (let i = 0, len = match.length; i < len; i += 4) {
+      parts.push(match.substring(i, i + 4));
+    }
+    if (parts.length) {
+      return parts.join(' ');
+    } else {
+      return v;
+    }
+  };
+
+  const formatExpiry = (value) => {
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    if (v.length >= 2) {
+      return v.substring(0, 2) + '/' + v.substring(2, 4);
+    }
+    return v;
+  };
+
+  const handleCardInputChange = (field, value) => {
+    setCardInfo((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   // ⭐️ 결제 데이터 생성 (useMemo로 최적화)
   const paymentData = useMemo(
@@ -605,7 +636,7 @@ const UserPayment = () => {
             <h3 className="section-title">결제 수단</h3>
             <div className="payment-methods">
               {/* 신용카드 옵션 주석처리 */}
-              {/* <label className="payment-method-item">
+              <label className="payment-method-item">
                 <input
                   type="radio"
                   name="paymentMethod"
@@ -617,7 +648,7 @@ const UserPayment = () => {
                   <i className="fas fa-credit-card method-icon"></i>
                   <span className="method-text">신용카드/체크카드</span>
                 </div>
-              </label> */}
+              </label>
 
               <label className="payment-method-item">
                 <input
@@ -634,7 +665,7 @@ const UserPayment = () => {
               </label>
 
               {/* 카카오페이 옵션 주석처리 */}
-              {/* <label className="payment-method-item">
+              <label className="payment-method-item">
                 <input
                   type="radio"
                   name="paymentMethod"
@@ -646,12 +677,12 @@ const UserPayment = () => {
                   <i className="fas fa-comment method-icon"></i>
                   <span className="method-text">카카오페이</span>
                 </div>
-              </label> */}
+              </label>
             </div>
           </div>
 
           {/* 카드 정보 입력 섹션 주석처리 */}
-          {/* {selectedPaymentMethod === 'card' && (
+          {selectedPaymentMethod === 'card' && (
             <div className="card-info-section">
               <h3 className="section-title">카드 정보</h3>
               <div className="card-inputs">
@@ -715,7 +746,7 @@ const UserPayment = () => {
                 </div>
               </div>
             </div>
-          )} */}
+          )}
 
           {/* 무통장입금 정보 */}
           {selectedPaymentMethod === 'bank' && (
@@ -733,7 +764,7 @@ const UserPayment = () => {
           )}
 
           {/* 카카오페이 정보 섹션 주석처리 */}
-          {/* {selectedPaymentMethod === 'kakao' && (
+          {selectedPaymentMethod === 'kakao' && (
             <div className="kakao-info-section">
               <h3 className="section-title">카카오페이</h3>
               <div className="kakao-details">
@@ -743,7 +774,7 @@ const UserPayment = () => {
                 </p>
               </div>
             </div>
-          )} */}
+          )}
 
           {/* 버튼 섹션 */}
           <div className="button-section">
@@ -888,18 +919,6 @@ const UserPayment = () => {
                 gap: '15px',
               }}
             >
-              {/* 제목 */}
-              <h3
-                style={{
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  color: '#333',
-                  margin: '0 0 20px 0',
-                }}
-              >
-                약관 전체 동의
-              </h3>
-
               {/* 약관전체동의 체크박스 */}
               <div
                 style={{

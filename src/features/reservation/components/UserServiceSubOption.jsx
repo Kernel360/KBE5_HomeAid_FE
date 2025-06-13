@@ -160,10 +160,21 @@ const UserServiceSubOption = () => {
   // 로딩 상태 표시 (단순화)
   if (loading && (!services || services.length === 0)) {
     return (
-      <div className="reservation-page">
-        <Header showBackButton={true} />
-        <div className="page-content-wrapper">
-          <div className="reservation-container">
+      <div className="min-h-screen bg-gray-100">
+        <div
+          className="w-full bg-gray-50 h-screen flex flex-col"
+          style={{
+            maxWidth: '512px',
+            margin: '0 auto',
+            position: 'relative',
+          }}
+        >
+          <Header showBackButton={true} />
+
+          <main
+            className="px-6 py-6 flex-1 overflow-y-auto"
+            style={{ paddingBottom: '100px', paddingTop: '80px' }}
+          >
             <div
               style={{
                 display: 'flex',
@@ -176,24 +187,36 @@ const UserServiceSubOption = () => {
             >
               서비스 옵션을 불러오는 중...
             </div>
-          </div>
+          </main>
+
+          <Footer current="/customer/service-sub-option" />
         </div>
-        <Footer current="/customer/service-sub-option" />
       </div>
     );
   }
 
   return (
-    <div className="reservation-page">
-      <Header showBackButton={true} />
-      <div className="page-content-wrapper">
-        <div className="reservation-container" style={{ marginTop: '64px' }}>
+    <div className="min-h-screen ">
+      <div
+        className="w-full bg-white h-screen flex flex-col"
+        style={{
+          maxWidth: '512px',
+          margin: '0 auto',
+          position: 'relative',
+        }}
+      >
+        <Header showBackButton={true} />
+
+        <main
+          className="px-6 py-6 flex-1 overflow-y-auto"
+          style={{ paddingBottom: '100px', paddingTop: '80px' }}
+        >
           {/* 서비스 선택 메시지 섹션 */}
           <div className="service-message-section">
             <h2 className="service-message">
               {getPersonalizedServiceQuestion()}
             </h2>
-            <p className="sub-message">원하는 청소 서비스를 선택해주세요.</p>
+            <p className="sub-message">원하는 청소 옵션을 선택해주세요.</p>
           </div>
 
           {/* 하위 서비스 옵션 섹션 */}
@@ -346,9 +369,10 @@ const UserServiceSubOption = () => {
               다음 단계
             </button>
           </div>
-        </div>
+        </main>
+
+        <Footer current="/customer/service-sub-option" />
       </div>
-      <Footer current="/customer/service-sub-option" />
     </div>
   );
 };

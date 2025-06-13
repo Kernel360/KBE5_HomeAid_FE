@@ -8,11 +8,11 @@ const MyAddress = () => {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate('/customer/mypage');
+    navigate('/manager/mypage');
   };
 
   const handleAddAddress = () => {
-    navigate('/customer/mypage/address/register');
+    navigate('/manager/mypage/address/register');
   };
 
   // TODO: API 연동 후 실제 주소 목록으로 교체
@@ -90,7 +90,7 @@ const MyAddress = () => {
         )}
       </main>
 
-      <Footer current="/customer/mypage" />
+      <Footer current="/manager/mypage" />
     </div>
   );
 };

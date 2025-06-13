@@ -15,7 +15,7 @@ export default function Footer({ current = '/' }) {
       // 매니저용 메뉴
       return [
         { label: '홈', icon: Home, to: '/' },
-        { label: '게시판', icon: MessageCircle, to: '/board' },
+        { label: '공지사항', icon: MessageCircle, to: '/board' },
         { label: '이벤트', icon: Star, to: '/event' },
         { label: '매칭내역', icon: ClipboardList, to: '/matching/list' },
         { label: '더보기', icon: Menu, to: '/manager/mypage' },
@@ -24,7 +24,7 @@ export default function Footer({ current = '/' }) {
       // 고객용 메뉴 (기본)
       return [
         { label: '홈', icon: Home, to: '/' },
-        { label: '게시판', icon: MessageCircle, to: '/board' },
+        { label: '공지사항', icon: MessageCircle, to: '/board' },
         { label: '이벤트', icon: Star, to: '/event' },
         {
           label: '이용내역',

@@ -5,6 +5,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  background-color: #ffffff;
 }
 
 /* 페이지 콘텐츠 래퍼 - 헤더와 푸터 사이에 위치 */
@@ -77,6 +78,8 @@
   font-size: 14px;
   font-weight: 600;
   text-align: center;
+  transform: translateX(0); /* 오른쪽 상단 고정 제거 */
+  position: static; /* 고정 위치 제거 */
 }
 
 /* 정보 섹션 */

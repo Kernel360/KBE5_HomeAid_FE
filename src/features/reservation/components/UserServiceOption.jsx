@@ -59,10 +59,21 @@ const UserServiceOption = () => {
   // };
 
   return (
-    <div className="reservation-page">
-      <Header showBackButton={true} />
-      <div className="page-content-wrapper">
-        <div className="reservation-container">
+    <div className="min-h-screen ">
+      <div
+        className="w-full bg-white h-screen flex flex-col"
+        style={{
+          maxWidth: '512px',
+          margin: '0 auto',
+          position: 'relative',
+        }}
+      >
+        <Header showBackButton={true} />
+
+        <main
+          className="px-6 py-6 flex-1 overflow-y-auto"
+          style={{ paddingBottom: '100px', paddingTop: '80px' }}
+        >
           {/* 인사말 섹션 */}
           <div className="greeting-section">
             <h1 className="greeting-text">{getUserGreeting()}</h1>
@@ -146,9 +157,10 @@ const UserServiceOption = () => {
               <span className="event-text">이벤트 또는 공지사항 영역</span>
             </div>
           </div> */}
-        </div>
+        </main>
+
+        <Footer current="/customer/service-option" />
       </div>
-      <Footer current="/customer/service-option" />
     </div>
   );
 };

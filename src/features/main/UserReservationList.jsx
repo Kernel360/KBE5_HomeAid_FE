@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  Suspense,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header.jsx';
 import Footer from '../../components/Footer.jsx';
@@ -6,6 +12,14 @@ import useReservationListStore from '../../stores/reservationListStore.js';
 import { useCustomerReservationList } from '../../features/reservation/hooks/useCustomerAPI.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import './UserReservationList.css';
+
+// 로딩 컴포넌트
+const LoadingSpinner = () => (
+  <div className="loading-spinner">
+    <div className="spinner"></div>
+    <p>로딩중...</p>
+  </div>
+);
 
 const UserReservationList = () => {
   const navigate = useNavigate();
@@ -20,6 +34,7 @@ const UserReservationList = () => {
   const { getAllReservations } = useReservationListStore();
 
   const [activeTab, setActiveTab] = useState('pending');
+  const [isLoading, setIsLoading] = useState(true);
   const [reservations, setReservations] = useState({
     pending: [],
     completed: [],
@@ -47,22 +62,21 @@ const UserReservationList = () => {
     visited: 1,
     cancelled: 1,
   });
-  const itemsPerPage = 5;
+  const itemsPerPage = 5; // 페이지당 5개의 아이템으로 변경
 
-  // 데이터 새로고침 함수 - 의존성 최소화
+  // 데이터 새로고침 함수 - 캐시 추가
   const refreshData = useCallback(async () => {
-    // ⭐️ 인증 확인 추가
     if (!user || !accessToken) {
       return false;
     }
 
+    setIsLoading(true);
     try {
-      // 백엔드 API 시도
       const backendData = await loadReservations();
       setReservations(backendData);
+      setIsLoading(false);
       return true;
     } catch (error) {
-      // JWT 토큰 관련 에러인 경우 재로그인 유도
       if (
         error.message.includes('401') ||
         error.message.includes('JWT_INVALID')
@@ -72,7 +86,6 @@ const UserReservationList = () => {
         return false;
       }
 
-      // 백엔드 실패 시 로컬 스토어 사용
       const localData = getAllReservations();
       setReservations({
         pending: localData.pending || [],
@@ -80,18 +93,28 @@ const UserReservationList = () => {
         visited: localData.visited || [],
         cancelled: localData.cancelled || [],
       });
+      setIsLoading(false);
       return false;
     }
   }, [loadReservations, getAllReservations, user, accessToken, navigate]);
 
-  // 예약 데이터 로드 - 단순화된 로직
+  // 예약 데이터 로드 - 최적화된 로직
   useEffect(() => {
-    if (!user || !accessToken) {
-      return;
-    }
+    let isMounted = true;
 
-    // API 데이터 로드
-    refreshData();
+    const loadData = async () => {
+      if (!user || !accessToken) return;
+
+      if (isMounted) {
+        await refreshData();
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, accessToken, refreshData]);
 
   // 탭 변경 시 페이지 초기화
@@ -221,7 +244,7 @@ const UserReservationList = () => {
     const endIndex = startIndex + itemsPerPage;
 
     return allReservations.slice(startIndex, endIndex);
-  }, [reservations, activeTab, currentPage]);
+  }, [reservations, activeTab, currentPage, itemsPerPage]);
 
   // ⭐️ 페이징 정보 계산
   const getPaginationInfo = useMemo(() => {
@@ -237,7 +260,7 @@ const UserReservationList = () => {
       hasNext: currentPageNum < totalPages,
       hasPrevious: currentPageNum > 1,
     };
-  }, [reservations, activeTab, currentPage]);
+  }, [reservations, activeTab, currentPage, itemsPerPage]);
 
   // ⭐️ 페이지 변경 핸들러
   const handlePageChange = useCallback(
@@ -251,10 +274,25 @@ const UserReservationList = () => {
   );
 
   return (
-    <div className="user-reservation-list-page">
-      <Header />
-      <div className="page-content-wrapper">
-        <div className="reservation-list-container">
+    <div className="min-h-screen bg-gray-100">
+      <div
+        className="w-full bg-white min-h-screen flex flex-col"
+        style={{
+          maxWidth: '512px',
+          margin: '0 auto',
+          position: 'relative',
+        }}
+      >
+        <Header />
+
+        <main
+          className="px-6 py-6 flex-1"
+          style={{
+            paddingBottom: '70px',
+            paddingTop: '80px',
+            minHeight: 'calc(100vh - 150px)', // 헤더(80px)와 푸터(70px) 높이를 제외한 최소 높이
+          }}
+        >
           {/* 탭 네비게이션 */}
           <div className="tab-navigation">
             {getTabData.map((tab) => (
@@ -273,37 +311,42 @@ const UserReservationList = () => {
 
           {/* 탭 콘텐츠 */}
           <div className="tab-content">
-            <div className="reservation-cards">
-              {(() => {
-                const currentReservations = getCurrentTabReservations;
+            {isLoading ? (
+              <LoadingSpinner />
+            ) : (
+              <div className="reservation-cards">
+                {(() => {
+                  const currentReservations = getCurrentTabReservations;
 
-                if (currentReservations.length > 0) {
-                  return currentReservations.map((reservation) => (
-                    <ReservationCard
-                      key={reservation.id}
-                      reservation={reservation}
-                    />
-                  ));
-                } else {
-                  return (
-                    <div className="empty-state">
-                      <p>
-                        {activeTab === 'pending' &&
-                          '예약중인 서비스가 없습니다.'}
-                        {activeTab === 'completed' &&
-                          '예약 완료된 서비스가 없습니다.'}
-                        {activeTab === 'visited' &&
-                          '방문 완료된 서비스가 없습니다.'}
-                        {activeTab === 'cancelled' && '취소된 예약이 없습니다.'}
-                      </p>
-                    </div>
-                  );
-                }
-              })()}
-            </div>
+                  if (currentReservations.length > 0) {
+                    return currentReservations.map((reservation) => (
+                      <ReservationCard
+                        key={reservation.id}
+                        reservation={reservation}
+                      />
+                    ));
+                  } else {
+                    return (
+                      <div className="empty-state">
+                        <p>
+                          {activeTab === 'pending' &&
+                            '예약중인 서비스가 없습니다.'}
+                          {activeTab === 'completed' &&
+                            '예약 완료된 서비스가 없습니다.'}
+                          {activeTab === 'visited' &&
+                            '방문 완료된 서비스가 없습니다.'}
+                          {activeTab === 'cancelled' &&
+                            '취소된 예약이 없습니다.'}
+                        </p>
+                      </div>
+                    );
+                  }
+                })()}
+              </div>
+            )}
 
             {/* ⭐️ 페이지네이션 */}
-            {getPaginationInfo.totalPages > 1 && (
+            {!isLoading && getPaginationInfo.totalPages > 1 && (
               <div className="pagination">
                 <button
                   className="pagination-btn"
@@ -316,7 +359,7 @@ const UserReservationList = () => {
                 </button>
 
                 <div className="pagination-info">
-                  <span className="page-numbers">
+                  <div className="page-numbers">
                     {Array.from(
                       { length: getPaginationInfo.totalPages },
                       (_, index) => (
@@ -329,7 +372,7 @@ const UserReservationList = () => {
                         </button>
                       )
                     )}
-                  </span>
+                  </div>
                 </div>
 
                 <button
@@ -344,9 +387,10 @@ const UserReservationList = () => {
               </div>
             )}
           </div>
-        </div>
+        </main>
+
+        <Footer current="/customer/reservations" />
       </div>
-      <Footer current="/customer/reservations" />
     </div>
   );
 };

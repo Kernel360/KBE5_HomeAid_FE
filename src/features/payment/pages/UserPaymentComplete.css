@@ -2,9 +2,12 @@
   position: relative;
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: #f3f4f6;
+  background-color: #ffffff;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  max-width: 512px;
+  margin: 0 auto;
 }
 
 /* Header가 추가된 페이지의 콘텐츠 래퍼 */
@@ -20,27 +23,21 @@
   margin: 0 auto;
 }
 
-/* Header 강제 중앙 정렬 - 더 구체적인 선택자들 */
-.payment-complete-page header,
-.payment-complete-page > header,
-.payment-complete-page header[class],
-.payment-complete-page header[class*='fixed'],
-.payment-complete-page header[class*='left-1/2'] {
+/* Header 강제 중앙 정렬 */
+.payment-complete-page header {
   position: fixed !important;
   top: 0 !important;
   left: 50% !important;
-  right: auto !important;
   transform: translateX(-50%) !important;
-  z-index: 50 !important;
   width: 100% !important;
   max-width: 512px !important;
+  height: 64px !important;
   background-color: white !important;
-  border-bottom: 1px solid #e9ecef !important;
-  box-shadow: none !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
+  z-index: 100 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 16px !important;
 }
 
 /* Footer 강제 중앙 정렬 */
@@ -49,7 +46,6 @@
   bottom: 0 !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  z-index: 50 !important;
   width: 100% !important;
   max-width: 512px !important;
   background-color: white !important;
@@ -93,7 +89,7 @@ html {
 
 .payment-complete-container {
   width: 100%;
-  max-width: 512px; /* 헤더 너비에 맞춤 */
+  max-width: 512px;
   background-color: white;
   padding: 0 20px 24px 20px;
   border-radius: 12px;

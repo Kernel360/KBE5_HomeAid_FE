@@ -3,39 +3,20 @@
   position: relative;
   width: 100%;
   min-height: 100vh;
-  background-color: #f3f4f6;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start !important;
+  max-width: 512px;
+  margin: 0 auto;
 }
 
-/* Header 스타일링 - 중앙 상단 고정 - 더 구체적인 선택자 */
-.manager-matching-list-page > header {
-  position: fixed !important;
-  top: 0 !important;
-  z-index: 100 !important;
-  width: 100% !important;
-  max-width: 480px !important;
-  margin-left: calc(50% - 240px) !important;
-  background-color: white !important;
-  height: 56px !important;
-  display: flex !important;
-  align-items: center !important;
-  border-bottom: 1px solid #e5e7eb !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  padding: 0 16px !important;
-  left: auto !important;
-  right: auto !important;
-  transform: none !important;
-}
-
-/* 강제로 모든 헤더 요소에 중앙 정렬 적용 */
+/* 헤더 스타일링 - 중앙 상단 고정 */
 .manager-matching-list-page header {
   position: fixed !important;
   top: 0 !important;
   left: 50% !important;
-  right: auto !important;
   transform: translateX(-50%) !important;
   width: 100% !important;
   max-width: 512px !important;
@@ -47,9 +28,6 @@
   align-items: center !important;
   justify-content: space-between !important;
   padding: 0 20px !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
 }
 
 /* 헤더 내부 버튼 스타일 강화 */
@@ -88,7 +66,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 512px; /* 헤더 사이즈에 맞춤 */
+  max-width: 512px;
   height: 84px;
   background-color: white;
   z-index: 1000;
@@ -99,11 +77,11 @@
 /* 콘텐츠 영역 - 헤더 사이즈에 맞춤 */
 .page-content-wrapper {
   width: 100%;
-  max-width: 512px; /* 헤더와 동일한 최대 너비 */
+  max-width: 512px;
   margin: 0 auto;
   background-color: white;
-  margin-top: 64px; /* 헤더 높이만큼 마진 */
-  margin-bottom: 84px; /* 푸터 높이만큼 마진 */
+  padding-top: 84px; /* 헤더 높이 + 여백 */
+  padding-bottom: 100px; /* 푸터 높이 + 여백 */
   min-height: calc(100vh - 148px); /* 헤더 + 푸터 높이 제외 */
 }
 
@@ -127,21 +105,25 @@
   display: flex;
   background-color: #f8f9fa;
   border-radius: 8px;
-  padding: 4px;
+  padding: 3px;
   margin-bottom: 20px;
+  width: 100%;
+  overflow: hidden;
 }
 
 .tab-button {
   flex: 1;
-  padding: 10px 12px;
+  padding: 6px 4px;
   border: none;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   background-color: transparent;
   color: #6c757d;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .tab-button.active {
@@ -352,9 +334,32 @@
 }
 
 /* 모바일 반응형 */
-@media (max-width: 576px) {
+@media (max-width: 512px) {
+  .manager-matching-list-page {
+    width: 100%;
+  }
+
+  .page-content-wrapper {
+    padding-top: 84px;
+    padding-bottom: 100px;
+  }
+
   .manager-matching-list-container {
-    padding: 76px 16px 104px;
+    padding: 16px;
+  }
+
+  .manager-matching-list-page header {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 512px !important;
+  }
+
+  .manager-matching-list-page footer {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 512px;
   }
 
   .page-title {
@@ -438,7 +443,6 @@
   width: 90%;
   max-width: 400px;
   max-height: 80vh;
-  overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -671,11 +675,7 @@
   background-color: #3367d6;
 }
 
-/* 모바일에서 헤더 중앙 정렬 */
+/* 모바일에서 헤더 중앙 정렬 - 이전 스타일 제거 */
 @media (max-width: 576px) {
-  .manager-matching-list-page header[class] {
-    margin-left: calc(50vw - 256px) !important; /* 뷰포트 기준으로 계산 */
-    width: 100% !important;
-    max-width: 512px !important;
-  }
+  /* 이 미디어 쿼리 전체 삭제 */
 }

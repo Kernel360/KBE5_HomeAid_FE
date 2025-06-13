@@ -1,11 +1,13 @@
 import { ArrowLeft, Search, Plus } from 'lucide-react';
-import Footer from '../../../../components/Footer.jsx';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Assuming axios is installed
+import axios from 'axios';
 import Header from '../../../../components/Header.jsx';
+import Footer from '../../../../components/Footer.jsx';
 
 // 문의 게시판 페이지
-const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
+const InquiryBoard = () => {
+  const navigate = useNavigate();
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,17 +20,13 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
     setLoading(true);
     setError(null);
     try {
-      // Assuming a base URL for the API
       const response = await axios.get('/api/v1/boards', {
         params: {
           keyword: keyword,
           page: page,
-          size: 10, // Assuming 10 items per page
+          size: 10,
           sortBy: 'createdAt',
           sortDirection: 'desc',
-          // Backend API currently does not support filtering by isAnswered.
-          // If needed, this would require backend modification or client-side filtering.
-          // For now, the filter buttons are purely for UI.
         },
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
@@ -46,22 +44,28 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
 
   useEffect(() => {
     fetchInquiries();
-  }, [keyword, page, activeFilter]); // Refetch when keyword, page, or activeFilter changes
+  }, [keyword, page, activeFilter]);
 
   const handleSearchChange = (e) => {
     setKeyword(e.target.value);
-    setPage(0); // Reset to first page on new search
+    setPage(0);
   };
 
   const handleFilterClick = (filter) => {
     setActiveFilter(filter);
-    setPage(0); // Reset page on filter change
+    setPage(0);
+  };
+
+  const handleBack = () => {
+    navigate('/manager/mypage');
+  };
+
+  const handleCreateInquiry = () => {
+    navigate('/manager/mypage/inquiry/create');
   };
 
   const handleInquiryClick = (id) => {
-    if (onNavigateToDetail) {
-      onNavigateToDetail(id);
-    }
+    navigate(`/manager/mypage/inquiry/${id}`);
   };
 
   // Helper function to format date
@@ -75,14 +79,14 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
 
   return (
     <div
-      className="min-h-screen bg-white"
+      className="min-h-screen bg-gray-50"
       style={{
         paddingBottom: '80px',
         maxWidth: '512px',
         margin: '0 auto',
       }}
     >
-      <Header showBackButton={true} onBackClick={onBack} />
+      <Header showBackButton={true} onBackClick={handleBack} />
 
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
         {/* 페이지 제목과 설명 */}
@@ -107,7 +111,7 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
             />
           </div>
           <button
-            onClick={onNavigateToCreate}
+            onClick={handleCreateInquiry}
             className="bg-blue-600 text-black flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md"
             style={{ height: '40px', minWidth: '90px' }}
           >
@@ -153,17 +157,15 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
           </button>
         </div>
 
-        {/* {loading && <p className="text-center text-gray-600">불러오는 중...</p>} */}
         {error && <p className="text-center text-red-500">{error}</p>}
         {!loading && !error && inquiries.length === 0 && (
           <p className="text-center text-gray-600">문의글이 없습니다.</p>
         )}
 
-        {/* Inquiry List (Figma Posts) */}
+        {/* Inquiry List */}
         <div className="space-y-3">
           {inquiries
             .filter((inquiry) => {
-              // Client-side filtering based on activeFilter for UI purposes
               if (activeFilter === 'all') return true;
               if (activeFilter === 'waiting') return !inquiry.isAnswered;
               if (activeFilter === 'completed') return inquiry.isAnswered;
@@ -172,7 +174,7 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
             .map((inquiry) => (
               <div
                 key={inquiry.id}
-                className="bg-gray-50 rounded-lg p-4 shadow-sm cursor-pointer border border-gray-100 hover:bg-gray-100 hover:border-gray-200 transition-all duration-200" // fill_B02V81, stroke_EHRQHW, borderRadius: 8px, padding: 16px, shadow-sm
+                className="bg-gray-50 rounded-lg p-4 shadow-sm cursor-pointer border border-gray-100 hover:bg-gray-100 hover:border-gray-200 transition-all duration-200"
                 onClick={() => handleInquiryClick(inquiry.id)}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -182,8 +184,8 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       inquiry.isAnswered
-                        ? 'bg-green-100 text-green-700' // fill_MOA2B6, fill_E8KKCL
-                        : 'bg-amber-100 text-amber-700' // fill_5XO40Y, fill_SYTTLO
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-amber-100 text-amber-700'
                     }`}
                   >
                     {inquiry.isAnswered ? '답변 완료' : '답변 대기'}
@@ -224,7 +226,7 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
         )}
       </main>
 
-      <Footer current="/customer/mypage" />
+      <Footer current="/manager/mypage" />
     </div>
   );
 };

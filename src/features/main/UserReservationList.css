@@ -1,23 +1,27 @@
 /* Page wrapper */
 .user-reservation-list-page {
   min-height: 100vh;
-  background-color: #f3f4f6;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-width: 512px;
+  margin: 0 auto;
+  overflow-x: hidden;
 }
 
 /* 콘텐츠 래퍼 - 헤더와 푸터 사이에 위치 */
 .page-content-wrapper {
   width: 100%;
-  max-width: 512px; /* 헤더/푸터와 동일한 너비 */
+  max-width: 512px;
   box-sizing: border-box;
   padding: 20px 16px;
   margin-top: 56px; /* Header 높이 */
   margin-bottom: 64px; /* Footer 높이 */
-  flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: visible;
+  flex: 1;
 }
 
 /* 메인 컨테이너 */
@@ -27,10 +31,10 @@
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: visible;
+  flex: 1;
 }
 
 /* 새로고침 버튼 */
@@ -56,6 +60,7 @@
   flex-direction: column;
   gap: 12px;
   flex: 1;
+  min-height: 0; /* 내용이 넘칠 때 스크롤 가능하도록 */
 }
 
 /* 예약 카드 */
@@ -246,79 +251,37 @@
   overflow-x: auto;
 }
 
-/* ⭐️ 모든 상태에서 색상 고정 - 최고 우선순위 */
-.reservation-list-container .tab-navigation .tab-button,
-.reservation-list-container .tab-navigation button.tab-button,
-button.tab-button {
-  flex: 1 !important;
-  background: none !important;
-  background-color: transparent !important;
-  border: none !important;
-  padding: 16px 8px !important;
-  cursor: pointer !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  color: #666 !important;
-  border-bottom: 2px solid transparent !important;
-  transition: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 4px !important;
-  min-width: 90px !important;
-  outline: none !important;
-  box-shadow: none !important;
+.tab-button {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 16px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 90px;
 }
 
-.reservation-list-container .tab-navigation .tab-button:hover,
-.reservation-list-container .tab-navigation .tab-button:active,
-.reservation-list-container .tab-navigation .tab-button:focus,
-.reservation-list-container .tab-navigation .tab-button:visited,
-.reservation-list-container .tab-navigation button.tab-button:hover,
-.reservation-list-container .tab-navigation button.tab-button:active,
-.reservation-list-container .tab-navigation button.tab-button:focus,
-.reservation-list-container .tab-navigation button.tab-button:visited,
-button.tab-button:hover,
-button.tab-button:active,
-button.tab-button:focus,
-button.tab-button:visited {
-  color: #666 !important;
-  background: none !important;
-  background-color: transparent !important;
-  outline: none !important;
-  transform: none !important;
-  box-shadow: none !important;
-  border-color: transparent !important;
+.tab-button:hover {
+  color: #4285f4;
+  background-color: transparent;
 }
 
-/* ⭐️ active 상태만 파란색 유지 */
-.reservation-list-container .tab-navigation .tab-button.active,
-.reservation-list-container .tab-navigation button.tab-button.active,
-button.tab-button.active {
-  color: #4285f4 !important;
-  border-bottom-color: #4285f4 !important;
-  background: none !important;
-  background-color: transparent !important;
+.tab-button.active {
+  color: #4285f4;
+  border-bottom-color: #4285f4;
+  background-color: transparent;
 }
 
-.reservation-list-container .tab-navigation .tab-button.active:hover,
-.reservation-list-container .tab-navigation .tab-button.active:active,
-.reservation-list-container .tab-navigation .tab-button.active:focus,
-.reservation-list-container .tab-navigation .tab-button.active:visited,
-.reservation-list-container .tab-navigation button.tab-button.active:hover,
-.reservation-list-container .tab-navigation button.tab-button.active:active,
-.reservation-list-container .tab-navigation button.tab-button.active:focus,
-.reservation-list-container .tab-navigation button.tab-button.active:visited,
-button.tab-button.active:hover,
-button.tab-button.active:active,
-button.tab-button.active:focus,
-button.tab-button.active:visited {
-  color: #4285f4 !important;
-  background: none !important;
-  background-color: transparent !important;
-  outline: none !important;
-  transform: none !important;
-  box-shadow: none !important;
+.tab-button.active:hover {
+  background-color: transparent;
 }
 
 .tab-label {
@@ -374,6 +337,7 @@ button.tab-button.active:visited {
   gap: 16px;
   margin-top: 24px;
   padding: 16px 0;
+  width: 100%;
 }
 
 .pagination-btn {
@@ -385,6 +349,8 @@ button.tab-button.active:visited {
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
+  min-width: 60px;
+  text-align: center;
 }
 
 .pagination-btn:hover:not(:disabled) {
@@ -513,5 +479,38 @@ button.tab-button.active:visited {
     padding: 6px 10px;
     font-size: 12px;
     min-width: 32px;
+  }
+}
+
+/* 로딩 스피너 */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #4285f4;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.loading-spinner p {
+  color: #666;
+  font-size: 14px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }

@@ -1,40 +1,48 @@
 /* Page wrapper for footer positioning */
-.user-service-request-page {
+.reservation-page {
   position: relative;
   min-height: 100vh;
   overflow-x: hidden; /* 가로 스크롤 방지 */
-  background-color: #f3f4f6; /* bg-gray-100 배경색 */
+  background-color: #ffffff; /* bg-gray-100 배경색 */
+  display: flex;
+  flex-direction: column;
+  max-width: 512px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Header가 추가된 페이지의 콘텐츠 래퍼 */
 .page-content-wrapper {
-  min-height: calc(100vh - 56px); /* Header 높이(56px)를 제외 */
+  min-height: calc(100vh - 64px); /* Header 높이(64px)를 제외 */
   padding: 16px;
-  padding-top: 56px; /* Header 높이와 정확히 동일 */
+  padding-top: 64px; /* Header 높이와 정확히 동일 */
   display: block; /* flex에서 block으로 변경 */
   width: 100%;
+  max-width: 512px;
+  margin: 0 auto;
   box-sizing: border-box;
 }
 
 /* Header 스타일 조정 */
-.user-service-request-page header {
+.reservation-page header {
   position: fixed;
   top: 0;
   z-index: 100;
   width: 100%;
-  max-width: 480px;
-  margin-left: calc(50% - 240px);
+  max-width: 512px;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: white;
-  height: 56px;
+  height: 64px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
   padding: 0 16px;
 }
 
 /* 헤더 내부 버튼 스타일 강화 */
-.user-service-request-page header button {
+.reservation-page header button {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -48,12 +56,12 @@
   transition: background-color 0.2s ease !important;
 }
 
-.user-service-request-page header button:hover {
+.reservation-page header button:hover {
   background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
 /* 헤더 화살표 아이콘 스타일 강화 */
-.user-service-request-page header button svg {
+.reservation-page header button svg {
   width: 24px !important;
   height: 24px !important;
   color: #000000 !important;
@@ -62,14 +70,14 @@
   display: block !important;
 }
 
-.user-service-request-page .footer-container {
+/* Footer 스타일링 - Footer 컴포넌트 사용 */
+.reservation-page footer {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
-  max-width: 480px;
-  margin-left: calc(50% - 240px); /* 중앙 정렬 대신 고정 위치 */
+  max-width: 512px;
   z-index: 1000;
   background-color: white;
   border-top: 1px solid #e9ecef;
@@ -82,21 +90,23 @@ html {
 }
 
 /* 메인 컨테이너 */
-.user-service-request-container,
+.reservation-container,
 .address-modal-container {
   width: 100%;
-  max-width: 480px;
+  max-width: 512px;
   background-color: white;
   padding: 0 20px; /* 상단 패딩 제거 */
-  padding-bottom: 30px; /* Footer 높이 + 여유 공간 (84px + 36px) */
+  padding-bottom: 120px; /* Footer 높이 + 여유 공간 (84px + 36px) */
   font-family: sans-serif;
   box-sizing: border-box;
   min-height: calc(
     100vh - 172px
-  ); /* Header(56px) + Footer(84px) + 패딩(32px) */
+  ); /* Header(64px) + Footer(84px) + 패딩(24px) */
   position: relative;
   z-index: 1; /* Footer보다 낮은 z-index */
   margin: 0 auto; /* 중앙 정렬 */
+  border-radius: 12px;
+  margin-top: 0; /* marginTop을 style로 처리하므로 기본값은 0 */
 }
 
 /* 제목 섹션 */
@@ -562,35 +572,43 @@ html {
 }
 
 /* 모바일 반응형 - 작은 화면에서는 중앙 정렬로 복귀 */
-@media (max-width: 768px) {
-  .user-service-request-page header {
-    margin: 0 auto;
+@media (max-width: 512px) {
+  .reservation-page {
+    max-width: 100%;
   }
 
-  .user-service-request-page .footer-container {
-    margin: 0 auto;
+  .reservation-page header {
+    max-width: 100%;
+    left: 0;
+    transform: none;
   }
 
-  .user-service-request-container,
+  .reservation-page footer {
+    max-width: 100%;
+    left: 0;
+    transform: none;
+  }
+
+  .reservation-container,
   .address-modal-container {
-    margin: 0 auto;
+    max-width: 100%;
   }
 }
 
 @media (max-width: 576px) {
   .page-content-wrapper {
     padding: 12px;
-    padding-top: 0;
-    min-height: calc(100vh - 56px);
+    padding-top: 64px;
+    min-height: calc(100vh - 64px);
   }
 
-  .user-service-request-container,
+  .reservation-container,
   .address-modal-container {
     padding: 20px 16px;
     padding-bottom: 110px; /* 모바일에서 Footer 높이 + 여유 공간 */
     min-height: calc(
       100vh - 156px
-    ); /* Header(56px) + Footer(76px) + 패딩(24px) */
+    ); /* Header(64px) + Footer(76px) + 패딩(16px) */
   }
 
   .page-title {
@@ -650,14 +668,14 @@ html {
 @media (max-width: 360px) {
   .page-content-wrapper {
     padding: 8px;
-    padding-top: 0;
+    padding-top: 64px;
   }
 
-  .user-service-request-container,
+  .reservation-container,
   .address-modal-container {
     min-height: calc(
-      100vh - 140px
-    ); /* Header(56px) + Footer(76px) + 패딩(8px) */
+      100vh - 148px
+    ); /* Header(64px) + Footer(76px) + 패딩(8px) */
   }
 
   .service-type-options,
@@ -756,4 +774,136 @@ html {
   font-size: 18px;
   font-weight: 700;
   color: #4285f4;
+}
+
+/* 서비스 이용하기 버튼 섹션 */
+.service-button-section {
+  margin-bottom: 32px;
+}
+
+.service-button {
+  width: 100%;
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 20px 24px;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.service-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+/* 공지사항 섹션 */
+.notice-section {
+  margin-bottom: 32px;
+}
+
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notice-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notice-item:hover {
+  background-color: #f1f3f5;
+  transform: translateY(-1px);
+}
+
+.notice-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notice-badge {
+  background-color: #ff4d4f;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.notice-title {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.notice-date {
+  font-size: 12px;
+  color: #666;
+}
+
+/* 이벤트 섹션 */
+.event-section {
+  margin-bottom: 32px;
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.event-item:hover {
+  background-color: #f1f3f5;
+  transform: translateY(-1px);
+}
+
+.event-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-badge {
+  background-color: #4f46e5;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.event-title {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.event-period {
+  font-size: 12px;
+  color: #666;
 }
