@@ -105,21 +105,25 @@
   display: flex;
   background-color: #f8f9fa;
   border-radius: 8px;
-  padding: 4px;
+  padding: 3px;
   margin-bottom: 20px;
+  width: 100%;
+  overflow: hidden;
 }
 
 .tab-button {
   flex: 1;
-  padding: 10px 12px;
+  padding: 6px 4px;
   border: none;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   background-color: transparent;
   color: #6c757d;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .tab-button.active {
