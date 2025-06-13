@@ -277,6 +277,14 @@ export default function ManagerMypage() {
             </button>
 
             <button
+              onClick={() => navigate('/manager/additional-info')}
+              className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-gray-900">매칭 정보 입력</span>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+
+            <button
               onClick={() => navigate('/manager/address')}
               className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
             >
