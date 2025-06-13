@@ -32,7 +32,7 @@ const ManagerMatchingList = () => {
   const [pageSize] = useState(10);
 
   // 탭 정의 (백엔드 상태에 맞게 수정)
-  const tabs = ['전체', '매칭 대기', '고객 응답 대기', '매칭 완료', '거절됨'];
+  const tabs = ['전체', '매칭 대기', '응답 대기', '매칭 완료', '거절'];
 
   // 백엔드 상태를 탭 이름으로 매핑
   const getTabNameFromStatus = (status) => {
