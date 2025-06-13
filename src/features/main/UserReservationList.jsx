@@ -264,7 +264,7 @@ const UserReservationList = () => {
 
         <main
           className="px-6 py-6 flex-1"
-          style={{ paddingBottom: '100px', paddingTop: '80px' }}
+          style={{ paddingBottom: '70px', paddingTop: '80px' }}
         >
           {/* 탭 네비게이션 */}
           <div className="tab-navigation">
