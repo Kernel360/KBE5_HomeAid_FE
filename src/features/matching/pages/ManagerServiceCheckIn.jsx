@@ -18,10 +18,10 @@ const ManagerServiceCheckIn = () => {
   const [reservation, setReservation] = useState({});
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
-  const matchingItem = useReservationStore((state) => state.matching);
+  // const matchingItem = useReservationStore((state) => state.matching);
   const [currentLocation, setCurrentLocation] = useState(null);
 
-    const { matchingRequest } = useMatchingStore();
+  const { matchingRequest } = useMatchingStore();
 
   console.log(reservationId);
   console.log('workLog State ', workLog);
@@ -42,9 +42,8 @@ const ManagerServiceCheckIn = () => {
       (position) => {
         setCurrentLocation({
           lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lng: position.coords.longitude,
         });
-
       },
       (error) => {
         console.error('위치 정보 에러:', error);
@@ -58,14 +57,15 @@ const ManagerServiceCheckIn = () => {
   }, []);
 
   const fetchReservation = async () => {
-    const response = await apiService.reservation.getById(matchingRequest.reservationId);
+    const response = await apiService.reservation.getById(
+      matchingRequest.reservationId
+    );
     console.log('fetchReservation back data', response.data.data);
-    setReservation(response.data.data)
-  }
+    setReservation(response.data.data);
+  };
   useEffect(() => {
     fetchReservation();
   }, []);
-
 
   const toggleCheckInModal = () => {
     setShowCheckInModal(!showCheckInModal);
@@ -75,7 +75,6 @@ const ManagerServiceCheckIn = () => {
     setShowCheckOutModal(!showCheckOutModal);
   };
 
-
   const handleCheckIn = () => {
     if (!currentLocation) {
       alert('위치 정보를 가져오는 중입니다. 잠시만 기다려주세요.');
@@ -83,7 +82,7 @@ const ManagerServiceCheckIn = () => {
     }
     console.log('현재 위치 정보:', {
       위도: currentLocation.lat,
-      경도: currentLocation.lng
+      경도: currentLocation.lng,
     });
     toggleCheckInModal();
   };
@@ -95,7 +94,7 @@ const ManagerServiceCheckIn = () => {
     }
     console.log('체크아웃 위치 정보:', {
       위도: currentLocation.lat,
-      경도: currentLocation.lng
+      경도: currentLocation.lng,
     });
     toggleCheckOutModal();
   };
@@ -109,13 +108,14 @@ const ManagerServiceCheckIn = () => {
       const requestData = {
         lat: currentLocation.lat,
         lng: currentLocation.lng,
-        reservationId: matchingRequest.reservationId
-      }
+        reservationId: matchingRequest.reservationId,
+        workType: 'CHECKIN',
+      };
 
       console.log('체크인 요청 데이터:', requestData);
       const response = await apiService.workLog.checkIn(requestData);
-      console.log('체크인 결과 데이터', response.data.data)
-      reservationStore.setWorkLog(response.data.data)
+      console.log('체크인 결과 데이터', response.data.data);
+      reservationStore.setWorkLog(response.data.data);
       toggleCheckInModal();
     } catch (error) {
       console.error('체크인 실패:', error);
@@ -132,17 +132,20 @@ const ManagerServiceCheckIn = () => {
 
       const requestData = {
         lat: currentLocation.lat,
-        lng: currentLocation.lng
-      }
+        lng: currentLocation.lng,
+      };
 
       console.log('체크아웃 요청 데이터:', requestData);
-      const response = await apiService.workLog.checkOut(matchingRequest.reservationId, requestData);
+      const response = await apiService.workLog.checkOut(
+        matchingRequest.reservationId,
+        requestData
+      );
       console.log('체크아웃 결과 데이터', response.data);
-      
+
       if (response.data.success) {
         reservationStore.setWorkLog({
           ...workLog,
-          workType: 'CHECKOUT'
+          workType: 'CHECKOUT',
         });
         alert('체크아웃이 완료되었습니다.');
       }
@@ -155,13 +158,11 @@ const ManagerServiceCheckIn = () => {
   };
 
   const cancelCheckIn = () => {
-    setShowCheckInModal(false);  // ✅ false로 닫기
-
+    setShowCheckInModal(false); // ✅ false로 닫기
   };
 
   const cancelCheckOut = () => {
     setShowCheckOutModal(false); // ✅ false로 닫기
-
   };
 
   // TODO: 파일 업로드 기능 구현 예정
@@ -261,13 +262,13 @@ const ManagerServiceCheckIn = () => {
               </div>
               <div className="detail-item">
                 <span className="label">예상 소요시간</span>
-                <span className="value">
-                  {reservation.totalDuration} 시간
-                </span>
+                <span className="value">{reservation.totalDuration} 시간</span>
               </div>
               <div className="detail-item">
                 <span className="label">주소</span>
-                <span className="value">{reservation.address} {reservation.addressDetail}</span>
+                <span className="value">
+                  {reservation.address} {reservation.addressDetail}
+                </span>
               </div>
             </div>
 
@@ -353,7 +354,8 @@ const ManagerServiceCheckIn = () => {
                 onClick={handleCheckIn}
                 disabled={workLog.workType === 'CHECKIN'}
                 style={{
-                  backgroundColor: workLog.workType === 'CHECKIN' ? '#e0e0e0' : '#4caf50',
+                  backgroundColor:
+                    workLog.workType === 'CHECKIN' ? '#e0e0e0' : '#4caf50',
                   color: workLog.workType === 'CHECKIN' ? '#9e9e9e' : 'white',
                 }}
               >
@@ -365,7 +367,8 @@ const ManagerServiceCheckIn = () => {
                 onClick={handleCheckOut}
                 disabled={workLog.workType === 'CHECKOUT'}
                 style={{
-                  backgroundColor: workLog.workType === 'CHECKOUT' ? '#e0e0e0' : '#4caf50',
+                  backgroundColor:
+                    workLog.workType === 'CHECKOUT' ? '#e0e0e0' : '#4caf50',
                   color: workLog.workType === 'CHECKOUT' ? '#9e9e9e' : 'white',
                 }}
               >
@@ -426,7 +429,7 @@ const ManagerServiceCheckIn = () => {
                   <button
                     onClick={confirmCheckIn}
                     className="confirm-button"
-                  // disabled={loading}
+                    // disabled={loading}
                   >
                     {/* {true ? '처리 중...' : '확인'} */}
                     확인
@@ -449,7 +452,7 @@ const ManagerServiceCheckIn = () => {
                   <button
                     onClick={confirmCheckOut}
                     className="confirm-button"
-                  // disabled={loading}
+                    // disabled={loading}
                   >
                     {/* {true ? '처리 중...' : '체크아웃'} */}
                     체크아웃
