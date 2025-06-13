@@ -5,19 +5,22 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-width: 512px;
+  margin: 0 auto;
+  overflow-x: hidden;
 }
 
 /* 콘텐츠 래퍼 - 헤더와 푸터 사이에 위치 */
 .page-content-wrapper {
   width: 100%;
-  max-width: 512px; /* 헤더/푸터와 동일한 너비 */
+  max-width: 512px;
   box-sizing: border-box;
   padding: 20px 16px;
   margin-top: 56px; /* Header 높이 */
   margin-bottom: 64px; /* Footer 높이 */
-  flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 /* 메인 컨테이너 */
@@ -27,10 +30,9 @@
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 /* 새로고침 버튼 */

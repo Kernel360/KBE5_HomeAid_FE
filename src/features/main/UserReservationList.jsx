@@ -263,7 +263,7 @@ const UserReservationList = () => {
         <Header />
 
         <main
-          className="px-6 py-6 flex-1 overflow-y-auto"
+          className="px-6 py-6 flex-1"
           style={{ paddingBottom: '100px', paddingTop: '80px' }}
         >
           {/* 탭 네비게이션 */}

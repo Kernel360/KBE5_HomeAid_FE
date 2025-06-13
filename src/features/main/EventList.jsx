@@ -24,7 +24,7 @@ const EventList = () => {
       period: '2025.10.01 ~ 2025.10.31',
       image: '🌸',
       status: 'ongoing',
-      isNew: false,
+      isNew: true,
     },
     {
       id: 3,

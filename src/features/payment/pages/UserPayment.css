@@ -1,76 +1,44 @@
-/* Page wrapper for footer positioning */
+/* Page wrapper */
 .user-payment-page {
   position: relative;
   min-height: 100vh;
-  overflow-x: hidden; /* 가로 스크롤 방지 */
-  background-color: #f3f4f6; /* bg-gray-100 배경색 */
+  overflow-x: hidden;
+  background-color: #ffffff;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  max-width: 512px;
+  margin: 0 auto;
 }
 
 /* Header가 추가된 페이지의 콘텐츠 래퍼 */
 .page-content-wrapper {
   width: 100%;
-  max-width: 512px; /* 헤더 너비에 맞춤 */
+  max-width: 512px;
   box-sizing: border-box;
   padding-top: 80px; /* Header 높이 + 여백 */
   padding-bottom: 100px; /* Footer 높이 + 여백 */
   padding-left: 16px;
   padding-right: 16px;
   min-height: 100vh;
-  margin: 0 auto; /* 중앙 정렬 */
+  margin: 0 auto;
 }
 
-/* Header 강제 중앙 정렬 - 더 구체적인 선택자들 */
-.user-payment-page header,
-.user-payment-page > header,
-.user-payment-page header[class],
-.user-payment-page header[class*='fixed'],
-.user-payment-page header[class*='left-1/2'] {
+/* Header 강제 중앙 정렬 */
+.user-payment-page header {
   position: fixed !important;
   top: 0 !important;
   left: 50% !important;
-  right: auto !important;
   transform: translateX(-50%) !important;
-  z-index: 50 !important;
   width: 100% !important;
   max-width: 512px !important;
+  height: 64px !important;
   background-color: white !important;
-  border-bottom: 1px solid #e9ecef !important;
-  box-shadow: none !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-}
-
-/* 헤더 내부 버튼 스타일 강화 */
-.user-payment-page header button {
+  z-index: 100 !important;
+  border-bottom: 1px solid #e5e7eb !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
-  width: 40px !important;
-  height: 40px !important;
-  padding: 8px !important;
-  border: none !important;
-  background: transparent !important;
-  border-radius: 50% !important;
-  cursor: pointer !important;
-  transition: background-color 0.2s ease !important;
-}
-
-.user-payment-page header button:hover {
-  background-color: rgba(0, 0, 0, 0.05) !important;
-}
-
-/* 헤더 화살표 아이콘 스타일 강화 */
-.user-payment-page header button svg {
-  width: 24px !important;
-  height: 24px !important;
-  color: #000000 !important;
-  stroke: #000000 !important;
-  stroke-width: 2 !important;
-  display: block !important;
+  padding: 0 16px !important;
 }
 
 /* Footer 강제 중앙 정렬 */
@@ -79,7 +47,6 @@
   bottom: 0 !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  z-index: 50 !important;
   width: 100% !important;
   max-width: 512px !important;
   background-color: white !important;
@@ -95,13 +62,13 @@ html {
 /* 메인 컨테이너 */
 .user-payment-container {
   width: 100%;
-  max-width: 512px; /* 헤더 너비에 맞춤 */
+  max-width: 512px;
   background-color: white;
-  padding: 0 20px 24px 20px; /* 상단 패딩 제거 */
+  padding: 0 20px 24px 20px;
   font-family: sans-serif;
   box-sizing: border-box;
   position: relative;
-  margin: 0 auto; /* 중앙 정렬 */
+  margin: 0 auto;
 }
 
 /* 제목 섹션 */
