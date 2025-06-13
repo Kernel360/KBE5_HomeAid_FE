@@ -193,6 +193,7 @@ const ManagerMatchingList = () => {
       customerRequest: matchingItem.customerRequest,
       status: MATCHING_STATUS.CONFIRMED,
       estimatedDuration: matchingItem.estimatedDuration,
+      reservationId: matchingItem.reservationId,
     });
     navigate('/matching/service-checkin');
   };
