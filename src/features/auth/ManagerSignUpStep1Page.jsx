@@ -481,16 +481,12 @@ const ManagerSignUpStep1Page = () => {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                 }}
               >
                 {showPassword ? (
-                  <EyeOff size={20} color="#6B7280" />
+                  <EyeOff size={20} color="#888" />
                 ) : (
-                  <Eye size={20} color="#6B7280" />
+                  <Eye size={20} color="#888" />
                 )}
               </button>
             </div>
@@ -538,16 +534,12 @@ const ManagerSignUpStep1Page = () => {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                 }}
               >
                 {showConfirmPassword ? (
-                  <EyeOff size={20} color="#6B7280" />
+                  <EyeOff size={20} color="#888" />
                 ) : (
-                  <Eye size={20} color="#6B7280" />
+                  <Eye size={20} color="#888" />
                 )}
               </button>
             </div>
