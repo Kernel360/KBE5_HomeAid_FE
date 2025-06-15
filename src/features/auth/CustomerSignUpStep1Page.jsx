@@ -152,7 +152,7 @@ const CustomerSignUpStep1Page = () => {
             회원 정보 등록
           </h2>
           <div style={{ fontSize: '15px', color: '#888' }}>
-            회원 정보를 입력해주세요
+          Antwork 회원으로 활동하기 위한 정보를 입력해주세요
           </div>
         </div>
 

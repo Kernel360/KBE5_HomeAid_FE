@@ -191,7 +191,7 @@ const ManagerSignUpStep1Page = () => {
             매니저 정보 등록
           </h2>
           <div style={{ fontSize: '15px', color: '#888' }}>
-            HomeAid 매니저로 활동하기 위한 정보를 입력해주세요
+            Antwork 매니저로 활동하기 위한 정보를 입력해주세요
           </div>
         </div>
 
