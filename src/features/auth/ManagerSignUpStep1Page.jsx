@@ -5,7 +5,7 @@ import { Calendar, Eye, EyeOff } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ko } from 'date-fns/locale';
-import { format, isPast } from 'date-fns'; // isPast 임포트
+import { format, isPast, isValid } from 'date-fns'; // isPast와 isValid 임포트
 import './styles/datepicker.css'; // 새로 생성한 CSS 파일 임포트
 import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
 import Header from '../../components/Header';
@@ -21,123 +21,178 @@ const validateManagerStep1Data = ({
   password,
   confirmPassword,
 }) => {
-  // 1. NotBlank/NotNull 검사
+  const errors = {};
+
+  // 이름 유효성 검사
   if (!name || name.trim() === '') {
-    return '이름은 필수 입력값입니다.';
+    errors.name = '이름은 필수 입력값입니다.';
+  } else if (name.length < 2 || name.length > 20) {
+    errors.name = '이름은 2자 이상 20자 이하여야 합니다.';
   }
-  // 전화번호에도 trim() 적용
-  const trimmedPhoneNumber = phoneNumber ? phoneNumber.trim() : '';
-  if (!trimmedPhoneNumber) {
-    return '전화번호는 필수 입력값입니다.';
-  }
+
+  // 이메일 유효성 검사
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!email || email.trim() === '') {
-    return '이메일은 필수 입력값입니다.';
+    errors.email = '이메일은 필수 입력값입니다.';
+  } else if (!emailRegex.test(email.trim())) {
+    errors.email = '유효한 이메일 주소를 입력해주세요.';
   }
-  // 이메일에도 trim() 적용
-  const trimmedEmail = email ? email.trim() : '';
-  if (!trimmedEmail) {
-    return '이메일은 필수 입력값입니다.';
+
+  // 휴대폰 번호 유효성 검사
+  const phoneRegex = /^01[016789]-(?:[0-9]{3}|[0-9]{4})-[0-9]{4}$/;
+  if (!phoneNumber || phoneNumber.trim() === '') {
+    errors.phoneNumber = '휴대폰 번호는 필수 입력값입니다.';
+  } else if (!phoneRegex.test(phoneNumber.trim())) {
+    errors.phoneNumber = '유효한 휴대폰 번호를 입력해주세요. (예: 010-1234-5678 또는 010-123-4567)';
   }
-  if (!dateOfBirth) {
-    return '생년월일은 필수 입력값입니다.';
+
+  // 생년월일 유효성 검사
+  if (!dateOfBirth || !isValid(dateOfBirth)) {
+    errors.dateOfBirth = '유효한 생년월일을 입력해주세요.';
+  } else if (!isPast(dateOfBirth)) {
+    errors.dateOfBirth = '생년월일은 과거 날짜여야 합니다.';
   }
+
+  // 성별 유효성 검사
   if (!gender || gender.trim() === '') {
-    return '성별은 필수 입력값입니다.';
+    errors.gender = '성별을 선택해주세요.';
   }
+
+  // 비밀번호 유효성 검사
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[@$!%*#?&])[A-Za-z0-9@$!%*#?&]{8,}$/;
   if (!password || password.trim() === '') {
-    return '비밀번호는 필수 입력값입니다.';
+    errors.password = '비밀번호는 필수 입력값입니다.';
+  } else if (!passwordRegex.test(password.trim())) {
+    errors.password = '비밀번호는 8자 이상, 영문자, 숫자, 특수문자를 포함해야 합니다.';
   }
+
+  // 비밀번호 확인 유효성 검사
   if (!confirmPassword || confirmPassword.trim() === '') {
-    return '비밀번호 확인은 필수 입력값입니다.';
+    errors.confirmPassword = '비밀번호 확인은 필수 입력값입니다.';
+  } else if (password !== confirmPassword) {
+    errors.confirmPassword = '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
   }
 
-  // 2. 비밀번호 일치 검사
-  if (password !== confirmPassword) {
-    return '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
-  }
-
-  // 3. 이메일 형식 검사 (@Email)
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(trimmedEmail)) {
-    return '올바른 이메일 형식이 아닙니다.';
-  }
-
-  // 4. 이름 길이 검사 (@Size)
-  if (name.length < 2 || name.length > 20) {
-    return '이름은 2자 이상 20자 이하여야 합니다.';
-  }
-
-  // 5. 전화번호 형식 검사 (@Pattern)
-  const phoneRegex = /^01[016789]-\d{3,4}-\d{4}$/;
-  if (!phoneRegex.test(trimmedPhoneNumber)) {
-    return '전화번호 형식이 올바르지 않습니다. 예: 010-1234-5678';
-  }
-
-  // 6. 생년월일 과거 날짜 검사 (@Past)
-  if (dateOfBirth && !isPast(dateOfBirth)) {
-    return '생년월일은 과거 날짜여야 합니다.';
-  }
-
-  // 7. 비밀번호 형식 검사 (@Pattern)
-  const passwordRegex =
-    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
-  if (!passwordRegex.test(password)) {
-    return '비밀번호는 8자 이상, 영문자, 숫자, 특수문자를 포함해야 합니다.';
-  }
-
-  return null; // 모든 유효성 검사 통과
+  return errors; // 모든 유효성 검사 통과
 };
 
 const ManagerSignUpStep1Page = () => {
-  const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [gender, setGender] = useState(''); // 'male' 또는 'female'
-  const [dateOfBirth, setDateOfBirth] = useState(null); // null로 초기화
-  const [email, setEmail] = useState(''); // 이메일 상태 추가
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState(''); // 에러 메시지 상태 추가
   const navigate = useNavigate();
   const datePickerRef = useRef(null); // DatePicker ref 생성
 
-  // Zustand 스토어에서 데이터 업데이트 함수 가져오기
-  const { setManagerSignUpData } = useSignUpStore();
+  // Zustand 스토어에서 데이터 가져오기 및 업데이트 함수 가져오기
+  const { managerSignUpData, setManagerSignUpData } = useSignUpStore();
 
-  const handleNext = () => {
-    setError(''); // 이전 에러 초기화
+  // 필드 상태 및 에러 상태 초기화
+  const [name, setName] = useState(managerSignUpData.name || '');
+  const [phoneNumber, setPhoneNumber] = useState(managerSignUpData.phone ? formatPhoneNumber(managerSignUpData.phone) : '');
+  const [gender, setGender] = useState(managerSignUpData.gender || '');
+  const [dateOfBirth, setDateOfBirth] = useState(managerSignUpData.birth ? new Date(managerSignUpData.birth) : null);
+  const [email, setEmail] = useState(managerSignUpData.email || '');
+  const [password, setPassword] = useState(managerSignUpData.password || '');
+  const [confirmPassword, setConfirmPassword] = useState(managerSignUpData.password || '');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({}); // 필드별 에러 상태 추가
 
-    // 헬퍼 함수를 사용하여 유효성 검사
-    const validationError = validateManagerStep1Data({
+  // 전화번호 자동 하이픈 함수
+  const formatPhoneNumber = (value) => {
+    if (!value) return '';
+    const digitsOnly = value.replace(/[^0-9]/g, '');
+
+    // Max 11 digits for '010-XXXX-XXXX'
+    const limitedDigits = digitsOnly.slice(0, 11);
+
+    let formatted = '';
+    if (limitedDigits.length <= 3) {
+      formatted = limitedDigits;
+    } else if (limitedDigits.length <= 7) {
+      formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3)}`;
+    } else { // 8 to 11 digits
+      formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3, 7)}-${limitedDigits.slice(7)}`;
+    }
+    return formatted;
+  };
+
+  // 입력 필드 변경 핸들러
+  const handleInputChange = (fieldName, value) => {
+    if (fieldName === 'phoneNumber') {
+      const formattedValue = formatPhoneNumber(value);
+      setPhoneNumber(formattedValue);
+    } else if (fieldName === 'name') setName(value);
+    else if (fieldName === 'email') setEmail(value);
+    else if (fieldName === 'gender') setGender(value);
+    else if (fieldName === 'password') setPassword(value);
+    else if (fieldName === 'confirmPassword') setConfirmPassword(value);
+
+    // 에러 초기화 (입력 중에는 에러 메시지 숨김)
+    setFieldErrors((prevErrors) => ({
+      ...prevErrors,
+      [fieldName]: '',
+    }));
+  };
+
+  // 입력 필드 포커스 아웃(blur) 핸들러
+  const handleBlur = (fieldName) => {
+    const currentValues = {
       name,
-      phoneNumber: phoneNumber.trim(), // 유효성 검사 시 전화번호 trim 적용
-      email: email.trim(), // 유효성 검사 시 이메일 trim 적용
+      phoneNumber,
+      email,
       dateOfBirth,
       gender,
       password,
       confirmPassword,
-    });
+    };
+    const errors = validateManagerStep1Data(currentValues);
+    setFieldErrors((prevErrors) => ({
+      ...prevErrors,
+      [fieldName]: errors[fieldName] || '',
+    }));
+  };
 
-    if (validationError) {
-      setError(validationError);
+  const handleDateChange = (date) => {
+    setDateOfBirth(date);
+    setFieldErrors((prevErrors) => ({
+      ...prevErrors,
+      dateOfBirth: '',
+    }));
+    // 날짜 선택 후 바로 유효성 검사 실행
+    handleBlur('dateOfBirth');
+  };
+
+  const handleNext = () => {
+    const currentValues = {
+      name,
+      phoneNumber,
+      email,
+      dateOfBirth,
+      gender,
+      password,
+      confirmPassword,
+    };
+    const errors = validateManagerStep1Data(currentValues);
+    setFieldErrors(errors); // 모든 에러 업데이트
+
+    if (Object.keys(errors).length > 0) {
+      // 에러가 있으면 스크롤을 최상단으로 이동 (첫 번째 에러가 보이는 곳으로)
+      window.scrollTo(0, 0);
       return;
     }
 
     // 유효성 검사 통과 후 데이터 포맷 및 스토어 저장
-    const formattedDateOfBirth = format(dateOfBirth, 'yyyy-MM-dd'); // dateOfBirth는 null이 아님이 보장됨
+    const formattedDateOfBirth = format(dateOfBirth, 'yyyy-MM-dd');
 
     setManagerSignUpData({
       name,
-      phone: phoneNumber.trim(), // 스토어 저장 시 전화번호 trim 적용
+      phone: phoneNumber, // 하이픈 제거 없이 그대로 저장
       gender: gender.toUpperCase(), // 백엔드 GenderType enum에 맞게 대문자로 변환
       birth: formattedDateOfBirth,
-      email: email.trim(), // 스토어 저장 시 이메일 trim 적용
+      email: email,
       password: password,
     });
 
     console.log('매니저 회원가입 1단계 데이터 스토어에 저장됨');
-    // 다음 단계로 이동 (예: '/auth/signup/manager/step2')
+    // 다음 단계로 이동
     navigate('/auth/signup/manager/step2');
   };
 
@@ -245,7 +300,7 @@ const ManagerSignUpStep1Page = () => {
         </div>
 
         {/* Form Fields */}
-        <form onSubmit={(e) => e.preventDefault()} style={{ width: '100%' }}>
+        <form onSubmit={(e) => e.preventDefault()} style={{ width: '100%', padding: '0 20px' }}>
           {/* 이름 Input */}
           <div style={{ marginBottom: '20px' }}>
             <label
@@ -260,22 +315,31 @@ const ManagerSignUpStep1Page = () => {
             >
               이름
             </label>
-            <input
-              id="name"
-              type="text"
-              placeholder="홍길동"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              style={{
-                width: 'calc(100% - 26px)',
-                padding: '13px',
-                borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                fontSize: '16px',
-                color: '#333',
-              }}
-            />
+            <div style={{ width: '100%' }}>
+              <input
+                id="name"
+                type="text"
+                placeholder="홍길동"
+                value={name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                onBlur={() => handleBlur('name')}
+                required
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  borderRadius: '8px',
+                  border: fieldErrors.name ? '1px solid #e74c3c' : '1px solid #E5E7EB',
+                  fontSize: '16px',
+                  color: '#333',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {fieldErrors.name && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.name}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 이메일 Input - 새로 추가 */}
@@ -292,22 +356,31 @@ const ManagerSignUpStep1Page = () => {
             >
               이메일
             </label>
-            <input
-              id="email"
-              type="email" // 이메일 형식 유효성 검사를 위해 type="email" 사용
-              placeholder="email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: 'calc(100% - 26px)',
-                padding: '13px',
-                borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                fontSize: '16px',
-                color: '#333',
-              }}
-            />
+            <div style={{ width: '100%' }}>
+              <input
+                id="email"
+                type="email"
+                placeholder="email@example.com"
+                value={email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                onBlur={() => handleBlur('email')}
+                required
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  borderRadius: '8px',
+                  border: fieldErrors.email ? '1px solid #e74c3c' : '1px solid #E5E7EB',
+                  fontSize: '16px',
+                  color: '#333',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {fieldErrors.email && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.email}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 휴대폰 번호 Input */}
@@ -324,28 +397,40 @@ const ManagerSignUpStep1Page = () => {
             >
               휴대폰 번호
             </label>
-            <input
-              id="phoneNumber"
-              type="text"
-              placeholder="010-1234-5678"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              required
-              style={{
-                width: 'calc(100% - 26px)',
-                padding: '13px',
-                borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                fontSize: '16px',
-                color: '#333',
-              }}
-            />
+            <div style={{ width: '100%' }}>
+              <input
+                id="phoneNumber"
+                type="text"
+                placeholder="010-1234-5678"
+                value={phoneNumber}
+                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                onBlur={() => handleBlur('phoneNumber')}
+                required
+                maxLength={13}
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  borderRadius: '8px',
+                  border: fieldErrors.phoneNumber ? '1px solid #e74c3c' : '1px solid #E5E7EB',
+                  fontSize: '16px',
+                  color: '#333',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {fieldErrors.phoneNumber && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.phoneNumber}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 생년월일 Input 및 성별 Select (가로 배치) */}
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', width: '100%' }}>
             {/* 생년월일 Input */}
             <div style={{ flex: 1 }}>
+              {' '}
+              {/* 너비를 반으로 */}
               <label
                 htmlFor="dateOfBirth"
                 style={{
@@ -363,22 +448,24 @@ const ManagerSignUpStep1Page = () => {
                   position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
-                  border: '1px solid #E5E7EB',
+                  border: fieldErrors.dateOfBirth ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   borderRadius: '8px',
                   padding: '0 13px',
+                  boxSizing: 'border-box',
                 }}
               >
+                {/* 실제 Date Picker 구현 */}
                 <DatePicker
-                  ref={datePickerRef}
+                  id="dateOfBirth"
                   selected={dateOfBirth}
-                  onChange={(date) => setDateOfBirth(date)}
-                  locale={ko}
+                  onChange={handleDateChange}
                   dateFormat="yyyy-MM-dd"
                   placeholderText="YYYY-MM-DD"
-                  maxDate={new Date()}
+                  peekMonthYearDropdown
                   showYearDropdown
                   showMonthDropdown
                   dropdownMode="select"
+                  locale={ko}
                   wrapperClassName="date-picker-wrapper"
                   customInput={
                     <input
@@ -389,22 +476,39 @@ const ManagerSignUpStep1Page = () => {
                         fontSize: '16px',
                         color: '#333',
                         padding: '13px 0',
+                        caretColor: 'transparent',
+                        boxSizing: 'border-box',
                       }}
                       required
+                      readOnly
+                      value={dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : ''}
+                      onBlur={() => handleBlur('dateOfBirth')}
+                      tabIndex="-1"
                     />
                   }
+                  ref={datePickerRef}
                 />
+                {/* Calendar Icon */}
                 <Calendar
                   size={20}
                   color="#6B7280"
-                  style={{ cursor: 'pointer' }}
+                  style={{
+                    cursor: 'pointer',
+                  }}
                   onClick={() => datePickerRef.current.setOpen(true)}
                 />
               </div>
+              {fieldErrors.dateOfBirth && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.dateOfBirth}
+                </div>
+              )}
             </div>
 
             {/* 성별 Select */}
             <div style={{ flex: 1 }}>
+              {' '}
+              {/* 너비를 반으로 */}
               <label
                 htmlFor="gender"
                 style={{
@@ -420,22 +524,37 @@ const ManagerSignUpStep1Page = () => {
               <select
                 id="gender"
                 value={gender}
-                onChange={(e) => setGender(e.target.value)}
+                onChange={(e) => handleInputChange('gender', e.target.value)}
+                onBlur={() => handleBlur('gender')}
                 required
                 style={{
                   width: '100%',
                   padding: '13px',
                   borderRadius: '8px',
-                  border: '1px solid #E5E7EB',
+                  border: fieldErrors.gender ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  backgroundImage:
+                    "url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20fill%3D%22%236B7280%22%20d%3D%22M5%207l5%205%205-5z%22%2F%3E%3C%2Fsvg%3E')",
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 12px center',
+                  backgroundSize: '12px 12px',
                   cursor: 'pointer',
+                  boxSizing: 'border-box',
                 }}
               >
                 <option value="">선택</option>
-                <option value="male">남성</option>
-                <option value="female">여성</option>
+                <option value="male">남</option>
+                <option value="female">여</option>
               </select>
+              {fieldErrors.gender && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.gender}
+                </div>
+              )}
             </div>
           </div>
 
@@ -453,23 +572,26 @@ const ManagerSignUpStep1Page = () => {
             >
               비밀번호
             </label>
-            <div style={{ position: 'relative', width: 'calc(100% - 28px)' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="8자 이상, 영문, 숫자, 특수문자 포함"
+                placeholder="비밀번호를 입력해 주세요."
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                onBlur={() => handleBlur('password')}
                 required
                 style={{
                   width: '100%',
                   padding: '13px',
                   borderRadius: '8px',
-                  border: '1px solid #E5E7EB',
+                  border: fieldErrors.password ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
+                  boxSizing: 'border-box',
                 }}
               />
+              {/* Password Visibility Toggle */}
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
@@ -487,8 +609,13 @@ const ManagerSignUpStep1Page = () => {
                   <EyeOff size={20} color="#888" />
                 ) : (
                   <Eye size={20} color="#888" />
-                )}
+                )}{' '}
               </button>
+              {fieldErrors.password && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.password}
+                </div>
+              )}
             </div>
           </div>
 
@@ -506,23 +633,26 @@ const ManagerSignUpStep1Page = () => {
             >
               비밀번호 확인
             </label>
-            <div style={{ position: 'relative', width: 'calc(100% - 28px)' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
               <input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="비밀번호를 다시 입력해주세요"
+                placeholder="비밀번호를 다시 입력해 주세요."
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                onBlur={() => handleBlur('confirmPassword')}
                 required
                 style={{
                   width: '100%',
                   padding: '13px',
                   borderRadius: '8px',
-                  border: '1px solid #E5E7EB',
+                  border: fieldErrors.confirmPassword ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
+                  boxSizing: 'border-box',
                 }}
               />
+              {/* Password Visibility Toggle */}
               <button
                 type="button"
                 onClick={toggleConfirmPasswordVisibility}
@@ -540,24 +670,15 @@ const ManagerSignUpStep1Page = () => {
                   <EyeOff size={20} color="#888" />
                 ) : (
                   <Eye size={20} color="#888" />
-                )}
+                )}{' '}
               </button>
+              {fieldErrors.confirmPassword && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.confirmPassword}
+                </div>
+              )}
             </div>
           </div>
-
-          {/* 에러 메시지 표시 */}
-          {error && (
-            <div
-              style={{
-                color: '#e74c3c',
-                fontSize: '14px',
-                marginTop: '16px',
-                textAlign: 'center',
-              }}
-            >
-              {error}
-            </div>
-          )}
 
           {/* Navigation Buttons */}
           <div style={{ display: 'flex', gap: '8px' }}>

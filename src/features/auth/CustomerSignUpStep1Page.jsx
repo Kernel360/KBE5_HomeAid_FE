@@ -299,7 +299,7 @@ const CustomerSignUpStep1Page = () => {
         </div>
 
         {/* Form Fields */}
-        <form onSubmit={(e) => e.preventDefault()} style={{ width: '100%' }}>
+        <form onSubmit={(e) => e.preventDefault()} style={{ width: '100%', padding: '0 20px' }}>
           {/* 이름 Input */}
           <div style={{ marginBottom: '20px' }}>
             <label
@@ -314,7 +314,7 @@ const CustomerSignUpStep1Page = () => {
             >
               이름
             </label>
-            <div style={{ width: 'calc(100% - 28px)' }}>
+            <div style={{ width: '100%' }}>
               <input
                 id="name"
                 type="text"
@@ -330,6 +330,7 @@ const CustomerSignUpStep1Page = () => {
                   border: fieldErrors.name ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
+                  boxSizing: 'border-box',
                 }}
               />
               {fieldErrors.name && (
@@ -354,10 +355,10 @@ const CustomerSignUpStep1Page = () => {
             >
               이메일
             </label>
-            <div style={{ width: 'calc(100% - 28px)' }}>
+            <div style={{ width: '100%' }}>
               <input
                 id="email"
-                type="email" // 이메일 형식 유효성 검사를 위해 type="email" 사용
+                type="email"
                 placeholder="email@example.com"
                 value={email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
@@ -370,6 +371,7 @@ const CustomerSignUpStep1Page = () => {
                   border: fieldErrors.email ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
+                  boxSizing: 'border-box',
                 }}
               />
               {fieldErrors.email && (
@@ -394,7 +396,7 @@ const CustomerSignUpStep1Page = () => {
             >
               휴대폰 번호
             </label>
-            <div style={{ width: 'calc(100% - 28px)' }}>
+            <div style={{ width: '100%' }}>
               <input
                 id="phoneNumber"
                 type="text"
@@ -403,7 +405,7 @@ const CustomerSignUpStep1Page = () => {
                 onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                 onBlur={() => handleBlur('phoneNumber')}
                 required
-                maxLength={13} // 하이픈 포함 최대 13자
+                maxLength={13}
                 style={{
                   width: '100%',
                   padding: '13px',
@@ -411,6 +413,7 @@ const CustomerSignUpStep1Page = () => {
                   border: fieldErrors.phoneNumber ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
+                  boxSizing: 'border-box',
                 }}
               />
               {fieldErrors.phoneNumber && (
@@ -422,7 +425,7 @@ const CustomerSignUpStep1Page = () => {
           </div>
 
           {/* 생년월일 Input 및 성별 Select (가로 배치) */}
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', width: 'calc(100% - 28px)' }}>
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', width: '100%' }}>
             {/* 생년월일 Input */}
             <div style={{ flex: 1 }}>
               {' '}
@@ -447,6 +450,7 @@ const CustomerSignUpStep1Page = () => {
                   border: fieldErrors.dateOfBirth ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   borderRadius: '8px',
                   padding: '0 13px', // 왼쪽 오른쪽 패딩 유지
+                  boxSizing: 'border-box',
                 }}
               >
                 {/* 실제 Date Picker 구현 */}
@@ -472,6 +476,7 @@ const CustomerSignUpStep1Page = () => {
                         color: '#333',
                         padding: '13px 0', // 위아래 패딩 유지, 좌우는 부모 div가 담당
                         caretColor: 'transparent', // 커서 안 보이게
+                        boxSizing: 'border-box',
                       }}
                       required
                       readOnly // 직접 입력 비활성화
@@ -537,6 +542,7 @@ const CustomerSignUpStep1Page = () => {
                   backgroundPosition: 'right 12px center',
                   backgroundSize: '12px 12px',
                   cursor: 'pointer',
+                  boxSizing: 'border-box',
                 }}
               >
                 <option value="">선택</option>
@@ -565,7 +571,7 @@ const CustomerSignUpStep1Page = () => {
             >
               비밀번호
             </label>
-            <div style={{ position: 'relative', width: 'calc(100% - 28px)' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -581,6 +587,7 @@ const CustomerSignUpStep1Page = () => {
                   border: fieldErrors.password ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
+                  boxSizing: 'border-box',
                 }}
               />
               {/* Password Visibility Toggle */}
@@ -626,7 +633,7 @@ const CustomerSignUpStep1Page = () => {
             >
               비밀번호 확인
             </label>
-            <div style={{ position: 'relative', width: 'calc(100% - 28px)' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
               <input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -642,6 +649,7 @@ const CustomerSignUpStep1Page = () => {
                   border: fieldErrors.confirmPassword ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
+                  boxSizing: 'border-box',
                 }}
               />
               {/* Password Visibility Toggle */}
