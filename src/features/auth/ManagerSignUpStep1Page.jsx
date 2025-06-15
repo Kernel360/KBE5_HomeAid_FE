@@ -358,7 +358,16 @@ const ManagerSignUpStep1Page = () => {
               >
                 생년월일
               </label>
-              <div style={{ position: 'relative' }}>
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '8px',
+                  padding: '0 13px',
+                }}
+              >
                 <DatePicker
                   ref={datePickerRef}
                   selected={dateOfBirth}
@@ -370,27 +379,26 @@ const ManagerSignUpStep1Page = () => {
                   showYearDropdown
                   showMonthDropdown
                   dropdownMode="select"
-                  style={{
-                    width: 'calc(100% - 26px)',
-                    padding: '13px',
-                    borderRadius: '8px',
-                    border: '1px solid #E5E7EB',
-                    fontSize: '16px',
-                    color: '#333',
-                    cursor: 'pointer',
-                  }}
-                  wrapperStyle={{ width: '100%' }}
+                  wrapperClassName="date-picker-wrapper"
+                  customInput={
+                    <input
+                      style={{
+                        flexGrow: 1,
+                        border: 'none',
+                        outline: 'none',
+                        fontSize: '16px',
+                        color: '#333',
+                        padding: '13px 0',
+                      }}
+                      required
+                    />
+                  }
                 />
                 <Calendar
                   size={20}
                   color="#6B7280"
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    pointerEvents: 'none',
-                  }}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => datePickerRef.current.setOpen(true)}
                 />
               </div>
             </div>
