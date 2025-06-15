@@ -22,56 +22,118 @@ const validateCustomerStep1Data = ({
   password,
   confirmPassword,
 }) => {
-  if (
-    !name ||
-    !phoneNumber ||
-    !email ||
-    !dateOfBirth ||
-    !gender ||
-    !password ||
-    !confirmPassword
-  ) {
-    return '모든 필수 정보를 입력해주세요.';
-  }
-  if (password !== confirmPassword) {
-    return '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
-  }
-  // 간단한 이메일 형식 검사
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return '유효한 이메일 주소를 입력해주세요.';
+  const errors = {};
+
+  // 이름 유효성 검사
+  if (!name || name.trim() === '') {
+    errors.name = '이름은 필수 입력값입니다.';
+  } else if (name.length < 2 || name.length > 20) {
+    errors.name = '이름은 2자 이상 20자 이하여야 합니다.';
   }
 
-  // dateOfBirth는 Date 객체 또는 null일 수 있으므로, null이 아니고 유효한 Date 객체인지 확인
+  // 이메일 유효성 검사
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!email || email.trim() === '') {
+    errors.email = '이메일은 필수 입력값입니다.';
+  } else if (!emailRegex.test(email.trim())) {
+    errors.email = '유효한 이메일 주소를 입력해주세요.';
+  }
+
+  // 휴대폰 번호 유효성 검사
+  const phoneRegex = /^01[016789]-(?:[0-9]{3}|[0-9]{4})-[0-9]{4}$/;
+  if (!phoneNumber || phoneNumber.trim() === '') {
+    errors.phoneNumber = '휴대폰 번호는 필수 입력값입니다.';
+  } else if (!phoneRegex.test(phoneNumber.trim())) {
+    errors.phoneNumber = '유효한 휴대폰 번호를 입력해주세요. (예: 010-1234-5678 또는 010-123-4567)';
+  }
+
+  // 생년월일 유효성 검사
   if (!dateOfBirth || !isValid(dateOfBirth)) {
-    return '유효한 생년월일을 입력해주세요.';
+    errors.dateOfBirth = '유효한 생년월일을 입력해주세요.';
   }
 
-  return null; // 유효성 검사 통과
+  // 성별 유효성 검사
+  if (!gender || gender.trim() === '') {
+    errors.gender = '성별을 선택해주세요.';
+  }
+
+  // 비밀번호 유효성 검사
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[@$!%*#?&])[A-Za-z0-9@$!%*#?&]{8,}$/;
+  if (!password || password.trim() === '') {
+    errors.password = '비밀번호는 필수 입력값입니다.';
+  } else if (!passwordRegex.test(password.trim())) {
+    errors.password = '비밀번호는 8자 이상, 영문자, 숫자, 특수문자를 포함해야 합니다.';
+  }
+
+  // 비밀번호 확인 유효성 검사
+  if (!confirmPassword || confirmPassword.trim() === '') {
+    errors.confirmPassword = '비밀번호 확인은 필수 입력값입니다.';
+  } else if (password !== confirmPassword) {
+    errors.confirmPassword = '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
+  }
+
+  return errors;
 };
 
 const CustomerSignUpStep1Page = () => {
-  const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [gender, setGender] = useState(''); // 'male' 또는 'female'
-  const [dateOfBirth, setDateOfBirth] = useState(null); // null로 초기화
-  const [email, setEmail] = useState(''); // 이메일 상태 추가
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState(''); // 에러 메시지 상태 추가
   const navigate = useNavigate();
   const datePickerRef = useRef(null); // DatePicker ref 생성
 
-  // Zustand 스토어에서 데이터 업데이트 함수 가져오기
-  const { setCustomerSignUpData } = useSignUpStore();
+  // Zustand 스토어에서 데이터 가져오기 및 업데이트 함수 가져오기
+  const { customerSignUpData, setCustomerSignUpData } = useSignUpStore();
 
-  const handleNext = () => {
-    setError(''); // 이전 에러 초기화
+  // 필드 상태 및 에러 상태 초기화
+  const [name, setName] = useState(customerSignUpData.name || '');
+  const [phoneNumber, setPhoneNumber] = useState(customerSignUpData.phone ? formatPhoneNumber(customerSignUpData.phone) : '');
+  const [gender, setGender] = useState(customerSignUpData.gender || '');
+  const [dateOfBirth, setDateOfBirth] = useState(customerSignUpData.birth ? new Date(customerSignUpData.birth) : null);
+  const [email, setEmail] = useState(customerSignUpData.email || '');
+  const [password, setPassword] = useState(customerSignUpData.password || '');
+  const [confirmPassword, setConfirmPassword] = useState(customerSignUpData.password || ''); // 비밀번호 확인도 초기화
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({}); // 필드별 에러 상태 추가
 
-    // 헬퍼 함수를 사용하여 유효성 검사
-    const validationError = validateCustomerStep1Data({
+  // 전화번호 자동 하이픈 함수
+  const formatPhoneNumber = (value) => {
+    if (!value) return '';
+    const digitsOnly = value.replace(/[^0-9]/g, '');
+
+    // Max 11 digits for '010-XXXX-XXXX'
+    const limitedDigits = digitsOnly.slice(0, 11);
+
+    let formatted = '';
+    if (limitedDigits.length <= 3) {
+      formatted = limitedDigits;
+    } else if (limitedDigits.length <= 7) {
+      formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3)}`;
+    } else { // 8 to 11 digits
+      formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3, 7)}-${limitedDigits.slice(7)}`;
+    }
+    return formatted;
+  };
+
+  // 입력 필드 변경 핸들러
+  const handleInputChange = (fieldName, value) => {
+    if (fieldName === 'phoneNumber') {
+      const formattedValue = formatPhoneNumber(value);
+      setPhoneNumber(formattedValue);
+    } else if (fieldName === 'name') setName(value);
+    else if (fieldName === 'email') setEmail(value);
+    else if (fieldName === 'gender') setGender(value);
+    else if (fieldName === 'password') setPassword(value);
+    else if (fieldName === 'confirmPassword') setConfirmPassword(value);
+
+    // 에러 초기화 (입력 중에는 에러 메시지 숨김)
+    setFieldErrors((prevErrors) => ({
+      ...prevErrors,
+      [fieldName]: '',
+    }));
+  };
+
+  // 입력 필드 포커스 아웃(blur) 핸들러
+  const handleBlur = (fieldName) => {
+    const currentValues = {
       name,
       phoneNumber,
       email,
@@ -79,18 +141,49 @@ const CustomerSignUpStep1Page = () => {
       gender,
       password,
       confirmPassword,
-    });
-    if (validationError) {
-      setError(validationError);
+    };
+    const errors = validateCustomerStep1Data(currentValues);
+    setFieldErrors((prevErrors) => ({
+      ...prevErrors,
+      [fieldName]: errors[fieldName] || '',
+    }));
+  };
+
+  const handleDateChange = (date) => {
+    setDateOfBirth(date);
+    setFieldErrors((prevErrors) => ({
+      ...prevErrors,
+      dateOfBirth: '',
+    }));
+    // 날짜 선택 후 바로 유효성 검사 실행
+    handleBlur('dateOfBirth');
+  };
+
+  const handleNext = () => {
+    const currentValues = {
+      name,
+      phoneNumber,
+      email,
+      dateOfBirth,
+      gender,
+      password,
+      confirmPassword,
+    };
+    const errors = validateCustomerStep1Data(currentValues);
+    setFieldErrors(errors); // 모든 에러 업데이트
+
+    if (Object.keys(errors).length > 0) {
+      // 에러가 있으면 스크롤을 최상단으로 이동 (첫 번째 에러가 보이는 곳으로)
+      window.scrollTo(0, 0);
       return;
     }
 
     // 유효성 검사 통과 후 데이터 포맷 및 스토어 저장
-    const formattedDateOfBirth = format(dateOfBirth, 'yyyy-MM-dd'); // dateOfBirth는 null이 아님이 보장됨
+    const formattedDateOfBirth = format(dateOfBirth, 'yyyy-MM-dd');
 
     setCustomerSignUpData({
       name,
-      phone: phoneNumber,
+      phone: phoneNumber, // 하이픈 제거 없이 그대로 저장
       gender,
       birth: formattedDateOfBirth,
       email: email,
@@ -221,22 +314,30 @@ const CustomerSignUpStep1Page = () => {
             >
               이름
             </label>
-            <input
-              id="name"
-              type="text"
-              placeholder="홍길동"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              style={{
-                width: 'calc(100% - 26px)',
-                padding: '13px',
-                borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                fontSize: '16px',
-                color: '#333',
-              }}
-            />
+            <div style={{ width: 'calc(100% - 28px)' }}>
+              <input
+                id="name"
+                type="text"
+                placeholder="홍길동"
+                value={name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                onBlur={() => handleBlur('name')}
+                required
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  borderRadius: '8px',
+                  border: fieldErrors.name ? '1px solid #e74c3c' : '1px solid #E5E7EB',
+                  fontSize: '16px',
+                  color: '#333',
+                }}
+              />
+              {fieldErrors.name && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.name}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 이메일 Input - 새로 추가 */}
@@ -253,22 +354,30 @@ const CustomerSignUpStep1Page = () => {
             >
               이메일
             </label>
-            <input
-              id="email"
-              type="email" // 이메일 형식 유효성 검사를 위해 type="email" 사용
-              placeholder="email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: 'calc(100% - 26px)',
-                padding: '13px',
-                borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                fontSize: '16px',
-                color: '#333',
-              }}
-            />
+            <div style={{ width: 'calc(100% - 28px)' }}>
+              <input
+                id="email"
+                type="email" // 이메일 형식 유효성 검사를 위해 type="email" 사용
+                placeholder="email@example.com"
+                value={email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                onBlur={() => handleBlur('email')}
+                required
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  borderRadius: '8px',
+                  border: fieldErrors.email ? '1px solid #e74c3c' : '1px solid #E5E7EB',
+                  fontSize: '16px',
+                  color: '#333',
+                }}
+              />
+              {fieldErrors.email && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.email}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 휴대폰 번호 Input */}
@@ -285,26 +394,35 @@ const CustomerSignUpStep1Page = () => {
             >
               휴대폰 번호
             </label>
-            <input
-              id="phoneNumber"
-              type="text"
-              placeholder="010-1234-5678"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              required
-              style={{
-                width: 'calc(100% - 26px)',
-                padding: '13px',
-                borderRadius: '8px',
-                border: '1px solid #E5E7EB',
-                fontSize: '16px',
-                color: '#333',
-              }}
-            />
+            <div style={{ width: 'calc(100% - 28px)' }}>
+              <input
+                id="phoneNumber"
+                type="text"
+                placeholder="010-1234-5678"
+                value={phoneNumber}
+                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                onBlur={() => handleBlur('phoneNumber')}
+                required
+                maxLength={13} // 하이픈 포함 최대 13자
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  borderRadius: '8px',
+                  border: fieldErrors.phoneNumber ? '1px solid #e74c3c' : '1px solid #E5E7EB',
+                  fontSize: '16px',
+                  color: '#333',
+                }}
+              />
+              {fieldErrors.phoneNumber && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.phoneNumber}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 생년월일 Input 및 성별 Select (가로 배치) */}
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', width: 'calc(100% - 28px)' }}>
             {/* 생년월일 Input */}
             <div style={{ flex: 1 }}>
               {' '}
@@ -326,16 +444,16 @@ const CustomerSignUpStep1Page = () => {
                   position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
-                  border: '1px solid #E5E7EB',
+                  border: fieldErrors.dateOfBirth ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   borderRadius: '8px',
-                  padding: '0 13px',
+                  padding: '0 13px', // 왼쪽 오른쪽 패딩 유지
                 }}
               >
-                {/* 실제 Date Picker 구현 */} {/* padding을 div로 이동 */}
+                {/* 실제 Date Picker 구현 */}
                 <DatePicker
                   id="dateOfBirth"
                   selected={dateOfBirth}
-                  onChange={(date) => setDateOfBirth(date)}
+                  onChange={handleDateChange}
                   dateFormat="yyyy-MM-dd"
                   placeholderText="YYYY-MM-DD"
                   peekMonthYearDropdown
@@ -347,14 +465,19 @@ const CustomerSignUpStep1Page = () => {
                   customInput={
                     <input
                       style={{
-                        flexGrow: 1,
-                        border: 'none',
-                        outline: 'none',
+                        flexGrow: 1, // 남은 공간 차지
+                        border: 'none', // 기존 input border 제거
+                        outline: 'none', // 아웃라인 제거
                         fontSize: '16px',
                         color: '#333',
-                        padding: '13px 0',
+                        padding: '13px 0', // 위아래 패딩 유지, 좌우는 부모 div가 담당
+                        caretColor: 'transparent', // 커서 안 보이게
                       }}
                       required
+                      readOnly // 직접 입력 비활성화
+                      value={dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : ''} // 선택된 날짜 표시
+                      onBlur={() => handleBlur('dateOfBirth')} // blur 시 유효성 검사
+                      tabIndex="-1" // 키보드 포커스 방지
                     />
                   }
                   ref={datePickerRef} // ref 연결
@@ -363,10 +486,17 @@ const CustomerSignUpStep1Page = () => {
                 <Calendar
                   size={20}
                   color="#6B7280"
-                  style={{ cursor: 'pointer' }}
+                  style={{
+                    cursor: 'pointer',
+                  }}
                   onClick={() => datePickerRef.current.setOpen(true)} // 아이콘 클릭 시 DatePicker 열기
                 />
               </div>
+              {fieldErrors.dateOfBirth && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.dateOfBirth}
+                </div>
+              )}
             </div>
 
             {/* 성별 Select */}
@@ -388,13 +518,14 @@ const CustomerSignUpStep1Page = () => {
               <select
                 id="gender"
                 value={gender}
-                onChange={(e) => setGender(e.target.value)}
+                onChange={(e) => handleInputChange('gender', e.target.value)}
+                onBlur={() => handleBlur('gender')}
                 required
                 style={{
                   width: '100%',
                   padding: '13px',
                   borderRadius: '8px',
-                  border: '1px solid #E5E7EB',
+                  border: fieldErrors.gender ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
                   appearance: 'none',
@@ -412,6 +543,11 @@ const CustomerSignUpStep1Page = () => {
                 <option value="male">남</option>
                 <option value="female">여</option>
               </select>
+              {fieldErrors.gender && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.gender}
+                </div>
+              )}
             </div>
           </div>
 
@@ -429,19 +565,20 @@ const CustomerSignUpStep1Page = () => {
             >
               비밀번호
             </label>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', width: 'calc(100% - 28px)' }}>
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="비밀번호를 입력해 주세요."
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                onBlur={() => handleBlur('password')}
                 required
                 style={{
-                  width: 'calc(100% - 40px)',
+                  width: '100%',
                   padding: '13px',
                   borderRadius: '8px',
-                  border: '1px solid #E5E7EB',
+                  border: fieldErrors.password ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
                 }}
@@ -467,6 +604,11 @@ const CustomerSignUpStep1Page = () => {
                 )}{' '}
                 {/* lucide-react 아이콘 사용 예시 */}
               </button>
+              {fieldErrors.password && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.password}
+                </div>
+              )}
             </div>
           </div>
 
@@ -484,19 +626,20 @@ const CustomerSignUpStep1Page = () => {
             >
               비밀번호 확인
             </label>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', width: 'calc(100% - 28px)' }}>
               <input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="비밀번호를 다시 입력해 주세요."
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                onBlur={() => handleBlur('confirmPassword')}
                 required
                 style={{
-                  width: 'calc(100% - 40px)',
+                  width: '100%',
                   padding: '13px',
                   borderRadius: '8px',
-                  border: '1px solid #E5E7EB',
+                  border: fieldErrors.confirmPassword ? '1px solid #e74c3c' : '1px solid #E5E7EB',
                   fontSize: '16px',
                   color: '#333',
                 }}
@@ -522,22 +665,13 @@ const CustomerSignUpStep1Page = () => {
                 )}{' '}
                 {/* lucide-react 아이콘 사용 예시 */}
               </button>
+              {fieldErrors.confirmPassword && (
+                <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
+                  {fieldErrors.confirmPassword}
+                </div>
+              )}
             </div>
           </div>
-
-          {/* 에러 메시지 표시 */}
-          {error && (
-            <div
-              style={{
-                color: '#e74c3c',
-                fontSize: '14px',
-                marginTop: '16px',
-                textAlign: 'center',
-              }}
-            >
-              {error}
-            </div>
-          )}
 
           {/* Navigation Buttons */}
           <div style={{ display: 'flex', gap: '8px' }}>

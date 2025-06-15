@@ -453,7 +453,7 @@ const ManagerSignUpStep1Page = () => {
             >
               비밀번호
             </label>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', width: 'calc(100% - 28px)' }}>
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -462,7 +462,7 @@ const ManagerSignUpStep1Page = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 style={{
-                  width: 'calc(100% - 26px)',
+                  width: '100%',
                   padding: '13px',
                   borderRadius: '8px',
                   border: '1px solid #E5E7EB',
@@ -506,7 +506,7 @@ const ManagerSignUpStep1Page = () => {
             >
               비밀번호 확인
             </label>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', width: 'calc(100% - 28px)' }}>
               <input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -515,7 +515,7 @@ const ManagerSignUpStep1Page = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 style={{
-                  width: 'calc(100% - 26px)',
+                  width: '100%',
                   padding: '13px',
                   borderRadius: '8px',
                   border: '1px solid #E5E7EB',
