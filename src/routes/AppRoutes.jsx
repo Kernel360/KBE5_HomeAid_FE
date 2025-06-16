@@ -2,10 +2,6 @@ import { useRoutes, Navigate } from 'react-router-dom';
 import { AuthRoutes } from '../features/auth/routes';
 import { NotFound } from '../lib/not-found';
 import { Forbidden } from '../lib/Forbidden';
-import { About } from '../features/misc/routes';
-import { Contact } from '../features/misc/routes';
-import { Policy } from '../features/misc/routes';
-import { Terms } from '../features/misc/routes';
 import MainPage from '../features/main/MainPage';
 
 import BoardList from '../features/board/pages/BoardList';
@@ -18,10 +14,6 @@ export const AppRoutes = () => {
   const commonRoutes = [
     { path: '/auth/*', element: <AuthRoutes /> },
     { path: '/404', element: <NotFound /> },
-    { path: '/about', element: <About /> },
-    { path: '/contact', element: <Contact /> },
-    { path: '/policy', element: <Policy /> },
-    { path: '/terms', element: <Terms /> },
     { path: '/403', element: <Forbidden /> },
     { path: '/board', element: <BoardList /> },
     { path: '/board/*', element: <BoardList /> },

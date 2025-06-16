@@ -16,18 +16,11 @@ import UserPaymentComplete from '../features/payment/pages/UserPaymentComplete';
 import UserReservationList from '../features/main/UserReservationList';
 import UserReservationDetail from '../features/main/UserReservationDetail';
 import ServiceRegistration from '../features/additional-info/pages';
-import CustomerLayout from '../layouts/CustomerLayout';
 import Mypage from '../features/mypage/customer/pages/Mypage';
-import ManagerLayout from '../layouts/ManagerLayout';
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
 import MyAddress from '../features/mypage/manager/components/MyAddress';
 import AddressRegister from '../features/mypage/manager/components/AddressRegister';
-import BoardWrite from '../features/board/pages/BoardWrite';
-import BoardList from '../features/board/pages/BoardList';
-import BoardDetail from '../features/board/pages/BoardDetail';
-import EventList from '../features/main/EventList';
 import AdminLayoutPage from '../features/admin/pages/AdminLayoutPage';
-import ManagerMain from '../features/manager/pages/ManagerMainPage';
 import ReservationHistoryPage from '../features/review/pages/ReservationHistoryPage';
 import ReservationDetailPage from '../features/review/pages/ReservationDetailPage';
 import ReviewWritePage from '../features/review/pages/ReviewWritePage';
@@ -42,7 +35,6 @@ export const protectedAppRoutes = [
   // 고객(CUSTOMER) 권한이 필요한 라우트 (레이아웃 포함)
   {
     path: '/customer',
-    element: <CustomerLayout />,
     allowedRoles: ['ROLE_CUSTOMER'],
     children: [
       { path: 'mypage', element: <Mypage /> },
@@ -68,7 +60,6 @@ export const protectedAppRoutes = [
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)
   {
     path: '/manager',
-    element: <ManagerLayout />,
     allowedRoles: ['ROLE_MANAGER'],
     children: [
       { path: 'mypage', element: <ManagerMypage /> },
