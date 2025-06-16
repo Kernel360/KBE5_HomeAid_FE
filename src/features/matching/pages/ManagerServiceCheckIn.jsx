@@ -5,7 +5,7 @@ import './ManagerServiceCheckIn.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
 import useReservationStore from '../store/reservationStore.js';
-import { apiService } from '../../../store/api.js';
+import { apiService } from '@/api';
 
 import useMatchingStore from '../../../stores/matchingStore.js';
 // TODO: 파일 업로드 기능 추가 시 필요한 import

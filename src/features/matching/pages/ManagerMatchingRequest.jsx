@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import './ManagerMatchingRequest.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
-import { apiService } from '../../../store/api';
+import { apiService } from '@/api';
 import reservationStore from '../store/reservationStore.js';
 
 const ManagerMatchingRequest = () => {

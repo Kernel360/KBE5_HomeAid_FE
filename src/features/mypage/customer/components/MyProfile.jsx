@@ -1,7 +1,7 @@
 import { ArrowLeft, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../../../stores/authStore';
-import { apiService } from '../../../../store/api';
+import { apiService } from '@/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { apiService } from '../../../store/api';
+import { apiService } from '@/api';
 import ScheduleSetup from '../components/ScheduleSetup';
 import ProfileCompletion from '../components/ProfileCompletion';
 import Header from '../../../components/Header';

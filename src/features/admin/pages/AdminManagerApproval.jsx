@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './AdminManagerApproval.css';
 import { useNavigate } from 'react-router-dom';
-import api from '@/services/apiClient';
+import apiService from '../../../api';
+// import api from '@/services/apiClient';
 
 const AdminManagerApproval = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const AdminManagerApproval = () => {
   const fetchManagers = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/v1/managers/list');
+      const res = apiService.manager.getManagerList();
       // console.log('API 응답:', res.data.data);
       if (res.data.data) {
         const sorted = res.data.data.slice().sort((a, b) => {
@@ -41,9 +42,10 @@ const AdminManagerApproval = () => {
   // ✅ 서버에 반영 후 DB에서 최신 목록으로 갱신 (최적 패턴)
   const changeStatus = async (id, status) => {
     try {
-      const response = await api.patch(`/api/v1/managers/${id}/status`, {
-        status,
-      });
+      // const response = await api.patch(`/api/v1/managers/${id}/status`, {
+      //   status,
+      // });
+      const response = await apiService.manager.changeStatus(id, status);
 
       if (response.status === 200) {
         // 서버 응답이 성공적일 때만 상태 업데이트

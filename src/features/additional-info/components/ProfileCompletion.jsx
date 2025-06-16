@@ -1,5 +1,5 @@
 import React from 'react';
-import { apiService } from '../../../store/api';
+import { apiService } from '@/api';
 import { useNavigate } from 'react-router-dom';
 
 // eslint-disable-next-line no-unused-vars

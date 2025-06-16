@@ -1,4 +1,4 @@
-import { apiService } from '../../store/api';
+import { apiService } from '@/api';
 
 // 고객의 예약 내역 조회
 export const getCustomerReservations = async () => {

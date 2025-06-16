@@ -1,5 +1,5 @@
 import { ArrowLeft, Star } from 'lucide-react';
-import { apiService } from '../../../../store/api.js';
+import { apiService } from '@/api';
 import { useState, useEffect } from 'react';
 import Footer from '../../../../components/Footer.jsx';
 

@@ -1,3 +1,4 @@
+import { Outlet } from 'react-router-dom';
 import AdminDashboardPage from '../features/admin/pages/AdminDashboardPage';
 import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
 import MatchingSystemPage from '../features/admin/pages/MatchingSystemPage';
@@ -35,6 +36,7 @@ export const protectedAppRoutes = [
   // 고객(CUSTOMER) 권한이 필요한 라우트 (레이아웃 포함)
   {
     path: '/customer',
+    element: <Outlet />, // Outlet 추가
     allowedRoles: ['ROLE_CUSTOMER'],
     children: [
       { path: 'mypage', element: <Mypage /> },
@@ -60,6 +62,7 @@ export const protectedAppRoutes = [
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)
   {
     path: '/manager',
+    element: <Outlet />, // Outlet으로 수정
     allowedRoles: ['ROLE_MANAGER'],
     children: [
       { path: 'mypage', element: <ManagerMypage /> },

@@ -1,4 +1,6 @@
-import api from './apiClient';
+// import api from './apiClient';
+import api from "../api/config/api";
+import { apiClient } from "../api/config/api";
 // 필요한 DTO 타입 정의가 있다면 여기서 임포트
 // import { CustomerSignUpRequestDto, ManagerSignUpRequestDto } from '../types/auth'; // 예시
 
@@ -24,11 +26,15 @@ export const authService = {
           }),
         }
       );
+      // const requestData = {
+      //   phone,
+      //   password,
+      // }
+      // const response = await api.post('/auth/signin', requestData);
 
-      console.log(
-        '🌐 로그인 API 호출:',
-        `${API_BASE_URL}/api/${API_VERSION}/auth/signin`
-      );
+      console.log('response 타입:', typeof response);
+
+      console.log('🌐 로그인 API 호출');
       console.log('📡 응답 상태:', response.status, response.statusText);
 
       if (!response.ok) {
@@ -39,6 +45,7 @@ export const authService = {
       console.log('🔍 원본 응답 텍스트:', responseText);
 
       const data = JSON.parse(responseText);
+      // const data = response.data;
       console.log('📄 파싱된 응답 데이터:', data);
 
       const accessToken =
@@ -47,7 +54,7 @@ export const authService = {
       if (accessToken) {
         const token = accessToken.replace('Bearer ', '');
         localStorage.setItem('accessToken', token);
-        api.defaults.headers.common['Authorization'] = accessToken;
+        apiClient.defaults.headers.common['Authorization'] = accessToken;
         console.log('✅ 액세스 토큰 저장됨:', token.substring(0, 20) + '...');
       } else {
         console.log('⚠️ Authorization 헤더가 응답에 없음');
@@ -56,6 +63,9 @@ export const authService = {
       return data;
     } catch (error) {
       console.error('❌ 로그인 API 오류:', error);
+      console.error('🚨 에러 상세:', error.message);
+console.error('🚨 응답 상태:', error.response?.status);
+console.error('🚨 응답 데이터:', error.response?.data);
       throw error;
     }
   },
@@ -66,7 +76,7 @@ export const authService = {
 
     try {
       const response = await api.post(
-        `/api/${API_VERSION}/users/signup/customers`,
+        '/users/signup/customers',
         customerData
       );
       console.log('✅ 고객 회원가입 성공:', response.data);
@@ -102,7 +112,7 @@ export const authService = {
 
     try {
       const response = await api.post(
-        `/api/${API_VERSION}/users/signup/managers`,
+        '/users/signup/managers',
         managerData
       );
       console.log('✅ 매니저 회원가입 성공:', response.data);
@@ -117,7 +127,7 @@ export const authService = {
         console.log('📋 백엔드 개발자에게 전달할 정보:');
         console.log('  🎯 문제: 백엔드 서버 미실행 또는 CORS 설정 누락');
         console.log(
-          `  🌐 요청: POST ${API_BASE_URL}/api/${API_VERSION}/users/signup/managers`
+          `  🌐 요청: POST url/api/v1/users/signup/managers`
         );
         console.log('  📦 필요한 작업:');
         console.log('    1. 백엔드 서버 실행 확인 (포트 8080)');
@@ -153,7 +163,7 @@ export const authService = {
 
   // 로그아웃
   signOut: async () => {
-    const response = await api.post(`/api/${API_VERSION}/auth/signout`);
+    const response = await api.post('/auth/signout');
     // accessToken 삭제
     localStorage.removeItem('accessToken');
     // axios 기본 헤더에서도 삭제
@@ -164,7 +174,7 @@ export const authService = {
   // 회원가입 단계별 데이터 저장 (예시)
   saveSignUpStep: async (step, data) => {
     const response = await api.post(
-      `/api/${API_VERSION}/users/signup/step/${step}`,
+      `/users/signup/step/${step}`,
       data
     );
     return response.data;

@@ -7,7 +7,7 @@ import {
   MANAGER_ACTION,
   CUSTOMER_ACTION,
 } from '../constants/matchingData';
-import { apiService } from '../../../store/api';
+import { apiService } from '@/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';

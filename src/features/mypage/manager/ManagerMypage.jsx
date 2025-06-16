@@ -2,7 +2,7 @@ import { User, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../../stores/authStore';
-import { apiService } from '../../../store/api';
+import { apiService } from '@/api';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
 
@@ -167,6 +167,9 @@ export default function ManagerMypage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  console.log('manager mypage');
+  
 
   // TODO: 포인트 내역 더미 데이터 - 실제 API 연동 필요
   // API: GET /api/manager/points/history

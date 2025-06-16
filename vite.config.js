@@ -25,10 +25,10 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': '/src',
-        '@components': '/src/components',
-        '@pages': '/src/pages',
-        '@assets': '/src/assets',
+        '@': path.resolve(__dirname, './src'),
+        '@components': path.resolve(__dirname, './src/components'),
+        '@pages': path.resolve(__dirname, './src/pages'),
+        '@assets': path.resolve(__dirname, './src/assets'),
       },
     },
   };
