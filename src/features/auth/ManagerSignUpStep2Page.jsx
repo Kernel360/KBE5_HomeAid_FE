@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 // lucide-react 아이콘 사용 시 설치 필요: npm install react-icons lucide-react --save
 import { Calendar, Eye, EyeOff, Upload } from 'lucide-react'; // Upload 아이콘 추가
-import { authService } from '../../services/authService'; // authService 임포트
+import { authService } from './services/authService'; // authService 임포트
 import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';

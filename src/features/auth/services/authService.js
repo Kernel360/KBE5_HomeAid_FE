@@ -1,6 +1,6 @@
 // import api from './apiClient';
-import api from "../api/config/api";
-import { apiClient } from "../api/config/api";
+import api from "../../../api/config/api";
+import { apiClient } from "../../../api/config/api";
 // 필요한 DTO 타입 정의가 있다면 여기서 임포트
 // import { CustomerSignUpRequestDto, ManagerSignUpRequestDto } from '../types/auth'; // 예시
 

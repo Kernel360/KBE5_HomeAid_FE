@@ -1,7 +1,7 @@
 import { useRoutes, Navigate } from 'react-router-dom';
 import { AuthRoutes } from '../features/auth/routes';
-import { NotFound } from '../lib/not-found';
-import { Forbidden } from '../lib/Forbidden';
+import { NotFound } from '../pages/shared/NotFound.jsx';
+import { Forbidden } from '../pages/shared/Forbidden.jsx';
 import MainPage from '../features/main/MainPage';
 
 import BoardList from '../features/board/pages/BoardList';

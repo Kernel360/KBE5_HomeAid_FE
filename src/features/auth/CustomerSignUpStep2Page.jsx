@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react'; // Search 아이콘 임포트
-import { authService } from '../../services/authService'; // authService 임포트
+import { authService } from './services/authService'; // authService 임포트
 import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react'; // lucide-react 사용 예시
 import { useAuthStore } from '../../stores/authStore.js';
 import Header from '../../components/Header.jsx';
-import { authService } from '../../services/authService.js';
+import { authService } from './services/authService.js';
 
 const SignInPage = () => {
   const [phone, setphone] = useState('');
