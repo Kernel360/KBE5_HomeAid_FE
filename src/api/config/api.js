@@ -66,7 +66,7 @@ apiClient.interceptors.response.use(
       console.log('401 에러 - 토큰 문제로 인한 인증 실패');
       // AT 만료 시 자동으로 refresh 시도
       try {
-        await refreshAccessToken();
+        // await refreshAccessToken();
         // 원래 요청 재시도
         return apiClient(error.config);
       } catch {
