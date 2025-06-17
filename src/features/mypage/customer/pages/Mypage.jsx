@@ -11,6 +11,10 @@ import InquiryBoard from '../components/InquiryBoard.jsx';
 import AddressRegister from '../components/AddressRegister.jsx';
 import CreateInquiry from '../components/CreateInquiry.jsx';
 import InquiryDetail from '../components/InquiryDetail.jsx';
+import CouponsView from '../components/CouponsView.jsx';
+import couponData from '../data/couponData.js';
+import pointsHistory from '../data/pointHistory.js';
+import PointsHistoryView from '../components/PointsHistoryView.jsx'
 
 export default function MyPage() {
   const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry', 'createInquiry', 'inquiryDetail', 'points', 'coupons'
@@ -39,73 +43,6 @@ export default function MyPage() {
     setCurrentView('inquiry'); // Back to inquiry list after deletion
   };
 
-  // TODO: 포인트 내역 더미 데이터 - 실제 API 연동 필요
-  // API: GET /api/customer/points/history
-  // Response: { points: [{ id, date, type, amount, reason, balance }] }
-  const pointsHistory = [
-    {
-      id: 1,
-      date: '2025-05-15',
-      type: '적립',
-      amount: '+500',
-      reason: '서비스 이용 적립',
-      balance: 1250,
-    },
-    {
-      id: 2,
-      date: '2025-05-10',
-      type: '사용',
-      amount: '-300',
-      reason: '할인 쿠폰 구매',
-      balance: 750,
-    },
-    {
-      id: 3,
-      date: '2025-05-05',
-      type: '적립',
-      amount: '+800',
-      reason: '신규 가입 보너스',
-      balance: 1050,
-    },
-    {
-      id: 4,
-      date: '2025-05-01',
-      type: '적립',
-      amount: '+250',
-      reason: '리뷰 작성 적립',
-      balance: 250,
-    },
-  ];
-
-  // TODO: 쿠폰 더미 데이터 - 실제 API 연동 필요
-  // API: GET /api/customer/coupons
-  // Response: { coupons: [{ id, name, discount, minAmount, expiry, status }] }
-  const coupons = [
-    {
-      id: 1,
-      name: '신규 회원 20% 할인',
-      discount: '20%',
-      minAmount: 30000,
-      expiry: '2025-10-28',
-      status: 'available',
-    },
-    {
-      id: 2,
-      name: '청소 서비스 5,000원 할인',
-      discount: '5,000원',
-      minAmount: 40000,
-      expiry: '2025-10-15',
-      status: 'available',
-    },
-    {
-      id: 3,
-      name: '첫 주문 30% 할인',
-      discount: '30%',
-      minAmount: 50000,
-      expiry: '2025-01-20',
-      status: 'expired',
-    },
-  ];
 
   const MainView = () => (
     <div
@@ -232,155 +169,7 @@ export default function MyPage() {
     </div>
   );
 
-  // 포인트 내역 페이지 컴포넌트
-  const PointsHistoryView = () => (
-    <div
-      className="min-h-screen bg-white"
-      style={{
-        paddingTop: '64px',
-        paddingBottom: '80px',
-        maxWidth: '512px',
-        margin: '0 auto',
-      }}
-    >
-      <Header
-        showBackButton={true}
-        onBackClick={() => setCurrentView('main')}
-      />
 
-      <div className="px-6 py-4">
-        <h3 className="text-xl font-bold text-gray-900">포인트 내역</h3>
-        {/* TODO: 하드코딩된 현재 포인트 값 - API에서 실시간 포인트 조회 필요 */}
-        <p className="text-sm text-gray-500 mt-1">
-          현재 보유: <span className="font-bold text-orange-600">1,250P</span>
-        </p>
-      </div>
-
-      <main className="px-6 py-6">
-        <div className="space-y-4">
-          {/* TODO: pointsHistory 배열을 실제 API 데이터로 교체 필요 */}
-          {pointsHistory.map((point) => (
-            <div
-              key={point.id}
-              className="bg-white rounded-lg border border-gray-200 p-4"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <p className="font-medium text-gray-900">{point.reason}</p>
-                  <p className="text-sm text-gray-500">{point.date}</p>
-                </div>
-                <div className="text-right">
-                  <p
-                    className={`font-bold ${point.type === '적립' ? 'text-blue-600' : 'text-red-600'}`}
-                  >
-                    {point.amount}P
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    잔액: {point.balance}P
-                  </p>
-                </div>
-              </div>
-              <div
-                className={`inline-block px-2 py-1 rounded text-xs ${
-                  point.type === '적립'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {point.type}
-              </div>
-            </div>
-          ))}
-        </div>
-      </main>
-
-      <Footer current="/customer/mypage" />
-    </div>
-  );
-
-  // 쿠폰함 페이지 컴포넌트
-  const CouponsView = () => (
-    <div
-      className="min-h-screen bg-white"
-      style={{
-        paddingTop: '64px',
-        paddingBottom: '80px',
-        maxWidth: '512px',
-        margin: '0 auto',
-      }}
-    >
-      <Header
-        showBackButton={true}
-        onBackClick={() => setCurrentView('main')}
-      />
-
-      <div className="px-6 py-4">
-        <h3 className="text-xl font-bold text-gray-900">쿠폰함</h3>
-        {/* TODO: 하드코딩된 사용가능 쿠폰 개수 - API에서 실시간 쿠폰 개수 조회 필요 */}
-        <p className="text-sm text-gray-500 mt-1">
-          사용 가능한 쿠폰:{' '}
-          <span className="font-bold text-green-600">2장</span>
-        </p>
-      </div>
-
-      <main className="px-6 py-6">
-        <div className="space-y-4">
-          {/* TODO: coupons 배열을 실제 API 데이터로 교체 필요 */}
-          {coupons.map((coupon) => (
-            <div
-              key={coupon.id}
-              className={`rounded-lg border p-4 ${
-                coupon.status === 'available'
-                  ? 'bg-white border-green-200'
-                  : 'bg-gray-50 border-gray-200'
-              }`}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h4
-                    className={`font-semibold ${coupon.status === 'available' ? 'text-gray-900' : 'text-gray-500'}`}
-                  >
-                    {coupon.name}
-                  </h4>
-                  <p className="text-sm text-gray-500">
-                    최소 주문금액: {coupon.minAmount.toLocaleString()}원
-                  </p>
-                </div>
-                <div
-                  className={`text-right ${coupon.status === 'available' ? 'text-green-600' : 'text-gray-400'}`}
-                >
-                  <p className="text-lg font-bold">{coupon.discount}</p>
-                  <p className="text-xs">할인</p>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-500">만료일: {coupon.expiry}</p>
-                <div
-                  className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                    coupon.status === 'available'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}
-                >
-                  {coupon.status === 'available' ? '사용 가능' : '만료됨'}
-                </div>
-              </div>
-
-              {coupon.status === 'available' && (
-                <button className="w-full mt-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-                  {/* TODO: 쿠폰 사용 기능 구현 필요 - API: POST /api/customer/coupons/use */}
-                  사용하기
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </main>
-
-      <Footer current="/customer/mypage" />
-    </div>
-  );
 
   // 조건부 렌더링
   switch (currentView) {
@@ -423,9 +212,9 @@ export default function MyPage() {
         />
       );
     case 'points':
-      return <PointsHistoryView />;
+      return <PointsHistoryView onBack={() => setCurrentView('main')} point={pointsHistory} />;
     case 'coupons':
-      return <CouponsView />;
+      return <CouponsView onBack={() => setCurrentView('main')} coupons={couponData} />;
     default:
       return <MainView />;
   }
