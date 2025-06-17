@@ -1,0 +1,127 @@
+import { useState, useRef } from 'react';
+import { useManagerMatching } from './useManagerAPI';
+
+/**
+ * 매칭 데이터 관리 훅
+ * API 호출과 데이터 변환 로직을 담당합니다.
+ */
+export const useMatchingData = () => {
+  const [matchingList, setMatchingList] = useState([]);
+  const { loading, error, getMatchingList } = useManagerMatching();
+  
+  // 로딩 상태 추적을 위한 ref
+  const isLoadingRef = useRef(false);
+
+  // 백엔드 상태를 탭 이름으로 매핑
+  const getTabNameFromStatus = (status) => {
+    switch (status) {
+      case 'REQUESTED':
+        return '매칭 대기';
+      case 'ACCEPTED':
+        return '고객 응답 대기';
+      case 'CONFIRMED':
+        return '매칭 완료';
+      case 'REJECTED':
+        return '거절됨';
+      default:
+        return '알 수 없음';
+    }
+  };
+
+  // 상태별 색상 매핑
+  const getStatusColor = (status) => {
+    const colors = {
+      'REQUESTED': 'pending',
+      'ACCEPTED': 'waiting',
+      'CONFIRMED': 'completed',
+      'REJECTED': 'rejected',
+    };
+    return colors[status] || 'default';
+  };
+
+  // 데이터 변환 함수
+  const transformMatchingData = (rawData) => {
+    return rawData.content.map((item) => ({
+      id: item.matchingId,
+      customerName: item.customerName || '김고객',
+      serviceType: item.serviceType,
+      workTime: `${item.reservedDate} ${item.reservedTime}`,
+      status: getTabNameFromStatus(item.status),
+      statusColor: getStatusColor(item.status),
+      originalStatus: item.status,
+      estimatedDuration: item.estimatedDuration || 0,
+      customerRequest: item.customerRequest,
+      address: `${item.latitude}, ${item.longitude}`,
+      reservationId: item.reservationId,
+      managerStatus: item.managerStatus,
+      customerStatus: item.customerStatus,
+    }));
+  };
+
+  // 매칭 목록 로드
+  const loadMatchingList = async (page = 0, size = 10) => {
+    // 이미 로딩 중이면 중복 요청 방지
+    if (isLoadingRef.current) {
+      console.log('⚠️ 이미 로딩 중 - 중복 요청 방지');
+      return { data: matchingList, totalPages: 0 };
+    }
+
+    try {
+      isLoadingRef.current = true;
+      console.log('📡 매칭 데이터 로드 중...', { page, size });
+      const data = await getMatchingList(page, size);
+      console.log('📡 백엔드에서 받은 원본 매칭 데이터:', data);
+      
+      const transformedData = transformMatchingData(data);
+      console.log('✅ 변환된 매칭 목록:', transformedData);
+      
+      setMatchingList(transformedData);
+      return {
+        data: transformedData,
+        totalPages: data.totalPages,
+      };
+    } catch (err) {
+      console.error('매칭 목록 로드 실패:', err);
+      setMatchingList([]);
+      throw err;
+    } finally {
+      isLoadingRef.current = false;
+    }
+  };
+
+  // 필터링 함수
+  const getFilteredList = (activeTab, searchQuery) => {
+    let filtered = matchingList;
+
+    // 탭 필터링
+    if (activeTab !== '전체') {
+      filtered = filtered.filter((item) => item.status === activeTab);
+    }
+
+    // 검색 필터링
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(
+        (item) =>
+          item.customerName.includes(searchQuery) ||
+          item.serviceType.includes(searchQuery) ||
+          item.id.toString().includes(searchQuery)
+      );
+    }
+
+    return filtered;
+  };
+
+  return {
+    // 상태
+    matchingList,
+    loading,
+    error,
+    
+    // 함수
+    loadMatchingList,
+    getFilteredList,
+    
+    // 헬퍼 함수
+    getTabNameFromStatus,
+  };
+};

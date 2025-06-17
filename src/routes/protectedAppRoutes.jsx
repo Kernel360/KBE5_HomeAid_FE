@@ -7,7 +7,7 @@ import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
 import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
 import ManagerServiceCheckIn from '../features/matching/pages/ManagerServiceCheckIn';
 import ManagerMatchingRequest from '../features/matching/pages/ManagerMatchingRequest';
-import ManagerMatchingList from '../features/matching/pages/ManagerMatchingList';
+
 import UserServiceOption from '../features/reservation/components/UserServiceOption';
 import UserServiceSubOption from '../features/reservation/components/UserServiceSubOption';
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
@@ -30,6 +30,7 @@ import InquiryDetail from '../features/mypage/manager/components/InquiryDetail';
 import CreateInquiry from '../features/mypage/manager/components/CreateInquiry';
 import CustomerMyAddress from '../features/mypage/customer/components/MyAddress';
 import CustomerAddressRegister from '../features/mypage/customer/components/AddressRegister';
+import ManagerMatchingListPage from '../pages/ManagerMatchingListPage';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -91,7 +92,7 @@ export const protectedAppRoutes = [
   // 매칭 관련 라우트 (기존 경로 유지 - 직접 접근용)
   {
     path: '/matching/list',
-    element: <ManagerMatchingList />,
+    element: <ManagerMatchingListPage />,
     allowedRoles: ['ROLE_MANAGER', 'ROLE_ADMIN'],
   },
   {
