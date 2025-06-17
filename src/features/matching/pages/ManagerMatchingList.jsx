@@ -10,6 +10,7 @@ import {
   MATCHING_STATUS_LABELS,
   MATCHING_STATUS_COLORS,
 } from '../constants/matchingData.js';
+import ManagerMatchingDetail from './ManagerMatchingDetail.jsx';
 
 const ManagerMatchingList = () => {
   const navigate = useNavigate();
@@ -174,11 +175,7 @@ const ManagerMatchingList = () => {
     setShowDetailModal(true);
   };
 
-  // 모달 닫기
-  const closeDetailModal = () => {
-    setShowDetailModal(false);
-    setSelectedItem(null);
-  };
+
 
   // 청소하기 버튼 클릭 (매칭 완료 상태)
   const handleServiceStart = (matchingItem) => {
@@ -303,6 +300,12 @@ const ManagerMatchingList = () => {
     setCurrentPage(0); // 탭 변경 시 첫 페이지로 이동
     loadMatchingList();
   };
+
+        // 모달 닫기
+  // const closeDetailModal = () => {
+  //   setShowDetailModal(false);
+  //   setSelectedItem(null);
+  // };
 
   return (
     <div className="manager-matching-list-page">
@@ -430,7 +433,15 @@ const ManagerMatchingList = () => {
       </div>
 
       {/* 상세보기 모달 */}
-      {showDetailModal && selectedItem && (
+      <ManagerMatchingDetail 
+          showDetailModal={showDetailModal} 
+          setShowDetailModal = {setShowDetailModal} 
+          selectedItem={selectedItem}
+          setSelectedItem={setSelectedItem}
+          handleServiceStart={handleServiceStart}
+          handleMatching={handleMatching}
+          />
+      {/* {showDetailModal && selectedItem && (
         <div className="modal-overlay" onClick={closeDetailModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -531,7 +542,7 @@ const ManagerMatchingList = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       <Footer current="/matching/list" />
     </div>
