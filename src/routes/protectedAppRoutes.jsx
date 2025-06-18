@@ -30,7 +30,7 @@ import InquiryDetail from '../features/mypage/manager/components/InquiryDetail';
 import CreateInquiry from '../features/mypage/manager/components/CreateInquiry';
 import CustomerMyAddress from '../features/mypage/customer/components/MyAddress';
 import CustomerAddressRegister from '../features/mypage/customer/components/AddressRegister';
-import ManagerMatchingListPage from '../pages/ManagerMatchingListPage';
+import ManagerMatchingListPage from '../features/matching/pages/ManagerMatchingListPage';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [

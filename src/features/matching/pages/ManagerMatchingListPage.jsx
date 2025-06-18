@@ -1,24 +1,24 @@
 import React, { useEffect } from 'react';
-import Header from '../components/Header.jsx';
-import Footer from '../components/Footer.jsx';
-import ManagerMatchingDetail from '../features/matching/pages/ManagerMatchingDetail.jsx';
+import Header from '@/components/Header.jsx';
+import Footer from '@/components/Footer.jsx';
+import ManagerMatchingDetail from '@/features/matching/pages/ManagerMatchingDetail.jsx';
 
 // 분리된 훅들
-import { useMatchingList } from '../features/matching/hooks/useMatchingList.js';
-import { useMatchingData } from '../features/matching/hooks/useMatchingData.js';
-import { useMatchingActions } from '../features/matching/hooks/useMatchingActions.js';
+import { useMatchingList } from '@/features/matching/hooks/useMatchingList.js';
+import { useMatchingData } from '@/features/matching/hooks/useMatchingData.js';
+import { useMatchingActions } from '@/features/matching/hooks/useMatchingActions.js';
 
 // 분리된 컴포넌트들
-import TabNavigation from '../features/matching/components/TabNavigation.jsx';
-import SearchBar from '../features/matching/components/SearchBar.jsx';
-import MatchingList from '../features/matching/components/MatchingList.jsx';
-import Pagination from '../features/matching/components/Pagination.jsx';
+import TabNavigation from '@/features/matching/components/TabNavigation.jsx';
+import SearchBar from '@/features/matching/components/SearchBar.jsx';
+import MatchingList from '@/features/matching/components/MatchingList.jsx';
+import Pagination from '@/features/matching/components/Pagination.jsx';
 
 // 서비스
-import MatchingService from '../features/matching/services/MatchingService.js';
+import MatchingService from '@/features/matching/services/MatchingService.js';
 
 // 스타일
-import '../features/matching/pages/ManagerMatchingList.css';
+import './ManagerMatchingList.css';
 
 /**
  * 매니저 매칭 리스트 페이지
