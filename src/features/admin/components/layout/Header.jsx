@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const location = useLocation();
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+
+  // 매 분마다 업데이트 시간 갱신
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastUpdate(new Date());
+    }, 60000); // 1분마다 업데이트
+
+    return () => clearInterval(interval);
+  }, []);
 
   const getPageTitle = () => {
     const path = location.pathname;
@@ -72,31 +82,13 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           </h1>
         </div>
 
-        {/* Right side - Search Bar */}
+        {/* Right side - Real-time Update Indicator */}
         <div className="flex items-center px-2 lg:px-3 xl:px-4">
-          <div className="w-72 max-w-md">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="검색어를 입력하세요..."
-                className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-            </div>
+          <div className="text-sm text-gray-500">
+            <span className="inline-flex items-center">
+              <span className="w-2 h-2 rounded-full mr-2 bg-green-500"></span>
+              실시간 업데이트: {lastUpdate.toLocaleString('ko-KR')}
+            </span>
           </div>
         </div>
       </div>
