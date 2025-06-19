@@ -169,23 +169,6 @@ const CustomerList = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="px-4 sm:px-6 lg:px-8 py-6">
         <div className="max-w-none space-y-6">
-          {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
-            <div>
-              <p className="text-sm text-gray-500 mt-1">
-                전체 {customerData.length}명의 수요자를 관리할 수 있습니다.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <button className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
-                내보내기
-              </button>
-              <button className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
-                수요자 추가
-              </button>
-            </div>
-          </div>
-
           {/* Stats Grid */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-6">
             {stats.map((stat, index) => (
