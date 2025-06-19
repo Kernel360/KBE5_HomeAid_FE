@@ -21,6 +21,8 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         return '대시보드';
       case '/admin/customers':
         return '수요자 조회';
+      case '/admin/customer-payments':
+        return '결제 관리';
       case '/admin/managers':
         return '매니저 조회';
       case '/admin/matches':
