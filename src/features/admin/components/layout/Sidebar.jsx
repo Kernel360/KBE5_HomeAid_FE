@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const menuItems = [
   {
@@ -145,10 +145,25 @@ const menuItems = [
 
 const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
-    // 로그아웃 로직
-    console.log('로그아웃');
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    // 로그아웃 처리 (세션 제거, 토큰 제거 등)
+    localStorage.removeItem('authToken');
+    sessionStorage.clear();
+
+    // 홈으로 이동
+    navigate('/', { replace: true });
+    setShowLogoutModal(false);
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   const handleLinkClick = () => {
@@ -375,6 +390,49 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           </div>
         </div>
       </aside>
+
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-5 flex items-center justify-center z-[100]">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+              <svg
+                className="w-6 h-6 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
+              로그아웃 하시겠습니까?
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              로그아웃 후 다시 로그인이 필요합니다.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelLogout}
+                className="flex-1 px-4 py-2 text-sm font-semibold text-red-600 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors shadow-sm"
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 px-4 py-2 text-sm font-semibold text-blue-600 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors shadow-sm"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

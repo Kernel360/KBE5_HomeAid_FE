@@ -23,7 +23,7 @@ const AdminLayout = () => {
         />
 
         {/* Main content */}
-        <main className="pt-16 min-h-screen bg-gray-50 w-full">
+        <main className="pt-20 min-h-screen bg-gray-50 w-full">
           <Outlet />
         </main>
       </div>

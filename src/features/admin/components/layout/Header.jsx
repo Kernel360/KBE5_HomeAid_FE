@@ -27,7 +27,7 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 bg-white border-b border-gray-200 z-50 shadow-sm">
+    <header className="fixed top-0 left-0 lg:left-64 right-0 h-20 bg-white border-b border-gray-200 z-50 shadow-sm">
       <div className="flex items-center justify-between h-full w-full">
         {/* Mobile Menu Button */}
         <div className="flex items-center lg:hidden px-3">
@@ -59,52 +59,43 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
         {/* Desktop Left side - Page Title */}
         <div className="hidden lg:flex items-center px-3 xl:px-4">
-          <h1 className="text-lg font-semibold text-gray-900">
+          <h1
+            className="text-2xl font-medium text-gray-700 tracking-normal"
+            style={{
+              fontFamily:
+                '"Nunito", "Poppins", "Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: '500',
+              borderRadius: '4px',
+            }}
+          >
             {getPageTitle()}
           </h1>
         </div>
 
-        {/* Center - Search Bar */}
-        <div className="flex-1 max-w-md mx-2 lg:mx-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="검색어를 입력하세요..."
-              className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="w-4 h-4 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Right side - User Profile */}
-        <div className="flex items-center space-x-2 px-2 lg:px-3 xl:px-4">
-          {/* User Profile */}
-          <div className="flex items-center space-x-2 lg:space-x-3 pl-2 lg:pl-3 border-l border-gray-200">
-            <div className="hidden lg:block text-right">
-              <p className="text-sm font-medium text-gray-900">관리자</p>
-              <p className="text-xs text-gray-500">admin@homeaid.com</p>
-            </div>
+        {/* Right side - Search Bar */}
+        <div className="flex items-center px-2 lg:px-3 xl:px-4">
+          <div className="w-72 max-w-md">
             <div className="relative">
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:shadow-md transition-shadow">
-                <span className="text-xs lg:text-sm font-medium text-white">
-                  관
-                </span>
+              <input
+                type="text"
+                placeholder="검색어를 입력하세요..."
+                className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
               </div>
-              <div className="absolute bottom-0 right-0 w-2 h-2 lg:w-3 lg:h-3 bg-green-400 border-2 border-white rounded-full"></div>
             </div>
           </div>
         </div>
