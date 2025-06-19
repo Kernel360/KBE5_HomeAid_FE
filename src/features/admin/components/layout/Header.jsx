@@ -1,0 +1,115 @@
+import React from 'react';
+import { useLocation } from 'react-router-dom';
+
+const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
+  const location = useLocation();
+
+  const getPageTitle = () => {
+    const path = location.pathname;
+    switch (path) {
+      case '/admin/dashboard':
+        return '대시보드';
+      case '/admin/customers':
+        return '수요자 조회';
+      case '/admin/managers':
+        return '매니저 조회';
+      case '/admin/matches':
+        return '매칭 관리';
+      case '/admin/statistics':
+        return '통계';
+      case '/admin/settlements':
+        return '매니저 정산';
+      case '/admin/inquiries':
+        return '1:1 문의';
+      default:
+        return '대시보드';
+    }
+  };
+
+  return (
+    <header className="fixed top-0 left-0 lg:left-64 right-0 h-20 bg-white border-b border-gray-200 z-50 shadow-sm">
+      <div className="flex items-center justify-between h-full w-full">
+        {/* Mobile Menu Button */}
+        <div className="flex items-center lg:hidden px-3">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <div className="ml-3 flex items-center space-x-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">H</span>
+            </div>
+            <span className="font-semibold text-gray-900">HomeAid</span>
+          </div>
+        </div>
+
+        {/* Desktop Left side - Page Title */}
+        <div className="hidden lg:flex items-center px-3 xl:px-4">
+          <h1
+            className="text-2xl font-medium text-gray-700 tracking-normal"
+            style={{
+              fontFamily:
+                '"Nunito", "Poppins", "Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              fontWeight: '500',
+              borderRadius: '4px',
+            }}
+          >
+            {getPageTitle()}
+          </h1>
+        </div>
+
+        {/* Right side - Search Bar */}
+        <div className="flex items-center px-2 lg:px-3 xl:px-4">
+          <div className="w-72 max-w-md">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="검색어를 입력하세요..."
+                className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+    </header>
+  );
+};
+
+export default Header;

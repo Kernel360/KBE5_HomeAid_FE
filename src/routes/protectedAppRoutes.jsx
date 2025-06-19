@@ -1,13 +1,14 @@
 import { Outlet } from 'react-router-dom';
-import AdminDashboardPage from '../features/admin/pages/AdminDashboardPage';
-import AdminUserManagement from '../features/admin/pages/AdminUserManagement';
-import MatchingSystemPage from '../features/admin/pages/MatchingSystemPage';
-import MatchingSystemActionPage from '../features/admin/pages/MatchingSystemActionPage';
-import MatchingManagerList from '../features/admin/pages/MatchingManagerList';
-import AdminManagerApproval from '../features/admin/pages/AdminManagerApproval';
+import AdminLayout from '../features/admin/components/layout/AdminLayout';
+import Dashboard from '../features/admin/pages/Dashboard';
+import CustomerList from '../features/admin/pages/CustomerList';
+import ManagerList from '../features/admin/pages/ManagerList';
+import MatchingManagement from '../features/admin/pages/MatchingManagement';
+import Statistics from '../features/admin/pages/Statistics';
+import ManagerSettlement from '../features/admin/pages/ManagerSettlement';
+import Inquiries from '../features/admin/pages/Inquiries';
 import ManagerServiceCheckIn from '../features/matching/pages/ManagerServiceCheckIn';
 import ManagerMatchingRequest from '../features/matching/pages/ManagerMatchingRequest';
-
 import UserServiceOption from '../features/reservation/components/UserServiceOption';
 import UserServiceSubOption from '../features/reservation/components/UserServiceSubOption';
 import UserServiceOptionCart from '../features/reservation/components/UserServiceOptionCart';
@@ -21,7 +22,6 @@ import Mypage from '../features/mypage/customer/pages/Mypage';
 import ManagerMypage from '../features/mypage/manager/ManagerMypage';
 import MyAddress from '../features/mypage/manager/components/MyAddress';
 import AddressRegister from '../features/mypage/manager/components/AddressRegister';
-import AdminLayoutPage from '../features/admin/pages/AdminLayoutPage';
 import ReservationHistoryPage from '../features/review/pages/ReservationHistoryPage';
 import ReservationDetailPage from '../features/review/pages/ReservationDetailPage';
 import ReviewWritePage from '../features/review/pages/ReviewWritePage';
@@ -34,10 +34,27 @@ import ManagerMatchingListPage from '../features/matching/pages/ManagerMatchingL
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
+  // 관리자(ADMIN) 권한이 필요한 라우트
+  {
+    path: '/admin',
+    element: <AdminLayout />,
+    allowedRoles: ['ROLE_ADMIN'],
+    children: [
+      { path: '', element: <Dashboard /> },
+      { path: 'dashboard', element: <Dashboard /> },
+      { path: 'customers', element: <CustomerList /> },
+      { path: 'managers', element: <ManagerList /> },
+      { path: 'matches', element: <MatchingManagement /> },
+      { path: 'statistics', element: <Statistics /> },
+      { path: 'settlements', element: <ManagerSettlement /> },
+      { path: 'inquiries', element: <Inquiries /> },
+    ],
+  },
+
   // 고객(CUSTOMER) 권한이 필요한 라우트 (레이아웃 포함)
   {
     path: '/customer',
-    element: <Outlet />, // Outlet 추가
+    element: <Outlet />,
     allowedRoles: ['ROLE_CUSTOMER'],
     children: [
       { path: 'mypage', element: <Mypage /> },
@@ -60,10 +77,11 @@ export const protectedAppRoutes = [
       { path: 'review/write', element: <ReviewWritePage /> },
     ],
   },
+
   // 매니저(MANAGER) 권한이 필요한 라우트 (레이아웃 포함)
   {
     path: '/manager',
-    element: <Outlet />, // Outlet으로 수정
+    element: <Outlet />,
     allowedRoles: ['ROLE_MANAGER'],
     children: [
       { path: 'mypage', element: <ManagerMypage /> },
@@ -89,7 +107,7 @@ export const protectedAppRoutes = [
     ],
   },
 
-  // 매칭 관련 라우트 (기존 경로 유지 - 직접 접근용)
+  // 매칭 관련 라우트
   {
     path: '/matching/list',
     element: <ManagerMatchingListPage />,
@@ -104,39 +122,5 @@ export const protectedAppRoutes = [
     path: '/matching/service-checkin',
     element: <ManagerServiceCheckIn />,
     allowedRoles: ['ROLE_MANAGER', 'ROLE_ADMIN'],
-  },
-
-  // 관리자(ADMIN) 권한이 필요한 라우트
-  {
-    path: '/admin',
-    element: <AdminLayoutPage />,
-    allowedRoles: ['ROLE_ADMIN'],
-    children: [
-      {
-        index: true,
-        element: <AdminDashboardPage />,
-      },
-      {
-        path: 'users',
-        element: <AdminUserManagement />,
-      },
-      {
-        path: 'matchingsystem',
-        element: <MatchingSystemPage />,
-      },
-      {
-        path: 'matchingsystem/:managerId',
-        element: <MatchingSystemActionPage />,
-      },
-      {
-        path: 'managers',
-        element: <MatchingManagerList />,
-      },
-
-      {
-        path: 'manager-approval',
-        element: <AdminManagerApproval />,
-      },
-    ],
   },
 ];
