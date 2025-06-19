@@ -148,26 +148,33 @@ const Statistics = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-white">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 bg-white">
         <div className="max-w-none space-y-6">
           {/* Main Tabs */}
           <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="flex overflow-x-auto border-b border-gray-200">
+            <div
+              className="flex overflow-x-auto bg-white"
+              style={{ backgroundColor: 'white' }}
+            >
               {mainTabs.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveMainTab(tab.split(' ')[0])}
-                  className={`px-4 sm:px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  className={`px-4 sm:px-6 py-4 text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                     activeMainTab === tab.split(' ')[0]
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'text-blue-600 border-b-2 border-blue-500 bg-white'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 border-transparent bg-white'
                   }`}
+                  style={{ backgroundColor: 'white' }}
                 >
                   {tab}
                 </button>
               ))}
             </div>
+
+            {/* 구분선 */}
+            <div className="border-b border-gray-200 bg-white"></div>
 
             <div className="w-full p-6">
               {/* Stats Grid */}
