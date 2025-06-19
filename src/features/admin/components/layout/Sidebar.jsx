@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../../../stores/authStore';
 
 const menuItems = [
   {
@@ -30,7 +29,7 @@ const menuItems = [
   },
   {
     path: '/admin/customers',
-    label: '수요자조회',
+    label: '수요자 조회',
     icon: (
       <svg
         className="w-5 h-5"
@@ -49,7 +48,7 @@ const menuItems = [
   },
   {
     path: '/admin/managers',
-    label: '매니저조회',
+    label: '매니저 조회',
     icon: (
       <svg
         className="w-5 h-5"
@@ -68,7 +67,7 @@ const menuItems = [
   },
   {
     path: '/admin/matches',
-    label: '매칭관리',
+    label: '매칭 관리',
     icon: (
       <svg
         className="w-5 h-5"
@@ -106,7 +105,7 @@ const menuItems = [
   },
   {
     path: '/admin/settlements',
-    label: '매니저정산',
+    label: '매니저 정산',
     icon: (
       <svg
         className="w-5 h-5"
@@ -125,7 +124,7 @@ const menuItems = [
   },
   {
     path: '/admin/inquiries',
-    label: '게시판1:1',
+    label: '1:1 문의',
     icon: (
       <svg
         className="w-5 h-5"
@@ -144,81 +143,239 @@ const menuItems = [
   },
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const location = useLocation();
-  const logout = useAuthStore((s) => s.logout);
+
+  const handleLogout = () => {
+    // 로그아웃 로직
+    console.log('로그아웃');
+  };
+
+  const handleLinkClick = () => {
+    // 모바일에서 링크 클릭 시 메뉴 닫기
+    if (setIsMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col z-40 h-[calc(100vh-4rem)]">
-      {/* Menu Header */}
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          MENU
-        </h2>
-      </div>
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:fixed lg:top-0 lg:left-0 lg:w-64 lg:h-screen lg:bg-white lg:border-r lg:border-gray-200 lg:flex lg:flex-col lg:shadow-sm lg:z-30">
+        {/* Brand Section */}
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">H</span>
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">HomeAid</h2>
+              <p className="text-xs text-gray-500">Management</p>
+            </div>
+          </div>
+        </div>
 
-      {/* Menu Items */}
-      <nav className="flex-1 overflow-y-auto py-4">
-        <div className="space-y-1 px-3">
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                location.pathname === item.path
-                  ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-              }`}
+        {/* Navigation Menu */}
+        <nav className="flex-1 overflow-y-auto py-4">
+          <div className="px-3">
+            <div className="mb-2">
+              <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                NAVIGATION
+              </p>
+            </div>
+            <div className="space-y-1">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    location.pathname === item.path
+                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600 shadow-sm'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <span
+                    className={`mr-3 flex-shrink-0 transition-colors ${
+                      location.pathname === item.path
+                        ? 'text-blue-600'
+                        : 'text-gray-400 group-hover:text-gray-600'
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="truncate">{item.label}</span>
+                  {location.pathname === item.path && (
+                    <span className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </nav>
+
+        {/* User Section */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="relative">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-white">관</span>
+              </div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                관리자
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                admin@homeaid.com
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex space-x-2">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center px-3 py-2 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
             >
-              <span
-                className={`mr-3 flex-shrink-0 ${
-                  location.pathname === item.path
-                    ? 'text-blue-600'
-                    : 'text-gray-400 group-hover:text-gray-500'
-                }`}
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
-
-      {/* User section */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-xs font-medium text-gray-700">관</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">관리자</p>
-            <p className="text-xs text-gray-500 truncate">admin@company.com</p>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              로그아웃
+            </button>
           </div>
         </div>
+      </aside>
 
-        {/* Logout button */}
-        <button
-          onClick={() => logout()}
-          className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-        >
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+      {/* Mobile Sidebar */}
+      <aside
+        className={`lg:hidden fixed top-0 left-0 w-64 h-screen bg-white border-r border-gray-200 flex flex-col shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Mobile Header */}
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">H</span>
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">HomeAid</h2>
+              <p className="text-xs text-gray-500">Management</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="p-2 text-gray-500 hover:text-gray-700 rounded-lg"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-            />
-          </svg>
-          로그아웃
-        </button>
-      </div>
-    </aside>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Navigation Menu */}
+        <nav className="flex-1 overflow-y-auto py-4">
+          <div className="px-3">
+            <div className="mb-2">
+              <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                NAVIGATION
+              </p>
+            </div>
+            <div className="space-y-1">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={handleLinkClick}
+                  className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    location.pathname === item.path
+                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600 shadow-sm'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <span
+                    className={`mr-3 flex-shrink-0 transition-colors ${
+                      location.pathname === item.path
+                        ? 'text-blue-600'
+                        : 'text-gray-400 group-hover:text-gray-600'
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="truncate">{item.label}</span>
+                  {location.pathname === item.path && (
+                    <span className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </nav>
+
+        {/* Mobile User Section */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="relative">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-white">관</span>
+              </div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                관리자
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                admin@homeaid.com
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              로그아웃
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 };
 

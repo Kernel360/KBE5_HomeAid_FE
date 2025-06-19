@@ -1,391 +1,280 @@
 import React from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Filler,
-  Legend,
-} from 'chart.js';
 
-// Chart.js 등록
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Filler,
-  Legend
+const StatCard = ({
+  title,
+  value,
+  subValue,
+  icon,
+  change,
+  changeType = 'increase',
+}) => (
+  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
+    <div className="flex items-start justify-between mb-3 min-h-0">
+      <div className="flex items-center space-x-2 flex-1 min-w-0">
+        <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></div>
+        <span className="text-xs text-gray-600 truncate flex-1">{title}</span>
+      </div>
+      <div className="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
+        {icon}
+      </div>
+    </div>
+    <div className="flex-1 flex flex-col justify-center min-h-0">
+      <div className="text-lg font-bold text-gray-900 mb-1 truncate">
+        {value}
+      </div>
+      {subValue && (
+        <div className="text-xs text-gray-500 mb-1">
+          {subValue.split('\n').map((line, index) => (
+            <div key={index} className="truncate">
+              {line}
+            </div>
+          ))}
+        </div>
+      )}
+      {change && (
+        <div
+          className={`text-xs truncate ${
+            changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+          }`}
+        >
+          <span className="inline-flex items-center">
+            {changeType === 'increase' ? '↗' : '↘'}
+            <span className="truncate ml-1">{change}</span>
+          </span>
+        </div>
+      )}
+    </div>
+  </div>
 );
 
 const Dashboard = () => {
-  // 차트 데이터
-  const chartData = {
-    labels: ['1/9', '1/10', '1/11', '1/12', '1/13', '1/14', '1/15'],
-    datasets: [
-      {
-        fill: true,
-        label: '매출',
-        data: [2100000, 2300000, 2400000, 2600000, 2700000, 2800000, 2900000],
-        borderColor: 'rgb(53, 162, 235)',
-        backgroundColor: 'rgba(53, 162, 235, 0.2)',
-        tension: 0.4,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false,
-      },
+  const stats = [
+    {
+      title: '실시간 접속자',
+      value: '247',
+      subValue: '수요자: 156명\n매니저: 91명',
+      icon: (
+        <svg
+          className="w-5 h-5 text-green-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+        </svg>
+      ),
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
+    {
+      title: '진행중 매칭',
+      value: '89',
+      subValue: '대기: 23건\n진행: 66건',
+      icon: (
+        <svg
+          className="w-5 h-5 text-orange-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
     },
-  };
+    {
+      title: '오늘 매출',
+      value: '₩2,450,000',
+      subValue: '',
+      change: '+18.5% 어제 대비',
+      icon: (
+        <svg
+          className="w-5 h-5 text-blue-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+          <path
+            fillRule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: '전체 사용자',
+      value: '3,456',
+      subValue: '',
+      change: '+12.3% 이번 달',
+      icon: (
+        <svg
+          className="w-5 h-5 text-blue-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+        </svg>
+      ),
+    },
+    {
+      title: '총 매칭 수',
+      value: '1,892',
+      subValue: '',
+      change: '94.2% 성공률',
+      icon: (
+        <svg
+          className="w-5 h-5 text-green-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: '이번 달 매출',
+      value: '₩68,900,000',
+      subValue: '',
+      change: '92.1% 목표 달성',
+      icon: (
+        <svg
+          className="w-5 h-5 text-pink-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+    },
+  ];
 
   return (
-    <div className="w-full">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div className="mb-4 sm:mb-0">
-          <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
-          <div className="flex items-center mt-2 text-sm text-gray-500">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            <span>실시간 업데이트: 2024.01.15 14:32</span>
+    <div className="min-h-screen bg-gray-50">
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-none space-y-6">
+          {/* Page Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+            <div>
+              <p className="text-sm text-gray-500 mt-1">
+                <span className="inline-flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  실시간 업데이트: 2024.01.15 14:32
+                </span>
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  placeholder="검색어를 입력하세요"
+                  className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button className="px-4 py-2 text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap">
+                  필터
+                </button>
+              </div>
+              <button className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
+                + 추가
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Top toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Search */}
-          <div className="relative">
-            <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"
+          {/* Stats Grid */}
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+            {stats.map((stat, index) => (
+              <StatCard
+                key={index}
+                title={stat.title}
+                value={stat.value}
+                subValue={stat.subValue}
+                icon={stat.icon}
+                change={stat.change}
               />
-            </svg>
-            <input
-              type="text"
-              placeholder="검색어를 입력하세요"
-              className="w-full sm:w-64 border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            ))}
           </div>
-          <button className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 2v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-              />
-            </svg>
-            필터
-          </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg px-4 py-2 whitespace-nowrap">
-            + 추가
-          </button>
-        </div>
-      </div>
 
-      {/* Stats Grid - Responsive */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
-        {/* 실시간 접속자 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-                <span className="text-sm font-medium text-gray-600 truncate">
-                  실시간 접속자
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1 truncate">
-                247
-              </div>
-              <div className="text-sm text-gray-500 space-y-1">
-                <div className="truncate">수요자: 156명</div>
-                <div className="truncate">매니저: 91명</div>
+          {/* Chart Section */}
+          <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                매출 추이 (최근 7일)
+              </h2>
+              <div className="flex space-x-2">
+                <button className="px-3 py-1 text-sm text-gray-600 bg-gray-100 rounded-lg">
+                  7일
+                </button>
+                <button className="px-3 py-1 text-sm text-white bg-blue-600 rounded-lg">
+                  30일
+                </button>
               </div>
             </div>
-            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+
+            {/* Placeholder for chart */}
+            <div className="w-full h-64 lg:h-80 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg flex items-center justify-center relative chart-container">
+              <svg viewBox="0 0 800 200" className="w-full h-full max-w-full">
+                <defs>
+                  <linearGradient
+                    id="gradient"
+                    x1="0%"
+                    y1="0%"
+                    x2="0%"
+                    y2="100%"
+                  >
+                    <stop
+                      offset="0%"
+                      style={{ stopColor: '#3B82F6', stopOpacity: 0.8 }}
+                    />
+                    <stop
+                      offset="100%"
+                      style={{ stopColor: '#3B82F6', stopOpacity: 0.1 }}
+                    />
+                  </linearGradient>
+                </defs>
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* 진행중 매칭 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
-                <span className="text-sm font-medium text-gray-600 truncate">
-                  진행중 매칭
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1 truncate">
-                89
-              </div>
-              <div className="text-sm text-gray-500 space-y-1">
-                <div className="truncate">대기중: 23건</div>
-                <div className="truncate">진행중: 66건</div>
-              </div>
-            </div>
-            <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-orange-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* 오늘 매출 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-gray-600 truncate block">
-                오늘 매출
-              </span>
-              <div className="text-2xl font-bold text-gray-900 my-1 truncate">
-                ₩2,450,000
-              </div>
-              <div className="flex items-center text-sm text-green-600">
-                <svg
-                  className="w-4 h-4 mr-1 flex-shrink-0"
+                  d="M50,150 L150,120 L250,100 L350,80 L450,70 L550,60 L650,50 L750,40"
                   fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 11l5-5m0 0l5 5m-5-5v12"
-                  />
-                </svg>
-                <span className="truncate">+18.5% 어제 대비</span>
-              </div>
-            </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  stroke="#3B82F6"
+                  strokeWidth="3"
                 />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* 전체 사용자 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-gray-600 truncate block">
-                전체 사용자
-              </span>
-              <div className="text-2xl font-bold text-gray-900 my-1 truncate">
-                3,456
-              </div>
-              <div className="flex items-center text-sm text-green-600">
-                <svg
-                  className="w-4 h-4 mr-1 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 11l5-5m0 0l5 5m-5-5v12"
-                  />
-                </svg>
-                <span className="truncate">+12.3% 이번 달</span>
-              </div>
-            </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  d="M50,150 L150,120 L250,100 L350,80 L450,70 L550,60 L650,50 L750,40 L750,200 L50,200 Z"
+                  fill="url(#gradient)"
                 />
+                {/* Data points */}
+                {[50, 150, 250, 350, 450, 550, 650, 750].map((x, i) => {
+                  const y = 150 - i * 15;
+                  return (
+                    <circle
+                      key={i}
+                      cx={x}
+                      cy={y}
+                      r="4"
+                      fill="#3B82F6"
+                      stroke="white"
+                      strokeWidth="2"
+                    />
+                  );
+                })}
               </svg>
+              <div className="absolute bottom-4 left-6 flex space-x-6 text-sm text-gray-600">
+                <span>1/9</span>
+                <span>1/10</span>
+                <span>1/11</span>
+                <span>1/12</span>
+                <span>1/13</span>
+                <span>1/14</span>
+                <span>1/15</span>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* 총 매칭 수 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-                <span className="text-sm font-medium text-gray-600 truncate">
-                  총 매칭 수
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1 truncate">
-                1,892
-              </div>
-              <div className="flex items-center text-sm text-green-600">
-                <svg
-                  className="w-4 h-4 mr-1 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span className="truncate">94.2% 성공률</span>
-              </div>
-            </div>
-            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* 이번 달 매출 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-gray-600 truncate block">
-                이번 달 매출
-              </span>
-              <div className="text-2xl font-bold text-gray-900 my-1 truncate">
-                ₩68,900,000
-              </div>
-              <div className="flex items-center text-sm text-pink-600">
-                <svg
-                  className="w-4 h-4 mr-1 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                  />
-                </svg>
-                <span className="truncate">92.1% 목표 달성</span>
-              </div>
-            </div>
-            <div className="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-pink-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Chart Section */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-0">
-            매출 추이 (최근 7일)
-          </h3>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg">
-              7일
-            </button>
-            <button className="px-3 py-1 text-sm text-white bg-blue-600 rounded-lg">
-              30일
-            </button>
-          </div>
-        </div>
-        <div className="h-48">
-          <Line data={chartData} options={chartOptions} />
         </div>
       </div>
     </div>

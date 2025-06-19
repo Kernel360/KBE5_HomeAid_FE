@@ -1,507 +1,337 @@
-import React from 'react';
+import React, { useState } from 'react';
+
+const StatCard = ({ title, value, subValue, icon, iconBg }) => (
+  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
+    <div className="flex items-start justify-between mb-3 min-h-0">
+      <div className="flex items-center space-x-2 flex-1 min-w-0">
+        <div className="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></div>
+        <span className="text-xs text-gray-600 truncate flex-1">{title}</span>
+      </div>
+      <div
+        className={`w-8 h-8 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0 ml-2`}
+      >
+        {icon}
+      </div>
+    </div>
+    <div className="flex-1 flex flex-col justify-center min-h-0">
+      <div className="text-lg font-bold text-gray-900 mb-1 truncate">
+        {value}
+      </div>
+      {subValue && (
+        <div className="text-xs text-gray-500">
+          {subValue.split('\n').map((line, index) => (
+            <div key={index} className="truncate">
+              {line}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 const CustomerList = () => {
+  const [sortBy, setSortBy] = useState('전체');
+
+  const stats = [
+    {
+      title: '전체 수요자',
+      value: '3,456',
+      subValue: '+12.3% 이번 달',
+      icon: (
+        <svg
+          className="w-5 h-5 text-blue-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+        </svg>
+      ),
+      iconBg: 'bg-blue-100',
+    },
+    {
+      title: '활성 수요자',
+      value: '2,891',
+      subValue: '온라인: 247명\n오프라인: 2,644명',
+      icon: (
+        <svg
+          className="w-5 h-5 text-green-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+      iconBg: 'bg-green-100',
+    },
+    {
+      title: '신규 가입 (오늘)',
+      value: '23',
+      subValue: '+15.0% 어제 대비',
+      icon: (
+        <svg
+          className="w-5 h-5 text-yellow-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+      iconBg: 'bg-yellow-100',
+    },
+    {
+      title: '매칭 성공률',
+      value: '87.5%',
+      subValue: '성공: 1854건\n실패: 238건',
+      icon: (
+        <svg
+          className="w-5 h-5 text-green-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+      iconBg: 'bg-green-100',
+    },
+  ];
+
+  const customerData = [
+    {
+      name: '김철수',
+      status: '● 온라인',
+      email: 'kim@email.com',
+      phone: '010-1234-5678',
+      joinDate: '2024.01.15',
+      activity: '활성',
+      matchCount: '3건',
+    },
+    {
+      name: '이영희',
+      status: '● 오프라인',
+      email: 'lee@email.com',
+      phone: '010-9876-5432',
+      joinDate: '2024.01.12',
+      activity: '활성',
+      matchCount: '1건',
+    },
+    {
+      name: '홍길동',
+      status: '● 오프라인',
+      email: 'hong@email.com',
+      phone: '010-9876-5432',
+      joinDate: '2024.01.12',
+      activity: '비활성',
+      matchCount: '1건',
+    },
+    {
+      name: '강운동',
+      status: '● 오프라인',
+      email: 'kang@email.com',
+      phone: '010-9876-5432',
+      joinDate: '2024.01.12',
+      activity: '비활성',
+      matchCount: '1건',
+    },
+    {
+      name: '최회일',
+      status: '● 오프라인',
+      email: 'cho@email.com',
+      phone: '010-9876-5432',
+      joinDate: '2024.01.12',
+      activity: '비활성',
+      matchCount: '1건',
+    },
+    {
+      name: '강수일',
+      status: '● 오프라인',
+      email: 'kang@email.com',
+      phone: '010-9876-5432',
+      joinDate: '2024.01.12',
+      activity: '비활성',
+      matchCount: '1건',
+    },
+  ];
+
   return (
-    <div className="w-full">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div className="mb-4 sm:mb-0">
-          <h1 className="text-2xl font-bold text-gray-900">수요자 조회</h1>
-          <div className="flex items-center mt-2 text-sm text-gray-500">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            <span>활성 수요자 2,891명 · 신규 가입 23명</span>
+    <div className="min-h-screen bg-gray-50">
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-none space-y-6">
+          {/* Page Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+            <div>
+              <p className="text-sm text-gray-500 mt-1">
+                전체 {customerData.length}명의 수요자를 관리할 수 있습니다.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
+                내보내기
+              </button>
+              <button className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
+                + 수요자 추가
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Top toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative">
-            <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"
+          {/* Stats Grid */}
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-6">
+            {stats.map((stat, index) => (
+              <StatCard
+                key={index}
+                title={stat.title}
+                value={stat.value}
+                subValue={stat.subValue}
+                icon={stat.icon}
+                iconBg={stat.iconBg}
               />
-            </svg>
-            <input
-              type="text"
-              placeholder="수요자 검색..."
-              className="w-full sm:w-64 border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            ))}
           </div>
-          <button className="flex items-center justify-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 2v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-              />
-            </svg>
-            필터
-          </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg px-4 py-2 whitespace-nowrap">
-            + 수요자 추가
-          </button>
-        </div>
-      </div>
 
-      {/* Stats Grid - Responsive */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        {/* 전체 수요자 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-gray-600 truncate block">
-                전체 수요자
-              </span>
-              <div className="text-2xl font-bold text-gray-900 my-1 truncate">
-                3,456
-              </div>
-              <div className="flex items-center text-sm text-green-600">
-                <svg
-                  className="w-4 h-4 mr-1 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          {/* Table */}
+          <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Table Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6 border-b border-gray-200 gap-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                수요자 목록
+              </h3>
+              <div className="flex items-center space-x-3">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 11l5-5m0 0l5 5m-5-5v12"
-                  />
-                </svg>
-                <span className="truncate">+234명 이번 달</span>
+                  <option>전체</option>
+                  <option>활성</option>
+                  <option>비활성</option>
+                </select>
+                <span className="text-sm text-gray-500">⋯</span>
               </div>
             </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
 
-        {/* 활성 수요자 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-                <span className="text-sm font-medium text-gray-600 truncate">
-                  활성 수요자
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1 truncate">
-                2,891
-              </div>
-              <div className="text-sm text-gray-500 space-y-1">
-                <div className="truncate">온라인: 1,456명</div>
-                <div className="truncate">오프라인: 1,435명</div>
-              </div>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-[1200px]">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300"
+                      />
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      이름
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      이메일
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      전화번호
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      가입일
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      상태
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      매칭수
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      상세보기
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {customerData.map((item, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {item.name}
+                          </div>
+                          <div
+                            className={`text-sm ${item.status.includes('온라인') ? 'text-green-600' : 'text-gray-500'}`}
+                          >
+                            {item.status}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.phone}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.joinDate}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            item.activity === '활성'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {item.activity}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.matchCount}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                          상세보기
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
 
-        {/* 신규 가입 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-gray-600 truncate block">
-                신규 가입 (오늘)
-              </span>
-              <div className="text-2xl font-bold text-gray-900 my-1 truncate">
-                23
+            {/* Pagination */}
+            <div className="w-full flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 gap-4">
+              <div className="text-sm text-gray-700">
+                총 1,234개 중 1-5개 표시
               </div>
-              <div className="flex items-center text-sm text-blue-600">
-                <svg
-                  className="w-4 h-4 mr-1 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span className="truncate">어제보다 +15%</span>
+              <div className="flex items-center space-x-2">
+                <button className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">
+                  ‹
+                </button>
+                <button className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
+                  1
+                </button>
+                <button className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">
+                  2
+                </button>
+                <button className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">
+                  3
+                </button>
+                <button className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">
+                  ›
+                </button>
               </div>
             </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* 매칭 성공률 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px]">
-          <div className="flex items-start justify-between h-full">
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-gray-600 truncate block">
-                매칭 성공률
-              </span>
-              <div className="text-2xl font-bold text-gray-900 my-1 truncate">
-                87.5%
-              </div>
-              <div className="flex items-center text-sm text-green-600">
-                <svg
-                  className="w-4 h-4 mr-1 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span className="truncate">목표 대비 +5.2%</span>
-              </div>
-            </div>
-            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-5 h-5 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Table - Responsive */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left py-4 px-6 text-sm font-medium text-gray-600">
-                  <input type="checkbox" className="rounded" />
-                </th>
-                <th className="text-left py-4 px-6 text-sm font-medium text-gray-600 whitespace-nowrap">
-                  이름
-                </th>
-                <th className="text-left py-4 px-6 text-sm font-medium text-gray-600 whitespace-nowrap">
-                  이메일
-                </th>
-                <th className="text-left py-4 px-6 text-sm font-medium text-gray-600 whitespace-nowrap">
-                  전화번호
-                </th>
-                <th className="text-left py-4 px-6 text-sm font-medium text-gray-600 whitespace-nowrap">
-                  가입일
-                </th>
-                <th className="text-left py-4 px-6 text-sm font-medium text-gray-600 whitespace-nowrap">
-                  상태
-                </th>
-                <th className="text-left py-4 px-6 text-sm font-medium text-gray-600 whitespace-nowrap">
-                  매칭수
-                </th>
-                <th className="text-left py-4 px-6 text-sm font-medium text-gray-600 whitespace-nowrap">
-                  최근활동
-                </th>
-                <th className="text-left py-4 px-6 text-sm font-medium text-gray-600 whitespace-nowrap">
-                  액션
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="py-4 px-6">
-                  <input type="checkbox" className="rounded" />
-                </td>
-                <td className="py-4 px-6">
-                  <div>
-                    <div className="font-medium text-gray-900 whitespace-nowrap">
-                      김철수
-                    </div>
-                    <div className="text-sm text-gray-500 flex items-center gap-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="whitespace-nowrap">온라인</span>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  kim@email.com
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  010-1234-5678
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  2024.01.15
-                </td>
-                <td className="py-4 px-6">
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
-                    활성
-                  </span>
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  3건
-                </td>
-                <td className="py-4 px-6 text-green-600 whitespace-nowrap">
-                  5분 전
-                </td>
-                <td className="py-4 px-6">
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                    </button>
-                    <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="py-4 px-6">
-                  <input type="checkbox" className="rounded" />
-                </td>
-                <td className="py-4 px-6">
-                  <div>
-                    <div className="font-medium text-gray-900 whitespace-nowrap">
-                      이영희
-                    </div>
-                    <div className="text-sm text-gray-500 flex items-center gap-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                      <span className="whitespace-nowrap">오프라인</span>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  lee@email.com
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  010-9876-5432
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  2024.01.12
-                </td>
-                <td className="py-4 px-6">
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
-                    활성
-                  </span>
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  1건
-                </td>
-                <td className="py-4 px-6 text-gray-500 whitespace-nowrap">
-                  10분 전
-                </td>
-                <td className="py-4 px-6">
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                    </button>
-                    <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="py-4 px-6">
-                  <input type="checkbox" className="rounded" />
-                </td>
-                <td className="py-4 px-6">
-                  <div>
-                    <div className="font-medium text-gray-900 whitespace-nowrap">
-                      홍길동
-                    </div>
-                    <div className="text-sm text-gray-500 flex items-center gap-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                      <span className="whitespace-nowrap">오프라인</span>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  hong@email.com
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  010-9876-5432
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  2024.01.12
-                </td>
-                <td className="py-4 px-6">
-                  <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
-                    비활성
-                  </span>
-                </td>
-                <td className="py-4 px-6 text-gray-900 whitespace-nowrap">
-                  1건
-                </td>
-                <td className="py-4 px-6 text-gray-500 whitespace-nowrap">
-                  2시간 전
-                </td>
-                <td className="py-4 px-6">
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                    </button>
-                    <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-gray-100">
-          <div className="text-sm text-gray-500 mb-4 sm:mb-0">
-            총 3,456개 중 1-5개 표시
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              &lt;
-            </button>
-            <button className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg">
-              1
-            </button>
-            <button className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              2
-            </button>
-            <button className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              3
-            </button>
-            <button className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              &gt;
-            </button>
           </div>
         </div>
       </div>
