@@ -39,7 +39,7 @@ const SignInPage = () => {
       if (data.role === 'ROLE_CUSTOMER') {
         navigate('/customer/service-option', { replace: true });
       } else if (data.role === 'ROLE_ADMIN') {
-        navigate('/admin', { replace: true });
+        navigate('/admin/dashboard', { replace: true });
       } else if (data.role === 'ROLE_MANAGER') {
         navigate('/matching/list', { replace: true }); // 매니저는 매칭내역 페이지로 이동
       } else {

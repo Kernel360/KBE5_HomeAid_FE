@@ -58,7 +58,7 @@ const MainPage = () => {
       } else if (user.role === 'ROLE_MANAGER') {
         navigate('/manager/mypage');
       } else if (user.role === 'ROLE_ADMIN') {
-        navigate('/admin');
+        navigate('/admin/dashboard');
       }
     } else {
       // 비로그인 사용자는 로그인 페이지로 이동
@@ -145,96 +145,15 @@ const MainPage = () => {
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`rounded-full transition-all duration-300 ${
+                  className={`w-2 h-2 rounded-full transition-colors duration-200 ${
                     currentSlide === index ? 'bg-white' : 'bg-white/50'
                   }`}
-                  style={{
-                    width: '2px',
-                    height: '2px',
-                  }}
-                />
+                ></button>
               ))}
             </div>
           </div>
-
-          {/* 서비스 바로가기 버튼들 */}
-          <div className="mb-8">
-            {/* 비로그인 사용자와 고객을 위한 안내 텍스트 */}
-            {(!user || user?.role === 'ROLE_CUSTOMER') && (
-              <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
-                서비스를 선택해주세요
-              </h3>
-            )}
-
-            {/* 매니저가 아닌 경우에만 서비스 버튼들 표시 */}
-            {user?.role !== 'ROLE_MANAGER' && (
-              <div className="grid grid-cols-3 gap-4">
-                <button
-                  onClick={() => handleServiceClick('/customer/service-option')}
-                  className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
-                >
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
-                    🧹
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    청소
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => handleServiceClick('/customer/service-option')}
-                  className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
-                >
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-2">
-                    👕
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    빨래
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => handleServiceClick('/customer/service-option')}
-                  className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
-                >
-                  <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-2">
-                    👶
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    육아
-                  </span>
-                </button>
-              </div>
-            )}
-
-            {/* 로그인된 고객 사용자를 위한 추가 메뉴 */}
-            {/* TODO: 예약내역과 마이페이지 버튼 기능 구현 예정 */}
-            {/* {user && user.role === 'ROLE_CUSTOMER' && (
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => navigate('/customer/reservations')}
-                  className="flex items-center justify-center p-4 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors duration-200"
-                >
-                  <span className="text-sm font-medium text-blue-700">
-                    예약 내역
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => navigate('/customer/mypage')}
-                  className="flex items-center justify-center p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <span className="text-sm font-medium text-gray-700">
-                    마이페이지
-                  </span>
-                </button>
-              </div>
-            )} */}
-          </div>
         </main>
-
-        {/* 로그인된 사용자에게만 Footer 표시 */}
-        {user && <Footer current="/" />}
+        <Footer />
       </div>
     </div>
   );
