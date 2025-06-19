@@ -1,6 +1,6 @@
 // import api from './apiClient';
-import api from "../../../api/config/api";
-import { apiClient } from "../../../api/config/api";
+import api from '../../../api/config/api';
+import { apiClient } from '../../../api/config/api';
 // 필요한 DTO 타입 정의가 있다면 여기서 임포트
 // import { CustomerSignUpRequestDto, ManagerSignUpRequestDto } from '../types/auth'; // 예시
 
@@ -64,8 +64,8 @@ export const authService = {
     } catch (error) {
       console.error('❌ 로그인 API 오류:', error);
       console.error('🚨 에러 상세:', error.message);
-console.error('🚨 응답 상태:', error.response?.status);
-console.error('🚨 응답 데이터:', error.response?.data);
+      console.error('🚨 응답 상태:', error.response?.status);
+      console.error('🚨 응답 데이터:', error.response?.data);
       throw error;
     }
   },
@@ -75,10 +75,7 @@ console.error('🚨 응답 데이터:', error.response?.data);
     console.log('🔄 고객 회원가입 API 호출:', customerData);
 
     try {
-      const response = await api.post(
-        '/users/signup/customers',
-        customerData
-      );
+      const response = await api.post('/users/signup/customers', customerData);
       console.log('✅ 고객 회원가입 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -111,10 +108,7 @@ console.error('🚨 응답 데이터:', error.response?.data);
     console.log('🔄 매니저 회원가입 API 호출:', managerData);
 
     try {
-      const response = await api.post(
-        '/users/signup/managers',
-        managerData
-      );
+      const response = await api.post('/users/signup/managers', managerData);
       console.log('✅ 매니저 회원가입 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -126,9 +120,7 @@ console.error('🚨 응답 데이터:', error.response?.data);
         console.log('');
         console.log('📋 백엔드 개발자에게 전달할 정보:');
         console.log('  🎯 문제: 백엔드 서버 미실행 또는 CORS 설정 누락');
-        console.log(
-          `  🌐 요청: POST url/api/v1/users/signup/managers`
-        );
+        console.log(`  🌐 요청: POST url/api/v1/users/signup/managers`);
         console.log('  📦 필요한 작업:');
         console.log('    1. 백엔드 서버 실행 확인 (포트 8080)');
         console.log(
@@ -173,10 +165,7 @@ console.error('🚨 응답 데이터:', error.response?.data);
 
   // 회원가입 단계별 데이터 저장 (예시)
   saveSignUpStep: async (step, data) => {
-    const response = await api.post(
-      `/users/signup/step/${step}`,
-      data
-    );
+    const response = await api.post(`/users/signup/step/${step}`, data);
     return response.data;
   },
 };

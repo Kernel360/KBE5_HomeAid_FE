@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../../stores/authStore.js';
 
 const StatCard = ({
   title,
@@ -7,40 +9,68 @@ const StatCard = ({
   icon,
   change,
   changeType = 'increase',
+  loading = false,
 }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
     <div className="flex items-start justify-between mb-3 min-h-0">
       <div className="flex items-center space-x-2 flex-1 min-w-0">
-        <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></div>
+        <div
+          className={`w-3 h-3 rounded-full flex-shrink-0 ${loading ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}
+        ></div>
         <span className="text-xs text-gray-600 truncate flex-1">{title}</span>
       </div>
-      <div className="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0 ml-2">
-        {icon}
+      <div
+        className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ml-2 ${loading ? 'bg-gray-100 animate-pulse' : 'bg-green-100'}`}
+      >
+        {loading ? (
+          <div className="w-5 h-5 bg-gray-300 rounded animate-pulse"></div>
+        ) : (
+          icon
+        )}
       </div>
     </div>
     <div className="flex-1 flex flex-col justify-center min-h-0">
-      <div className="text-lg font-bold text-gray-900 mb-1 truncate">
-        {value}
+      <div
+        className={`text-lg font-bold mb-1 truncate ${loading ? 'bg-gray-200 animate-pulse rounded h-6' : 'text-gray-900'}`}
+      >
+        {loading ? '' : value}
       </div>
       {subValue && (
-        <div className="text-xs text-gray-500 mb-1">
-          {subValue.split('\n').map((line, index) => (
-            <div key={index} className="truncate">
-              {line}
-            </div>
-          ))}
+        <div
+          className={`text-xs mb-1 ${loading ? 'space-y-1' : 'text-gray-500'}`}
+        >
+          {loading ? (
+            <>
+              <div className="bg-gray-200 animate-pulse rounded h-3 w-3/4"></div>
+              <div className="bg-gray-200 animate-pulse rounded h-3 w-1/2"></div>
+            </>
+          ) : (
+            subValue.split('\n').map((line, index) => (
+              <div key={index} className="truncate">
+                {line}
+              </div>
+            ))
+          )}
         </div>
       )}
       {change && (
         <div
           className={`text-xs truncate ${
-            changeType === 'increase' ? 'text-green-600' : 'text-red-600'
+            loading
+              ? 'bg-gray-200 animate-pulse rounded h-3 w-2/3'
+              : changeType === 'increase'
+                ? 'text-green-600'
+                : 'text-red-600'
           }`}
         >
-          <span className="inline-flex items-center">
-            {changeType === 'increase' ? '↗' : '↘'}
-            <span className="truncate ml-1">{change}</span>
-          </span>
+          {loading ? (
+            ''
+          ) : (
+            <span className="inline-flex items-center">
+              {changeType === 'increase' ? '↗' : '↘'}
+              <span className="truncate ml-1">{change}</span>
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -48,62 +78,115 @@ const StatCard = ({
 );
 
 const Dashboard = () => {
-  const stats = [
-    {
-      title: '실시간 접속자',
-      value: '247',
-      subValue: '수요자: 156명\n매니저: 91명',
-      icon: (
-        <svg
-          className="w-5 h-5 text-green-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-        </svg>
-      ),
+  const [dashboardStats, setDashboardStats] = useState({
+    totalUsers: 0,
+    activeManagers: 0,
+    totalPayments: 0,
+    todayReservations: 0,
+    pendingApprovals: 0,
+    managerStatusDetails: {
+      pending: 0,
+      review: 0,
+      active: 0,
+      rejected: 0,
     },
-    {
-      title: '진행중 매칭',
-      value: '89',
-      subValue: '대기: 23건\n진행: 66건',
-      icon: (
-        <svg
-          className="w-5 h-5 text-orange-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-    },
-    {
-      title: '오늘 매출',
-      value: '₩2,450,000',
-      subValue: '',
-      change: '+18.5% 어제 대비',
-      icon: (
-        <svg
-          className="w-5 h-5 text-blue-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-    },
+  });
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { user: authUser } = useAuthStore();
+
+  // 사용자 권한 확인 함수 (관리자인지만 확인)
+  const getUserRole = () => {
+    // 먼저 Zustand store에서 확인
+    if (authUser && authUser.role) {
+      return authUser.role;
+    }
+
+    // Zustand에 없으면 localStorage에서 확인
+    const userDataString = localStorage.getItem('userData');
+    if (userDataString) {
+      try {
+        const userData = JSON.parse(userDataString);
+        return userData.role;
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
+  };
+
+  // API 호출 함수
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem('accessToken');
+
+      if (!token) {
+        navigate('/auth/login', { replace: true });
+        return;
+      }
+
+      const role = getUserRole();
+
+      if (!role) {
+        navigate('/auth/login', { replace: true });
+        return;
+      }
+
+      if (role !== 'ROLE_ADMIN') {
+        navigate('/403', { replace: true });
+        return;
+      }
+
+      const response = await fetch('/api/v1/admin/dashboard-stats', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('accessToken');
+          navigate('/auth/login', { replace: true });
+          return;
+        } else if (response.status === 403) {
+          navigate('/403', { replace: true });
+          return;
+        }
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setDashboardStats(data.data);
+      }
+    } catch {
+      // 오류 발생 시 아무것도 하지 않음
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 데이터 가져오기
+  useEffect(() => {
+    fetchDashboardStats();
+
+    // 30초마다 데이터 새로고침 (실시간 업데이트)
+    const interval = setInterval(fetchDashboardStats, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 관리자용 통계 카드 설정
+  const adminStats = [
     {
       title: '전체 사용자',
-      value: '3,456',
+      value: loading ? '...' : `${dashboardStats.totalUsers.toLocaleString()}`,
       subValue: '',
       change: '+12.3% 이번 달',
       icon: (
@@ -117,38 +200,90 @@ const Dashboard = () => {
       ),
     },
     {
-      title: '총 매칭 수',
-      value: '1,892',
-      subValue: '',
-      change: '94.2% 성공률',
+      title: '활성 매니저',
+      value: loading
+        ? '...'
+        : `${dashboardStats.activeManagers.toLocaleString()}`,
+      subValue: loading ? '로딩 중...' : `승인된 매니저`,
+      change: '+15.2% 지난달 대비',
       icon: (
         <svg
           className="w-5 h-5 text-green-600"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
+          <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      ),
+    },
+    {
+      title: '승인 대기 매니저',
+      value: loading ? '...' : `${dashboardStats.pendingApprovals}`,
+      subValue: loading ? '로딩 중...' : '대기 + 검토 중',
+      icon: (
+        <svg
+          className="w-5 h-5 text-yellow-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
           <path
             fillRule="evenodd"
-            d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
             clipRule="evenodd"
           />
         </svg>
       ),
     },
     {
-      title: '이번 달 매출',
-      value: '₩68,900,000',
-      subValue: '',
-      change: '92.1% 목표 달성',
+      title: '오늘 예약',
+      value: loading ? '...' : `${dashboardStats.todayReservations}`,
+      subValue: loading ? '로딩 중...' : '실시간 업데이트',
+      change: '+18.5% 어제 대비',
       icon: (
         <svg
-          className="w-5 h-5 text-pink-600"
+          className="w-5 h-5 text-blue-600"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
           <path
             fillRule="evenodd"
-            d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: '전체 결제 건수',
+      value: loading
+        ? '...'
+        : `${dashboardStats.totalPayments.toLocaleString()}`,
+      subValue: loading ? '로딩 중...' : '누적 결제 건수',
+      change: '+25.7% 이번 달',
+      icon: (
+        <svg
+          className="w-5 h-5 text-purple-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
+        </svg>
+      ),
+    },
+    {
+      title: '플랫폼 성장률',
+      value: loading ? '...' : '94.2%',
+      subValue: loading ? '로딩 중...' : '이번 달 성장률',
+      change: '+8.3% 지난달 대비',
+      icon: (
+        <svg
+          className="w-5 h-5 text-indigo-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"
             clipRule="evenodd"
           />
         </svg>
@@ -160,9 +295,51 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="px-4 sm:px-6 lg:px-8 py-6">
         <div className="max-w-none space-y-6">
+          {/* Page Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+            <div>
+              <p className="text-sm text-gray-500 mt-1">
+                <span className="inline-flex items-center">
+                  <span
+                    className={`w-2 h-2 rounded-full mr-2 ${loading ? 'bg-yellow-500' : 'bg-green-500'}`}
+                  ></span>
+                  {loading
+                    ? '데이터 로딩 중...'
+                    : `실시간 업데이트: ${new Date().toLocaleString('ko-KR')}`}
+                </span>
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  placeholder="검색어를 입력하세요"
+                  className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors whitespace-nowrap">
+                  필터
+                </button>
+              </div>
+              <div>
+                <button
+                  onClick={fetchDashboardStats}
+                  disabled={loading}
+                  className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors whitespace-nowrap disabled:opacity-50"
+                >
+                  {loading ? '새로고침 중...' : '새로고침'}
+                </button>
+              </div>
+              <div>
+                <button className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors whitespace-nowrap">
+                  추가
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Stats Grid */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-            {stats.map((stat, index) => (
+            {adminStats.map((stat, index) => (
               <StatCard
                 key={index}
                 title={stat.title}
@@ -170,6 +347,7 @@ const Dashboard = () => {
                 subValue={stat.subValue}
                 icon={stat.icon}
                 change={stat.change}
+                loading={loading}
               />
             ))}
           </div>

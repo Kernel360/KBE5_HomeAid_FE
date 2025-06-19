@@ -30,7 +30,6 @@ const SignInPage = () => {
 
       // localStorage에서 토큰 꺼내 zustand에도 저장
       const token = localStorage.getItem('accessToken');
-
       // Zustand store에 사용자 정보와 토큰 저장
       setUser(data);
       setAccessToken(token);
