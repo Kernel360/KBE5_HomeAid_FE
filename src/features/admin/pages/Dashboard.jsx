@@ -296,44 +296,15 @@ const Dashboard = () => {
       <div className="px-4 sm:px-6 lg:px-8 py-6">
         <div className="max-w-none space-y-6">
           {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 w-full">
             <div>
-              <p className="text-sm text-gray-500 mt-1">
-                <span className="inline-flex items-center">
-                  <span
-                    className={`w-2 h-2 rounded-full mr-2 ${loading ? 'bg-yellow-500' : 'bg-green-500'}`}
-                  ></span>
-                  {loading
-                    ? '데이터 로딩 중...'
-                    : `실시간 업데이트: ${new Date().toLocaleString('ko-KR')}`}
-                </span>
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  placeholder="검색어를 입력하세요"
-                  className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <button className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors whitespace-nowrap">
-                  필터
-                </button>
-              </div>
-              <div>
-                <button
-                  onClick={fetchDashboardStats}
-                  disabled={loading}
-                  className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors whitespace-nowrap disabled:opacity-50"
-                >
-                  {loading ? '새로고침 중...' : '새로고침'}
-                </button>
-              </div>
-              <div>
-                <button className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors whitespace-nowrap">
-                  추가
-                </button>
-              </div>
+              <button
+                onClick={fetchDashboardStats}
+                disabled={loading}
+                className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors whitespace-nowrap disabled:opacity-50"
+              >
+                {loading ? '새로고침 중...' : '새로고침'}
+              </button>
             </div>
           </div>
 
