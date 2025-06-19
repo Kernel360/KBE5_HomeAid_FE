@@ -154,10 +154,7 @@ const ManagerSettlement = () => {
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
-                📊 정산 리포트
-              </button>
-              <button className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
-                💰 일괄 정산 처리
+                정산 리포트
               </button>
             </div>
           </div>

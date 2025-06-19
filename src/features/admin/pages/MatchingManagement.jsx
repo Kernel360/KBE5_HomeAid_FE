@@ -242,8 +242,8 @@ const MatchingManagement = () => {
               <button className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
                 필터
               </button>
-              <button className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
-                + 매칭 생성
+              <button className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
+                매칭 생성
               </button>
             </div>
           </div>

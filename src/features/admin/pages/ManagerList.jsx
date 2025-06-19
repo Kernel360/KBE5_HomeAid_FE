@@ -197,12 +197,12 @@ const ManagerList = () => {
                   placeholder="매니저 검색..."
                   className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <button className="px-4 py-2 text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap">
+                <button className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
                   필터
                 </button>
               </div>
-              <button className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
-                💼 일괄승인
+              <button className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
+                일괄승인
               </button>
             </div>
           </div>

@@ -160,10 +160,7 @@ const Statistics = () => {
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
-                📅 최근 30일
-              </button>
-              <button className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
-                ⬇️ 리포트 다운로드
+                최근 30일
               </button>
             </div>
           </div>

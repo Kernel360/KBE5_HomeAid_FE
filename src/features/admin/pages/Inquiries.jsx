@@ -149,10 +149,7 @@ const Inquiries = () => {
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
-                📧 이메일 답변
-              </button>
-              <button className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
-                💬 일괄 답변
+                이메일 답변
               </button>
             </div>
           </div>
