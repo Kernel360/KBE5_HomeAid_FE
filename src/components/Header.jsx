@@ -1,6 +1,8 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useState } from 'react';
+import AlertCard from '@/features/alert/AlertCard';
 
 export default function Header({
   showBackButton = true,
@@ -9,6 +11,7 @@ export default function Header({
 }) {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const [ open, setOpen ] = useState(false);
 
   const handleBackClick = () => {
     if (onBackClick) {
@@ -101,6 +104,10 @@ export default function Header({
       {/* 오른쪽: 메인 페이지일 때 로그인/회원가입 텍스트 */}
       {isMainPage && (
         <div className="flex items-center gap-3">
+          <Bell onClick={() => setOpen(true)}></Bell>
+          {open &&
+            <AlertCard onClose={() => setOpen(false)}></AlertCard>
+          }
           {user ? (
             // 로그인된 사용자용 버튼들
             <div className="flex items-center gap-3">

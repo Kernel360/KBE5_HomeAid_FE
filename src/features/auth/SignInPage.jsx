@@ -5,6 +5,7 @@ import { Eye, EyeOff } from 'lucide-react'; // lucide-react 사용 예시
 import { useAuthStore } from '../../stores/authStore.js';
 import Header from '../../components/Header.jsx';
 import { authService } from './services/authService.js';
+import sseEmitter from '../alert/sseEmitter.js';
 
 const SignInPage = () => {
   const [phone, setphone] = useState('');
@@ -34,6 +35,8 @@ const SignInPage = () => {
       // Zustand store에 사용자 정보와 토큰 저장
       setUser(data);
       setAccessToken(token);
+
+      sseEmitter.connection();
 
       // 역할에 따른 페이지 이동
       if (data.role === 'ROLE_CUSTOMER') {
