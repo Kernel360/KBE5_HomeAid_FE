@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { api } from '../../../api/config/api';
 
 const StatCard = ({ title, value, subValue, icon, iconBg, trend }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
@@ -46,6 +47,7 @@ const CustomerPayment = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [searchScope, setSearchScope] = useState('all'); // 검색 범위 추가
   const [pagination, setPagination] = useState({
     page: 0,
     size: 10,
@@ -60,15 +62,95 @@ const CustomerPayment = () => {
     successRate: 0,
     pendingPayments: 0,
   });
+  const [authError, setAuthError] = useState(false);
+  const [activeTab, setActiveTab] = useState('전체');
+
+  // 탭별 결제 건수 계산 함수를 먼저 정의
+  const getTabCount = (status) => {
+    if (status === null) return allPayments.length;
+    return allPayments.filter((payment) => payment.status === status).length;
+  };
+
+  // 탭 정의 (getTabCount 함수 사용)
+  const tabs = [
+    { key: '전체', label: `전체 (${getTabCount(null)})`, status: null },
+    {
+      key: '결제완료',
+      label: `결제완료 (${getTabCount('PAID')})`,
+      status: 'PAID',
+    },
+    {
+      key: '결제대기',
+      label: `결제대기 (${getTabCount('PENDING')})`,
+      status: 'PENDING',
+    },
+    {
+      key: '결제실패',
+      label: `결제실패 (${getTabCount('FAILED')})`,
+      status: 'FAILED',
+    },
+    {
+      key: '환불완료',
+      label: `환불완료 (${getTabCount('REFUNDED')})`,
+      status: 'REFUNDED',
+    },
+    {
+      key: '결제취소',
+      label: `결제취소 (${getTabCount('CANCELED')})`,
+      status: 'CANCELED',
+    },
+  ];
+
+  // 탭 변경 핸들러
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    const selectedTab = tabs.find((tab) => tab.key === tabKey);
+
+    let filteredPayments = allPayments;
+    if (selectedTab.status !== null) {
+      filteredPayments = allPayments.filter(
+        (payment) => payment.status === selectedTab.status
+      );
+    }
+
+    // 검색어가 있으면 추가 필터링
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filteredPayments = filteredPayments.filter((payment) => {
+        switch (searchScope) {
+          case 'customerName':
+            return payment.customerName.toLowerCase().includes(query);
+          case 'serviceName':
+            return payment.serviceName.toLowerCase().includes(query);
+          case 'managerName':
+            return payment.managerName.toLowerCase().includes(query);
+          case 'paymentDate':
+            // 결제 날짜 부분 검색 (예: "2024", "2024-01", "01-15" 등)
+            return payment.createdAt.toLowerCase().includes(query);
+          case 'all':
+          default:
+            return (
+              payment.customerName.toLowerCase().includes(query) ||
+              payment.serviceName.toLowerCase().includes(query) ||
+              payment.managerName.toLowerCase().includes(query) ||
+              payment.createdAt.toLowerCase().includes(query)
+            );
+        }
+      });
+    }
+
+    setPayments(filteredPayments);
+    updatePagination(filteredPayments, 0);
+  };
 
   // 결제 상태 매핑
   const getPaymentStatusText = (status) => {
     const statusMap = {
-      COMPLETED: '결제완료',
+      PAID: '결제완료',
       PENDING: '결제대기',
       FAILED: '결제실패',
       REFUNDED: '환불완료',
-      CANCELLED: '결제취소',
+      CANCELED: '결제취소',
     };
     return statusMap[status] || status;
   };
@@ -76,13 +158,49 @@ const CustomerPayment = () => {
   // 결제 상태 색상
   const getPaymentStatusColor = (status) => {
     const colorMap = {
-      COMPLETED: 'bg-green-100 text-green-800',
+      PAID: 'bg-green-100 text-green-800',
       PENDING: 'bg-yellow-100 text-yellow-800',
       FAILED: 'bg-red-100 text-red-800',
       REFUNDED: 'bg-blue-100 text-blue-800',
-      CANCELLED: 'bg-gray-100 text-gray-800',
+      CANCELED: 'bg-gray-100 text-gray-800',
     };
     return colorMap[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  // 토큰 검증 함수
+  const validateToken = (token) => {
+    if (!token) return { valid: false, reason: '토큰이 없음' };
+
+    try {
+      // JWT 토큰 구조 확인 (header.payload.signature)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return { valid: false, reason: 'JWT 형식이 아님' };
+      }
+
+      // Base64 디코딩 시도
+      const payload = JSON.parse(atob(parts[1]));
+
+      // 만료 시간 확인
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        return { valid: false, reason: '토큰이 만료됨' };
+      }
+
+      // 특수 문자 확인 (INVALID_DATA_CONVERSION 원인 중 하나)
+      const hasSpecialChars = !/^[\x20-\x7E.]+$/.test(token);
+      if (hasSpecialChars) {
+        return { valid: false, reason: '토큰에 특수 문자 포함됨' };
+      }
+
+      return {
+        valid: true,
+        payload: payload,
+        expiresAt: new Date(payload.exp * 1000),
+        issuedAt: new Date(payload.iat * 1000),
+      };
+    } catch (error) {
+      return { valid: false, reason: `토큰 파싱 오류: ${error.message}` };
+    }
   };
 
   // API 호출 함수
@@ -90,95 +208,225 @@ const CustomerPayment = () => {
     try {
       setLoading(true);
       setError(null);
+      setAuthError(false);
 
+      // 디버깅을 위한 토큰 확인
       const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
+      console.log('=== 결제 API 호출 시작 ===');
+      console.log('토큰 존재 여부:', token ? '있음' : '없음');
+
+      if (token) {
+        console.log('토큰 길이:', token.length);
+        console.log('토큰 앞 20자:', token.substring(0, 20));
+
+        // 토큰 검증
+        const tokenValidation = validateToken(token);
+        console.log('토큰 검증 결과:', tokenValidation);
+
+        if (!tokenValidation.valid) {
+          console.error('토큰 검증 실패:', tokenValidation.reason);
+          setAuthError(true);
+          setError(`토큰 오류: ${tokenValidation.reason}`);
+          return;
+        }
+      } else {
+        console.error('토큰이 없습니다.');
+        setAuthError(true);
+        setError('로그인이 필요합니다.');
+        return;
       }
 
-      console.log('Fetching payments from backend API');
+      let response;
+      let attemptCount = 0;
+      const maxAttempts = 4;
 
-      const response = await fetch('/api/v1/admin/payments', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // 여러 가지 API 호출 방식을 시도
+      while (attemptCount < maxAttempts) {
+        attemptCount++;
+        console.log(`=== API 호출 시도 ${attemptCount} ===`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        try {
+          switch (attemptCount) {
+            case 1:
+              // 시도 1: 기본 파라미터 방식
+              console.log('시도 1: 기본 파라미터 방식');
+              response = await api.get('/admin/payments/list', {
+                params: {
+                  page: 0,
+                  size: 100,
+                },
+              });
+              break;
+
+            case 2:
+              // 시도 2: 다른 엔드포인트 시도
+              console.log('시도 2: /admin/payments 엔드포인트');
+              response = await api.get('/admin/payments', {
+                params: {
+                  page: 0,
+                  size: 100,
+                },
+              });
+              break;
+
+            case 3:
+              // 시도 3: POST 방식으로 시도
+              console.log('시도 3: POST 방식');
+              response = await api.post('/admin/payments/list', {
+                page: 0,
+                size: 100,
+              });
+              break;
+
+            case 4:
+              // 시도 4: 파라미터 없이 시도
+              console.log('시도 4: 파라미터 없이');
+              response = await api.get('/admin/payments/list');
+              break;
+
+            default:
+              throw new Error('모든 시도 실패');
+          }
+
+          // 성공한 경우 루프 종료
+          console.log(`=== API 호출 성공 (시도 ${attemptCount}) ===`);
+          console.log('응답 상태:', response.status);
+          console.log('응답 데이터:', response.data);
+          break;
+        } catch (attemptError) {
+          console.error(
+            `시도 ${attemptCount} 실패:`,
+            attemptError.response?.status,
+            attemptError.response?.data
+          );
+
+          // 마지막 시도가 아니면 계속 시도
+          if (attemptCount < maxAttempts) {
+            continue;
+          } else {
+            // 모든 시도가 실패한 경우 마지막 에러를 던짐
+            throw attemptError;
+          }
+        }
       }
 
-      const data = await response.json();
-      console.log('API Response:', data);
+      // API 클라이언트는 이미 response.data를 반환함
+      const data = response.data || response;
 
-      if (data.success && data.data) {
-        // 백엔드에서 PaymentResponseDto 배열을 반환
-        const paymentsData = data.data.map((payment) => ({
-          id: payment.paymentId,
-          customerName: payment.customerName,
-          customerEmail: payment.customerEmail || '-',
-          serviceName: payment.serviceName || '서비스',
-          amount: payment.amount,
-          method: payment.paymentMethod || 'CARD',
-          status: payment.status,
-          createdAt: new Date(payment.paymentDate)
-            .toLocaleString('ko-KR', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            })
-            .replace(/\. /g, '.'),
-          managerName: getPaymentMethodText(payment.paymentMethod),
-        }));
+      if (data && data.success !== false) {
+        // 백엔드에서 List<PaymentResponseDto>를 직접 반환
+        const paymentsArray = data.data || data || [];
+
+        console.log('결제 데이터 배열:', paymentsArray);
+        console.log('결제 데이터 개수:', paymentsArray.length);
+
+        const paymentsData = paymentsArray.map((payment) => {
+          const mappedPayment = {
+            id: payment.id,
+            reservationId: payment.reservationId,
+            customerName: payment.customerName || '알 수 없음',
+            managerName: '매니저 정보 없음',
+            serviceName: '홈케어 서비스',
+            amount: payment.amount || 0,
+            method: payment.paymentMethod || 'CARD',
+            status: payment.status || 'PENDING',
+            createdAt: payment.paidAt
+              ? new Date(payment.paidAt)
+                  .toLocaleString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  })
+                  .replace(/\. /g, '.')
+              : '날짜 정보 없음',
+            paymentMethodText: getPaymentMethodText(
+              payment.paymentMethod || 'CARD'
+            ),
+          };
+
+          return mappedPayment;
+        });
+
+        console.log('매핑된 결제 데이터:', paymentsData);
 
         setAllPayments(paymentsData);
         setPayments(paymentsData);
         updatePagination(paymentsData, 0);
       } else {
-        console.warn('No data received from API');
+        console.log('응답 데이터가 비었거나 실패 응답');
         setAllPayments([]);
         setPayments([]);
+        updatePagination([], 0);
       }
     } catch (err) {
-      console.error('Payment fetch error:', err);
-      setError(err.message);
-      // Mock data for development when API fails
-      const mockPayments = [
-        {
-          id: 'PAY240115001',
-          customerName: '김민수',
-          customerEmail: 'user123@email.com',
-          serviceName: '홈클리닝',
-          amount: 150000,
-          method: 'CARD',
-          status: 'COMPLETED',
-          createdAt: '2024.01.15 14:30:25',
-          managerName: '신용카드',
-        },
-        {
-          id: 'PAY240115002',
-          customerName: '이영희',
-          customerEmail: 'user456@email.com',
-          serviceName: '에어컨청소',
-          amount: 120000,
-          method: 'TRANSFER',
-          status: 'PENDING',
-          createdAt: '2024.01.15 15:20:10',
-          managerName: '계좌이체',
-        },
-      ];
-      setAllPayments(mockPayments);
-      setPayments(mockPayments);
-      updatePagination(mockPayments, 0);
+      console.error('=== Payment fetch error ===');
+      console.error('에러 객체:', err);
+      console.error('에러 메시지:', err.message);
+      console.error('응답 상태:', err.response?.status);
+      console.error('응답 데이터:', err.response?.data);
+      console.error('요청 설정:', err.config);
+
+      // 더 구체적인 에러 처리
+      if (err.response?.status === 401) {
+        setAuthError(true);
+        setError('인증이 만료되었습니다. 다시 로그인해주세요.');
+      } else if (err.response?.status === 400) {
+        const errorData = err.response.data;
+        if (errorData?.code === 'INVALID_DATA_CONVERSION') {
+          setError(
+            `데이터 변환 오류: ${errorData.message || '요청 형식을 확인해주세요.'}`
+          );
+        } else {
+          setError(
+            `잘못된 요청: ${errorData?.message || '요청 형식을 확인해주세요.'}`
+          );
+        }
+      } else if (err.response?.status === 403) {
+        setError('접근 권한이 없습니다. 관리자 권한을 확인해주세요.');
+      } else if (err.response?.status === 404) {
+        setError(
+          'API 엔드포인트를 찾을 수 없습니다. 백엔드 서버를 확인해주세요.'
+        );
+      } else if (err.response?.status >= 500) {
+        setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      } else if (
+        err.code === 'ERR_NETWORK' ||
+        err.message.includes('Network Error')
+      ) {
+        setError('네트워크 연결을 확인해주세요.');
+      } else if (
+        err.code === 'ECONNREFUSED' ||
+        err.message.includes('ERR_CONNECTION_REFUSED')
+      ) {
+        setError(
+          '백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.'
+        );
+      } else {
+        setError(
+          err.message || '데이터를 불러오는 중 알 수 없는 오류가 발생했습니다.'
+        );
+      }
+
+      setAllPayments([]);
+      setPayments([]);
+      updatePagination([], 0);
     } finally {
       setLoading(false);
       setIsSearching(false);
     }
+  };
+
+  // 결제 수단 텍스트 매핑 함수
+  const getPaymentMethodText = (method) => {
+    const methodMap = {
+      CARD: '신용카드',
+      TRANSFER: '계좌이체',
+      VIRTUAL_ACCOUNT: '가상계좌',
+    };
+    return methodMap[method] || method;
   };
 
   // 페이징 업데이트 함수
@@ -198,20 +446,10 @@ const CustomerPayment = () => {
     });
   };
 
-  // 결제 수단 텍스트 매핑
-  const getPaymentMethodText = (method) => {
-    const methodMap = {
-      CARD: '신용카드',
-      TRANSFER: '계좌이체',
-      VIRTUAL_ACCOUNT: '가상계좌',
-    };
-    return methodMap[method] || method;
-  };
-
   // 통계 데이터 가져오기 (백엔드에 통계 API가 없으므로 클라이언트에서 계산)
   const calculateStats = (paymentsData) => {
     const totalPayment = paymentsData
-      .filter((p) => p.status === 'COMPLETED')
+      .filter((p) => p.status === 'PAID')
       .reduce((sum, p) => sum + p.amount, 0);
 
     const refundAmount = paymentsData
@@ -220,7 +458,7 @@ const CustomerPayment = () => {
 
     const totalCount = paymentsData.length;
     const completedCount = paymentsData.filter(
-      (p) => p.status === 'COMPLETED'
+      (p) => p.status === 'PAID'
     ).length;
     const successRate =
       totalCount > 0 ? ((completedCount / totalCount) * 100).toFixed(1) : 0;
@@ -244,30 +482,26 @@ const CustomerPayment = () => {
     refundAmount = null
   ) => {
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
-      }
-
       const endpoint = isPartial
-        ? `/api/v1/admin/payments/${paymentId}/partial-refund?refundAmount=${refundAmount}`
-        : `/api/v1/admin/payments/${paymentId}/refund`;
+        ? `/admin/payments/${paymentId}/partial-refund`
+        : `/admin/payments/${paymentId}/refund`;
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      let response;
+      if (isPartial && refundAmount) {
+        // 부분 환불의 경우 쿼리 파라미터로 전송
+        response = await api.post(
+          endpoint,
+          {},
+          {
+            params: { refundAmount },
+          }
+        );
+      } else {
+        // 전액 환불의 경우
+        response = await api.post(endpoint);
       }
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.success !== false) {
         alert(
           isPartial
             ? '부분 환불이 완료되었습니다.'
@@ -275,7 +509,7 @@ const CustomerPayment = () => {
         );
         fetchPayments(); // 데이터 새로고침
       } else {
-        throw new Error(data.message || '환불 처리에 실패했습니다.');
+        throw new Error(response.message || '환불 처리에 실패했습니다.');
       }
     } catch (err) {
       console.error('Refund error:', err);
@@ -295,25 +529,63 @@ const CustomerPayment = () => {
     }
   }, [allPayments]);
 
+  // 활성 탭이 변경되거나 데이터가 로드될 때 필터링 적용
+  useEffect(() => {
+    if (allPayments.length > 0) {
+      const selectedTab = tabs.find((tab) => tab.key === activeTab);
+      let filteredPayments = allPayments;
+
+      if (selectedTab && selectedTab.status !== null) {
+        filteredPayments = allPayments.filter(
+          (payment) => payment.status === selectedTab.status
+        );
+      }
+
+      setPayments(filteredPayments);
+      updatePagination(filteredPayments, 0);
+    }
+  }, [activeTab, allPayments]);
+
   // 검색 핸들러 (현재는 클라이언트 사이드 필터링)
   const handleSearch = () => {
-    console.log('Search triggered with query:', searchQuery);
     setIsSearching(true);
 
     // 클라이언트 사이드 검색 (백엔드 검색 API가 없으므로)
     setTimeout(() => {
       let filteredPayments = allPayments;
 
-      if (searchQuery.trim()) {
-        filteredPayments = allPayments.filter(
-          (payment) =>
-            payment.customerName
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase()) ||
-            payment.serviceName
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase())
+      // 현재 활성 탭 필터링 적용
+      const selectedTab = tabs.find((tab) => tab.key === activeTab);
+      if (selectedTab.status !== null) {
+        filteredPayments = filteredPayments.filter(
+          (payment) => payment.status === selectedTab.status
         );
+      }
+
+      // 검색어 필터링
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        filteredPayments = filteredPayments.filter((payment) => {
+          switch (searchScope) {
+            case 'customerName':
+              return payment.customerName.toLowerCase().includes(query);
+            case 'serviceName':
+              return payment.serviceName.toLowerCase().includes(query);
+            case 'managerName':
+              return payment.managerName.toLowerCase().includes(query);
+            case 'paymentDate':
+              // 결제 날짜 부분 검색 (예: "2024", "2024-01", "01-15" 등)
+              return payment.createdAt.toLowerCase().includes(query);
+            case 'all':
+            default:
+              return (
+                payment.customerName.toLowerCase().includes(query) ||
+                payment.serviceName.toLowerCase().includes(query) ||
+                payment.managerName.toLowerCase().includes(query) ||
+                payment.createdAt.toLowerCase().includes(query)
+              );
+          }
+        });
       }
 
       setPayments(filteredPayments);
@@ -325,9 +597,20 @@ const CustomerPayment = () => {
   // 검색 초기화
   const handleClearSearch = () => {
     setSearchQuery('');
+    setSearchScope('all');
     setIsSearching(false);
-    setPayments(allPayments);
-    updatePagination(allPayments, 0);
+
+    // 현재 활성 탭에 맞게 필터링
+    const selectedTab = tabs.find((tab) => tab.key === activeTab);
+    let filteredPayments = allPayments;
+    if (selectedTab.status !== null) {
+      filteredPayments = allPayments.filter(
+        (payment) => payment.status === selectedTab.status
+      );
+    }
+
+    setPayments(filteredPayments);
+    updatePagination(filteredPayments, 0);
   };
 
   // 엔터 키 검색
@@ -373,174 +656,154 @@ const CustomerPayment = () => {
     return new Intl.NumberFormat('ko-KR').format(amount);
   };
 
-  const stats = [
-    {
-      title: '오늘 총 결제금액',
-      value: `₩${formatAmount(paymentStats.totalPayment)}`,
-      subValue: '결제 건수 : 89건\n평균 결제액 : ₩139,888',
-      icon: (
-        <svg
-          className="w-5 h-5 text-blue-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-      iconBg: 'bg-blue-100',
-    },
-    {
-      title: '환불 금액',
-      value: `₩${formatAmount(paymentStats.refundAmount)}`,
-      subValue: '',
-      icon: (
-        <svg
-          className="w-5 h-5 text-red-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-      iconBg: 'bg-red-100',
-      trend: { value: '7건', period: '환불 요청', isPositive: false },
-    },
-    {
-      title: '결제 성공률',
-      value: `${paymentStats.successRate}%`,
-      subValue: '',
-      icon: (
-        <svg
-          className="w-5 h-5 text-green-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-      iconBg: 'bg-green-100',
-      trend: { value: '+2.1%', period: '지난 주 대비', isPositive: true },
-    },
-    {
-      title: '결제 대기',
-      value: `₩${formatAmount(paymentStats.pendingPayments)}`,
-      subValue: '',
-      icon: (
-        <svg
-          className="w-5 h-5 text-yellow-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-      iconBg: 'bg-yellow-100',
-      trend: { value: '12건', period: '결제 진행중', isPositive: false },
-    },
-  ];
+  // 검색 placeholder 텍스트 생성
+  const getSearchPlaceholder = () => {
+    switch (searchScope) {
+      case 'customerName':
+        return '고객명을 입력하세요';
+      case 'serviceName':
+        return '서비스명을 입력하세요';
+      case 'managerName':
+        return '매니저명을 입력하세요';
+      case 'paymentDate':
+        return '날짜를 입력하세요 (예: 2024.01 01.15)';
+      case 'all':
+      default:
+        return '검색어를 입력하세요';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
       <div className="px-4 sm:px-6 lg:px-8 py-6 bg-white">
         <div className="max-w-none space-y-6">
-          {/* Stats Grid */}
+          {/* 통계 카드 */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-            {stats.map((stat, index) => (
-              <StatCard
-                key={index}
-                title={stat.title}
-                value={stat.value}
-                subValue={stat.subValue}
-                icon={stat.icon}
-                iconBg={stat.iconBg}
-                trend={stat.trend}
-              />
-            ))}
+            <StatCard
+              title="오늘 총 결제금액"
+              value={`₩${formatAmount(paymentStats.totalPayment)}`}
+              subValue={`결제 건수 : ${getTabCount('PAID')}건\n평균 결제액 : ₩${paymentStats.totalPayment > 0 ? formatAmount(Math.round(paymentStats.totalPayment / Math.max(getTabCount('PAID'), 1))) : 0}`}
+              icon={
+                <svg
+                  className="w-5 h-5 text-blue-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+              iconBg="bg-blue-100"
+            />
+            <StatCard
+              title="환불 금액"
+              value={`₩${formatAmount(paymentStats.refundAmount)}`}
+              subValue={`환불 건수 : ${getTabCount('REFUNDED')}건\n환불률 : ${allPayments.length > 0 ? ((getTabCount('REFUNDED') / allPayments.length) * 100).toFixed(1) : 0}%`}
+              icon={
+                <svg
+                  className="w-5 h-5 text-red-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+              iconBg="bg-red-100"
+            />
+            <StatCard
+              title="결제 성공률"
+              value={`${paymentStats.successRate}%`}
+              subValue={`성공 : ${getTabCount('PAID')}건\n실패 : ${getTabCount('FAILED')}건`}
+              icon={
+                <svg
+                  className="w-5 h-5 text-green-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+              iconBg="bg-green-100"
+            />
+            <StatCard
+              title="결제 대기"
+              value={`₩${formatAmount(paymentStats.pendingPayments)}`}
+              subValue={`대기 건수 : ${getTabCount('PENDING')}건\n대기율 : ${allPayments.length > 0 ? ((getTabCount('PENDING') / allPayments.length) * 100).toFixed(1) : 0}%`}
+              icon={
+                <svg
+                  className="w-5 h-5 text-yellow-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+              iconBg="bg-yellow-100"
+            />
           </div>
 
-          {/* Search Section */}
-          <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-end space-x-4">
-              <h3 className="text-lg font-semibold text-gray-900 whitespace-nowrap">
-                결제 내역 검색
-              </h3>
-
-              <div className="relative w-80">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder="결제ID, 고객명, 서비스명으로 검색"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <button
-                onClick={handleClearSearch}
-                className="px-4 py-2 text-black bg-gray-100 text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-              >
-                초기화
-              </button>
-
-              <button
-                onClick={handleSearch}
-                disabled={isSearching}
-                className="px-6 py-2 bg-gray-100 text-black text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSearching ? '검색 중...' : '검색'}
-              </button>
-            </div>
-          </div>
-
-          {/* Tabs and Table */}
+          {/* 탭과 테이블 */}
           <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Table */}
-            <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              {/* Table Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6 border-b border-gray-200 gap-4">
+            {/* 탭 */}
+            <div className="flex bg-white" style={{ backgroundColor: 'white' }}>
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => handleTabChange(tab.key)}
+                  className={`px-6 py-4 text-sm font-medium transition-all duration-200 ${
+                    activeTab === tab.key
+                      ? 'text-blue-600 border-b-2 border-blue-500 bg-white'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 border-transparent bg-white'
+                  }`}
+                  style={{ backgroundColor: 'white' }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 구분선 */}
+            <div className="border-b border-gray-200 bg-white"></div>
+
+            {/* 검색 영역 */}
+            <div className="p-6 bg-white">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  결제 내역 목록
+                  결제 내역 목록 {activeTab !== '전체' && `- ${activeTab}`}
                 </h3>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">
-                      위치 ID, 결제ID, 서비스명으로 검색...
-                    </span>
-                    <button className="p-2 text-gray-400 hover:text-gray-600">
+                <div className="flex items-center space-x-3">
+                  {/* 검색 범위 선택 */}
+                  <select
+                    value={searchScope}
+                    onChange={(e) => setSearchScope(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">전체</option>
+                    <option value="customerName">고객명</option>
+                    <option value="serviceName">서비스명</option>
+                    <option value="managerName">매니저명</option>
+                    <option value="paymentDate">결제날짜</option>
+                  </select>
+
+                  <div className="w-80 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg
-                        className="w-5 h-5"
+                        className="w-4 h-4 text-gray-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -552,32 +815,72 @@ const CustomerPayment = () => {
                           d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                         />
                       </svg>
-                    </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder={getSearchPlaceholder()}
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={isSearching}
+                    />
                   </div>
-                  <select
-                    defaultValue="오늘"
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+
+                  <button
+                    onClick={handleClearSearch}
+                    className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <option value="오늘">오늘</option>
-                    <option value="어제">어제</option>
-                    <option value="7일">최근 7일</option>
-                    <option value="30일">최근 30일</option>
-                  </select>
-                  <button className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
-                    결제내역 다운로드
+                    초기화
+                  </button>
+                  <button
+                    onClick={handleSearch}
+                    disabled={isSearching}
+                    className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    {isSearching ? '검색 중...' : '검색'}
                   </button>
                 </div>
               </div>
 
-              {/* Error Message */}
-              {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg mx-6 mb-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg
-                        className="h-5 w-5 text-red-400"
-                        viewBox="0 0 20 20"
+              {/* 로딩 및 에러 상태 */}
+              {loading && (
+                <div className="text-center py-12">
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg
+                      className="w-6 h-6 animate-spin text-blue-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
                         fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    <p className="text-gray-500">
+                      결제 데이터를 불러오는 중...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {error && !loading && (
+                <div className="text-center py-12">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center justify-center space-x-2 text-red-800">
+                      <svg
+                        className="w-5 h-5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
                       >
                         <path
                           fillRule="evenodd"
@@ -585,273 +888,202 @@ const CustomerPayment = () => {
                           clipRule="evenodd"
                         />
                       </svg>
+                      <p className="font-medium">오류 발생</p>
                     </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">
-                        데이터 로드 오류
-                      </h3>
-                      <p className="text-sm text-red-700 mt-1">{error}</p>
-                    </div>
+                    <p className="mt-2 text-sm text-red-600">{error}</p>
+                    {authError && (
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        페이지 새로고침
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
 
-              <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[1000px]">
-                  <colgroup>
-                    <col style={{ width: '80px' }} />
-                    <col style={{ width: '180px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '140px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '120px' }} />
-                  </colgroup>
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          className="rounded border-gray-300"
-                        />
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        회원정보
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        서비스명
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        결제금액
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        결제방법
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        결제일시
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        상태
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        액션
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {loading ? (
-                      // 로딩 상태
-                      [...Array(5)].map((_, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="space-y-2">
-                              <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                              <div className="w-32 h-3 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-16 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-16 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-24 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-16 h-6 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-16 h-6 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
+              {/* 테이블 */}
+              {!loading && !error && (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            결제 ID
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            고객 정보
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            서비스 정보
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            결제 정보
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            상태
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            결제일시
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            작업
+                          </th>
                         </tr>
-                      ))
-                    ) : displayedPayments.length === 0 ? (
-                      // 데이터 없음
-                      <tr>
-                        <td colSpan="8" className="px-4 py-12 text-center">
-                          <div className="flex flex-col items-center">
-                            <svg
-                              className="w-12 h-12 text-gray-400 mb-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                              />
-                            </svg>
-                            <h3 className="text-lg font-medium text-gray-900 mb-1">
-                              결제 내역이 없습니다
-                            </h3>
-                            <p className="text-gray-500">
-                              조건에 맞는 결제 데이터가 없거나 데이터를 불러올
-                              수 없습니다.
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      // 실제 데이터
-                      displayedPayments.map((payment, index) => (
-                        <tr
-                          key={payment.id || index}
-                          className="hover:bg-gray-50"
-                        >
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <input
-                              type="checkbox"
-                              className="rounded border-gray-300"
-                            />
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {payment.customerName || '-'}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {payment.customerEmail || '-'}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            {payment.serviceName || '-'}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">
-                            ₩{formatAmount(payment.amount || 0)}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            {payment.managerName || '-'}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            {payment.createdAt || '-'}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <span
-                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(payment.status)}`}
-                            >
-                              {getPaymentStatusText(payment.status)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                            {payment.status === 'COMPLETED' ? (
-                              <div className="flex space-x-1 justify-center">
-                                <button
-                                  onClick={() =>
-                                    confirmRefund(
-                                      payment.id,
-                                      payment.customerName
-                                    )
-                                  }
-                                  className="px-2 py-1 text-xs text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {displayedPayments.length > 0 ? (
+                          displayedPayments.map((payment) => (
+                            <tr key={payment.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                                #{payment.id}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {payment.customerName}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    예약 ID: {payment.reservationId || 'N/A'}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {payment.serviceName}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    매니저: {payment.managerName}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    ₩{formatAmount(payment.amount)}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {payment.paymentMethodText}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(
+                                    payment.status
+                                  )}`}
                                 >
-                                  전액환불
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    confirmPartialRefund(
-                                      payment.id,
-                                      payment.customerName,
-                                      payment.amount
-                                    )
-                                  }
-                                  className="px-2 py-1 text-xs text-orange-600 bg-orange-50 rounded hover:bg-orange-100 transition-colors"
-                                >
-                                  부분환불
-                                </button>
-                              </div>
-                            ) : payment.status === 'REFUNDED' ? (
-                              <span className="px-2 py-1 text-xs text-gray-500 bg-gray-50 rounded">
-                                환불완료
-                              </span>
-                            ) : (
-                              <button className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                                상세보기
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="w-full flex items-center justify-between px-6 py-4 border-t border-gray-200">
-                <div className="text-sm text-gray-700">
-                  총 {pagination.totalElements}개 중{' '}
-                  {pagination.totalElements > 0
-                    ? `${pagination.page * pagination.size + 1}-${Math.min(
-                        (pagination.page + 1) * pagination.size,
-                        pagination.totalElements
-                      )}`
-                    : '0-0'}
-                  개 표시
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 0 || loading}
-                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-
-                  <div className="w-8 h-8 flex items-center justify-center bg-blue-500 text-white text-sm font-medium rounded">
-                    {pagination.page + 1}
+                                  {getPaymentStatusText(payment.status)}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {payment.createdAt}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <div className="flex items-center justify-center space-x-2">
+                                  {payment.status === 'PAID' && (
+                                    <>
+                                      <button
+                                        onClick={() =>
+                                          confirmRefund(
+                                            payment.id,
+                                            payment.customerName
+                                          )
+                                        }
+                                        className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded hover:bg-red-200 transition-colors"
+                                      >
+                                        전액환불
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          confirmPartialRefund(
+                                            payment.id,
+                                            payment.customerName,
+                                            payment.amount
+                                          )
+                                        }
+                                        className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 transition-colors"
+                                      >
+                                        부분환불
+                                      </button>
+                                    </>
+                                  )}
+                                  {payment.status === 'PENDING' && (
+                                    <span className="px-3 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-lg">
+                                      대기중
+                                    </span>
+                                  )}
+                                  {(payment.status === 'FAILED' ||
+                                    payment.status === 'REFUNDED' ||
+                                    payment.status === 'CANCELED') && (
+                                    <span className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg">
+                                      처리완료
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="7"
+                              className="px-6 py-12 text-center text-gray-500"
+                            >
+                              {searchQuery
+                                ? '검색 결과가 없습니다.'
+                                : '결제 데이터가 없습니다.'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
 
-                  <span className="text-gray-400 text-sm font-medium">
-                    / {pagination.totalPages}
-                  </span>
-
-                  <button
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={
-                      pagination.page >= pagination.totalPages - 1 || loading
-                    }
-                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+                  {/* 페이지네이션 */}
+                  {pagination.totalPages > 1 && (
+                    <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
+                      <div className="text-sm text-gray-700">
+                        총 {pagination.totalElements}건 중{' '}
+                        {pagination.page * pagination.size + 1}-
+                        {Math.min(
+                          (pagination.page + 1) * pagination.size,
+                          pagination.totalElements
+                        )}
+                        건 표시
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                          onClick={() => handlePageChange(pagination.page - 1)}
+                          disabled={pagination.page === 0 || loading}
+                        >
+                          ‹
+                        </button>
+                        <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
+                          {pagination.page + 1}
+                        </span>
+                        <span className="px-3 py-1 text-sm text-gray-500">
+                          / {pagination.totalPages}
+                        </span>
+                        <button
+                          className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                          onClick={() => handlePageChange(pagination.page + 1)}
+                          disabled={
+                            pagination.page >= pagination.totalPages - 1 ||
+                            loading
+                          }
+                        >
+                          ›
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
