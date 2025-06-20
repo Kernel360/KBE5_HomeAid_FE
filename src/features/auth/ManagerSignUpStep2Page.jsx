@@ -136,7 +136,7 @@ const ManagerSignUpStep2Page = () => {
             style={{
               width: 'calc(33.33% - 2px)',
               height: '4px',
-              background: '#ddd',
+              background: '#247cff',
               borderRadius: '2px',
             }}
           ></div>
