@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import AdminLayout from '../features/admin/components/layout/AdminLayout';
 import Dashboard from '../features/admin/pages/Dashboard';
 import CustomerList from '../features/admin/pages/CustomerList';
+import CustomerPayment from '../features/admin/pages/CustomerPayment';
 import ManagerList from '../features/admin/pages/ManagerList';
 import MatchingManagement from '../features/admin/pages/MatchingManagement';
 import Statistics from '../features/admin/pages/Statistics';
@@ -43,6 +44,7 @@ export const protectedAppRoutes = [
       { path: '', element: <Dashboard /> },
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'customers', element: <CustomerList /> },
+      { path: 'customer-payments', element: <CustomerPayment /> },
       { path: 'managers', element: <ManagerList /> },
       { path: 'matches', element: <MatchingManagement /> },
       { path: 'statistics', element: <Statistics /> },

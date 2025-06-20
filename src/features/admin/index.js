@@ -7,6 +7,7 @@ export { default as Sidebar } from './components/layout/Sidebar';
 export { default as Dashboard } from './pages/Dashboard';
 export { default as ManagerSettlement } from './pages/ManagerSettlement';
 export { default as CustomerList } from './pages/CustomerList';
+export { default as CustomerPayment } from './pages/CustomerPayment';
 export { default as ManagerList } from './pages/ManagerList';
 export { default as MatchingManagement } from './pages/MatchingManagement';
 export { default as Inquiries } from './pages/Inquiries';

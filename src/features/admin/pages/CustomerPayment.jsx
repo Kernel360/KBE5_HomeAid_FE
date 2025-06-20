@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const StatCard = ({ title, value, subValue, icon, iconBg }) => (
+const StatCard = ({ title, value, subValue, icon, iconBg, trend }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
     <div className="flex items-start justify-between mb-3 min-h-0">
       <div className="flex items-center space-x-2 flex-1 min-w-0">
@@ -26,74 +26,67 @@ const StatCard = ({ title, value, subValue, icon, iconBg }) => (
           ))}
         </div>
       )}
+      {trend && (
+        <div className="flex items-center mt-1">
+          <span
+            className={`text-xs font-medium ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}
+          >
+            {trend.isPositive ? '▲' : '▼'} {trend.value}
+          </span>
+          <span className="text-xs text-gray-500 ml-1">{trend.period}</span>
+        </div>
+      )}
     </div>
   </div>
 );
 
-const ManagerList = () => {
-  const [managers, setManagers] = useState([]);
+const CustomerPayment = () => {
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('전체');
-  const [sortBy, setSortBy] = useState('전체');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [pagination, setPagination] = useState({
     page: 0,
     size: 10,
     totalElements: 0,
     totalPages: 0,
   });
-  const [statusCounts, setStatusCounts] = useState({
-    total: 0,
-    pending: 0,
-    review: 0,
-    active: 0,
-    rejected: 0,
+  const [allPayments, setAllPayments] = useState([]); // 전체 데이터 저장
+  const [displayedPayments, setDisplayedPayments] = useState([]); // 현재 페이지 데이터
+  const [paymentStats, setPaymentStats] = useState({
+    totalPayment: 0,
+    refundAmount: 0,
+    successRate: 0,
+    pendingPayments: 0,
   });
 
-  // 검색 관련 상태 추가
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(''); // 통합 검색어
-
-  // 탭 이름과 API 상태값 매핑
-  const getStatusForAPI = (tabName) => {
+  // 결제 상태 매핑
+  const getPaymentStatusText = (status) => {
     const statusMap = {
-      전체: null,
-      승인대기: 'PENDING',
-      검토중: 'REVIEW',
-      승인완료: 'ACTIVE',
-      반려: 'REJECTED',
-    };
-    return statusMap[tabName];
-  };
-
-  // 매니저 상태 한글 변환
-  const getStatusText = (status) => {
-    const statusMap = {
-      PENDING: '승인대기',
-      REVIEW: '검토중',
-      ACTIVE: '승인완료',
-      REJECTED: '반려',
+      COMPLETED: '결제완료',
+      PENDING: '결제대기',
+      FAILED: '결제실패',
+      REFUNDED: '환불완료',
+      CANCELLED: '결제취소',
     };
     return statusMap[status] || status;
   };
 
-  // 매니저 상태 색상
-  const getStatusColor = (status) => {
+  // 결제 상태 색상
+  const getPaymentStatusColor = (status) => {
     const colorMap = {
+      COMPLETED: 'bg-green-100 text-green-800',
       PENDING: 'bg-yellow-100 text-yellow-800',
-      REVIEW: 'bg-blue-100 text-blue-800',
-      ACTIVE: 'bg-green-100 text-green-800',
-      REJECTED: 'bg-red-100 text-red-800',
+      FAILED: 'bg-red-100 text-red-800',
+      REFUNDED: 'bg-blue-100 text-blue-800',
+      CANCELLED: 'bg-gray-100 text-gray-800',
     };
     return colorMap[status] || 'bg-gray-100 text-gray-800';
   };
 
   // API 호출 함수
-  const fetchManagers = async (
-    page = 0,
-    filterStatus = null,
-    searchData = null
-  ) => {
+  const fetchPayments = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -103,36 +96,9 @@ const ManagerList = () => {
         throw new Error('인증 토큰이 없습니다.');
       }
 
-      // 검색 파라미터 구성 - size를 고정값으로 사용
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: '10', // 고정값 사용
-      });
+      console.log('Fetching payments from backend API');
 
-      // 상태 필터 추가 - API 상태값으로 변환
-      const apiStatus = getStatusForAPI(filterStatus);
-      if (apiStatus) {
-        params.append('status', apiStatus);
-      }
-
-      // 검색 파라미터 추가
-      if (searchData) {
-        if (searchData.name && searchData.name.trim()) {
-          params.append('name', searchData.name.trim());
-        }
-        if (searchData.phone && searchData.phone.trim()) {
-          params.append('phone', searchData.phone.trim());
-        }
-        if (searchData.career && searchData.career.trim()) {
-          params.append('career', searchData.career.trim());
-        }
-      }
-
-      console.log('Fetching managers with params:', Object.fromEntries(params));
-      console.log('Filter status:', filterStatus, '-> API status:', apiStatus);
-      console.log('Search params:', searchData);
-
-      const response = await fetch(`/api/v1/admin/managers?${params}`, {
+      const response = await fetch('/api/v1/admin/payments', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -148,248 +114,270 @@ const ManagerList = () => {
       console.log('API Response:', data);
 
       if (data.success && data.data) {
-        setManagers(data.data.content || []);
-        setPagination({
-          page: data.data.currentPage || 0,
-          size: data.data.size || 10,
-          totalElements: data.data.totalElements || 0,
-          totalPages: data.data.totalPages || 0,
-        });
+        // 백엔드에서 PaymentResponseDto 배열을 반환
+        const paymentsData = data.data.map((payment) => ({
+          id: payment.paymentId,
+          customerName: payment.customerName,
+          customerEmail: payment.customerEmail || '-',
+          serviceName: payment.serviceName || '서비스',
+          amount: payment.amount,
+          method: payment.paymentMethod || 'CARD',
+          status: payment.status,
+          createdAt: new Date(payment.paymentDate)
+            .toLocaleString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })
+            .replace(/\. /g, '.'),
+          managerName: getPaymentMethodText(payment.paymentMethod),
+        }));
+
+        setAllPayments(paymentsData);
+        setPayments(paymentsData);
+        updatePagination(paymentsData, 0);
       } else {
         console.warn('No data received from API');
-        setManagers([]);
+        setAllPayments([]);
+        setPayments([]);
       }
     } catch (err) {
-      console.error('Manager fetch error:', err);
+      console.error('Payment fetch error:', err);
       setError(err.message);
-      setManagers([]);
-      setPagination({
-        page: 0,
-        size: 10,
-        totalElements: 0,
-        totalPages: 0,
-      });
+      // Mock data for development when API fails
+      const mockPayments = [
+        {
+          id: 'PAY240115001',
+          customerName: '김민수',
+          customerEmail: 'user123@email.com',
+          serviceName: '홈클리닝',
+          amount: 150000,
+          method: 'CARD',
+          status: 'COMPLETED',
+          createdAt: '2024.01.15 14:30:25',
+          managerName: '신용카드',
+        },
+        {
+          id: 'PAY240115002',
+          customerName: '이영희',
+          customerEmail: 'user456@email.com',
+          serviceName: '에어컨청소',
+          amount: 120000,
+          method: 'TRANSFER',
+          status: 'PENDING',
+          createdAt: '2024.01.15 15:20:10',
+          managerName: '계좌이체',
+        },
+      ];
+      setAllPayments(mockPayments);
+      setPayments(mockPayments);
+      updatePagination(mockPayments, 0);
     } finally {
       setLoading(false);
       setIsSearching(false);
     }
   };
 
-  // 전체 매니저 데이터로 상태별 카운트 계산
-  const fetchStatusCounts = async () => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
+  // 페이징 업데이트 함수
+  const updatePagination = (data, currentPage) => {
+    const pageSize = 10;
+    const totalElements = data.length;
+    const totalPages = Math.ceil(totalElements / pageSize);
+    const startIndex = currentPage * pageSize;
+    const endIndex = startIndex + pageSize;
 
-      // 전체 데이터를 가져와서 상태별 카운트 계산
-      const response = await fetch('/api/v1/admin/managers?page=0&size=1000', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          const allManagers = data.data.content || [];
-          const counts = {
-            total: allManagers.length,
-            pending: allManagers.filter((m) => m.status === 'PENDING').length,
-            review: allManagers.filter((m) => m.status === 'REVIEW').length,
-            active: allManagers.filter((m) => m.status === 'ACTIVE').length,
-            rejected: allManagers.filter((m) => m.status === 'REJECTED').length,
-          };
-          setStatusCounts(counts);
-          console.log('Status counts updated:', counts);
-        }
-      }
-    } catch (err) {
-      console.error('Status counts fetch error:', err);
-    }
+    setDisplayedPayments(data.slice(startIndex, endIndex));
+    setPagination({
+      page: currentPage,
+      size: pageSize,
+      totalElements: totalElements,
+      totalPages: totalPages,
+    });
   };
 
-  // 컴포넌트 마운트 시 데이터 로드
-  useEffect(() => {
-    console.log('Component mounted, initial load');
-    fetchManagers(0, activeTab, null);
-    fetchStatusCounts();
-  }, []); // 빈 의존성 배열로 마운트 시에만 실행
-
-  // 탭 변경 핸들러
-  const handleTabChange = (tab) => {
-    console.log('=== Tab Change ===');
-    console.log('Previous tab:', activeTab);
-    console.log('New tab:', tab);
-    console.log('Current managers count:', managers.length);
-
-    // 즉시 상태 업데이트
-    setActiveTab(tab);
-    setSortBy(tab); // sortBy도 동기화
-
-    // 페이지를 0으로 리셋
-    setPagination((prev) => ({
-      ...prev,
-      page: 0,
-    }));
-
-    // 매니저 리스트 즉시 초기화하고 로딩 상태 설정
-    setManagers([]);
-    setLoading(true);
-    setError(null);
-
-    // 현재 검색 상태 유지하면서 새로운 데이터 fetch
-    const searchData = searchQuery.trim()
-      ? { name: searchQuery.trim(), phone: '', career: '' }
-      : null;
-    fetchManagers(0, tab, searchData);
+  // 결제 수단 텍스트 매핑
+  const getPaymentMethodText = (method) => {
+    const methodMap = {
+      CARD: '신용카드',
+      TRANSFER: '계좌이체',
+      VIRTUAL_ACCOUNT: '가상계좌',
+    };
+    return methodMap[method] || method;
   };
 
-  // 필터 변경 핸들러
-  const handleFilterChange = (filter) => {
-    console.log('=== Filter Change ===');
-    console.log('Previous filter:', sortBy);
-    console.log('New filter:', filter);
-    console.log('Current managers count:', managers.length);
+  // 통계 데이터 가져오기 (백엔드에 통계 API가 없으므로 클라이언트에서 계산)
+  const calculateStats = (paymentsData) => {
+    const totalPayment = paymentsData
+      .filter((p) => p.status === 'COMPLETED')
+      .reduce((sum, p) => sum + p.amount, 0);
 
-    // 즉시 상태 업데이트
-    setSortBy(filter);
-    setActiveTab(filter); // activeTab도 동기화
+    const refundAmount = paymentsData
+      .filter((p) => p.status === 'REFUNDED')
+      .reduce((sum, p) => sum + p.amount, 0);
 
-    // 페이지를 0으로 리셋
-    setPagination((prev) => ({
-      ...prev,
-      page: 0,
-    }));
+    const totalCount = paymentsData.length;
+    const completedCount = paymentsData.filter(
+      (p) => p.status === 'COMPLETED'
+    ).length;
+    const successRate =
+      totalCount > 0 ? ((completedCount / totalCount) * 100).toFixed(1) : 0;
 
-    // 매니저 리스트 즉시 초기화하고 로딩 상태 설정
-    setManagers([]);
-    setLoading(true);
-    setError(null);
+    const pendingPayments = paymentsData
+      .filter((p) => p.status === 'PENDING')
+      .reduce((sum, p) => sum + p.amount, 0);
 
-    // 현재 검색 상태 유지하면서 새로운 데이터 fetch
-    const searchData = searchQuery.trim()
-      ? { name: searchQuery.trim(), phone: '', career: '' }
-      : null;
-    fetchManagers(0, filter, searchData);
+    setPaymentStats({
+      totalPayment,
+      refundAmount,
+      successRate: parseFloat(successRate),
+      pendingPayments,
+    });
   };
 
-  // 페이지 변경 핸들러
-  const handlePageChange = (newPage) => {
-    const searchData = searchQuery.trim()
-      ? { name: searchQuery.trim(), phone: '', career: '' }
-      : null;
-    fetchManagers(newPage, activeTab, searchData);
-  };
-
-  // 매니저 상태 변경
-  const updateManagerStatus = async (managerId, newStatus) => {
+  // 환불 처리 함수
+  const handleRefund = async (
+    paymentId,
+    isPartial = false,
+    refundAmount = null
+  ) => {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('인증 토큰이 없습니다.');
       }
 
-      const response = await fetch(
-        `/api/v1/admin/managers/${managerId}/status`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
+      const endpoint = isPartial
+        ? `/api/v1/admin/payments/${paymentId}/partial-refund?refundAmount=${refundAmount}`
+        : `/api/v1/admin/payments/${paymentId}/refund`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // 성공 시 데이터 새로고침 - 현재 검색 상태 유지
-      const searchData = searchQuery.trim()
-        ? { name: searchQuery.trim(), phone: '', career: '' }
-        : null;
-      fetchManagers(pagination.page, activeTab, searchData);
-      fetchStatusCounts(); // 상태 카운트도 업데이트
+      const data = await response.json();
+
+      if (data.success) {
+        alert(
+          isPartial
+            ? '부분 환불이 완료되었습니다.'
+            : '전액 환불이 완료되었습니다.'
+        );
+        fetchPayments(); // 데이터 새로고침
+      } else {
+        throw new Error(data.message || '환불 처리에 실패했습니다.');
+      }
     } catch (err) {
-      console.error('Status update error:', err);
-      setError('상태 변경에 실패했습니다.');
+      console.error('Refund error:', err);
+      alert(`환불 처리 중 오류가 발생했습니다: ${err.message}`);
     }
   };
 
-  // 검색 실행 함수
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    fetchPayments();
+  }, []);
+
+  // payments 데이터가 변경될 때마다 통계 계산
+  useEffect(() => {
+    if (allPayments.length > 0) {
+      calculateStats(allPayments);
+    }
+  }, [allPayments]);
+
+  // 검색 핸들러 (현재는 클라이언트 사이드 필터링)
   const handleSearch = () => {
     console.log('Search triggered with query:', searchQuery);
     setIsSearching(true);
 
-    // 페이지를 0으로 리셋하고 검색 실행
-    setPagination((prev) => ({
-      ...prev,
-      page: 0,
-    }));
+    // 클라이언트 사이드 검색 (백엔드 검색 API가 없으므로)
+    setTimeout(() => {
+      let filteredPayments = allPayments;
 
-    // 통합 검색어를 이름 검색으로 사용
-    const searchData = searchQuery.trim()
-      ? { name: searchQuery.trim(), phone: '', career: '' }
-      : null;
-    fetchManagers(0, activeTab, searchData);
+      if (searchQuery.trim()) {
+        filteredPayments = allPayments.filter(
+          (payment) =>
+            payment.customerName
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            payment.serviceName
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase())
+        );
+      }
+
+      setPayments(filteredPayments);
+      updatePagination(filteredPayments, 0);
+      setIsSearching(false);
+    }, 500);
   };
 
-  // 검색 초기화 함수
+  // 검색 초기화
   const handleClearSearch = () => {
     setSearchQuery('');
     setIsSearching(false);
-
-    // 검색 초기화 후 현재 탭의 데이터 다시 로드
-    setPagination((prev) => ({
-      ...prev,
-      page: 0,
-    }));
-
-    fetchManagers(0, activeTab, null);
+    setPayments(allPayments);
+    updatePagination(allPayments, 0);
   };
 
-  // 엔터 키 검색 핸들러
+  // 엔터 키 검색
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
   };
 
-  const tabs = [
-    { key: '전체', label: `전체 (${statusCounts.total})` },
-    { key: '승인대기', label: `승인대기 (${statusCounts.pending})` },
-    { key: '검토중', label: `검토중 (${statusCounts.review})` },
-    { key: '승인완료', label: `승인완료 (${statusCounts.active})` },
-    { key: '반려', label: `반려 (${statusCounts.rejected})` },
-  ];
+  // 페이지 변경
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < pagination.totalPages) {
+      updatePagination(payments, newPage);
+    }
+  };
+
+  // 환불 처리 확인 다이얼로그
+  const confirmRefund = (paymentId, customerName) => {
+    if (
+      window.confirm(`${customerName} 고객의 결제를 전액 환불하시겠습니까?`)
+    ) {
+      handleRefund(paymentId, false);
+    }
+  };
+
+  // 부분 환불 처리
+  const confirmPartialRefund = (paymentId, customerName, totalAmount) => {
+    const refundAmount = prompt(
+      `${customerName} 고객의 부분 환불 금액을 입력하세요 (최대: ₩${formatAmount(totalAmount)}):`
+    );
+    if (refundAmount && !isNaN(refundAmount)) {
+      const amount = parseInt(refundAmount);
+      if (amount > 0 && amount <= totalAmount) {
+        handleRefund(paymentId, true, amount);
+      } else {
+        alert('올바른 환불 금액을 입력해주세요.');
+      }
+    }
+  };
+
+  // 금액 포맷팅
+  const formatAmount = (amount) => {
+    return new Intl.NumberFormat('ko-KR').format(amount);
+  };
 
   const stats = [
     {
-      title: '승인 대기',
-      value: statusCounts.pending.toString(),
-      subValue: '신규 신청',
-      icon: (
-        <svg
-          className="w-5 h-5 text-yellow-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-      iconBg: 'bg-yellow-100',
-    },
-    {
-      title: '검토 중',
-      value: statusCounts.review.toString(),
-      subValue: '서류 검토',
+      title: '오늘 총 결제금액',
+      value: `₩${formatAmount(paymentStats.totalPayment)}`,
+      subValue: '결제 건수 : 89건\n평균 결제액 : ₩139,888',
       icon: (
         <svg
           className="w-5 h-5 text-blue-600"
@@ -398,7 +386,7 @@ const ManagerList = () => {
         >
           <path
             fillRule="evenodd"
-            d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z"
+            d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
             clipRule="evenodd"
           />
         </svg>
@@ -406,9 +394,29 @@ const ManagerList = () => {
       iconBg: 'bg-blue-100',
     },
     {
-      title: '승인 완료',
-      value: statusCounts.active.toString(),
-      subValue: '활성 매니저',
+      title: '환불 금액',
+      value: `₩${formatAmount(paymentStats.refundAmount)}`,
+      subValue: '',
+      icon: (
+        <svg
+          className="w-5 h-5 text-red-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ),
+      iconBg: 'bg-red-100',
+      trend: { value: '7건', period: '환불 요청', isPositive: false },
+    },
+    {
+      title: '결제 성공률',
+      value: `${paymentStats.successRate}%`,
+      subValue: '',
       icon: (
         <svg
           className="w-5 h-5 text-green-600"
@@ -423,25 +431,27 @@ const ManagerList = () => {
         </svg>
       ),
       iconBg: 'bg-green-100',
+      trend: { value: '+2.1%', period: '지난 주 대비', isPositive: true },
     },
     {
-      title: '반려',
-      value: statusCounts.rejected.toString(),
-      subValue: '신청 거절',
+      title: '결제 대기',
+      value: `₩${formatAmount(paymentStats.pendingPayments)}`,
+      subValue: '',
       icon: (
         <svg
-          className="w-5 h-5 text-red-600"
+          className="w-5 h-5 text-yellow-600"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
           <path
             fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
             clipRule="evenodd"
           />
         </svg>
       ),
-      iconBg: 'bg-red-100',
+      iconBg: 'bg-yellow-100',
+      trend: { value: '12건', period: '결제 진행중', isPositive: false },
     },
   ];
 
@@ -459,6 +469,7 @@ const ManagerList = () => {
                 subValue={stat.subValue}
                 icon={stat.icon}
                 iconBg={stat.iconBg}
+                trend={stat.trend}
               />
             ))}
           </div>
@@ -467,7 +478,7 @@ const ManagerList = () => {
           <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-end space-x-4">
               <h3 className="text-lg font-semibold text-gray-900 whitespace-nowrap">
-                매니저 검색
+                결제 내역 검색
               </h3>
 
               <div className="relative w-80">
@@ -488,7 +499,7 @@ const ManagerList = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder="매니저 이름을 입력하세요"
+                  placeholder="결제ID, 고객명, 서비스명으로 검색"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyPress}
@@ -515,47 +526,46 @@ const ManagerList = () => {
 
           {/* Tabs and Table */}
           <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Tabs */}
-            <div className="flex bg-white" style={{ backgroundColor: 'white' }}>
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => handleTabChange(tab.key)}
-                  className={`px-6 py-4 text-sm font-medium transition-all duration-200 ${
-                    activeTab === tab.key
-                      ? 'text-blue-600 border-b-2 border-blue-500 bg-white'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 border-transparent bg-white'
-                  }`}
-                  style={{ backgroundColor: 'white' }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* 구분선 */}
-            <div className="border-b border-gray-200 bg-white"></div>
-
             {/* Table */}
             <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               {/* Table Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6 border-b border-gray-200 gap-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  매니저 목록 {activeTab !== '전체' && `- ${activeTab}`}
+                  결제 내역 목록
                 </h3>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      위치 ID, 결제ID, 서비스명으로 검색...
+                    </span>
+                    <button className="p-2 text-gray-400 hover:text-gray-600">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                   <select
-                    value={sortBy}
-                    onChange={(e) => handleFilterChange(e.target.value)}
+                    defaultValue="오늘"
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="전체">전체</option>
-                    <option value="승인대기">승인대기</option>
-                    <option value="검토중">검토중</option>
-                    <option value="승인완료">승인완료</option>
-                    <option value="반려">반려</option>
+                    <option value="오늘">오늘</option>
+                    <option value="어제">어제</option>
+                    <option value="7일">최근 7일</option>
+                    <option value="30일">최근 30일</option>
                   </select>
-                  <span className="text-sm text-gray-500">⋯</span>
+                  <button className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                    결제내역 다운로드
+                  </button>
                 </div>
               </div>
 
@@ -593,7 +603,8 @@ const ManagerList = () => {
                     <col style={{ width: '180px' }} />
                     <col style={{ width: '120px' }} />
                     <col style={{ width: '100px' }} />
-                    <col style={{ width: '120px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '140px' }} />
                     <col style={{ width: '100px' }} />
                     <col style={{ width: '120px' }} />
                   </colgroup>
@@ -606,22 +617,25 @@ const ManagerList = () => {
                         />
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        매니저 정보
+                        회원정보
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        경력
+                        서비스명
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        전문분야
+                        결제금액
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        결제방법
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        결제일시
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         상태
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        평점
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        상세보기
+                        액션
                       </th>
                     </tr>
                   </thead>
@@ -636,30 +650,33 @@ const ManagerList = () => {
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="space-y-2">
                               <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                              <div className="w-24 h-3 bg-gray-200 rounded animate-pulse mx-auto"></div>
+                              <div className="w-32 h-3 bg-gray-200 rounded animate-pulse mx-auto"></div>
                             </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-12 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="w-16 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-16 h-6 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
+                            <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-12 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
+                            <div className="w-16 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-center">
+                            <div className="w-24 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-center">
+                            <div className="w-16 h-6 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="w-16 h-6 bg-gray-200 rounded animate-pulse mx-auto"></div>
                           </td>
                         </tr>
                       ))
-                    ) : managers.length === 0 ? (
+                    ) : displayedPayments.length === 0 ? (
                       // 데이터 없음
                       <tr>
-                        <td colSpan="7" className="px-4 py-12 text-center">
+                        <td colSpan="8" className="px-4 py-12 text-center">
                           <div className="flex flex-col items-center">
                             <svg
                               className="w-12 h-12 text-gray-400 mb-4"
@@ -671,24 +688,24 @@ const ManagerList = () => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
                               />
                             </svg>
                             <h3 className="text-lg font-medium text-gray-900 mb-1">
-                              매니저 데이터가 없습니다
+                              결제 내역이 없습니다
                             </h3>
                             <p className="text-gray-500">
-                              조건에 맞는 매니저가 없거나 데이터를 불러올 수
-                              없습니다.
+                              조건에 맞는 결제 데이터가 없거나 데이터를 불러올
+                              수 없습니다.
                             </p>
                           </div>
                         </td>
                       </tr>
                     ) : (
                       // 실제 데이터
-                      managers.map((manager, index) => (
+                      displayedPayments.map((payment, index) => (
                         <tr
-                          key={manager.id || index}
+                          key={payment.id || index}
                           className="hover:bg-gray-50"
                         >
                           <td className="px-4 py-4 whitespace-nowrap text-center">
@@ -700,38 +717,68 @@ const ManagerList = () => {
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div>
                               <div className="text-sm font-medium text-gray-900">
-                                {manager.name || '-'}
+                                {payment.customerName || '-'}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {manager.phone || '-'}
+                                {payment.customerEmail || '-'}
                               </div>
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            {manager.experience || '-'}
+                            {payment.serviceName || '-'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+                            ₩{formatAmount(payment.amount || 0)}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            {manager.specialty || manager.career || '-'}
+                            {payment.managerName || '-'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                            {payment.createdAt || '-'}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <span
-                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(manager.status)}`}
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(payment.status)}`}
                             >
-                              {getStatusText(manager.status)}
+                              {getPaymentStatusText(payment.status)}
                             </span>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            {manager.rating || '⭐ 신규'}
-                          </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                            <button
-                              onClick={() =>
-                                updateManagerStatus(manager.id, 'ACTIVE')
-                              }
-                              className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                            >
-                              상세보기
-                            </button>
+                            {payment.status === 'COMPLETED' ? (
+                              <div className="flex space-x-1 justify-center">
+                                <button
+                                  onClick={() =>
+                                    confirmRefund(
+                                      payment.id,
+                                      payment.customerName
+                                    )
+                                  }
+                                  className="px-2 py-1 text-xs text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
+                                >
+                                  전액환불
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    confirmPartialRefund(
+                                      payment.id,
+                                      payment.customerName,
+                                      payment.amount
+                                    )
+                                  }
+                                  className="px-2 py-1 text-xs text-orange-600 bg-orange-50 rounded hover:bg-orange-100 transition-colors"
+                                >
+                                  부분환불
+                                </button>
+                              </div>
+                            ) : payment.status === 'REFUNDED' ? (
+                              <span className="px-2 py-1 text-xs text-gray-500 bg-gray-50 rounded">
+                                환불완료
+                              </span>
+                            ) : (
+                              <button className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                상세보기
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -813,4 +860,4 @@ const ManagerList = () => {
   );
 };
 
-export default ManagerList;
+export default CustomerPayment;
