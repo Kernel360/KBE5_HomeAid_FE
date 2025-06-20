@@ -44,7 +44,6 @@ const CustomerPayment = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('전체조회');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [pagination, setPagination] = useState({
@@ -53,6 +52,8 @@ const CustomerPayment = () => {
     totalElements: 0,
     totalPages: 0,
   });
+  const [allPayments, setAllPayments] = useState([]); // 전체 데이터 저장
+  const [displayedPayments, setDisplayedPayments] = useState([]); // 현재 페이지 데이터
   const [paymentStats, setPaymentStats] = useState({
     totalPayment: 0,
     refundAmount: 0,
@@ -84,22 +85,8 @@ const CustomerPayment = () => {
     return colorMap[status] || 'bg-gray-100 text-gray-800';
   };
 
-  // 결제 수단 아이콘
-  const getPaymentMethodIcon = (method) => {
-    switch (method) {
-      case 'CARD':
-        return '💳';
-      case 'TRANSFER':
-        return '🏦';
-      case 'VIRTUAL_ACCOUNT':
-        return '📄';
-      default:
-        return '💰';
-    }
-  };
-
   // API 호출 함수
-  const fetchPayments = async (page = 0, searchData = null) => {
+  const fetchPayments = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -109,18 +96,9 @@ const CustomerPayment = () => {
         throw new Error('인증 토큰이 없습니다.');
       }
 
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: '10',
-      });
+      console.log('Fetching payments from backend API');
 
-      if (searchData?.query) {
-        params.append('search', searchData.query);
-      }
-
-      console.log('Fetching payments with params:', Object.fromEntries(params));
-
-      const response = await fetch(`/api/v1/admin/payments?${params}`, {
+      const response = await fetch('/api/v1/admin/payments', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -136,22 +114,40 @@ const CustomerPayment = () => {
       console.log('API Response:', data);
 
       if (data.success && data.data) {
-        setPayments(data.data.content || []);
-        setPagination({
-          page: data.data.currentPage || 0,
-          size: data.data.size || 10,
-          totalElements: data.data.totalElements || 0,
-          totalPages: data.data.totalPages || 0,
-        });
+        // 백엔드에서 PaymentResponseDto 배열을 반환
+        const paymentsData = data.data.map((payment) => ({
+          id: payment.paymentId,
+          customerName: payment.customerName,
+          customerEmail: payment.customerEmail || '-',
+          serviceName: payment.serviceName || '서비스',
+          amount: payment.amount,
+          method: payment.paymentMethod || 'CARD',
+          status: payment.status,
+          createdAt: new Date(payment.paymentDate)
+            .toLocaleString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })
+            .replace(/\. /g, '.'),
+          managerName: getPaymentMethodText(payment.paymentMethod),
+        }));
+
+        setAllPayments(paymentsData);
+        setPayments(paymentsData);
+        updatePagination(paymentsData, 0);
       } else {
         console.warn('No data received from API');
+        setAllPayments([]);
         setPayments([]);
       }
     } catch (err) {
       console.error('Payment fetch error:', err);
       setError(err.message);
-      setPayments([]);
-      // Mock data for development
+      // Mock data for development when API fails
       const mockPayments = [
         {
           id: 'PAY240115001',
@@ -164,84 +160,174 @@ const CustomerPayment = () => {
           createdAt: '2024.01.15 14:30:25',
           managerName: '신용카드',
         },
+        {
+          id: 'PAY240115002',
+          customerName: '이영희',
+          customerEmail: 'user456@email.com',
+          serviceName: '에어컨청소',
+          amount: 120000,
+          method: 'TRANSFER',
+          status: 'PENDING',
+          createdAt: '2024.01.15 15:20:10',
+          managerName: '계좌이체',
+        },
       ];
+      setAllPayments(mockPayments);
       setPayments(mockPayments);
-      setPagination({
-        page: 0,
-        size: 10,
-        totalElements: 1,
-        totalPages: 1,
-      });
+      updatePagination(mockPayments, 0);
     } finally {
       setLoading(false);
       setIsSearching(false);
     }
   };
 
-  // 통계 데이터 가져오기
-  const fetchPaymentStats = async () => {
+  // 페이징 업데이트 함수
+  const updatePagination = (data, currentPage) => {
+    const pageSize = 10;
+    const totalElements = data.length;
+    const totalPages = Math.ceil(totalElements / pageSize);
+    const startIndex = currentPage * pageSize;
+    const endIndex = startIndex + pageSize;
+
+    setDisplayedPayments(data.slice(startIndex, endIndex));
+    setPagination({
+      page: currentPage,
+      size: pageSize,
+      totalElements: totalElements,
+      totalPages: totalPages,
+    });
+  };
+
+  // 결제 수단 텍스트 매핑
+  const getPaymentMethodText = (method) => {
+    const methodMap = {
+      CARD: '신용카드',
+      TRANSFER: '계좌이체',
+      VIRTUAL_ACCOUNT: '가상계좌',
+    };
+    return methodMap[method] || method;
+  };
+
+  // 통계 데이터 가져오기 (백엔드에 통계 API가 없으므로 클라이언트에서 계산)
+  const calculateStats = (paymentsData) => {
+    const totalPayment = paymentsData
+      .filter((p) => p.status === 'COMPLETED')
+      .reduce((sum, p) => sum + p.amount, 0);
+
+    const refundAmount = paymentsData
+      .filter((p) => p.status === 'REFUNDED')
+      .reduce((sum, p) => sum + p.amount, 0);
+
+    const totalCount = paymentsData.length;
+    const completedCount = paymentsData.filter(
+      (p) => p.status === 'COMPLETED'
+    ).length;
+    const successRate =
+      totalCount > 0 ? ((completedCount / totalCount) * 100).toFixed(1) : 0;
+
+    const pendingPayments = paymentsData
+      .filter((p) => p.status === 'PENDING')
+      .reduce((sum, p) => sum + p.amount, 0);
+
+    setPaymentStats({
+      totalPayment,
+      refundAmount,
+      successRate: parseFloat(successRate),
+      pendingPayments,
+    });
+  };
+
+  // 환불 처리 함수
+  const handleRefund = async (
+    paymentId,
+    isPartial = false,
+    refundAmount = null
+  ) => {
     try {
       const token = localStorage.getItem('accessToken');
-      if (!token) return;
+      if (!token) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
 
-      const response = await fetch('/api/v1/admin/payments/stats', {
-        method: 'GET',
+      const endpoint = isPartial
+        ? `/api/v1/admin/payments/${paymentId}/partial-refund?refundAmount=${refundAmount}`
+        : `/api/v1/admin/payments/${paymentId}/refund`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setPaymentStats(data.data);
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(
+          isPartial
+            ? '부분 환불이 완료되었습니다.'
+            : '전액 환불이 완료되었습니다.'
+        );
+        fetchPayments(); // 데이터 새로고침
       } else {
-        // Mock stats for development
-        setPaymentStats({
-          totalPayment: 12450000,
-          refundAmount: 890000,
-          successRate: 97.8,
-          pendingPayments: 2340000,
-        });
+        throw new Error(data.message || '환불 처리에 실패했습니다.');
       }
     } catch (err) {
-      console.error('Payment stats fetch error:', err);
-      // Mock stats for development
-      setPaymentStats({
-        totalPayment: 12450000,
-        refundAmount: 890000,
-        successRate: 97.8,
-        pendingPayments: 2340000,
-      });
+      console.error('Refund error:', err);
+      alert(`환불 처리 중 오류가 발생했습니다: ${err.message}`);
     }
   };
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
-    fetchPayments(0, null);
-    fetchPaymentStats();
+    fetchPayments();
   }, []);
 
-  // 검색 핸들러
+  // payments 데이터가 변경될 때마다 통계 계산
+  useEffect(() => {
+    if (allPayments.length > 0) {
+      calculateStats(allPayments);
+    }
+  }, [allPayments]);
+
+  // 검색 핸들러 (현재는 클라이언트 사이드 필터링)
   const handleSearch = () => {
     console.log('Search triggered with query:', searchQuery);
     setIsSearching(true);
-    setPagination((prev) => ({ ...prev, page: 0 }));
 
-    const searchData = searchQuery.trim()
-      ? { query: searchQuery.trim() }
-      : null;
-    fetchPayments(0, searchData);
+    // 클라이언트 사이드 검색 (백엔드 검색 API가 없으므로)
+    setTimeout(() => {
+      let filteredPayments = allPayments;
+
+      if (searchQuery.trim()) {
+        filteredPayments = allPayments.filter(
+          (payment) =>
+            payment.customerName
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            payment.serviceName
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase())
+        );
+      }
+
+      setPayments(filteredPayments);
+      updatePagination(filteredPayments, 0);
+      setIsSearching(false);
+    }, 500);
   };
 
   // 검색 초기화
   const handleClearSearch = () => {
     setSearchQuery('');
     setIsSearching(false);
-    setPagination((prev) => ({ ...prev, page: 0 }));
-    fetchPayments(0, null);
+    setPayments(allPayments);
+    updatePagination(allPayments, 0);
   };
 
   // 엔터 키 검색
@@ -253,20 +339,39 @@ const CustomerPayment = () => {
 
   // 페이지 변경
   const handlePageChange = (newPage) => {
-    const searchData = searchQuery.trim()
-      ? { query: searchQuery.trim() }
-      : null;
-    fetchPayments(newPage, searchData);
+    if (newPage >= 0 && newPage < pagination.totalPages) {
+      updatePagination(payments, newPage);
+    }
+  };
+
+  // 환불 처리 확인 다이얼로그
+  const confirmRefund = (paymentId, customerName) => {
+    if (
+      window.confirm(`${customerName} 고객의 결제를 전액 환불하시겠습니까?`)
+    ) {
+      handleRefund(paymentId, false);
+    }
+  };
+
+  // 부분 환불 처리
+  const confirmPartialRefund = (paymentId, customerName, totalAmount) => {
+    const refundAmount = prompt(
+      `${customerName} 고객의 부분 환불 금액을 입력하세요 (최대: ₩${formatAmount(totalAmount)}):`
+    );
+    if (refundAmount && !isNaN(refundAmount)) {
+      const amount = parseInt(refundAmount);
+      if (amount > 0 && amount <= totalAmount) {
+        handleRefund(paymentId, true, amount);
+      } else {
+        alert('올바른 환불 금액을 입력해주세요.');
+      }
+    }
   };
 
   // 금액 포맷팅
   const formatAmount = (amount) => {
     return new Intl.NumberFormat('ko-KR').format(amount);
   };
-
-  const tabs = [
-    { key: '전체조회', label: `전체조회 (${pagination.totalElements})` },
-  ];
 
   const stats = [
     {
@@ -421,27 +526,6 @@ const CustomerPayment = () => {
 
           {/* Tabs and Table */}
           <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Tabs */}
-            <div className="flex bg-white" style={{ backgroundColor: 'white' }}>
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`px-6 py-4 text-sm font-medium transition-all duration-200 ${
-                    activeTab === tab.key
-                      ? 'text-blue-600 border-b-2 border-blue-500 bg-white'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 border-transparent bg-white'
-                  }`}
-                  style={{ backgroundColor: 'white' }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* 구분선 */}
-            <div className="border-b border-gray-200 bg-white"></div>
-
             {/* Table */}
             <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               {/* Table Header */}
@@ -449,24 +533,39 @@ const CustomerPayment = () => {
                 <h3 className="text-lg font-semibold text-gray-900">
                   결제 내역 목록
                 </h3>
-                <div className="flex items-center space-x-3">
-                  <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="전체 회원">전체 회원</option>
-                    <option value="일반 회원">일반 회원</option>
-                    <option value="프리미엄 회원">프리미엄 회원</option>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      위치 ID, 결제ID, 서비스명으로 검색...
+                    </span>
+                    <button className="p-2 text-gray-400 hover:text-gray-600">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <select
+                    defaultValue="오늘"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="오늘">오늘</option>
+                    <option value="어제">어제</option>
+                    <option value="7일">최근 7일</option>
+                    <option value="30일">최근 30일</option>
                   </select>
-                  <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="전체 상태">전체 상태</option>
-                    <option value="결제완료">결제완료</option>
-                    <option value="결제대기">결제대기</option>
-                    <option value="결제실패">결제실패</option>
-                  </select>
-                  <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="전체 서비스">전체 서비스</option>
-                    <option value="홈클리닝">홈클리닝</option>
-                    <option value="에어컨청소">에어컨청소</option>
-                  </select>
-                  <span className="text-sm text-gray-500">⋯</span>
+                  <button className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                    결제내역 다운로드
+                  </button>
                 </div>
               </div>
 
@@ -498,10 +597,9 @@ const CustomerPayment = () => {
               )}
 
               <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[1200px]">
+                <table className="w-full min-w-[1000px]">
                   <colgroup>
                     <col style={{ width: '80px' }} />
-                    <col style={{ width: '140px' }} />
                     <col style={{ width: '180px' }} />
                     <col style={{ width: '120px' }} />
                     <col style={{ width: '100px' }} />
@@ -517,9 +615,6 @@ const CustomerPayment = () => {
                           type="checkbox"
                           className="rounded border-gray-300"
                         />
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        결제ID
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         회원정보
@@ -540,7 +635,7 @@ const CustomerPayment = () => {
                         상태
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        매니저
+                        액션
                       </th>
                     </tr>
                   </thead>
@@ -551,9 +646,6 @@ const CustomerPayment = () => {
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-24 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="space-y-2">
@@ -581,10 +673,10 @@ const CustomerPayment = () => {
                           </td>
                         </tr>
                       ))
-                    ) : payments.length === 0 ? (
+                    ) : displayedPayments.length === 0 ? (
                       // 데이터 없음
                       <tr>
-                        <td colSpan="9" className="px-4 py-12 text-center">
+                        <td colSpan="8" className="px-4 py-12 text-center">
                           <div className="flex flex-col items-center">
                             <svg
                               className="w-12 h-12 text-gray-400 mb-4"
@@ -611,7 +703,7 @@ const CustomerPayment = () => {
                       </tr>
                     ) : (
                       // 실제 데이터
-                      payments.map((payment, index) => (
+                      displayedPayments.map((payment, index) => (
                         <tr
                           key={payment.id || index}
                           className="hover:bg-gray-50"
@@ -621,11 +713,6 @@ const CustomerPayment = () => {
                               type="checkbox"
                               className="rounded border-gray-300"
                             />
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="text-sm font-medium text-blue-600">
-                              {payment.id || '-'}
-                            </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div>
@@ -644,12 +731,7 @@ const CustomerPayment = () => {
                             ₩{formatAmount(payment.amount || 0)}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            <div className="flex items-center justify-center">
-                              <span className="mr-1">
-                                {getPaymentMethodIcon(payment.method)}
-                              </span>
-                              {payment.managerName || '-'}
-                            </div>
+                            {payment.managerName || '-'}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
                             {payment.createdAt || '-'}
@@ -662,9 +744,41 @@ const CustomerPayment = () => {
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                            <button className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                              액션
-                            </button>
+                            {payment.status === 'COMPLETED' ? (
+                              <div className="flex space-x-1 justify-center">
+                                <button
+                                  onClick={() =>
+                                    confirmRefund(
+                                      payment.id,
+                                      payment.customerName
+                                    )
+                                  }
+                                  className="px-2 py-1 text-xs text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
+                                >
+                                  전액환불
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    confirmPartialRefund(
+                                      payment.id,
+                                      payment.customerName,
+                                      payment.amount
+                                    )
+                                  }
+                                  className="px-2 py-1 text-xs text-orange-600 bg-orange-50 rounded hover:bg-orange-100 transition-colors"
+                                >
+                                  부분환불
+                                </button>
+                              </div>
+                            ) : payment.status === 'REFUNDED' ? (
+                              <span className="px-2 py-1 text-xs text-gray-500 bg-gray-50 rounded">
+                                환불완료
+                              </span>
+                            ) : (
+                              <button className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                상세보기
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))
