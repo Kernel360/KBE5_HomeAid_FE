@@ -34,7 +34,6 @@ const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortBy, setSortBy] = useState('전체');
   const [pagination, setPagination] = useState({
     page: 0,
     size: 10,
@@ -58,11 +57,7 @@ const CustomerList = () => {
   const [isAllSelected, setIsAllSelected] = useState(false);
 
   // API 호출 함수
-  const fetchCustomers = async (
-    page = 0,
-    searchData = null,
-    filterStatus = sortBy
-  ) => {
+  const fetchCustomers = async (page = 0, searchData = null) => {
     try {
       setLoading(true);
       setError(null);
@@ -101,12 +96,6 @@ const CustomerList = () => {
             params.append('phone', query);
             break;
         }
-      }
-
-      // 상태 필터 추가
-      if (filterStatus && filterStatus !== '전체') {
-        const statusValue = filterStatus === '활성' ? 'true' : 'false';
-        params.append('isActive', statusValue);
       }
 
       const response = await fetch(`/api/v1/admin/customers?${params}`, {
@@ -200,16 +189,15 @@ const CustomerList = () => {
     const searchData = searchQuery.trim()
       ? { query: searchQuery.trim(), scope: searchScope }
       : null;
-    fetchCustomers(0, searchData, sortBy);
+    fetchCustomers(0, searchData);
   };
 
   // 검색 초기화
   const handleReset = () => {
     setSearchQuery('');
     setSearchScope('all');
-    setSortBy('전체');
     setIsSearching(false);
-    fetchCustomers(0, null, '전체');
+    fetchCustomers(0, null);
   };
 
   // 엔터 키 검색 핸들러
@@ -224,16 +212,7 @@ const CustomerList = () => {
     const searchData = searchQuery.trim()
       ? { query: searchQuery.trim(), scope: searchScope }
       : null;
-    fetchCustomers(newPage, searchData, sortBy);
-  };
-
-  // 필터 상태 변경
-  const handleFilterChange = (newFilter) => {
-    setSortBy(newFilter);
-    const searchData = searchQuery.trim()
-      ? { query: searchQuery.trim(), scope: searchScope }
-      : null;
-    fetchCustomers(0, searchData, newFilter);
+    fetchCustomers(newPage, searchData);
   };
 
   // 활동 상태 표시 함수
@@ -444,19 +423,6 @@ const CustomerList = () => {
                     {isSearching ? '검색 중...' : '검색'}
                   </button>
                 </div>
-              </div>
-
-              {/* 상태 필터 */}
-              <div className="flex items-center justify-end mb-4">
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleFilterChange(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option>전체</option>
-                  <option>활성</option>
-                  <option>비활성</option>
-                </select>
               </div>
 
               {/* Error Message */}
