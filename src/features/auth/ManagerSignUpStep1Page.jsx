@@ -152,12 +152,18 @@ const ManagerSignUpStep1Page = () => {
 
   const handleDateChange = (date) => {
     setDateOfBirth(date);
+    let error = '';
+    if (!isValid(date)) {
+      error = '유효한 생년월일을 입력해주세요.';
+    } else if (!isPast(date)) {
+      error = '생년월일은 과거 날짜여야 합니다.';
+    }
     setFieldErrors((prevErrors) => ({
       ...prevErrors,
-      dateOfBirth: '',
+      dateOfBirth: error,
     }));
     // 날짜 선택 후 바로 유효성 검사 실행
-    handleBlur('dateOfBirth');
+    // handleBlur('dateOfBirth'); // 중복 검사 방지 위해 주석처리
   };
 
   const handleNext = () => {
@@ -197,7 +203,7 @@ const ManagerSignUpStep1Page = () => {
   };
 
   const handlePrevious = () => {
-    navigate(-1); // 이전 페이지로 이동
+    navigate(-1); // 브라우저 히스토리 기준 이전 화면으로 이동
   };
 
   const togglePasswordVisibility = () => {

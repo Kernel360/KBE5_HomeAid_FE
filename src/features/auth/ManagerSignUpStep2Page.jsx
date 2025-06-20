@@ -61,7 +61,7 @@ const ManagerSignUpStep2Page = () => {
   };
 
   const handlePrevious = () => {
-    navigate(-1); // 이전 페이지로 이동 (Step 1)
+    navigate(-1); // 브라우저 히스토리 기준 이전 화면으로 이동
   };
 
   return (

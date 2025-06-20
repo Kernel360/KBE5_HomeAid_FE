@@ -5,12 +5,28 @@ import { Calendar, Eye, EyeOff } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ko } from 'date-fns/locale';
-import { format, isValid } from 'date-fns'; // 날짜 형식을 변환하기 위해 임포트
+import { format, isValid, isPast } from 'date-fns'; // 날짜 형식을 변환하기 위해 임포트
 import './styles/datepicker.css'; // 새로 생성한 CSS 파일 임포트
 import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
+// 전화번호 자동 하이픈 함수 (가장 위로 이동)
+const formatPhoneNumber = (value) => {
+  if (!value) return '';
+  const digitsOnly = value.replace(/[^0-9]/g, '');
+  // Max 11 digits for '010-XXXX-XXXX'
+  const limitedDigits = digitsOnly.slice(0, 11);
+  let formatted = '';
+  if (limitedDigits.length <= 3) {
+    formatted = limitedDigits;
+  } else if (limitedDigits.length <= 7) {
+    formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3)}`;
+  } else { // 8 to 11 digits
+    formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3, 7)}-${limitedDigits.slice(7)}`;
+  }
+  return formatted;
+};
 
 // Step 1 유효성 검사 헬퍼 함수
 const validateCustomerStep1Data = ({
@@ -50,6 +66,8 @@ const validateCustomerStep1Data = ({
   // 생년월일 유효성 검사
   if (!dateOfBirth || !isValid(dateOfBirth)) {
     errors.dateOfBirth = '유효한 생년월일을 입력해주세요.';
+  } else if (!isPast(dateOfBirth)) {
+    errors.dateOfBirth = '생년월일은 과거 날짜여야 합니다.';
   }
 
   // 성별 유효성 검사
@@ -94,25 +112,6 @@ const CustomerSignUpStep1Page = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({}); // 필드별 에러 상태 추가
 
-  // 전화번호 자동 하이픈 함수
-  const formatPhoneNumber = (value) => {
-    if (!value) return '';
-    const digitsOnly = value.replace(/[^0-9]/g, '');
-
-    // Max 11 digits for '010-XXXX-XXXX'
-    const limitedDigits = digitsOnly.slice(0, 11);
-
-    let formatted = '';
-    if (limitedDigits.length <= 3) {
-      formatted = limitedDigits;
-    } else if (limitedDigits.length <= 7) {
-      formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3)}`;
-    } else { // 8 to 11 digits
-      formatted = `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3, 7)}-${limitedDigits.slice(7)}`;
-    }
-    return formatted;
-  };
-
   // 입력 필드 변경 핸들러
   const handleInputChange = (fieldName, value) => {
     if (fieldName === 'phoneNumber') {
@@ -151,12 +150,16 @@ const CustomerSignUpStep1Page = () => {
 
   const handleDateChange = (date) => {
     setDateOfBirth(date);
+    let error = '';
+    if (!isValid(date)) {
+      error = '유효한 생년월일을 입력해주세요.';
+    } else if (!isPast(date)) {
+      error = '생년월일은 과거 날짜여야 합니다.';
+    }
     setFieldErrors((prevErrors) => ({
       ...prevErrors,
-      dateOfBirth: '',
+      dateOfBirth: error,
     }));
-    // 날짜 선택 후 바로 유효성 검사 실행
-    handleBlur('dateOfBirth');
   };
 
   const handleNext = () => {
@@ -196,7 +199,7 @@ const CustomerSignUpStep1Page = () => {
   };
 
   const handlePrevious = () => {
-    navigate(-1); // 이전 페이지로 이동
+    navigate(-1); // 브라우저 히스토리 기준 이전 화면으로 이동
   };
 
   const togglePasswordVisibility = () => {
@@ -469,23 +472,23 @@ const CustomerSignUpStep1Page = () => {
                   customInput={
                     <input
                       style={{
-                        flexGrow: 1, // 남은 공간 차지
-                        border: 'none', // 기존 input border 제거
-                        outline: 'none', // 아웃라인 제거
+                        flexGrow: 1,
+                        border: 'none',
+                        outline: 'none',
                         fontSize: '16px',
                         color: '#333',
-                        padding: '13px 0', // 위아래 패딩 유지, 좌우는 부모 div가 담당
-                        caretColor: 'transparent', // 커서 안 보이게
+                        padding: '13px 0',
+                        caretColor: 'transparent',
                         boxSizing: 'border-box',
                       }}
                       required
-                      readOnly // 직접 입력 비활성화
-                      value={dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : ''} // 선택된 날짜 표시
-                      onBlur={() => handleBlur('dateOfBirth')} // blur 시 유효성 검사
-                      tabIndex="-1" // 키보드 포커스 방지
+                      readOnly
+                      value={dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : ''}
+                      onBlur={() => handleBlur('dateOfBirth')}
+                      tabIndex="-1"
                     />
                   }
-                  ref={datePickerRef} // ref 연결
+                  ref={datePickerRef}
                 />
                 {/* Calendar Icon */}
                 <Calendar
