@@ -1,11 +1,15 @@
 import { useAlertStore } from "@/stores/alertStore";
 import { X, Bell, Check } from 'lucide-react';
+import { memo } from 'react';
 
-const AlertCard = ({ onClose }) => {
+const AlertCard = memo(({ onClose, isVisible = false }) => {
     const { notificationAlert } = useAlertStore();
 
-    console.log('알림 아이콘 클릭')
-    console.log(notificationAlert)
+
+    // 보이지 않을 때는 null 반환
+    if (!isVisible) {
+        return null;
+    }
 
     return(
         <>
@@ -26,18 +30,17 @@ const AlertCard = ({ onClose }) => {
             
             {/* 알림 카드 */}
             <div 
-                className="fixed top-16 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white rounded-b-lg shadow-2xl z-50"
+                className="fixed z-50"
                 style={{
                     position: 'fixed',
                     top: '64px', // 헤더 높이만큼 아래
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    width: '100%',
-                    maxWidth: '512px',
+                    width: '90%', // 화면 너비의 90%
+                    maxWidth: '475px', // 최대 너비 제한
                     height: '50vh', // 화면의 절반 높이
                     backgroundColor: 'white',
-                    borderBottomLeftRadius: '12px',
-                    borderBottomRightRadius: '12px',
+                    borderRadius: '12px',
                     boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
                     zIndex: 50,
                     display: 'flex',
@@ -103,6 +106,6 @@ const AlertCard = ({ onClose }) => {
         </>
     );
 
-}
+});
 
 export default AlertCard

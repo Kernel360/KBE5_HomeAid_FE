@@ -4,9 +4,15 @@ export const useAlertStore = create((set) => ({
     notificationAlert: [],
 
     // 알림 리스트 전체 교체 (서버에서 전체 목록을 받을 때)
-    setNotificationAlert: (newNotiList) => set(() => ({
-        notificationAlert: Array.isArray(newNotiList) ? newNotiList : [newNotiList]
-    })),
+    setNotificationAlert: (newNotiList) => {
+        console.log('🔵 스토어 - setNotificationAlert 호출됨:', newNotiList);
+        set(() => {
+            console.log('🔵 스토어 - 상태 업데이트 실행');
+            return {
+                notificationAlert: Array.isArray(newNotiList) ? newNotiList : [newNotiList]
+            };
+        });
+    },
 
     // 기존 알림 목록에 새로운 알림들 추가 (실시간 알림 수신 시)
     addNotificationAlert: (newNoti) => set((prev) => ({
