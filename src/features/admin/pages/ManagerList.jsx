@@ -35,7 +35,6 @@ const ManagerList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('전체');
-  const [sortBy, setSortBy] = useState('전체');
   const [pagination, setPagination] = useState({
     page: 0,
     size: 10,
@@ -53,6 +52,11 @@ const ManagerList = () => {
   // 검색 관련 상태 추가
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState(''); // 통합 검색어
+  const [searchScope, setSearchScope] = useState('all'); // 체크박스 대신 단일 선택
+
+  // 체크박스 선택 상태 추가
+  const [selectedManagers, setSelectedManagers] = useState([]);
+  const [isAllSelected, setIsAllSelected] = useState(false);
 
   // 탭 이름과 API 상태값 매핑
   const getStatusForAPI = (tabName) => {
@@ -117,14 +121,33 @@ const ManagerList = () => {
 
       // 검색 파라미터 추가
       if (searchData) {
-        if (searchData.name && searchData.name.trim()) {
-          params.append('name', searchData.name.trim());
-        }
-        if (searchData.phone && searchData.phone.trim()) {
-          params.append('phone', searchData.phone.trim());
-        }
-        if (searchData.career && searchData.career.trim()) {
-          params.append('career', searchData.career.trim());
+        const query = searchData.query;
+        const scope = searchData.scope;
+
+        if (query && query.trim()) {
+          // 선택된 범위에 따라 검색 파라미터 추가
+          switch (scope) {
+            case 'name':
+              params.append('name', query.trim());
+              break;
+            case 'email':
+              params.append('email', query.trim());
+              break;
+            case 'phone':
+              params.append('phone', query.trim());
+              break;
+            case 'career':
+              params.append('career', query.trim());
+              break;
+            case 'all':
+            default:
+              // 전체 검색인 경우 모든 필드에 검색
+              params.append('name', query.trim());
+              params.append('email', query.trim());
+              params.append('phone', query.trim());
+              params.append('career', query.trim());
+              break;
+          }
         }
       }
 
@@ -226,7 +249,6 @@ const ManagerList = () => {
 
     // 즉시 상태 업데이트
     setActiveTab(tab);
-    setSortBy(tab); // sortBy도 동기화
 
     // 페이지를 0으로 리셋
     setPagination((prev) => ({
@@ -241,44 +263,21 @@ const ManagerList = () => {
 
     // 현재 검색 상태 유지하면서 새로운 데이터 fetch
     const searchData = searchQuery.trim()
-      ? { name: searchQuery.trim(), phone: '', career: '' }
+      ? {
+          query: searchQuery.trim(),
+          scope: searchScope,
+        }
       : null;
     fetchManagers(0, tab, searchData);
-  };
-
-  // 필터 변경 핸들러
-  const handleFilterChange = (filter) => {
-    console.log('=== Filter Change ===');
-    console.log('Previous filter:', sortBy);
-    console.log('New filter:', filter);
-    console.log('Current managers count:', managers.length);
-
-    // 즉시 상태 업데이트
-    setSortBy(filter);
-    setActiveTab(filter); // activeTab도 동기화
-
-    // 페이지를 0으로 리셋
-    setPagination((prev) => ({
-      ...prev,
-      page: 0,
-    }));
-
-    // 매니저 리스트 즉시 초기화하고 로딩 상태 설정
-    setManagers([]);
-    setLoading(true);
-    setError(null);
-
-    // 현재 검색 상태 유지하면서 새로운 데이터 fetch
-    const searchData = searchQuery.trim()
-      ? { name: searchQuery.trim(), phone: '', career: '' }
-      : null;
-    fetchManagers(0, filter, searchData);
   };
 
   // 페이지 변경 핸들러
   const handlePageChange = (newPage) => {
     const searchData = searchQuery.trim()
-      ? { name: searchQuery.trim(), phone: '', career: '' }
+      ? {
+          query: searchQuery.trim(),
+          scope: searchScope,
+        }
       : null;
     fetchManagers(newPage, activeTab, searchData);
   };
@@ -309,7 +308,10 @@ const ManagerList = () => {
 
       // 성공 시 데이터 새로고침 - 현재 검색 상태 유지
       const searchData = searchQuery.trim()
-        ? { name: searchQuery.trim(), phone: '', career: '' }
+        ? {
+            query: searchQuery.trim(),
+            scope: searchScope,
+          }
         : null;
       fetchManagers(pagination.page, activeTab, searchData);
       fetchStatusCounts(); // 상태 카운트도 업데이트
@@ -330,9 +332,12 @@ const ManagerList = () => {
       page: 0,
     }));
 
-    // 통합 검색어를 이름 검색으로 사용
+    // 통합 검색어를 이름, 경력, 전화번호 모든 필드에 적용
     const searchData = searchQuery.trim()
-      ? { name: searchQuery.trim(), phone: '', career: '' }
+      ? {
+          query: searchQuery.trim(),
+          scope: searchScope,
+        }
       : null;
     fetchManagers(0, activeTab, searchData);
   };
@@ -341,6 +346,7 @@ const ManagerList = () => {
   const handleClearSearch = () => {
     setSearchQuery('');
     setIsSearching(false);
+    setSearchScope('all');
 
     // 검색 초기화 후 현재 탭의 데이터 다시 로드
     setPagination((prev) => ({
@@ -357,6 +363,49 @@ const ManagerList = () => {
       handleSearch();
     }
   };
+
+  // 전체 선택/해제 핸들러
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      // 전체 해제
+      setSelectedManagers([]);
+      setIsAllSelected(false);
+    } else {
+      // 전체 선택
+      const allManagerIds = managers.map((manager) => manager.id);
+      setSelectedManagers(allManagerIds);
+      setIsAllSelected(true);
+    }
+  };
+
+  // 개별 매니저 선택/해제 핸들러
+  const handleSelectManager = (managerId) => {
+    setSelectedManagers((prev) => {
+      if (prev.includes(managerId)) {
+        // 선택 해제
+        const newSelected = prev.filter((id) => id !== managerId);
+        setIsAllSelected(false);
+        return newSelected;
+      } else {
+        // 선택 추가
+        const newSelected = [...prev, managerId];
+        setIsAllSelected(newSelected.length === managers.length);
+        return newSelected;
+      }
+    });
+  };
+
+  // 매니저 데이터가 변경될 때 전체 선택 상태 업데이트
+  useEffect(() => {
+    if (managers.length > 0) {
+      setIsAllSelected(
+        selectedManagers.length === managers.length && managers.length > 0
+      );
+    } else {
+      setIsAllSelected(false);
+      setSelectedManagers([]);
+    }
+  }, [managers, selectedManagers.length]);
 
   const tabs = [
     { key: '전체', label: `전체 (${statusCounts.total})` },
@@ -463,56 +512,6 @@ const ManagerList = () => {
             ))}
           </div>
 
-          {/* Search Section */}
-          <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-end space-x-4">
-              <h3 className="text-lg font-semibold text-gray-900 whitespace-nowrap">
-                매니저 검색
-              </h3>
-
-              <div className="relative w-80">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder="매니저 이름을 입력하세요"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <button
-                onClick={handleClearSearch}
-                className="px-4 py-2 text-black bg-gray-100 text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-              >
-                초기화
-              </button>
-
-              <button
-                onClick={handleSearch}
-                disabled={isSearching}
-                className="px-6 py-2 bg-gray-100 text-black text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSearching ? '검색 중...' : '검색'}
-              </button>
-            </div>
-          </div>
-
           {/* Tabs and Table */}
           <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {/* Tabs */}
@@ -536,26 +535,66 @@ const ManagerList = () => {
             {/* 구분선 */}
             <div className="border-b border-gray-200 bg-white"></div>
 
-            {/* Table */}
-            <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              {/* Table Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6 border-b border-gray-200 gap-4">
+            {/* 검색 영역 */}
+            <div className="p-6 bg-white">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
                   매니저 목록 {activeTab !== '전체' && `- ${activeTab}`}
                 </h3>
                 <div className="flex items-center space-x-3">
+                  {/* 검색 범위 선택 */}
                   <select
-                    value={sortBy}
-                    onChange={(e) => handleFilterChange(e.target.value)}
+                    value={searchScope}
+                    onChange={(e) => setSearchScope(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="전체">전체</option>
-                    <option value="승인대기">승인대기</option>
-                    <option value="검토중">검토중</option>
-                    <option value="승인완료">승인완료</option>
-                    <option value="반려">반려</option>
+                    <option value="all">전체</option>
+                    <option value="name">이름</option>
+                    <option value="email">이메일</option>
+                    <option value="phone">전화번호</option>
+                    <option value="career">경력</option>
                   </select>
-                  <span className="text-sm text-gray-500">⋯</span>
+
+                  <div className="w-80 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      placeholder="검색어를 입력하세요"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={isSearching}
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleClearSearch}
+                    className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    초기화
+                  </button>
+                  <button
+                    onClick={handleSearch}
+                    disabled={isSearching}
+                    className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    {isSearching ? '검색 중...' : '검색'}
+                  </button>
                 </div>
               </div>
 
@@ -602,6 +641,8 @@ const ManagerList = () => {
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <input
                           type="checkbox"
+                          checked={isAllSelected}
+                          onChange={handleSelectAll}
                           className="rounded border-gray-300"
                         />
                       </th>
@@ -694,6 +735,8 @@ const ManagerList = () => {
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <input
                               type="checkbox"
+                              checked={selectedManagers.includes(manager.id)}
+                              onChange={() => handleSelectManager(manager.id)}
                               className="rounded border-gray-300"
                             />
                           </td>
@@ -741,70 +784,43 @@ const ManagerList = () => {
               </div>
 
               {/* Pagination */}
-              <div className="w-full flex items-center justify-between px-6 py-4 border-t border-gray-200">
-                <div className="text-sm text-gray-700">
-                  총 {pagination.totalElements}개 중{' '}
-                  {pagination.totalElements > 0
-                    ? `${pagination.page * pagination.size + 1}-${Math.min(
-                        (pagination.page + 1) * pagination.size,
-                        pagination.totalElements
-                      )}`
-                    : '0-0'}
-                  개 표시
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 0 || loading}
-                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-
-                  <div className="w-8 h-8 flex items-center justify-center bg-blue-500 text-white text-sm font-medium rounded">
-                    {pagination.page + 1}
+              {pagination.totalPages > 1 && (
+                <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
+                  <div className="text-sm text-gray-700">
+                    총 {pagination.totalElements}건 중{' '}
+                    {pagination.page * pagination.size + 1}-
+                    {Math.min(
+                      (pagination.page + 1) * pagination.size,
+                      pagination.totalElements
+                    )}
+                    건 표시
                   </div>
-
-                  <span className="text-gray-400 text-sm font-medium">
-                    / {pagination.totalPages}
-                  </span>
-
-                  <button
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={
-                      pagination.page >= pagination.totalPages - 1 || loading
-                    }
-                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div className="flex items-center space-x-2">
+                    <button
+                      className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 0 || loading}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
+                      ‹
+                    </button>
+                    <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
+                      {pagination.page + 1}
+                    </span>
+                    <span className="px-3 py-1 text-sm text-gray-500">
+                      / {pagination.totalPages}
+                    </span>
+                    <button
+                      className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={
+                        pagination.page >= pagination.totalPages - 1 || loading
+                      }
+                    >
+                      ›
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
