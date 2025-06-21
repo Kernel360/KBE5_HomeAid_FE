@@ -5,6 +5,29 @@ import { apiService } from '@/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
+const isImage = (url) => !!url;
+
+// 중앙 정사각형 crop 함수
+function cropToSquare(imageFile) {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = function () {
+      const size = Math.min(img.width, img.height);
+      const sx = (img.width - size) / 2;
+      const sy = (img.height - size) / 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, size, size);
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, imageFile.type);
+    };
+    img.src = URL.createObjectURL(imageFile);
+  });
+}
+
 // 내 정보 수정 페이지
 const MyProfile = ({ onBack }) => {
   const { user, updateUser } = useAuthStore();
@@ -12,6 +35,7 @@ const MyProfile = ({ onBack }) => {
     name: '',
     email: '',
     phone: '',
+    profileImageUrl: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -26,28 +50,29 @@ const MyProfile = ({ onBack }) => {
     return formatPhoneNumber(phone);
   };
 
-  // 컴포넌트 마운트 시 사용자 정보로 폼 초기화
+  // 마운트 시 최신 회원정보 API 호출
   useEffect(() => {
-    if (user) {
-      // 백엔드 API 호출 대신 기존 사용자 정보로 초기화
-      console.log('=== 사용자 정보로 폼 초기화 ===');
-      console.log('현재 사용자:', user);
-
-      setFormData({
-        name: user.name || user.username || '',
-        email: user.email || '', // 사용자가 직접 입력해야 함
-        phone: addHyphensToPhone(user.phone) || '', // 백엔드에서 받은 전화번호에 하이픈 추가
-      });
-
-      console.log('초기화된 폼 데이터:', {
-        name: user.name || user.username || '',
-        email: user.email || '',
-        phone: addHyphensToPhone(user.phone) || '',
-      });
-
-      // 백엔드 API 호출은 403 에러로 인해 임시 비활성화
-      // fetchUserProfile();
+    async function fetchProfile() {
+      try {
+        const res = await apiService.user.getMyProfile();
+        const data = res.data?.data || res.data;
+        console.log('프로필 응답:', data); // profileImageUrl 값 콘솔 출력
+        setFormData({
+          name: data.name || '',
+          email: data.email || '',
+          phone: addHyphensToPhone(data.phone) || '',
+          profileImageUrl: data.profileImageUrl || '',
+        });
+      } catch (e) {
+        setFormData({
+          name: user?.name || user?.username || '',
+          email: user?.email || '',
+          phone: addHyphensToPhone(user?.phone) || '',
+          profileImageUrl: user?.profileImageUrl || '',
+        });
+      }
     }
+    fetchProfile();
   }, [user]);
 
   // 전화번호 포맷팅 함수
@@ -86,14 +111,55 @@ const MyProfile = ({ onBack }) => {
     setSuccess('');
   };
 
+  // 프로필 이미지 업로드/삭제 핸들러 (headers 옵션 없이 순수 FormData만 전달)
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      setLoading(true);
+      setError('');
+      // 중앙 정사각형 crop
+      const croppedBlob = await cropToSquare(file);
+      const formData = new FormData();
+      formData.append('file', croppedBlob, file.name); // 파일명 유지
+      await apiService.user.uploadProfileImage(formData);
+      setSuccess('프로필 이미지가 업로드되었습니다.');
+      setTimeout(() => setSuccess(''), 2000);
+      // 업로드 후 프로필 정보 새로고침
+      const res = await apiService.user.getMyProfile();
+      const data = res.data?.data || res.data;
+      setFormData((prev) => ({ ...prev, profileImageUrl: data.profileImageUrl || '' }));
+    } catch (err) {
+      setError('프로필 이미지 업로드에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageDelete = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      await apiService.user.deleteProfileImage();
+      setSuccess('프로필 이미지가 삭제되었습니다.');
+      setTimeout(() => setSuccess(''), 2000);
+      // 삭제 후 프로필 정보 새로고침
+      const res = await apiService.user.getMyProfile();
+      const data = res.data?.data || res.data;
+      setFormData((prev) => ({ ...prev, profileImageUrl: data.profileImageUrl || '' }));
+    } catch (err) {
+      setError('프로필 이미지 삭제에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 저장 버튼 클릭 핸들러
   const handleSave = async () => {
     try {
       setLoading(true);
       setError('');
       setSuccess('');
-
-      // 유효성 검사
       if (!formData.name.trim()) {
         setError('이름을 입력해주세요.');
         return;
@@ -102,68 +168,24 @@ const MyProfile = ({ onBack }) => {
         setError('이메일을 입력해주세요.');
         return;
       }
-      // 전화번호 수정 기능 비활성화로 인한 주석처리
-      /*
-      if (!formData.phone.trim()) {
-        setError('전화번호를 입력해주세요.');
-        return;
-      }
-      */
-
-      // 이메일 형식 검사
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
         setError('올바른 이메일 형식을 입력해주세요.');
         return;
       }
-
-      // 전화번호 수정 기능 비활성화로 인한 주석처리
-      /*
-      // 전화번호 형식 검사 (하이픈 포함된 한국 전화번호)
-      const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/; // 하이픈 포함된 한국 휴대폰 번호 형식
-      if (!phoneRegex.test(formData.phone)) {
-        setError(
-          '올바른 전화번호 형식을 입력해주세요. (예: 010-1234-5678)'
-        );
-        return;
-      }
-      */
-
-      // 사용자 ID 확인
-      if (!user?.userId && !user?.id) {
-        setError('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
-        return;
-      }
-
-      // UserUpdateRequestDto 구조에 맞춰 데이터 준비 (전화번호 제외)
-      const updateData = {
+      // updateMyProfile로 변경
+      await apiService.user.updateMyProfile({
         name: formData.name.trim(),
         email: formData.email.trim(),
-        // phone: formData.phone, // 전화번호 수정 기능 비활성화로 인한 주석처리
-      };
-
-      // API 호출로 프로필 업데이트 (userId 포함)
-      const userId = user.userId || user.id;
-      await apiService.user.updateProfile(userId, updateData);
-
-      // 성공 시 AuthStore의 사용자 정보도 업데이트 (전화번호 제외)
+      });
       updateUser({
         ...user,
-        name: updateData.name,
-        email: updateData.email,
-        // phone: formData.phone, // 전화번호는 수정하지 않으므로 기존 값 유지
+        name: formData.name.trim(),
+        email: formData.email.trim(),
       });
-
       setSuccess('프로필이 성공적으로 업데이트되었습니다.');
-
-      // 2초 후 성공 메시지 자동 제거
-      setTimeout(() => {
-        setSuccess('');
-      }, 2000);
+      setTimeout(() => setSuccess(''), 2000);
     } catch (err) {
-      console.error('프로필 업데이트 실패:', err);
-
-      // 백엔드 에러 메시지 처리
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else if (err.response?.status === 404) {
@@ -202,10 +224,24 @@ const MyProfile = ({ onBack }) => {
 
         {/* 프로필 사진 */}
         <div className="text-center mb-8">
-          <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-            <User className="w-12 h-12 text-gray-400" />
+          <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
+            {isImage(formData.profileImageUrl) ? (
+              <img
+                src={formData.profileImageUrl}
+                alt="프로필 이미지"
+                className="w-24 h-24 object-cover object-center rounded-full"
+              />
+            ) : (
+              <User className="w-12 h-12 text-gray-400" />
+            )}
           </div>
-          <button className="text-blue-600 text-sm">사진 업데이트</button>
+          <div className="flex flex-col items-center gap-2">
+            <label htmlFor="profile-image-upload" className="text-blue-600 text-sm cursor-pointer">사진 업데이트</label>
+            <input id="profile-image-upload" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} disabled={loading} />
+            {formData.profileImageUrl && (
+              <button type="button" className="text-red-500 text-xs" onClick={handleImageDelete} disabled={loading}>사진 삭제</button>
+            )}
+          </div>
         </div>
 
         {/* 에러/성공 메시지 */}

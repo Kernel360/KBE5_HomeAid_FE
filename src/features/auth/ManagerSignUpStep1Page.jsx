@@ -322,21 +322,21 @@ const ManagerSignUpStep1Page = () => {
               이름
             </label>
             <div style={{ width: '100%' }}>
-              <input
-                id="name"
-                type="text"
-                placeholder="홍길동"
-                value={name}
+            <input
+              id="name"
+              type="text"
+              placeholder="홍길동"
+              value={name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 onBlur={() => handleBlur('name')}
-                required
-                style={{
+              required
+              style={{
                   width: '100%',
-                  padding: '13px',
-                  borderRadius: '8px',
+                padding: '13px',
+                borderRadius: '8px',
                   border: fieldErrors.name ? '1px solid #e74c3c' : '1px solid #E5E7EB',
-                  fontSize: '16px',
-                  color: '#333',
+                fontSize: '16px',
+                color: '#333',
                   boxSizing: 'border-box',
                 }}
               />
@@ -363,21 +363,21 @@ const ManagerSignUpStep1Page = () => {
               이메일
             </label>
             <div style={{ width: '100%' }}>
-              <input
-                id="email"
+            <input
+              id="email"
                 type="email"
-                placeholder="email@example.com"
-                value={email}
+              placeholder="email@example.com"
+              value={email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 onBlur={() => handleBlur('email')}
-                required
-                style={{
+              required
+              style={{
                   width: '100%',
-                  padding: '13px',
-                  borderRadius: '8px',
+                padding: '13px',
+                borderRadius: '8px',
                   border: fieldErrors.email ? '1px solid #e74c3c' : '1px solid #E5E7EB',
-                  fontSize: '16px',
-                  color: '#333',
+                fontSize: '16px',
+                color: '#333',
                   boxSizing: 'border-box',
                 }}
               />
@@ -404,22 +404,22 @@ const ManagerSignUpStep1Page = () => {
               휴대폰 번호
             </label>
             <div style={{ width: '100%' }}>
-              <input
-                id="phoneNumber"
-                type="text"
-                placeholder="010-1234-5678"
-                value={phoneNumber}
+            <input
+              id="phoneNumber"
+              type="text"
+              placeholder="010-1234-5678"
+              value={phoneNumber}
                 onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                 onBlur={() => handleBlur('phoneNumber')}
-                required
+              required
                 maxLength={13}
-                style={{
+              style={{
                   width: '100%',
-                  padding: '13px',
-                  borderRadius: '8px',
+                padding: '13px',
+                borderRadius: '8px',
                   border: fieldErrors.phoneNumber ? '1px solid #e74c3c' : '1px solid #E5E7EB',
-                  fontSize: '16px',
-                  color: '#333',
+                fontSize: '16px',
+                color: '#333',
                   boxSizing: 'border-box',
                 }}
               />
@@ -476,12 +476,12 @@ const ManagerSignUpStep1Page = () => {
                   wrapperClassName="date-picker-wrapper"
                   customInput={
                     <input
-                      style={{
+                  style={{
                         flexGrow: 1,
                         border: 'none',
                         outline: 'none',
-                        fontSize: '16px',
-                        color: '#333',
+                    fontSize: '16px',
+                    color: '#333',
                         padding: '13px 0',
                         caretColor: 'transparent',
                         boxSizing: 'border-box',

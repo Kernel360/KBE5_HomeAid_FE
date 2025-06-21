@@ -375,28 +375,33 @@ export default function ManagerMypage() {
     return formatPhoneNumber(phone);
   };
 
-  // 컴포넌트 마운트 시 사용자 정보로 폼 초기화
+  // 컴포넌트 마운트 시 사용자 정보로 폼 초기화 (API 연동)
   useEffect(() => {
-    if (user) {
-      // 백엔드 API 호출 대신 기존 사용자 정보로 초기화
-      console.log('=== 사용자 정보로 폼 초기화 ===');
-      console.log('현재 사용자:', user);
-
-      setFormData({
-        name: user.name || user.username || '',
-        email: user.email || '', // 사용자가 직접 입력해야 함
-        phone: addHyphensToPhone(user.phone) || '', // 백엔드에서 받은 전화번호에 하이픈 추가
-      });
-
-      console.log('초기화된 폼 데이터:', {
-        name: user.name || user.username || '',
-        email: user.email || '',
-        phone: addHyphensToPhone(user.phone) || '',
-      });
-
-      // 백엔드 API 호출은 403 에러로 인해 임시 비활성화
-      // fetchUserProfile();
+    async function fetchProfile() {
+      try {
+        // 매니저용 프로필 조회 (userId 필요)
+        const userId = user?.userId || user?.id;
+        if (!userId) throw new Error('userId 없음');
+        const res = await apiService.manager.getById(userId);
+        const data = res.data?.data || res.data;
+        setFormData({
+          name: data.name || '',
+          email: data.email || '',
+          phone: addHyphensToPhone(data.phone) || '',
+          // profileImageUrl: data.profileImageUrl || '', // 필요시
+        });
+      } catch (e) {
+        // fallback: 기존 user store 사용
+        setFormData({
+          name: user?.name || user?.username || '',
+          email: user?.email || '',
+          phone: addHyphensToPhone(user?.phone) || '',
+          // profileImageUrl: user?.profileImageUrl || '',
+        });
+      }
     }
+    fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // 저장 버튼 클릭 핸들러

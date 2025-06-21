@@ -13,9 +13,6 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-apiClient.defaults.headers.common['Content-Type'] = 'application/json; charset=utf-8';
-apiClient.defaults.headers.common['Accept'] = 'application/json; charset=utf-8';
-
 // 요청 인터셉터 (토큰 자동 추가 등)
 apiClient.interceptors.request.use(
   (config) => {
