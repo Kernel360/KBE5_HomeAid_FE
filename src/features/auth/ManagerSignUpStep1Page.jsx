@@ -465,6 +465,7 @@ const ManagerSignUpStep1Page = () => {
                   id="dateOfBirth"
                   selected={dateOfBirth}
                   onChange={handleDateChange}
+                  onChangeRaw={(e) => e.preventDefault()}
                   dateFormat="yyyy-MM-dd"
                   placeholderText="YYYY-MM-DD"
                   peekMonthYearDropdown
@@ -487,9 +488,15 @@ const ManagerSignUpStep1Page = () => {
                       }}
                       required
                       readOnly
-                      value={dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : ''}
+                      value={dateOfBirth && isValid(dateOfBirth) ? format(dateOfBirth, 'yyyy-MM-dd') : ''}
                       onBlur={() => handleBlur('dateOfBirth')}
                       tabIndex="-1"
+                      autoComplete="off"
+                      onKeyDown={e => e.preventDefault()}
+                      onPaste={e => e.preventDefault()}
+                      onDrop={e => e.preventDefault()}
+                      onCompositionUpdate={e => e.preventDefault()}
+                      onCompositionEnd={e => e.preventDefault()}
                     />
                   }
                   ref={datePickerRef}
