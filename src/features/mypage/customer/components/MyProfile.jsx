@@ -235,11 +235,27 @@ const MyProfile = ({ onBack }) => {
               <User className="w-12 h-12 text-gray-400" />
             )}
           </div>
-          <div className="flex flex-col items-center gap-2">
-            <label htmlFor="profile-image-upload" className="text-blue-600 text-sm cursor-pointer">사진 업데이트</label>
-            <input id="profile-image-upload" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} disabled={loading} />
+          <div className="flex flex-row gap-4 justify-center items-center mt-2">
+            <label htmlFor="profile-image-upload" className="text-blue-600 text-sm cursor-pointer">
+              사진 업데이트
+            </label>
+            <input
+              id="profile-image-upload"
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleImageUpload}
+              disabled={loading}
+            />
             {formData.profileImageUrl && (
-              <button type="button" className="text-red-500 text-xs" onClick={handleImageDelete} disabled={loading}>사진 삭제</button>
+              <label
+                className="text-red-500 text-sm cursor-pointer"
+                tabIndex={0}
+                onClick={handleImageDelete}
+                style={{ userSelect: 'none' }}
+              >
+                사진 삭제
+              </label>
             )}
           </div>
         </div>
