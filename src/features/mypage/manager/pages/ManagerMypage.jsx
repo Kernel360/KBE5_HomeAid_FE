@@ -1,7 +1,8 @@
 import { User, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { apiService } from '@/api';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import MyProfile from '../components/MyProfile.jsx';
@@ -245,6 +246,19 @@ export default function ManagerMypage() {
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const [userProfile, setUserProfile] = useState(null);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await apiService.user.getMyProfile();
+        setUserProfile(res.data?.data || res.data);
+      } catch (e) {
+        setUserProfile(null);
+      }
+    }
+    fetchProfile();
+  }, []);
 
   const handleNavigateToCreate = () => setCurrentView('createInquiry');
   const handleNavigateToDetail = (id) => { setSelectedInquiryId(id); setCurrentView('inquiryDetail'); };
@@ -262,11 +276,19 @@ export default function ManagerMypage() {
         {/* 프로필 정보 */}
         <div className="bg-white rounded-2xl p-6 mb-10 shadow-sm">
           <div className="flex items-center mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-              <User className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4 overflow-hidden">
+              {userProfile?.profileImageUrl ? (
+                <img
+                  src={userProfile.profileImageUrl}
+                  alt="프로필 이미지"
+                  className="w-12 h-12 object-cover object-center rounded-full"
+                />
+              ) : (
+                <User className="w-6 h-6 text-blue-600" />
+              )}
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">{user?.name || user?.username || '매니저'}님</h3>
+              <h3 className="font-semibold text-gray-900">{userProfile?.name || user?.name || user?.username || '매니저'}님</h3>
             </div>
           </div>
         </div>
@@ -346,7 +368,7 @@ export default function ManagerMypage() {
 
   switch (currentView) {
     case 'profile':
-      return <MyProfile onBack={() => setCurrentView('main')} />;
+      return <MyProfile onBack={() => setCurrentView('main')} userProfile={userProfile} setUserProfile={setUserProfile} />;
     case 'address':
       return <MyAddress onBack={() => setCurrentView('main')} onAddAddress={() => setCurrentView('addressRegister')} />;
     case 'addressRegister':
