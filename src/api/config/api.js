@@ -13,6 +13,9 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
+let isRefreshing = false;
+let refreshPromise = null;
+
 // 요청 인터셉터 (토큰 자동 추가 등)
 apiClient.interceptors.request.use(
   (config) => {
@@ -53,28 +56,57 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    const originalRequest = error.config;
+
     console.error('=== API 응답 에러 ===');
     console.error('상태 코드:', error.response?.status);
     console.error('에러 메시지:', error.response?.data);
     console.error('요청 URL:', error.config?.url);
 
-    // 401 에러 시 토큰 관련 처리 (주석 처리 - services/apiClient.js에서 처리)
-    if (error.response?.status === 401) {
-      console.log('401 에러 - 토큰 문제로 인한 인증 실패');
-      // AT 만료 시 자동으로 refresh 시도
-      try {
-        // await refreshAccessToken();
-        // 원래 요청 재시도
-        return apiClient(error.config);
-      } catch {
-        // refresh도 실패하면 로그아웃 처리
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('auth-storage');
-        useAuthStore.getState().logout();
-        console.log('토큰 및 사용자 정보 초기화 완료');
-        window.location.href = '/auth/signin';
+    // 401 에러 + JWT 만료 에러코드일 경우
+    if (error.response?.status === 401 && error.response?.data?.error === 'JWT_EXPIRED') {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        // 새로운 토큰을 발급받는 비동기 작업을 Promise로 감싸 refreshPromise에 할당
+        refreshPromise = (async () => {
+          try {
+            console.log('Access Token 재발급을 시도합니다.');
+            const res = await apiClient.post('/auth/refresh/reissue');
+            const newAccessToken = res.data.accessToken;
+
+            if (!newAccessToken) {
+              throw new Error('새로운 Access Token을 받지 못했습니다.');
+            }
+
+            console.log('새로운 Access Token 발급 성공.');
+            localStorage.setItem('accessToken', newAccessToken);
+            useAuthStore.getState().setAccessToken(newAccessToken);
+            apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+
+            return newAccessToken;
+          } catch (refreshError) {
+            console.error('토큰 재발급 실패:', refreshError);
+            localStorage.removeItem('accessToken');
+            useAuthStore.getState().logout();
+            window.location.href = '/auth/signin';
+            return Promise.reject(refreshError);
+          } finally {
+            isRefreshing = false;
+            refreshPromise = null;
+          }
+        })();
       }
 
+      try {
+        // 진행중인 토큰 재발급 작업이 끝나기를 기다림
+        const token = await refreshPromise;
+        // 새로운 토큰으로 원래 요청의 헤더를 교체
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        // 원래 요청 재시도
+        return apiClient(originalRequest);
+      } catch (e) {
+        return Promise.reject(e);
+      }
     }
 
     return Promise.reject(error);
@@ -109,8 +141,6 @@ export const api = {
   },
 };
 
-
-
 // 기본 api 객체도 export (직접 사용하고 싶을 때)
 export default api;
 
@@ -137,24 +167,3 @@ api.post('/manager/all')
     .then(response => console.log(response.data))
     .catch(error => console.error(error));
 */
-
-const refreshAccessToken = async () => {
-  try {
-    const response = await api.post('/users/auth/refresh');
-    const newAccessToken =
-      response.headers['authorization'] || response.headers['Authorization'];
-    if (newAccessToken) {
-      localStorage.setItem(
-        'accessToken',
-        newAccessToken.replace('Bearer ', '')
-      );
-      // ✅ api/config의 인스턴스 사용
-      api.defaults.headers.common['Authorization'] = newAccessToken;
-    }
-    return newAccessToken;
-  } catch (error) {
-    // 리프레시 토큰도 만료된 경우, 로그인 페이지로 이동 등 처리
-    window.location.href = '/auth/signin';
-    throw error;
-  }
-};
