@@ -40,69 +40,92 @@ const UserReservationDetail = () => {
         setLoading(true);
         setError(null);
 
+        console.log('🔍 예약 상세 조회 시작 - reservationId:', reservationId);
+        
         const backendReservation = await getReservationById(reservationId);
+        
+        console.log('✅ API 호출 완료 - 백엔드 응답:', backendReservation);
 
         if (backendReservation) {
+          // ⭐️ 디버깅: 백엔드에서 받은 주소 데이터 확인
+          console.log('📋 백엔드 예약 데이터 전체:', backendReservation);
+          console.log('📍 주소 관련 필드들:', {
+            address: backendReservation.address,
+            addressDetail: backendReservation.addressDetail,
+            customerAddress: backendReservation.customerAddress,
+            fullAddress: backendReservation.fullAddress,
+          });
+
           const transformedReservation = {
-            id:
-              backendReservation.id ||
-              backendReservation.reservationId ||
-              reservationId,
-            type: getServiceName(
-              backendReservation.subOptionId,
-              backendReservation.subOptionName,
-              backendReservation
-            ),
-            icon: getServiceIcon(backendReservation.subOptionId),
+            id: backendReservation.reservationId || backendReservation.id || reservationId,
+            type: backendReservation.serviceOptionName || getServiceName(1, '청소', backendReservation),
+            icon: getServiceIcon(1),
             status: backendReservation.status || 'REQUESTED',
-            date:
-              backendReservation.requestedDate ||
-              backendReservation.date ||
-              '날짜 정보 없음',
+            date: backendReservation.requestedDate || '날짜 정보 없음',
             time: formatTimeRange(
-              backendReservation.requestedTime || backendReservation.time,
-              backendReservation.totalDuration || 180
+              backendReservation.requestedTime,
+              (backendReservation.totalDuration || 3) * 60 // 시간을 분으로 변환
             ),
-            price: getServicePrice(
-              backendReservation.totalPrice,
-              backendReservation.subOptionId,
-              backendReservation.subOptionName,
-              backendReservation
-            ),
+            price: backendReservation.totalPrice || getServicePrice(null, 1, '청소', backendReservation),
 
-            // ⭐️ DB에서 가져온 주소 정보 (안전한 접근)
-            address:
-              backendReservation.customerAddress?.main ||
-              backendReservation.address ||
-              '주소 정보 없음',
-            addressDetail:
-              backendReservation.customerAddress?.detail ||
-              backendReservation.addressDetail ||
-              '',
+            // ⭐️ 백엔드 DTO에 맞게 주소 처리: address와 addressDetail을 합쳐서 표시
+            address: (() => {
+              // 1. 백엔드에서 받은 주소 정보 확인
+              const backendAddress = backendReservation.address;
+              const backendAddressDetail = backendReservation.addressDetail;
+              
+              // 2. URL state에서 전달받은 주소 정보 확인 (예약 목록에서 넘어온 경우)
+              const stateAddress = location.state?.reservation?.address;
+              const stateAddressDetail = location.state?.reservation?.addressDetail;
+              
+              // 3. 우선순위: 백엔드 주소 > URL state 주소 > 기본값
+              const mainAddress = backendAddress || stateAddress || '주소 정보 없음';
+              const detailAddress = backendAddressDetail || stateAddressDetail || '';
+              
+              const fullAddress = detailAddress ? `${mainAddress} ${detailAddress}` : mainAddress;
+              
+              // ⭐️ 디버깅: 주소 조합 결과 확인
+              console.log('🔗 주소 조합 결과:', {
+                backendAddress,
+                backendAddressDetail,
+                stateAddress,
+                stateAddressDetail,
+                mainAddress,
+                detailAddress,
+                fullAddress,
+              });
+              
+              return fullAddress;
+            })(),
+            addressDetail: '', // 상세 주소는 별도로 표시하지 않음
 
-            customerNote:
-              backendReservation.customerMemo ||
-              backendReservation.customerNote ||
-              '',
-            createdAt: backendReservation.createdAt || new Date().toISOString(),
+            customerNote: backendReservation.customerMemo || '',
+            createdAt: backendReservation.startTime || new Date().toISOString(),
 
-            // ⭐️ 원본 백엔드 데이터도 보존
+            // ⭐️ 백엔드 DTO의 추가 필드들도 보존
             backendData: {
               ...backendReservation,
-              latitude: backendReservation.latitude,
-              longitude: backendReservation.longitude,
+              customerId: backendReservation.customerId,
+              managerId: backendReservation.managerId,
+              customerName: backendReservation.customerName,
+              matchedManagerName: backendReservation.matchedManagerName,
+              matchingStatus: backendReservation.matchingStatus,
             },
           };
 
+          // ⭐️ 디버깅: 최종 변환된 예약 데이터 확인
+          console.log('🎯 최종 변환된 예약 데이터:', transformedReservation);
+
           setReservation(transformedReservation);
         } else {
+          console.error('❌ 백엔드에서 예약 데이터를 받지 못함');
           setError('예약 정보를 찾을 수 없습니다.');
         }
       } catch (err) {
-        console.error('Failed to load reservation detail:', err);
+        console.error('❌ 예약 상세 조회 실패:', err);
 
-        // ⭐️ 백엔드 실패 시 URL state 데이터 사용 (fallback)
         if (location.state?.reservation) {
+          console.log('🔄 URL state 데이터로 fallback');
           setReservation(location.state.reservation);
           setError(null);
         } else {
@@ -117,15 +140,12 @@ const UserReservationDetail = () => {
   }, [reservationId, getReservationById, location.state]);
 
   const getServiceName = (subOptionId, subOptionName, backendData) => {
-    // 1. 백엔드에서 받은 subOptionName 우선 사용
     if (subOptionName) return subOptionName;
 
-    // 2. backendData에서 서비스 이름 찾기
     if (backendData?.subOptionName) return backendData.subOptionName;
     if (backendData?.serviceName) return backendData.serviceName;
     if (backendData?.type) return backendData.type;
 
-    // 3. subOptionId로 매핑
     const serviceMapping = {
       1: '빨래/세탁',
       2: '청소',
@@ -166,7 +186,6 @@ const UserReservationDetail = () => {
     return `${timeStr} ~ ${endTime}`;
   };
 
-  // 서비스 아이콘 매핑
   const getServiceEmoji = (icon) => {
     const emojiMapping = {
       cleaning: '🧹',
@@ -177,69 +196,59 @@ const UserReservationDetail = () => {
     return emojiMapping[icon] || '🏠';
   };
 
-  // 상태 한글 매핑
   const getStatusText = (status) => {
     const statusMapping = {
       pending: '예약 요청됨',
-      REQUESTED: '예약 요청됨', // 백엔드 상태
-      MATCHING: '매니저 매칭 중', // 백엔드 상태
-      MATCHED: '매칭 완료', // 백엔드 상태
+      REQUESTED: '예약 요청됨',
+      MATCHING: '매니저 매칭 중',
+      MATCHED: '매칭 완료',
       completed: '매칭 완료',
-      COMPLETED: '서비스 완료', // 백엔드 상태
+      COMPLETED: '서비스 완료',
       visited: '서비스 완료',
-      CANCELLED: '예약 취소됨', // 백엔드 상태
+      CANCELLED: '예약 취소됨',
       cancelled: '예약 취소됨',
     };
     return statusMapping[status] || '알 수 없음';
   };
 
-  // 상태 색상 매핑
   const getStatusColor = (status) => {
     const colorMapping = {
       pending: '#ffc107',
-      REQUESTED: '#ffc107', // 백엔드 상태
-      MATCHING: '#17a2b8', // 백엔드 상태
-      MATCHED: '#28a745', // 백엔드 상태
+      REQUESTED: '#ffc107',
+      MATCHING: '#17a2b8',
+      MATCHED: '#28a745',
       completed: '#28a745',
-      COMPLETED: '#6c757d', // 백엔드 상태
+      COMPLETED: '#6c757d',
       visited: '#6c757d',
-      CANCELLED: '#dc3545', // 백엔드 상태
+      CANCELLED: '#dc3545',
       cancelled: '#dc3545',
     };
     return colorMapping[status] || '#6c757d';
   };
 
-  // 결제 가능 여부 확인
   const canMakePayment = (status) => {
-    // ⭐️ 결제 완료 여부 확인 추가
     if (reservation.backendData) {
-      // 백엔드 데이터에서 결제 정보 확인
       const hasPayment =
         reservation.backendData.paymentId ||
         reservation.backendData.paidAt ||
         reservation.backendData.paymentStatus === 'COMPLETED';
 
-      // 결제가 이미 완료된 경우 결제 버튼 비활성화
       if (hasPayment) {
         return false;
       }
     }
 
-    // ⭐️ 서비스 완료 상태는 결제 불가
     if (status === 'COMPLETED' || status === 'visited') {
       return false;
     }
 
-    // ⭐️ 취소된 예약은 결제 불가
     if (status === 'CANCELLED' || status === 'cancelled') {
       return false;
     }
 
-    // MATCHED 상태일 때만 결제 가능
     return status === 'MATCHED' || status === 'completed';
   };
 
-  // 결제하기 버튼 클릭
   const handlePayment = () => {
     navigate('/customer/payment', {
       state: {
@@ -249,22 +258,18 @@ const UserReservationDetail = () => {
     });
   };
 
-  // ⭐️ 서비스 가격 계산 함수 강화
   const getServicePrice = (
     totalPrice,
     subOptionId,
     subOptionName,
     backendData
   ) => {
-    // 1. 백엔드에서 받은 totalPrice 우선 사용
     if (totalPrice && totalPrice > 0) return totalPrice;
 
-    // 2. backendData에서 가격 찾기
     if (backendData?.totalPrice && backendData.totalPrice > 0)
       return backendData.totalPrice;
     if (backendData?.price && backendData.price > 0) return backendData.price;
 
-    // 3. 서비스 유형별 기본 가격 설정
     if (subOptionName) {
       if (subOptionName.includes('빨래') || subOptionName.includes('세탁'))
         return 40000;
@@ -272,21 +277,19 @@ const UserReservationDetail = () => {
       if (subOptionName.includes('육아')) return 62000;
     }
 
-    // 4. subOptionId로 기본 가격 매핑
     const priceMapping = {
-      1: 40000, // 빨래/세탁
-      2: 58000, // 청소
-      3: 62000, // 육아
+      1: 40000,
+      2: 58000,
+      3: 62000,
     };
 
     if (subOptionId && priceMapping[subOptionId]) {
       return priceMapping[subOptionId];
     }
 
-    return 50000; // 기본값
+    return 50000;
   };
 
-  // 매칭 응답 처리
   const handleMatchingResponse = async (action) => {
     if (action === 'REJECT') {
       setShowRejectModal(true);
@@ -296,7 +299,6 @@ const UserReservationDetail = () => {
     await submitMatchingResponse(action);
   };
 
-  // 매칭 응답 제출
   const submitMatchingResponse = async (action, memo = '') => {
     if (!reservationId) return;
 
@@ -338,15 +340,12 @@ const UserReservationDetail = () => {
         throw new Error(errorData.message || '매칭 응답 처리에 실패했습니다.');
       }
 
-      // 성공 시 예약 정보 새로고침
       const updatedReservation = await getReservationById(reservationId);
       setReservation(updatedReservation);
 
-      // 모달 닫기
       setShowRejectModal(false);
       setRejectMemo('');
 
-      // 성공 메시지
       alert(
         action === 'CONFIRM'
           ? '매칭이 확인되었습니다.'
@@ -434,16 +433,15 @@ const UserReservationDetail = () => {
     );
   }
 
-  // ⭐️ reservation이 여전히 없는 경우 기본값으로 설정
   if (!reservation) {
     const defaultReservation = {
       id: reservationId,
-      type: getServiceName(2, '청소', {}), // 기본값으로 청소 서비스
+      type: getServiceName(1, '청소', {}),
       icon: 'cleaning',
       status: 'REQUESTED',
       date: '날짜 정보 없음',
       time: '시간 정보 없음',
-      price: getServicePrice(null, 2, '청소', {}), // 기본값으로 청소 가격
+      price: getServicePrice(null, 2, '청소', {}),
       address: '주소 정보 없음',
       addressDetail: '',
       customerNote: '',
@@ -474,7 +472,6 @@ const UserReservationDetail = () => {
         }}
       >
         <div className="reservation-detail-container">
-          {/* 예약 상태 배지 */}
           <div className="status-section">
             <div
               className="status-badge"
@@ -488,7 +485,6 @@ const UserReservationDetail = () => {
             </div>
           </div>
 
-          {/* 서비스 정보 섹션 */}
           <div className="info-section">
             <h3 className="section-title">
               <span className="section-icon">
@@ -512,7 +508,6 @@ const UserReservationDetail = () => {
             </div>
           </div>
 
-          {/* 일정 정보 섹션 */}
           <div className="info-section">
             <h3 className="section-title">
               <span className="section-icon">📅</span>
@@ -534,7 +529,6 @@ const UserReservationDetail = () => {
             </div>
           </div>
 
-          {/* 주소 정보 섹션 */}
           <div className="info-section">
             <h3 className="section-title">
               <span className="section-icon">📍</span>
@@ -547,48 +541,9 @@ const UserReservationDetail = () => {
                   {reservation?.address || '주소 정보 없음'}
                 </span>
               </div>
-              {reservation?.addressDetail && (
-                <div className="info-row">
-                  <span className="info-label">상세 주소</span>
-                  <span className="info-value">
-                    {reservation.addressDetail}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* 위치 정보 섹션 (백엔드 데이터가 있을 때) */}
-          {/* TODO: 향후 위치정보 기능 구현 시 활성화 예정
-          {reservation.backendData && (
-            <div className="info-section">
-              <h3 className="section-title">
-                <span className="section-icon">🌍</span>
-                위치 정보
-              </h3>
-              <div className="info-card">
-                {reservation.backendData.latitude && (
-                  <div className="info-row">
-                    <span className="info-label">위도</span>
-                    <span className="info-value coordinates">
-                      {reservation.backendData.latitude.toFixed(6)}
-                    </span>
-                  </div>
-                )}
-                {reservation.backendData.longitude && (
-                  <div className="info-row">
-                    <span className="info-label">경도</span>
-                    <span className="info-value coordinates">
-                      {reservation.backendData.longitude.toFixed(6)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          */}
-
-          {/* 추가 정보 섹션 */}
           {reservation?.customerNote && (
             <div className="info-section">
               <h3 className="section-title">
@@ -601,7 +556,6 @@ const UserReservationDetail = () => {
             </div>
           )}
 
-          {/* 예약 ID 정보 */}
           <div className="info-section">
             <h3 className="section-title">
               <span className="section-icon">🔢</span>
@@ -625,12 +579,11 @@ const UserReservationDetail = () => {
             </div>
           </div>
 
-          {/* 결제하기 버튼 (MATCHED/completed 상태일 때만 표시) */}
           {canMakePayment(reservation?.status) && (
             <div className="payment-section">
               <div className="payment-info">
                 <p className="payment-notice">
-                  🎉 매니저가 배정되었습니다! 이제 결제를 진행하세요.
+                  매니저가 배정되었습니다! 이제 결제를 진행하세요.
                 </p>
                 <div className="manager-info">
                   <span className="manager-label">배정된 매니저:</span>
@@ -643,7 +596,6 @@ const UserReservationDetail = () => {
             </div>
           )}
 
-          {/* ⭐️ 결제 완료 상태 안내 */}
           {!canMakePayment(reservation?.status) &&
             (reservation?.status === 'MATCHED' ||
               reservation?.status === 'completed') && (
@@ -672,7 +624,6 @@ const UserReservationDetail = () => {
               </div>
             )}
 
-          {/* 결제 대기 상태 안내 */}
           {reservation?.status === 'pending' ||
           reservation?.status === 'REQUESTED' ||
           reservation?.status === 'MATCHING' ? (
@@ -717,7 +668,6 @@ const UserReservationDetail = () => {
             </div>
           ) : null}
 
-          {/* 거절 메모 모달 */}
           {showRejectModal && (
             <div className="modal-overlay">
               <div className="modal-content">
@@ -751,7 +701,6 @@ const UserReservationDetail = () => {
             </div>
           )}
 
-          {/* ⭐️ 서비스 완료 상태 안내 */}
           {(reservation?.status === 'COMPLETED' ||
             reservation?.status === 'visited') && (
             <div className="service-completed-section">
@@ -762,7 +711,6 @@ const UserReservationDetail = () => {
                 <p className="service-completed-description">
                   서비스를 이용해 주셔서 감사합니다.
                 </p>
-                {/* 리뷰 쓰기 버튼 추가 */}
                 <button
                   className="review-btn"
                   onClick={() => {
@@ -799,7 +747,6 @@ const UserReservationDetail = () => {
             </div>
           )}
 
-          {/* ⭐️ 취소 상태 안내 */}
           {(reservation?.status === 'CANCELLED' ||
             reservation?.status === 'cancelled') && (
             <div className="cancelled-section">

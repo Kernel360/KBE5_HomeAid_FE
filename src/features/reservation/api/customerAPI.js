@@ -95,11 +95,23 @@ const apiCall = async (url, options = {}) => {
 
   const result = await response.json();
 
+  // ⭐️ 디버깅: 백엔드 응답 구조 확인
+  console.log('🔍 API 응답 원본:', result);
+  console.log('🔍 API 응답 구조:', {
+    hasData: 'data' in result,
+    hasSuccess: 'success' in result,
+    hasCode: 'code' in result,
+    dataType: typeof result.data,
+    resultKeys: Object.keys(result),
+  });
+
   // Spring Boot CommonApiResponse 구조 처리
   if (result && typeof result === 'object' && 'data' in result) {
+    console.log('✅ data 필드 추출:', result.data);
     return result.data;
   }
 
+  console.log('⚠️ data 필드 없음, 전체 응답 반환:', result);
   return result;
 };
 
