@@ -71,23 +71,32 @@ apiClient.interceptors.response.use(
         refreshPromise = (async () => {
           try {
             console.log('Access Token 재발급을 시도합니다.');
-            const res = await apiClient.post('/auth/refresh/reissue');
-            const newAccessToken = res.data.accessToken;
 
-            if (!newAccessToken) {
-              throw new Error('새로운 Access Token을 받지 못했습니다.');
+            // 1. 본문 없이 재발급 요청 (HttpOnly 쿠키 자동 전송)
+            const res = await apiClient.post('/auth/refresh/reissue');
+
+            // 2. 응답 헤더에서 새로 발급된 Access Token 추출
+            const authHeader = res.headers.authorization || res.headers.Authorization;
+            if (!authHeader) {
+              throw new Error('재발급 응답 헤더에 Access Token이 없습니다.');
             }
+            
+            const newAccessToken = authHeader.replace('Bearer ', '');
 
             console.log('새로운 Access Token 발급 성공.');
+            
+            // 3. 새로운 Access Token 저장
             localStorage.setItem('accessToken', newAccessToken);
             useAuthStore.getState().setAccessToken(newAccessToken);
+
             apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
 
             return newAccessToken;
           } catch (refreshError) {
             console.error('토큰 재발급 실패:', refreshError);
+            // 재발급 실패 시 Access Token 정보만 삭제
             localStorage.removeItem('accessToken');
-            useAuthStore.getState().logout();
+            useAuthStore.getState().logout(); // user, accessToken, refreshToken 모두 null로
             window.location.href = '/auth/signin';
             return Promise.reject(refreshError);
           } finally {
