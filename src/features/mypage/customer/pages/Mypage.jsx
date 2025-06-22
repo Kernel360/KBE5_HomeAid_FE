@@ -92,11 +92,11 @@ export default function MyPage() {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">
-                {userProfile?.name || user?.name || user?.username || '사용자'}님
+              👋 {userProfile?.name || user?.name || user?.username || '사용자'}님, 환영합니다!
+              <div className="text-gray-500 text-sm leading-tight mt-0">
+                필요한 서비스를 한눈에 확인하세요.
+              </div>
               </h3>
-              {/* <p className="text-sm text-gray-500">
-                {user?.email || '이메일 정보 없음'}
-              </p> */}
             </div>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function MyPage() {
             onClick={() => setCurrentView('profile')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">내 정보 수정</span>
+            <span className="text-gray-900">✏️ 내 정보 수정</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
 
@@ -160,7 +160,7 @@ export default function MyPage() {
             onClick={() => setCurrentView('address')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">주소 관리</span>
+            <span className="text-gray-900">📍 주소 관리</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
 
@@ -168,7 +168,7 @@ export default function MyPage() {
             onClick={() => navigate('/customer/review/history')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">리뷰 관리</span>
+            <span className="text-gray-900">⭐ 작성한 리뷰 보기</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
 
@@ -176,7 +176,7 @@ export default function MyPage() {
             onClick={() => setCurrentView('inquiry')}
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">문의 게시판</span>
+            <span className="text-gray-900">💬 1:1 문의하기</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
         </div>

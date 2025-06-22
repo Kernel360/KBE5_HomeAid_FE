@@ -11,6 +11,7 @@ import InquiryBoard from '../components/InquiryBoard.jsx';
 import AddressRegister from '../components/AddressRegister.jsx';
 import CreateInquiry from '../components/CreateInquiry.jsx';
 import InquiryDetail from '../components/InquiryDetail.jsx';
+import ManagerDocumentUpload from '../components/ManagerDocumentUpload.jsx';
 
 // 더미 포인트/수익 데이터
 const pointsHistory = [
@@ -241,6 +242,27 @@ function EarningsView({ onBack }) {
   );
 }
 
+function MatchingInfoView({ onBack }) {
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="w-full bg-gray-50 h-screen flex flex-col" style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}>
+        <Header showBackButton={true} onBackClick={onBack} />
+        <main className="px-6 py-6 flex-1 overflow-y-auto" style={{ paddingBottom: '100px', paddingTop: '80px' }}>
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-gray-900">매칭 정보 입력</h3>
+            <p className="text-sm text-gray-500 mt-1">여기에 매칭 정보 입력 폼/컴포넌트가 들어갑니다.</p>
+          </div>
+          {/* TODO: 실제 매칭 정보 입력 폼/컴포넌트로 교체 */}
+          <div className="bg-white rounded-lg p-6 shadow-sm text-center text-gray-400">
+            (매칭 정보 입력 더미 화면)
+          </div>
+        </main>
+        <Footer current="/manager/mypage" />
+      </div>
+    </div>
+  );
+}
+
 export default function ManagerMypage() {
   const [currentView, setCurrentView] = useState('main');
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
@@ -275,8 +297,8 @@ export default function ManagerMypage() {
       <main className="px-6 py-6">
         {/* 프로필 정보 */}
         <div className="bg-white rounded-2xl p-6 mb-10 shadow-sm">
-          <div className="flex items-center mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4 overflow-hidden">
+          <div className="flex items-start mb-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4 overflow-hidden flex-shrink-0">
               {userProfile?.profileImageUrl ? (
                 <img
                   src={userProfile.profileImageUrl}
@@ -287,8 +309,13 @@ export default function ManagerMypage() {
                 <User className="w-6 h-6 text-blue-600" />
               )}
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">{userProfile?.name || user?.name || user?.username || '매니저'}님</h3>
+            <div className="pt-0">
+              <div className="font-semibold text-gray-900 leading-tight">
+              👋 {userProfile?.name || user?.name || user?.username || '매니저'}님, 안녕하세요!
+              </div>
+              <div className="text-gray-500 text-sm leading-tight mt-0">
+                매니저 활동 현황을 확인해보세요
+              </div>
             </div>
           </div>
         </div>
@@ -336,28 +363,35 @@ export default function ManagerMypage() {
             onClick={() => setCurrentView('profile')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">내 정보 수정</span>
+            <span className="text-gray-900">✏️ 내 정보 수정</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
           <button
-            onClick={() => setCurrentView('address')}
+            onClick={() => setCurrentView('matchingInfo')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">주소 관리</span>
+            <span className="text-gray-900">📝 매칭 정보 입력</span>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+          <button
+            onClick={() => setCurrentView('documentUpload')}
+            className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-gray-900">📄 매니저 활동 승인 서류 제출</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
           <button
             onClick={() => navigate('/manager/review/history')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">리뷰 관리</span>
+            <span className="text-gray-900">⭐ 받은 리뷰 보기</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
           <button
             onClick={() => setCurrentView('inquiry')}
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">문의 게시판</span>
+            <span className="text-gray-900">💬 1:1 문의하기</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
         </div>
@@ -383,6 +417,10 @@ export default function ManagerMypage() {
       return <PointsHistoryView onBack={() => setCurrentView('main')} />;
     case 'earnings':
       return <EarningsView onBack={() => setCurrentView('main')} />;
+    case 'matchingInfo':
+      return <MatchingInfoView onBack={() => setCurrentView('main')} />;
+    case 'documentUpload':
+      return <ManagerDocumentUpload onBack={() => setCurrentView('main')} />;
     default:
       return <MainView />;
   }
