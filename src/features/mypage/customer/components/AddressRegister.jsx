@@ -1,6 +1,6 @@
 import { ArrowLeft, MapPin, Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 import { useAddressStore } from '../../../../stores/addressStore';
@@ -9,7 +9,11 @@ const KAKAO_MAP_KEY = import.meta.env.KAKAO_MAP_KEY;
 
 const AddressRegister = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { addAddress, isLoading, error, clearError } = useAddressStore();
+
+  const returnPath = location.state?.from || '/customer/mypage/address';
+
   const [formData, setFormData] = useState({
     alias: '',
     address: '',
@@ -85,7 +89,7 @@ const AddressRegister = () => {
   }, [showMap, formData.latitude, formData.longitude]);
 
   const handleBack = () => {
-    navigate('/customer/mypage/address');
+    navigate(returnPath);
   };
 
   // 카카오 주소 검색 모달 오픈
@@ -128,7 +132,7 @@ const AddressRegister = () => {
     try {
       await addAddress(formData);
       alert('주소가 성공적으로 등록되었습니다.');
-      navigate('/customer/mypage/address');
+      navigate(returnPath);
     } catch (error) {
       console.error('주소 등록 실패:', error);
     }
