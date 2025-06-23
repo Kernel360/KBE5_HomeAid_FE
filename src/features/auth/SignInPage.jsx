@@ -15,6 +15,22 @@ const SignInPage = () => {
   const navigate = useNavigate();
   const { setUser, setAccessToken, logout } = useAuthStore();
 
+  const formatPhoneNumber = (value) => {
+    if (!value) return '';
+    const phoneNumber = value.replace(/[^0-9]/g, '');
+    let result = '';
+    if (phoneNumber.length < 4) {
+      result = phoneNumber;
+    } else if (phoneNumber.length < 7) {
+      result = `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3)}`;
+    } else if (phoneNumber.length < 11) {
+      result = `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7)}`;
+    } else {
+      result = `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7, 11)}`;
+    }
+    return result;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -128,7 +144,7 @@ const SignInPage = () => {
                   type="text"
                   placeholder="휴대폰 번호를 입력해 주세요."
                   value={phone}
-                  onChange={(e) => setphone(e.target.value)}
+                  onChange={(e) => setphone(formatPhoneNumber(e.target.value))}
                   required
                   style={{
                     width: 'calc(100% - 26px)',

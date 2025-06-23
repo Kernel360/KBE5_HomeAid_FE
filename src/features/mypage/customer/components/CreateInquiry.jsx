@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import axios from 'axios';
+import api from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
@@ -15,18 +15,10 @@ const CreateInquiry = ({ onBack, onInquiryCreated }) => {
     setError(null);
 
     try {
-      const response = await axios.post(
-        '/api/v1/boards',
-        {
-          title,
-          content,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        }
-      );
+      const response = await api.post('/boards', {
+        title,
+        content,
+      });
       console.log('문의글 작성 성공:', response.data);
       if (onInquiryCreated) {
         onInquiryCreated();

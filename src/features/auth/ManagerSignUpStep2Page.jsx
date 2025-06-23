@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // lucide-react 아이콘 사용 시 설치 필요: npm install react-icons lucide-react --save
-import { Calendar, Eye, EyeOff, Upload } from 'lucide-react'; // Upload 아이콘 추가
+import { Calendar, Eye, EyeOff } from 'lucide-react'; // Upload 아이콘 제거
 import { authService } from './services/authService'; // authService 임포트
 import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
 import Header from '../../components/Header';
@@ -24,77 +24,44 @@ const validateManagerStep2Data = ({ career, experience }) => {
 };
 
 const ManagerSignUpStep2Page = () => {
-  const [career, setCareer] = useState(''); // career 상태 추가
+  const [career, setCareer] = useState('');
   const [experience, setExperience] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null); // 파일 상태 추가
-  const [loading, setLoading] = useState(false); // 로딩 상태 추가
-  const [error, setError] = useState(''); // 에러 상태 추가
-  const [showCompletionModal, setShowCompletionModal] = useState(false); // 완료 모달 상태 추가
-
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const navigate = useNavigate();
-
-  // Zustand 스토어에서 매니저 회원가입 데이터와 초기화 함수 가져오기
   const { managerSignUpData, resetSignUpData } = useSignUpStore();
 
-  const handleFileChange = (event) => {
-    // 파일 선택 시 호출될 함수
-    setSelectedFile(event.target.files[0]);
-  };
-
   const handleSignUp = async () => {
-    setError(''); // 이전 에러 초기화
-
-    // 헬퍼 함수를 사용하여 유효성 검사
+    setError('');
     const validationError = validateManagerStep2Data({ career, experience });
     if (validationError) {
       setError(validationError);
       return;
     }
-    // TODO: Step 1에서 가져온 managerSignUpData의 유효성도 여기서 다시 한번 검사할 수 있습니다. (선택 사항)
-
-    // 현재 단계에서 수집된 경력과 업로드된 파일 정보를 합침
+    // API 전송 데이터에서 파일 관련 필드 제거
     const managerSignUpDataForApi = {
-      ...managerSignUpData, // Step1에서 저장된 데이터
-      gender: managerSignUpData.gender
-        ? managerSignUpData.gender.toUpperCase()
-        : '', // 성별 값을 대문자로 변환
-      career: career, // 경력 사항(Career) 추가
-      experience: experience, // 경험(Experience) 추가
-      // 파일 정보는 DTO에 맞춰서 처리 방식 결정 필요
-      // uploadedFile: selectedFile // DTO에 맞는 형식으로 변환 필요
+      ...managerSignUpData,
+      gender: managerSignUpData.gender ? managerSignUpData.gender.toUpperCase() : '',
+      career: career,
+      experience: experience,
     };
-
-    console.log('API 전송 데이터:', managerSignUpDataForApi); // 전송할 데이터 로그 추가
-
-    // TODO: 파일 업로드 로직 추가 (selectedFile 처리) - 백엔드 API 명세 확인 필요
-
-    setLoading(true); // 로딩 시작
-
+    console.log('API 전송 데이터:', managerSignUpDataForApi);
+    setLoading(true);
     try {
-      // authService의 managerSignUp 함수 호출
       const response = await authService.managerSignUp(managerSignUpDataForApi);
       console.log('매니저 회원가입 성공:', response);
-
-      // 회원가입 성공 시 스토어 데이터 초기화
       resetSignUpData();
-
-      // 성공 시 모달 표시
       setShowCompletionModal(true);
     } catch (err) {
-      console.error('매니저 회원가입 실패:', err);
-      // 백엔드에서 보낸 오류 메시지 또는 기본 메시지 표시
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          '회원가입 중 오류가 발생했습니다.'
-      );
+      setError('회원가입 중 오류가 발생했습니다.');
     } finally {
-      setLoading(false); // 로딩 종료
+      setLoading(false);
     }
   };
 
   const handlePrevious = () => {
-    navigate(-1); // 이전 페이지로 이동 (Step 1)
+    navigate(-1); // 브라우저 히스토리 기준 이전 화면으로 이동
   };
 
   return (
@@ -169,7 +136,7 @@ const ManagerSignUpStep2Page = () => {
             style={{
               width: 'calc(33.33% - 2px)',
               height: '4px',
-              background: '#ddd',
+              background: '#247cff',
               borderRadius: '2px',
             }}
           ></div>
@@ -241,55 +208,6 @@ const ManagerSignUpStep2Page = () => {
               resize: 'vertical',
             }}
           />
-        </div>
-
-        {/* Document Upload Section */}
-        <div style={{ marginBottom: '32px' }}>
-          <div
-            style={{
-              fontSize: '18px',
-              fontWeight: 'bold',
-              color: '#222',
-              marginBottom: '8px',
-            }}
-          >
-            서류 업로드
-          </div>
-          <div
-            style={{ fontSize: '15px', color: '#666', marginBottom: '16px' }}
-          >
-            신분증, 자격증 등 관련 서류를 업로드해주세요
-          </div>
-
-          {/* File Upload Input */}
-          <div
-            style={{
-              border: '2px dashed #E5E7EB',
-              borderRadius: '8px',
-              padding: '32px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              transition: 'border-color 0.2s ease',
-            }}
-            onClick={() => document.getElementById('fileInput').click()}
-          >
-            <input
-              id="fileInput"
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-            />
-            <Upload size={32} color="#6B7280" style={{ marginBottom: '8px' }} />
-            <div
-              style={{ fontSize: '16px', color: '#333', marginBottom: '4px' }}
-            >
-              {selectedFile ? selectedFile.name : '파일을 선택하세요'}
-            </div>
-            <div style={{ fontSize: '14px', color: '#888' }}>
-              PDF, JPG, PNG, DOC 파일 지원 (최대 10MB)
-            </div>
-          </div>
         </div>
 
         {/* 에러 메시지 표시 */}

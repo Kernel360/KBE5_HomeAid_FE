@@ -20,6 +20,10 @@ export const apiService = {
     getProfile: () => api.get('/customers/profile'),
     updateProfile: (userId, data) => api.put(`/users/${userId}`, data),
     changePassword: (data) => api.post('/user/change-password', data),
+    getMyProfile: () => api.get('/users/my'),
+    updateMyProfile: (data) => api.put('/users/my', data),
+    uploadProfileImage: (formData) => api.post('/users/my/image', formData),
+    deleteProfileImage: () => api.delete('/users/my/image'),
   },
 
   // 인증 관련 API
