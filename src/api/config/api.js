@@ -41,7 +41,6 @@ apiClient.interceptors.request.use(
       console.log('토큰이 없습니다. 로그인이 필요할 수 있습니다.');
     }
 
-    console.log('API 요청:', config.method?.toUpperCase(), config.url);
     return config;
   },
   (error) => {
@@ -53,7 +52,6 @@ apiClient.interceptors.request.use(
 // 응답 인터셉터 (에러 처리 등)
 apiClient.interceptors.response.use(
   (response) => {
-    console.log('API 응답 성공:', response.status, response.config.url);
     // 예약 목록 API 응답이면 zustand store에 저장
     if (response.config.url && response.config.url.includes('/reservations') && response.data && response.data.data && Array.isArray(response.data.data.content)) {
       const reservationList = response.data.data.content;

@@ -105,7 +105,7 @@ const UserReservationList = () => {
   const handleReservationClick = useCallback(
     (reservation) => {
       // 예약 상세 페이지로 이동
-      navigate(`/customer/reservations/${reservation.id}`, {
+      navigate(`/customer/reservations/${reservation.reservationId}`, {
         state: { reservation },
       });
     },
