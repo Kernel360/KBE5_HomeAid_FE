@@ -27,6 +27,8 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         return '매니저 조회';
       case '/admin/matches':
         return '매칭 관리';
+      case '/admin/reviews':
+        return '리뷰 관리';
       case '/admin/statistics':
         return '통계';
       case '/admin/settlements':
