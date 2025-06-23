@@ -86,5 +86,8 @@ export const apiService = {
     checkIn: (data) => api.post('/managers/work-logs', data),
     checkOut: (reservationId, data) => api.patch(`/managers/work-logs/${reservationId}`, data)
   },
+  alert: {
+  updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
+  }
 };
 export default apiService;

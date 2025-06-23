@@ -1,4 +1,4 @@
-import { create } from'zustand';
+import { create } from 'zustand';
 
 export const useAlertStore = create((set) => ({
     notificationAlert: [],
@@ -8,7 +8,7 @@ export const useAlertStore = create((set) => ({
         console.log('🔵 스토어 - setNotificationAlert 호출됨:', newNotiList);
         set(() => {
             console.log('🔵 스토어 - 상태 업데이트 실행');
-            return {
+                        return {
                 notificationAlert: Array.isArray(newNotiList) ? newNotiList : [newNotiList]
             };
         });
@@ -16,15 +16,16 @@ export const useAlertStore = create((set) => ({
 
     // 기존 알림 목록에 새로운 알림들 추가 (실시간 알림 수신 시)
     addNotificationAlert: (newNoti) => set((prev) => ({
-        notificationAlert: Array.isArray(newNoti) 
+        notificationAlert: Array.isArray(newNoti)
             ? [...prev.notificationAlert, ...newNoti]
             : [...prev.notificationAlert, newNoti]
     })),
 
     // 특정 알림 제거
     removeNotificationAlert: (alertId) => set((prev) => ({
-        notificationAlert: prev.notificationAlert.filter(alert => alert.id !== alertId)
-    })),
+    notificationAlert: prev.notificationAlert.filter(alert => alert.alertId !== alertId)
+        //                                                            ^^^^^^^ alertId로 수정
+        })),
 
     // 모든 알림 읽음 처리
     markAllAsRead: () => set((prev) => ({

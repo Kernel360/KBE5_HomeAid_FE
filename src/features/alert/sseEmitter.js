@@ -40,6 +40,9 @@ const sseEmitter = {
         eventSource.onerror = (error) => {
             console.error('❌ SSE 연결 에러:', error);
             
+            // 스토어 비우기
+            useAlertStore.getState().clearNotificationAlert();
+            
             if (error.status === 403) {
                 console.error('🚫 403 Forbidden - 토큰 문제일 가능성');
             } else {
@@ -63,7 +66,7 @@ const sseEmitter = {
                 const parsedData = JSON.parse(receivedConnectData);
                 useAlertStore.getState().setNotificationAlert(parsedData);
             } catch (error) {
-                console.error('SSE - 파싱 에러:', error);
+                console.error('🟢 SSE - 파싱 에러:', error);
             }
         });
 
@@ -91,6 +94,10 @@ const sseEmitter = {
             console.log('🔌 SSE 연결 수동 종료');
             sseEmitter.eventSource.close();
             sseEmitter.eventSource = null;
+            
+            // 연결 종료 시 스토어도 비우기
+            useAlertStore.getState().clearNotificationAlert();
+            console.log('🗑️ SSE 연결 종료로 인한 알림 스토어 초기화');
         }
     },
 

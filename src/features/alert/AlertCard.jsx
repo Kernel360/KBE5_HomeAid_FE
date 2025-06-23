@@ -1,14 +1,41 @@
+import apiService from "@/api";
 import { useAlertStore } from "@/stores/alertStore";
 import { X, Bell, Check } from 'lucide-react';
 import { memo } from 'react';
+import { useNavigate } from "react-router-dom";
 
 const AlertCard = memo(({ onClose, isVisible = false }) => {
-    const { notificationAlert } = useAlertStore();
+    const { notificationAlert, removeNotificationAlert } = useAlertStore();
+    // const [alerts, setAlerts] = useState(notificationAlert);
+    const navigate = useNavigate();
 
 
     // 보이지 않을 때는 null 반환
     if (!isVisible) {
         return null;
+    }
+
+    function handleNavigate(alertId, relatedEntityId, relatedEntityType) {
+        console.log('알림 클릭:', alertId, relatedEntityId, relatedEntityType);
+        removeNotificationAlert(alertId); // 알림 클릭 후 제거
+        console.log(notificationAlert);
+        const response = alertRead(alertId);
+        console.log('알림 읽음 처리:', response);
+        onClose();
+        //Todo 권한과 엔티티에 따라 라우팅 되는 주소 설정
+        switch (relatedEntityType) {
+            case 'RESERVATION':
+                return navigate(`/customer/reservations/${relatedEntityId}`);
+            case 'MATCHING':
+                return navigate(`/customer/matchings/${relatedEntityId}`);
+            }
+
+                
+    }
+
+    const alertRead = async (alertId) => {
+        const response = await apiService.alert.updateReadStatus(alertId);
+        console.log('read update', response);
     }
 
     return(
@@ -67,17 +94,19 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                         <div className="divide-y divide-gray-100">
                             {notificationAlert.map((noti, index) => (
                                 <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
-                                    <div className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                                    <div className="flex items-start gap-3" onClick={() => 
+                                        handleNavigate(noti.alertId, noti.relatedEntityId, noti.relatedEntityType)}>
+                                        {/* <div className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-2"></div> */}
                                         <div className="flex-1">
-                                            <p className="text-sm font-medium text-gray-900 mb-1">
+                                            {/* <p className="text-sm font-medium text-gray-900 mb-1">
                                                 {noti.eventType || '알림'}
-                                            </p>
+                                            </p> */}
                                             <p className="text-sm text-gray-600 mb-2">
-                                                {noti.message || noti.content || '새로운 알림이 있습니다.'}
+                                                {noti.message || '새로운 알림이 있습니다.'}
+                                                {noti.alertId }
                                             </p>
                                             <p className="text-xs text-gray-400">
-                                                {noti.timestamp || noti.createdAt || '방금 전'}
+                                                {noti.createdAt || '방금 전'}
                                             </p>
                                         </div>
                                         <button className="flex-shrink-0 p-1 hover:bg-gray-200 rounded-full">
@@ -97,11 +126,11 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                 </div>
 
                 {/* 푸터 (선택사항) */}
-                <div className="p-4 border-t border-gray-200 bg-gray-50">
+                {/* <div className="p-4 border-t border-gray-200 bg-gray-50">
                     <button className="w-full text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors">
                         모든 알림 읽음 처리
                     </button>
-                </div>
+                </div> */}
             </div>
         </>
     );
