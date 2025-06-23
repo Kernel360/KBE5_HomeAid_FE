@@ -20,7 +20,7 @@ import UserReservationList from '../features/main/UserReservationList';
 import UserReservationDetail from '../features/main/UserReservationDetail';
 import ServiceRegistration from '../features/additional-info/pages';
 import Mypage from '../features/mypage/customer/pages/Mypage';
-import ManagerMypage from '../features/mypage/manager/ManagerMypage';
+import ManagerMypage from '../features/mypage/manager/pages/ManagerMypage.jsx';
 import MyAddress from '../features/mypage/manager/components/MyAddress';
 import AddressRegister from '../features/mypage/manager/components/AddressRegister';
 import ReservationHistoryPage from '../features/review/pages/ReservationHistoryPage';

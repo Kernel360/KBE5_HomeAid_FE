@@ -1,7 +1,7 @@
 import { ArrowLeft, Search, Plus } from 'lucide-react';
 import Footer from '../../../../components/Footer.jsx';
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Assuming axios is installed
+import api from '../../../../api/config/api.js';
 import Header from '../../../../components/Header.jsx';
 
 // 문의 게시판 페이지
@@ -19,7 +19,7 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
     setError(null);
     try {
       // Assuming a base URL for the API
-      const response = await axios.get('/api/v1/boards', {
+      const response = await api.get('/boards', {
         params: {
           keyword: keyword,
           page: page,
@@ -29,9 +29,6 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
           // Backend API currently does not support filtering by isAnswered.
           // If needed, this would require backend modification or client-side filtering.
           // For now, the filter buttons are purely for UI.
-        },
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
       });
       setInquiries(response.data.data.content);

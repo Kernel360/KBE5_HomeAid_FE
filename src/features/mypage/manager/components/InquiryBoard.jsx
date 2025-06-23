@@ -1,7 +1,7 @@
 import { ArrowLeft, Search, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../../../api/config/api.js';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
@@ -20,16 +20,13 @@ const InquiryBoard = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('/api/v1/boards', {
+      const response = await api.get('/boards', {
         params: {
           keyword: keyword,
           page: page,
           size: 10,
           sortBy: 'createdAt',
           sortDirection: 'desc',
-        },
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
       });
       setInquiries(response.data.data.content);

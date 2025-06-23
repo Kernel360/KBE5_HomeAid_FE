@@ -91,6 +91,10 @@ const CustomerSignUpStep2Page = () => {
     console.log('지도에서 위치 확인 클릭');
   };
 
+  const handlePrevious = () => {
+    navigate(-1); // 브라우저 히스토리 기준 이전 화면으로 이동
+  };
+
   return (
     <div
       style={{

@@ -7,13 +7,15 @@ export const useAuthStore = create(
     (set) => ({
       user: null, // { userId, role, ... }
       accessToken: null,
+      refreshToken: null,
       setUser: (user) => set({ user }),
       updateUser: (userData) =>
         set((state) => ({
           user: { ...state.user, ...userData },
         })),
       setAccessToken: (token) => set({ accessToken: token }),
-      logout: () => set({ user: null, accessToken: null }),
+      setRefreshToken: (token) => set({ refreshToken: token }),
+      logout: () => set({ user: null, accessToken: null, refreshToken: null }),
     }),
     {
       name: 'auth-storage', // localStorage에 저장될 키 이름

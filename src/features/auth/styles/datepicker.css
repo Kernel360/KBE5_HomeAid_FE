@@ -15,6 +15,18 @@
   padding: 8px; /* 예시: 전체 패딩을 줄여 사이즈 축소 */
 }
 
+/* Year Dropdown */
+.react-datepicker__year-dropdown {
+  font-size: 13px; /* 년도 드롭다운 폰트 크기 줄임 */
+  max-height: 60px; /* 년도 드롭다운 최대 높이 설정 (약 8-10년 단위) */
+  overflow-y: auto; /* 내용이 넘칠 경우 스크롤바 생성 */
+}
+
+.react-datepicker__year-select {
+  width: 80px; /* 년도 선택 드롭다운 너비 줄임 */
+  font-size: 13px; /* 년도 선택 드롭다운 폰트 크기 줄임 */
+}
+
 /* Header (Month and Year) */
 .react-datepicker__header {
   background-color: #fff; /* 예시: 헤더 배경색 (흰색) */
