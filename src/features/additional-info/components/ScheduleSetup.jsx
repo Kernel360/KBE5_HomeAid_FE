@@ -23,7 +23,7 @@ const reverseDayMapping = {
   7: '일',
 };
 const days = ['월', '화', '수', '목', '금', '토', '일'];
-const defaultTime = { startTime: '09:00', endTime: '18:00' };
+
 
 const ScheduleSetup = ({ onBack, nextStep }) => {
   const { formData, setFormData } = useManagerProfileStore();
@@ -31,6 +31,9 @@ const ScheduleSetup = ({ onBack, nextStep }) => {
   const [selectedSido, setSelectedSido] = useState('');
 
   const availabilities = formData.availabilities || [];
+
+  const firstAvailability = formData.availabilities?.[0] || {};
+  const { startTime, endTime, weekday, preferRegions } = firstAvailability;
 
   // 요일 선택
   const handleDayClick = (weekday) => {
@@ -46,6 +49,8 @@ const ScheduleSetup = ({ onBack, nextStep }) => {
         },
       ];
       setFormData({ availabilities: newAvailabilities });
+      console.log('[요일추가] availabilities:', newAvailabilities);
+      console.log('[요일추가] formData:', { ...formData, availabilities: newAvailabilities });
     }
   };
 
@@ -55,11 +60,15 @@ const ScheduleSetup = ({ onBack, nextStep }) => {
       a.weekday === weekday ? { ...a, [field]: value } : a
     );
     setFormData({ availabilities: newAvailabilities });
+    console.log(`[시간변경] ${weekday} ${field} -> ${value}`);
+    console.log('[시간변경] availabilities:', newAvailabilities);
+    console.log('[시간변경] formData:', { ...formData, availabilities: newAvailabilities });
   };
 
   // 시/도 선택
   const handleSidoChange = (sido) => {
     setSelectedSido(sido);
+    console.log('[시/도선택] selectedSido:', sido);
   };
 
   // 구/군 체크박스
@@ -81,10 +90,14 @@ const ScheduleSetup = ({ onBack, nextStep }) => {
       return { ...a, preferRegions: newRegions };
     });
     setFormData({ availabilities: newAvailabilities });
+    console.log(`[구/군체크] ${weekday} ${selectedSido} ${sigungu}`);
+    console.log('[구/군체크] availabilities:', newAvailabilities);
+    console.log('[구/군체크] formData:', { ...formData, availabilities: newAvailabilities });
   };
 
   // 다음 버튼
   const handleNext = () => {
+    console.log('[다음버튼] 최종 formData:', formData);
     nextStep();
   };
 
@@ -213,6 +226,12 @@ const ScheduleSetup = ({ onBack, nextStep }) => {
               </div>
             </div>
           )}
+          <p className="text-xs text-blue-700">
+            제공 서비스: {formData.preferenceIds?.length || 0}개<br />
+            활동 지역: {preferRegions?.map(r => `${r.sido} ${r.sigungu}`).join(', ') || '없음'}<br />
+            근무 요일: {weekday ? reverseDayMapping[weekday] : '없음'}요일<br />
+            근무 시간: {startTime} - {endTime}
+          </p>
         </div>
         {/* Bottom Buttons */}
         <div className="flex gap-3 p-6 border-t border-gray-100">

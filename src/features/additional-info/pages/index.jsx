@@ -215,8 +215,6 @@ const ServiceRegistration = () => {
             style={{ paddingTop: '80px', paddingBottom: '100px' }}
           >
             <ScheduleSetup
-              allFormData={formData}
-              setAllFormData={setFormData}
               onBack={() => setStepView('step1')}
               nextStep={() => setStepView('step3')}
             />
@@ -238,8 +236,6 @@ const ServiceRegistration = () => {
           >
             <ProfileCompletion
               onBack={() => setStepView('step2')}
-              allFormData={formData}
-              setAllFormData={setFormData}
             />
           </main>
           <Footer />
