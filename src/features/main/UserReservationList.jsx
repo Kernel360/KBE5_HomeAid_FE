@@ -34,7 +34,6 @@ const UserReservationList = () => {
   const { getAllReservations } = useReservationListStore();
 
   const reservations = useReservationListStore((state) => state.reservations);
-  console.log('UserReservationList reservations:', reservations);
 
   // ⭐️ 인증 상태 확인
   useEffect(() => {
@@ -135,6 +134,22 @@ const UserReservationList = () => {
     return statusClasses[status] || 'status-default';
   };
 
+  const mapBackendStatus = (backendStatus) => {
+    switch (backendStatus) {
+      case 'REQUESTED':
+      case 'MATCHING':
+        return 'pending';
+      case 'MATCHED':
+        return 'completed';
+      case 'COMPLETED':
+        return 'visited';
+      case 'CANCELLED':
+        return 'cancelled';
+      default:
+        return 'pending';
+    }
+  };
+
   // ReservationCard 컴포넌트 메모이제이션
   const ReservationCard = React.memo(({ reservation }) => {
     if (!reservation) return null;
@@ -144,7 +159,7 @@ const UserReservationList = () => {
     const date = reservation.requestedDate || reservation.date || '날짜 정보 없음';
     const time = reservation.requestedTime || reservation.time || '시간 정보 없음';
     const price = reservation.totalPrice || reservation.price || 0;
-    const status = reservation.status || '상태 미확인';
+    const status = mapBackendStatus(reservation.status);
 
     return (
       <div
