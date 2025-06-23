@@ -62,61 +62,7 @@ const MainPage = memo(() => {
           </div>
 
           {/* 슬라이드쇼 배너 */}
-          <div className="relative mb-8 overflow-hidden rounded-3xl">
-            <div
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-            >
-              {slides.map((slide, index) => (
-                <div
-                  key={slide.id}
-                  className={`w-full flex-shrink-0 relative bg-gradient-to-r ${slide.bgGradient} rounded-3xl p-8 text-white overflow-hidden`}
-                >
-                  {/* 슬라이드 인디케이터 */}
-                  <div className="absolute top-4 right-4 text-white/20">
-                    <div className="text-xs bg-white/20 px-2 py-1 rounded-full">
-                      {index + 1} / {slides.length}
-                    </div>
-                  </div>
-
-                  {/* 아이콘 */}
-                  <div className="absolute top-6 right-12">
-                    <div
-                      className={`w-16 h-16 ${slide.iconBg} rounded-full flex items-center justify-center transform rotate-12`}
-                    >
-                      <div
-                        className={`w-8 h-8 ${slide.iconInnerBg} rounded-full`}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div className="relative z-10">
-                    <p className="text-sm font-medium mb-2 opacity-90">
-                      {slide.badge}
-                    </p>
-                    <h2 className="text-2xl font-bold mb-4 leading-tight">
-                      {slide.title}
-                      <br />
-                      {slide.subtitle}
-                    </h2>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* 슬라이드 점 인디케이터 */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-colors duration-200 ${
-                    currentSlide === index ? 'bg-white' : 'bg-white/50'
-                  }`}
-                ></button>
-              ))}
-            </div>
-          </div>
+          <SlideShow />
         </main>
         <Footer />
       </div>

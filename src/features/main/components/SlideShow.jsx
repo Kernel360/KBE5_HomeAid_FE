@@ -92,14 +92,10 @@ const SlideShow = () => {
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}
-            className={`rounded-full transition-all duration-300 ${
+            className={`w-2 h-2 rounded-full transition-colors duration-200 ${
               currentSlide === index ? 'bg-white' : 'bg-white/50'
             }`}
-            style={{
-              width: '2px',
-              height: '2px',
-            }}
-          />
+          ></button>
         ))}
       </div>
     </div>
