@@ -8,6 +8,7 @@ import MatchingManagement from '../features/admin/pages/MatchingManagement';
 import Statistics from '../features/admin/pages/Statistics';
 import ManagerSettlement from '../features/admin/pages/ManagerSettlement';
 import Inquiries from '../features/admin/pages/Inquiries';
+import ReviewManagement from '../features/admin/pages/ReviewManagement';
 import ManagerServiceCheckIn from '../features/matching/pages/ManagerServiceCheckIn';
 import ManagerMatchingRequest from '../features/matching/pages/ManagerMatchingRequest';
 import UserServiceOption from '../features/reservation/components/UserServiceOption';
@@ -47,6 +48,7 @@ export const protectedAppRoutes = [
       { path: 'customer-payments', element: <CustomerPayment /> },
       { path: 'managers', element: <ManagerList /> },
       { path: 'matches', element: <MatchingManagement /> },
+      { path: 'reviews', element: <ReviewManagement /> },
       { path: 'statistics', element: <Statistics /> },
       { path: 'settlements', element: <ManagerSettlement /> },
       { path: 'inquiries', element: <Inquiries /> },

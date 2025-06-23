@@ -37,7 +37,7 @@ const ManagerList = () => {
   const [activeTab, setActiveTab] = useState('전체');
   const [pagination, setPagination] = useState({
     page: 0,
-    size: 10,
+    size: 20, // 성능 최적화를 위해 증가
     totalElements: 0,
     totalPages: 0,
   });
@@ -49,14 +49,61 @@ const ManagerList = () => {
     rejected: 0,
   });
 
-  // 검색 관련 상태 추가
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(''); // 통합 검색어
-  const [searchScope, setSearchScope] = useState('all'); // 체크박스 대신 단일 선택
+  // 검색 관련 상태 - 리뷰 관리와 동일한 패턴
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchType, setSearchType] = useState('all');
 
-  // 체크박스 선택 상태 추가
+  // 체크박스 선택 상태
   const [selectedManagers, setSelectedManagers] = useState([]);
   const [isAllSelected, setIsAllSelected] = useState(false);
+
+  // 디바운스된 검색 - 성능 최적화
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // 검색어가 변경된 후 300ms 후에 실행
+      if (searchTerm.trim()) {
+        handleSearch();
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // 검색과 필터를 적용한 매니저 필터링 - 성능 최적화
+  const getFilteredManagers = () => {
+    if (!managers.length) return [];
+
+    let filtered = managers;
+
+    // 검색어 필터링 - 최적화된 버전
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter((manager) => {
+        switch (searchType) {
+          case 'name':
+            return manager.name?.toLowerCase().includes(term);
+          case 'email':
+            return manager.email?.toLowerCase().includes(term);
+          case 'phone':
+            return manager.phone?.toLowerCase().includes(term);
+          case 'career':
+            return manager.career?.toLowerCase().includes(term);
+          case 'all':
+          default:
+            return (
+              manager.name?.toLowerCase().includes(term) ||
+              manager.email?.toLowerCase().includes(term) ||
+              manager.phone?.toLowerCase().includes(term) ||
+              manager.career?.toLowerCase().includes(term)
+            );
+        }
+      });
+    }
+
+    return filtered;
+  };
+
+  const filteredManagers = getFilteredManagers();
 
   // 탭 이름과 API 상태값 매핑
   const getStatusForAPI = (tabName) => {
@@ -194,7 +241,6 @@ const ManagerList = () => {
       });
     } finally {
       setLoading(false);
-      setIsSearching(false);
     }
   };
 
@@ -262,10 +308,10 @@ const ManagerList = () => {
     setError(null);
 
     // 현재 검색 상태 유지하면서 새로운 데이터 fetch
-    const searchData = searchQuery.trim()
+    const searchData = searchTerm.trim()
       ? {
-          query: searchQuery.trim(),
-          scope: searchScope,
+          query: searchTerm.trim(),
+          scope: searchType,
         }
       : null;
     fetchManagers(0, tab, searchData);
@@ -273,10 +319,10 @@ const ManagerList = () => {
 
   // 페이지 변경 핸들러
   const handlePageChange = (newPage) => {
-    const searchData = searchQuery.trim()
+    const searchData = searchTerm.trim()
       ? {
-          query: searchQuery.trim(),
-          scope: searchScope,
+          query: searchTerm.trim(),
+          scope: searchType,
         }
       : null;
     fetchManagers(newPage, activeTab, searchData);
@@ -307,10 +353,10 @@ const ManagerList = () => {
       }
 
       // 성공 시 데이터 새로고침 - 현재 검색 상태 유지
-      const searchData = searchQuery.trim()
+      const searchData = searchTerm.trim()
         ? {
-            query: searchQuery.trim(),
-            scope: searchScope,
+            query: searchTerm.trim(),
+            scope: searchType,
           }
         : null;
       fetchManagers(pagination.page, activeTab, searchData);
@@ -323,8 +369,8 @@ const ManagerList = () => {
 
   // 검색 실행 함수
   const handleSearch = () => {
-    console.log('Search triggered with query:', searchQuery);
-    setIsSearching(true);
+    console.log('Search triggered with query:', searchTerm);
+    setLoading(true);
 
     // 페이지를 0으로 리셋하고 검색 실행
     setPagination((prev) => ({
@@ -333,10 +379,10 @@ const ManagerList = () => {
     }));
 
     // 통합 검색어를 이름, 경력, 전화번호 모든 필드에 적용
-    const searchData = searchQuery.trim()
+    const searchData = searchTerm.trim()
       ? {
-          query: searchQuery.trim(),
-          scope: searchScope,
+          query: searchTerm.trim(),
+          scope: searchType,
         }
       : null;
     fetchManagers(0, activeTab, searchData);
@@ -344,9 +390,8 @@ const ManagerList = () => {
 
   // 검색 초기화 함수
   const handleClearSearch = () => {
-    setSearchQuery('');
-    setIsSearching(false);
-    setSearchScope('all');
+    setSearchTerm('');
+    setSearchType('all');
 
     // 검색 초기화 후 현재 탭의 데이터 다시 로드
     setPagination((prev) => ({
@@ -544,8 +589,8 @@ const ManagerList = () => {
                 <div className="flex items-center space-x-3">
                   {/* 검색 범위 선택 */}
                   <select
-                    value={searchScope}
-                    onChange={(e) => setSearchScope(e.target.value)}
+                    value={searchType}
+                    onChange={(e) => setSearchType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="all">전체</option>
@@ -573,12 +618,12 @@ const ManagerList = () => {
                     </div>
                     <input
                       type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                       onKeyDown={handleKeyPress}
                       placeholder="검색어를 입력하세요"
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isSearching}
+                      disabled={loading}
                     />
                   </div>
 
@@ -590,10 +635,10 @@ const ManagerList = () => {
                   </button>
                   <button
                     onClick={handleSearch}
-                    disabled={isSearching}
+                    disabled={loading}
                     className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
-                    {isSearching ? '검색 중...' : '검색'}
+                    {loading ? '검색 중...' : '검색'}
                   </button>
                 </div>
               </div>
@@ -727,7 +772,7 @@ const ManagerList = () => {
                       </tr>
                     ) : (
                       // 실제 데이터
-                      managers.map((manager, index) => (
+                      filteredManagers.map((manager, index) => (
                         <tr
                           key={manager.id || index}
                           className="hover:bg-gray-50"
