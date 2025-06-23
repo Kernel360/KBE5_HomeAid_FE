@@ -1,75 +1,104 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MapPin } from 'lucide-react';
 import LocationPicker from './LocationPicker';
+import sidoSggData from '../../../assets/db/korea_sido_sgg.json';
+import { useManagerProfileStore } from '../../../stores/managerProfileStore.js';
 
-const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
-  // 요일 매핑 (표시용 -> 서버용)
-  const dayMapping = {
-    월: 1,
-    화: 2,
-    수: 3,
-    목: 4,
-    금: 5,
-    토: 6,
-    일: 7,
+const dayMapping = {
+  월: 1,
+  화: 2,
+  수: 3,
+  목: 4,
+  금: 5,
+  토: 6,
+  일: 7,
+};
+const reverseDayMapping = {
+  1: '월',
+  2: '화',
+  3: '수',
+  4: '목',
+  5: '금',
+  6: '토',
+  7: '일',
+};
+const days = ['월', '화', '수', '목', '금', '토', '일'];
+
+
+const ScheduleSetup = ({ onBack, nextStep }) => {
+  const { formData, setFormData } = useManagerProfileStore();
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedSido, setSelectedSido] = useState('');
+
+  const availabilities = formData.availabilities || [];
+
+  const firstAvailability = formData.availabilities?.[0] || {};
+  const { startTime, endTime, weekday, preferRegions } = firstAvailability;
+
+  // 요일 선택
+  const handleDayClick = (weekday) => {
+    setSelectedDay(weekday);
+    if (!availabilities.find((a) => a.weekday === weekday)) {
+      const newAvailabilities = [
+        ...availabilities,
+        {
+          weekday,
+          startTime: '09:00',
+          endTime: '18:00',
+          preferRegions: [],
+        },
+      ];
+      setFormData({ availabilities: newAvailabilities });
+      console.log('[요일추가] availabilities:', newAvailabilities);
+      console.log('[요일추가] formData:', { ...formData, availabilities: newAvailabilities });
+    }
   };
 
-  // 서버용 -> 표시용 매핑
-  const reverseDayMapping = {
-    1: '월',
-    2: '화',
-    3: '수',
-    4: '목',
-    5: '금',
-    6: '토',
-    7: '일',
+  // 시간 변경
+  const handleTimeChange = (weekday, field, value) => {
+    const newAvailabilities = availabilities.map((a) =>
+      a.weekday === weekday ? { ...a, [field]: value } : a
+    );
+    setFormData({ availabilities: newAvailabilities });
+    console.log(`[시간변경] ${weekday} ${field} -> ${value}`);
+    console.log('[시간변경] availabilities:', newAvailabilities);
+    console.log('[시간변경] formData:', { ...formData, availabilities: newAvailabilities });
   };
 
-  const days = ['월', '화', '수', '목', '금', '토', '일'];
-
-  const handleDaySelect = (day) => {
-    const dayNumber = dayMapping[day]; // 한글 요일을 숫자로 변환
-    setAllFormData((prev) => ({
-      ...prev,
-      availableDays: prev.availableDays?.includes(dayNumber)
-        ? prev.availableDays.filter((d) => d !== dayNumber)
-        : [...(prev.availableDays || []), dayNumber],
-    }));
+  // 시/도 선택
+  const handleSidoChange = (sido) => {
+    setSelectedSido(sido);
+    console.log('[시/도선택] selectedSido:', sido);
   };
 
-  // 위치 선택 핸들러
-  const handleLocationSelect = (locationData) => {
-    setAllFormData((prev) => ({
-      ...prev,
-      area: locationData.address,
-      latitude: locationData.latitude || prev.latitude,
-      longitude: locationData.longitude || prev.longitude,
-    }));
+  // 구/군 체크박스
+  const handleSigunguCheck = (weekday, sigungu) => {
+    const newAvailabilities = availabilities.map((a) => {
+      if (a.weekday !== weekday) return a;
+      const exists = a.preferRegions.find(
+        (r) => r.sido === selectedSido && r.sigungu === sigungu
+      );
+      let newRegions;
+      if (exists) {
+        newRegions = a.preferRegions.filter(
+          (r) => !(r.sido === selectedSido && r.sigungu === sigungu)
+        );
+      } else {
+        if (a.preferRegions.length >= 3) return a;
+        newRegions = [...a.preferRegions, { sido: selectedSido, sigungu }];
+      }
+      return { ...a, preferRegions: newRegions };
+    });
+    setFormData({ availabilities: newAvailabilities });
+    console.log(`[구/군체크] ${weekday} ${selectedSido} ${sigungu}`);
+    console.log('[구/군체크] availabilities:', newAvailabilities);
+    console.log('[구/군체크] formData:', { ...formData, availabilities: newAvailabilities });
   };
 
-  const handleTimeChange = (field, value) => {
-    setAllFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  // 현재 선택된 요일과 시간 (allFormData에서 가져오기)
-  const availableDays = allFormData.availableDays || [];
-  const startTime = allFormData.startTime || '09:00';
-  const endTime = allFormData.endTime || '18:00';
-
-  // 서버에서 오는 숫자 데이터를 표시용 한글로 변환
-  const getDisplayDays = () => {
-    return availableDays
-      .map((dayNum) => reverseDayMapping[dayNum])
-      .filter(Boolean);
-  };
-
-  // 단일 요일이 선택되었는지 확인 (한글 요일로 확인)
-  const isDaySelected = (day) => {
-    const dayNumber = dayMapping[day];
-    return availableDays.includes(dayNumber);
+  // 다음 버튼
+  const handleNext = () => {
+    console.log('[다음버튼] 최종 formData:', formData);
+    nextStep();
   };
 
   return (
@@ -78,12 +107,11 @@ const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
         {/* Header */}
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900 mb-2">
-            활동 가능 시간대 설정
+            활동 가능 요일/시간/지역 설정
           </h2>
           <p className="text-sm text-gray-600">
-            요일별로 활동 가능한 시간을 설정해주세요
+            요일을 선택하고, 각 요일별로 근무시간과 활동지역을 입력하세요 (지역 최대 3개)
           </p>
-
           {/* Progress Bar */}
           <div className="flex gap-2 mt-4">
             <div className="flex-1 h-1 bg-blue-500 rounded"></div>
@@ -91,113 +119,120 @@ const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
             <div className="flex-1 h-1 bg-gray-200 rounded"></div>
           </div>
         </div>
-
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* 활동 지역 */}
+          {/* 활동 요일 선택 */}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">
-              활동 지역
-            </h2>
-            <LocationPicker
-              onLocationSelect={handleLocationSelect}
-              currentAddress={allFormData.area}
-            />
-          </div>
-
-          {/* 요일 선택 */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">
-              활동 요일
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">활동 요일</h2>
             <div className="flex gap-2 flex-wrap">
-              {days.map((day) => (
-                <button
-                  key={day}
-                  onClick={() => handleDaySelect(day)}
-                  className={`w-12 h-12 rounded-full text-sm font-medium transition-colors ${
-                    isDaySelected(day)
-                      ? 'bg-blue-600 text-blue-400 hover:bg-blue-700'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {day}
-                </button>
-              ))}
+              {days.map((day) => {
+                const dayNumber = dayMapping[day];
+                const isSelected = availabilities.some((a) => a.weekday === dayNumber);
+                return (
+                  <button
+                    key={day}
+                    onClick={() => handleDayClick(dayNumber)}
+                    className={`w-12 h-12 rounded-full text-sm font-medium transition-colors border ${selectedDay === dayNumber ? 'bg-blue-600 text-white border-blue-600' : isSelected ? 'bg-blue-100 text-blue-600 border-blue-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* 공통 시간 설정 */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">
-              근무 시간
-            </h2>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <label className="block text-sm text-gray-600 mb-2">
-                  시작 시간
-                </label>
+          {/* 선택된 요일 상세 설정 */}
+          {selectedDay && (
+            <div className="mt-6 p-4 border rounded-lg bg-gray-50">
+              <h3 className="text-base font-semibold mb-2">{reverseDayMapping[selectedDay]}요일 상세 설정</h3>
+              {/* 근무 시간 */}
+              <div className="flex gap-4 items-center mb-4">
+                <label className="text-sm">시작</label>
                 <select
-                  value={startTime}
-                  onChange={(e) =>
-                    handleTimeChange('startTime', e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={availabilities.find((a) => a.weekday === selectedDay)?.startTime || '09:00'}
+                  onChange={(e) => handleTimeChange(selectedDay, 'startTime', e.target.value)}
+                  className="px-2 py-1 border rounded"
                 >
                   {Array.from({ length: 24 }, (_, i) => {
                     const hour = i.toString().padStart(2, '0');
-                    const timeValue = `${hour}:00`;
                     return (
-                      <option key={timeValue} value={timeValue}>
+                      <option key={hour} value={`${hour}:00`}>
+                        {hour}:00
+                      </option>
+                    );
+                  })}
+                </select>
+                <label className="text-sm">종료</label>
+                <select
+                  value={availabilities.find((a) => a.weekday === selectedDay)?.endTime || '18:00'}
+                  onChange={(e) => handleTimeChange(selectedDay, 'endTime', e.target.value)}
+                  className="px-2 py-1 border rounded"
+                >
+                  {Array.from({ length: 24 }, (_, i) => {
+                    const hour = i.toString().padStart(2, '0');
+                    return (
+                      <option key={hour} value={`${hour}:00`}>
                         {hour}:00
                       </option>
                     );
                   })}
                 </select>
               </div>
-              <span className="text-gray-400 mt-6">-</span>
-              <div className="flex-1">
-                <label className="block text-sm text-gray-600 mb-2">
-                  종료 시간
-                </label>
-                <select
-                  value={endTime}
-                  onChange={(e) => handleTimeChange('endTime', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {Array.from({ length: 24 }, (_, i) => {
-                    const hour = i.toString().padStart(2, '0');
-                    const timeValue = `${hour}:00`;
-                    return (
-                      <option key={timeValue} value={timeValue}>
-                        {hour}:00
-                      </option>
-                    );
-                  })}
-                </select>
+              {/* 활동 지역 */}
+              <div className="mb-2">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {Object.keys(sidoSggData).map((sido) => (
+                    <button
+                      key={sido}
+                      onClick={() => handleSidoChange(sido)}
+                      className={`px-3 py-2 rounded border ${selectedSido === sido ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-100 text-gray-800 border-gray-200'}`}
+                      type="button"
+                    >
+                      {sido}
+                    </button>
+                  ))}
+                </div>
+                {selectedSido && (
+                  <div className="flex flex-wrap gap-2">
+                    {sidoSggData[selectedSido].map((sigungu) => {
+                      const preferRegions = availabilities.find((a) => a.weekday === selectedDay)?.preferRegions || [];
+                      const checked = preferRegions.some(
+                        (r) => r.sido === selectedSido && r.sigungu === sigungu
+                      );
+                      const disabled =
+                        !checked && preferRegions.length >= 3;
+                      return (
+                        <label key={sigungu} className="flex items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={disabled}
+                            onChange={() => handleSigunguCheck(selectedDay, sigungu)}
+                          />
+                          <span>{sigungu}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="mt-2 text-xs text-blue-700">
+                  {availabilities.find((a) => a.weekday === selectedDay)?.preferRegions.length > 0
+                    ? `선택: ${availabilities
+                        .find((a) => a.weekday === selectedDay)
+                        .preferRegions.map((r) => `${r.sido} ${r.sigungu}`)
+                        .join(', ')}`
+                    : '최대 3개까지 선택 가능'}
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* 선택된 요일과 시간 미리보기 */}
-          {availableDays.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-              <h4 className="text-sm font-medium text-blue-800 mb-2">
-                선택된 근무 일정
-              </h4>
-              <p className="text-sm text-blue-700">
-                <span className="font-medium">
-                  {getDisplayDays().join(', ')}요일
-                </span>
-                <br />
-                <span>
-                  {startTime} - {endTime}
-                </span>
-              </p>
             </div>
           )}
+          <p className="text-xs text-blue-700">
+            제공 서비스: {formData.preferenceIds?.length || 0}개<br />
+            활동 지역: {preferRegions?.map(r => `${r.sido} ${r.sigungu}`).join(', ') || '없음'}<br />
+            근무 요일: {weekday ? reverseDayMapping[weekday] : '없음'}요일<br />
+            근무 시간: {startTime} - {endTime}
+          </p>
         </div>
-
         {/* Bottom Buttons */}
         <div className="flex gap-3 p-6 border-t border-gray-100">
           <button
@@ -207,8 +242,8 @@ const ScheduleSetup = ({ onBack, nextStep, allFormData, setAllFormData }) => {
             이전
           </button>
           <button
-            onClick={nextStep}
-            className="flex-1 py-3 px-4 bg-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            onClick={handleNext}
+            className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
             다음
           </button>
