@@ -42,20 +42,11 @@ const StatCard = ({ title, value, subValue, icon, iconBg, trend }) => (
 );
 
 const CustomerPayment = () => {
-  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchScope, setSearchScope] = useState('all'); // 검색 범위 추가
-  const [pagination, setPagination] = useState({
-    page: 0,
-    size: 10,
-    totalElements: 0,
-    totalPages: 0,
-  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchType, setSearchType] = useState('all');
   const [allPayments, setAllPayments] = useState([]); // 전체 데이터 저장
-  const [displayedPayments, setDisplayedPayments] = useState([]); // 현재 페이지 데이터
   const [paymentStats, setPaymentStats] = useState({
     totalPayment: 0,
     refundAmount: 0,
@@ -101,46 +92,64 @@ const CustomerPayment = () => {
     },
   ];
 
-  // 탭 변경 핸들러
-  const handleTabChange = (tabKey) => {
-    setActiveTab(tabKey);
-    const selectedTab = tabs.find((tab) => tab.key === tabKey);
+  // 디바운스된 검색 - 성능 최적화
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // 검색어가 변경된 후 300ms 후에 실행
+      if (searchTerm.trim()) {
+        handleSearch();
+      }
+    }, 300);
 
-    let filteredPayments = allPayments;
-    if (selectedTab.status !== null) {
-      filteredPayments = allPayments.filter(
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // 검색과 필터를 적용한 결제 필터링 - 성능 최적화
+  const getFilteredPayments = () => {
+    let filtered = allPayments;
+
+    // 활성 탭에 따른 상태 필터링
+    const selectedTab = tabs.find((tab) => tab.key === activeTab);
+    if (selectedTab && selectedTab.status !== null) {
+      filtered = filtered.filter(
         (payment) => payment.status === selectedTab.status
       );
     }
 
-    // 검색어가 있으면 추가 필터링
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filteredPayments = filteredPayments.filter((payment) => {
-        switch (searchScope) {
+    // 검색어 필터링 - 최적화된 버전
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter((payment) => {
+        switch (searchType) {
           case 'customerName':
-            return payment.customerName.toLowerCase().includes(query);
+            return payment.customerName?.toLowerCase().includes(term);
           case 'serviceName':
-            return payment.serviceName.toLowerCase().includes(query);
+            return payment.serviceName?.toLowerCase().includes(term);
           case 'managerName':
-            return payment.managerName.toLowerCase().includes(query);
+            return payment.managerName?.toLowerCase().includes(term);
           case 'paymentDate':
-            // 결제 날짜 부분 검색 (예: "2024", "2024-01", "01-15" 등)
-            return payment.createdAt.toLowerCase().includes(query);
+            return payment.createdAt?.toLowerCase().includes(term);
           case 'all':
           default:
             return (
-              payment.customerName.toLowerCase().includes(query) ||
-              payment.serviceName.toLowerCase().includes(query) ||
-              payment.managerName.toLowerCase().includes(query) ||
-              payment.createdAt.toLowerCase().includes(query)
+              payment.customerName?.toLowerCase().includes(term) ||
+              payment.serviceName?.toLowerCase().includes(term) ||
+              payment.managerName?.toLowerCase().includes(term) ||
+              payment.createdAt?.toLowerCase().includes(term)
             );
         }
       });
     }
 
-    setPayments(filteredPayments);
-    updatePagination(filteredPayments, 0);
+    return filtered;
+  };
+
+  const filteredPayments = getFilteredPayments();
+
+  // 탭 변경 핸들러
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    // filteredPayments가 자동으로 탭과 검색어에 따라 필터링됨
   };
 
   // 결제 상태 매핑
@@ -353,13 +362,9 @@ const CustomerPayment = () => {
         console.log('매핑된 결제 데이터:', paymentsData);
 
         setAllPayments(paymentsData);
-        setPayments(paymentsData);
-        updatePagination(paymentsData, 0);
       } else {
         console.log('응답 데이터가 비었거나 실패 응답');
         setAllPayments([]);
-        setPayments([]);
-        updatePagination([], 0);
       }
     } catch (err) {
       console.error('=== Payment fetch error ===');
@@ -411,11 +416,8 @@ const CustomerPayment = () => {
       }
 
       setAllPayments([]);
-      setPayments([]);
-      updatePagination([], 0);
     } finally {
       setLoading(false);
-      setIsSearching(false);
     }
   };
 
@@ -427,23 +429,6 @@ const CustomerPayment = () => {
       VIRTUAL_ACCOUNT: '가상계좌',
     };
     return methodMap[method] || method;
-  };
-
-  // 페이징 업데이트 함수
-  const updatePagination = (data, currentPage) => {
-    const pageSize = 10;
-    const totalElements = data.length;
-    const totalPages = Math.ceil(totalElements / pageSize);
-    const startIndex = currentPage * pageSize;
-    const endIndex = startIndex + pageSize;
-
-    setDisplayedPayments(data.slice(startIndex, endIndex));
-    setPagination({
-      page: currentPage,
-      size: pageSize,
-      totalElements: totalElements,
-      totalPages: totalPages,
-    });
   };
 
   // 통계 데이터 가져오기 (백엔드에 통계 API가 없으므로 클라이언트에서 계산)
@@ -529,101 +514,22 @@ const CustomerPayment = () => {
     }
   }, [allPayments]);
 
-  // 활성 탭이 변경되거나 데이터가 로드될 때 필터링 적용
-  useEffect(() => {
-    if (allPayments.length > 0) {
-      const selectedTab = tabs.find((tab) => tab.key === activeTab);
-      let filteredPayments = allPayments;
-
-      if (selectedTab && selectedTab.status !== null) {
-        filteredPayments = allPayments.filter(
-          (payment) => payment.status === selectedTab.status
-        );
-      }
-
-      setPayments(filteredPayments);
-      updatePagination(filteredPayments, 0);
-    }
-  }, [activeTab, allPayments]);
-
-  // 검색 핸들러 (현재는 클라이언트 사이드 필터링)
+  // 검색 핸들러 - 리뷰 관리와 동일한 방식
   const handleSearch = () => {
-    setIsSearching(true);
-
-    // 클라이언트 사이드 검색 (백엔드 검색 API가 없으므로)
-    setTimeout(() => {
-      let filteredPayments = allPayments;
-
-      // 현재 활성 탭 필터링 적용
-      const selectedTab = tabs.find((tab) => tab.key === activeTab);
-      if (selectedTab.status !== null) {
-        filteredPayments = filteredPayments.filter(
-          (payment) => payment.status === selectedTab.status
-        );
-      }
-
-      // 검색어 필터링
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        filteredPayments = filteredPayments.filter((payment) => {
-          switch (searchScope) {
-            case 'customerName':
-              return payment.customerName.toLowerCase().includes(query);
-            case 'serviceName':
-              return payment.serviceName.toLowerCase().includes(query);
-            case 'managerName':
-              return payment.managerName.toLowerCase().includes(query);
-            case 'paymentDate':
-              // 결제 날짜 부분 검색 (예: "2024", "2024-01", "01-15" 등)
-              return payment.createdAt.toLowerCase().includes(query);
-            case 'all':
-            default:
-              return (
-                payment.customerName.toLowerCase().includes(query) ||
-                payment.serviceName.toLowerCase().includes(query) ||
-                payment.managerName.toLowerCase().includes(query) ||
-                payment.createdAt.toLowerCase().includes(query)
-              );
-          }
-        });
-      }
-
-      setPayments(filteredPayments);
-      updatePagination(filteredPayments, 0);
-      setIsSearching(false);
-    }, 500);
+    // filteredPayments를 통해 자동으로 필터링됨
+    // 별도 처리 불필요
   };
 
-  // 검색 초기화
+  // 검색 초기화 - 리뷰 관리와 동일한 방식
   const handleClearSearch = () => {
-    setSearchQuery('');
-    setSearchScope('all');
-    setIsSearching(false);
-
-    // 현재 활성 탭에 맞게 필터링
-    const selectedTab = tabs.find((tab) => tab.key === activeTab);
-    let filteredPayments = allPayments;
-    if (selectedTab.status !== null) {
-      filteredPayments = allPayments.filter(
-        (payment) => payment.status === selectedTab.status
-      );
-    }
-
-    setPayments(filteredPayments);
-    updatePagination(filteredPayments, 0);
+    setSearchTerm('');
+    setSearchType('all');
   };
 
   // 엔터 키 검색
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSearch();
-    }
-  };
-
-  // 페이지 변경
-  const handlePageChange = (newPage) => {
-    if (newPage >= 0 && newPage < pagination.totalPages) {
-      updatePagination(payments, newPage);
     }
   };
 
@@ -658,7 +564,7 @@ const CustomerPayment = () => {
 
   // 검색 placeholder 텍스트 생성
   const getSearchPlaceholder = () => {
-    switch (searchScope) {
+    switch (searchType) {
       case 'customerName':
         return '고객명을 입력하세요';
       case 'serviceName':
@@ -789,8 +695,8 @@ const CustomerPayment = () => {
                 <div className="flex items-center space-x-3">
                   {/* 검색 범위 선택 */}
                   <select
-                    value={searchScope}
-                    onChange={(e) => setSearchScope(e.target.value)}
+                    value={searchType}
+                    onChange={(e) => setSearchType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="all">전체</option>
@@ -818,12 +724,11 @@ const CustomerPayment = () => {
                     </div>
                     <input
                       type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder={getSearchPlaceholder()}
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isSearching}
                     />
                   </div>
 
@@ -835,13 +740,38 @@ const CustomerPayment = () => {
                   </button>
                   <button
                     onClick={handleSearch}
-                    disabled={isSearching}
                     className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
-                    {isSearching ? '검색 중...' : '검색'}
+                    검색
                   </button>
                 </div>
               </div>
+
+              {/* 페이지네이션 및 결과 정보 */}
+              {!loading && filteredPayments.length > 0 && (
+                <div className="mt-6 flex items-center justify-between">
+                  <div className="text-sm text-gray-700">
+                    {searchTerm || activeTab !== '전체' ? (
+                      <>
+                        검색 결과:{' '}
+                        <span className="font-medium">
+                          {filteredPayments.length}
+                        </span>
+                        개{searchTerm && ` (검색어: "${searchTerm}")`}
+                        {activeTab !== '전체' && ` (탭: ${activeTab})`}
+                      </>
+                    ) : (
+                      <>
+                        총{' '}
+                        <span className="font-medium">
+                          {allPayments.length}
+                        </span>
+                        개 결제 내역
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* 로딩 및 에러 상태 */}
               {loading && (
@@ -890,7 +820,6 @@ const CustomerPayment = () => {
                       </svg>
                       <p className="font-medium">오류 발생</p>
                     </div>
-                    <p className="mt-2 text-sm text-red-600">{error}</p>
                     {authError && (
                       <button
                         onClick={() => window.location.reload()}
@@ -934,8 +863,8 @@ const CustomerPayment = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {displayedPayments.length > 0 ? (
-                          displayedPayments.map((payment) => (
+                        {filteredPayments.length > 0 ? (
+                          filteredPayments.map((payment) => (
                             <tr key={payment.id} className="hover:bg-gray-50">
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
                                 #{payment.id}
@@ -1033,7 +962,7 @@ const CustomerPayment = () => {
                               colSpan="7"
                               className="px-6 py-12 text-center text-gray-500"
                             >
-                              {searchQuery
+                              {searchTerm
                                 ? '검색 결과가 없습니다.'
                                 : '결제 데이터가 없습니다.'}
                             </td>
@@ -1042,46 +971,6 @@ const CustomerPayment = () => {
                       </tbody>
                     </table>
                   </div>
-
-                  {/* 페이지네이션 */}
-                  {pagination.totalPages > 1 && (
-                    <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
-                      <div className="text-sm text-gray-700">
-                        총 {pagination.totalElements}건 중{' '}
-                        {pagination.page * pagination.size + 1}-
-                        {Math.min(
-                          (pagination.page + 1) * pagination.size,
-                          pagination.totalElements
-                        )}
-                        건 표시
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
-                          onClick={() => handlePageChange(pagination.page - 1)}
-                          disabled={pagination.page === 0 || loading}
-                        >
-                          ‹
-                        </button>
-                        <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
-                          {pagination.page + 1}
-                        </span>
-                        <span className="px-3 py-1 text-sm text-gray-500">
-                          / {pagination.totalPages}
-                        </span>
-                        <button
-                          className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
-                          onClick={() => handlePageChange(pagination.page + 1)}
-                          disabled={
-                            pagination.page >= pagination.totalPages - 1 ||
-                            loading
-                          }
-                        >
-                          ›
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </>
               )}
             </div>
