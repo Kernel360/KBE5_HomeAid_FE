@@ -70,82 +70,10 @@ const Statistics = () => {
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
   // API 호출 함수들
-  const fetchUserStats = async (year) => {
+  const fetchUserStats = async (year, month) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(
-        `/api/v1/admin/statistics/users?year=${year}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      }
-      return null;
-    } catch (err) {
-      console.error('Failed to fetch user stats:', err);
-      return null;
-    }
-  };
-
-  const fetchSettlementStats = async (year) => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(
-        `/api/v1/admin/statistics/settlements?year=${year}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      }
-      return null;
-    } catch (err) {
-      console.error('Failed to fetch settlement stats:', err);
-      return null;
-    }
-  };
-
-  const fetchPaymentStats = async (year) => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(
-        `/api/v1/admin/statistics/payments?year=${year}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      }
-      return null;
-    } catch (err) {
-      console.error('Failed to fetch payment stats:', err);
-      return null;
-    }
-  };
-
-  const fetchPaymentMethodStats = async (year, month) => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      const url = `/api/v1/admin/statistics/payments/methods?year=${year}&month=${month}`;
+      const url = `/api/v1/admin/statistics/users?year=${year}&month=${month}`;
 
       const response = await fetch(url, {
         headers: {
@@ -156,55 +84,136 @@ const Statistics = () => {
 
       if (response.ok) {
         const data = await response.json();
-        return data;
+        // CommonApiResponse 구조 처리
+        if (data && data.data) {
+          return data.data;
+        } else {
+          return data;
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('❌ User stats error:', {
+          status: response.status,
+          error: errorText,
+        });
       }
       return null;
     } catch (err) {
-      console.error('Failed to fetch payment method stats:', err);
+      console.error('💥 Failed to fetch user stats:', err);
       return null;
     }
   };
 
-  const fetchReservationStats = async (year) => {
+  const fetchSettlementStats = async (year, month) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(
-        `/api/v1/admin/statistics/reservations?year=${year}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const url = `/api/v1/admin/statistics/settlements?year=${year}&month=${month}`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
-        return data;
+        return data && data.data ? data.data : data;
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Settlement stats error:', {
+          status: response.status,
+          error: errorText,
+        });
       }
       return null;
     } catch (err) {
-      console.error('Failed to fetch reservation stats:', err);
+      console.error('💥 Failed to fetch settlement stats:', err);
       return null;
     }
   };
 
-  const fetchMatchingStats = async (year) => {
+  const fetchPaymentStats = async (year, month) => {
     try {
       const token = localStorage.getItem('accessToken');
+      const url = `/api/v1/admin/statistics/payments?year=${year}&month=${month}`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data && data.data ? data.data : data;
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Payment stats error:', {
+          status: response.status,
+          error: errorText,
+        });
+      }
+      return null;
+    } catch (err) {
+      console.error('💥 Failed to fetch payment stats:', err);
+      return null;
+    }
+  };
+
+  const fetchReservationStats = async (year, month) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const url = `/api/v1/admin/statistics/reservations?year=${year}&month=${month}`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data && data.data ? data.data : data;
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Reservation stats error:', {
+          status: response.status,
+          error: errorText,
+        });
+      }
+      return null;
+    } catch (err) {
+      console.error('💥 Failed to fetch reservation stats:', err);
+      return null;
+    }
+  };
+
+  const fetchMatchingStats = async (year, month) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+
       const [successResponse, failResponse] = await Promise.all([
-        fetch(`/api/v1/admin/statistics/matching/success?year=${year}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }),
-        fetch(`/api/v1/admin/statistics/matching/fail?year=${year}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }),
+        fetch(
+          `/api/v1/admin/statistics/matching/success?year=${year}&month=${month}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        ),
+        fetch(
+          `/api/v1/admin/statistics/matching/fail?year=${year}&month=${month}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        ),
       ]);
 
       const successData = successResponse.ok
@@ -213,11 +222,12 @@ const Statistics = () => {
       const failData = failResponse.ok ? await failResponse.json() : null;
 
       return {
-        success: successData,
-        fail: failData,
+        success:
+          successData && successData.data ? successData.data : successData,
+        fail: failData && failData.data ? failData.data : failData,
       };
     } catch (err) {
-      console.error('Failed to fetch matching stats:', err);
+      console.error('💥 Failed to fetch matching stats:', err);
       return null;
     }
   };
@@ -228,32 +238,36 @@ const Statistics = () => {
       setLoading(true);
       setError(null);
 
-      const [
-        users,
-        settlements,
-        payments,
-        paymentMethods,
-        reservations,
-        matching,
-      ] = await Promise.all([
-        fetchUserStats(selectedYear),
-        fetchSettlementStats(selectedYear),
-        fetchPaymentStats(selectedYear),
-        fetchPaymentMethodStats(selectedYear, selectedMonth),
-        fetchReservationStats(selectedYear),
-        fetchMatchingStats(selectedYear),
-      ]);
+      const [users, settlements, payments, reservations, matching] =
+        await Promise.all([
+          fetchUserStats(selectedYear, selectedMonth),
+          fetchSettlementStats(selectedYear, selectedMonth),
+          fetchPaymentStats(selectedYear, selectedMonth),
+          fetchReservationStats(selectedYear, selectedMonth),
+          fetchMatchingStats(selectedYear, selectedMonth),
+        ]);
 
-      setStats({
+      // 결제 수단 데이터는 월별 조회일 때만 payments 응답에 포함됨
+      const paymentMethods =
+        payments &&
+        (payments.card !== undefined ||
+          payments.transfer !== undefined ||
+          payments.cash !== undefined)
+          ? payments
+          : null;
+
+      const newStats = {
         users,
         settlements,
         payments,
-        paymentMethods,
+        paymentMethods, // 월별일 때만 결제 수단 데이터 있음
         reservations,
         matching,
-      });
+      };
+
+      setStats(newStats);
     } catch (err) {
-      console.error('Failed to load statistics:', err);
+      console.error('💥 Failed to load statistics:', err);
       setError('통계 데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -273,27 +287,35 @@ const Statistics = () => {
 
   // 숫자 포맷팅
   const formatNumber = (number) => {
-    if (!number) return '0';
-    return number.toLocaleString();
+    if (!number || isNaN(number) || !isFinite(number)) return '0';
+    return Number(number).toLocaleString();
   };
 
   // 퍼센트 포맷팅
   const formatPercent = (percent) => {
-    if (!percent) return '0%';
-    return `${percent.toFixed(1)}%`;
+    if (!percent || isNaN(percent) || !isFinite(percent)) return '0%';
+    return `${Number(percent).toFixed(1)}%`;
   };
 
   // 차트 데이터 생성 함수
   const getChartData = () => {
     if (!stats) return { values: [], max: 100, labels: [] };
 
+    // 안전한 숫자 변환 함수
+    const safeNumber = (value, defaultValue = 0) => {
+      const num = Number(value);
+      return isNaN(num) || !isFinite(num) ? defaultValue : num;
+    };
+
     switch (activeMainTab) {
       case '회원현황': {
         if (!stats.users) return { values: [], max: 100, labels: [] };
-        const totalUsers = stats.users.totalUsers;
-        const signupCount = stats.users.signupCount;
-        const withdrawCount = stats.users.withdrawCount;
-        const dormantCount = stats.users.dormantCount;
+        const totalUsers = safeNumber(stats.users.totalUsers, 100);
+        const signupCount = safeNumber(stats.users.signupCount, 0);
+        const withdrawCount = safeNumber(stats.users.withdrawCount, 0);
+        const inactiveUserCount = safeNumber(stats.users.inactiveUserCount, 0);
+
+        const maxValue = Math.max(totalUsers, 100);
 
         return {
           values: [
@@ -306,17 +328,19 @@ const Statistics = () => {
             totalUsers,
             totalUsers,
           ],
-          max: totalUsers * 1.2,
+          max: maxValue * 1.2,
           labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
           mainValue: totalUsers,
-          subValues: [signupCount, withdrawCount, dormantCount],
+          subValues: [signupCount, withdrawCount, inactiveUserCount],
         };
       }
 
       case '정산': {
         if (!stats.settlements) return { values: [], max: 100, labels: [] };
-        const requestedCount = stats.settlements.requestedCount;
-        const paidCount = stats.settlements.paidCount;
+        const requestedCount = safeNumber(stats.settlements.requestedCount, 0);
+        const paidCount = safeNumber(stats.settlements.paidCount, 0);
+
+        const maxValue = Math.max(requestedCount, 10);
 
         return {
           values: [
@@ -329,7 +353,7 @@ const Statistics = () => {
             paidCount * 0.95,
             paidCount,
           ],
-          max: requestedCount * 1.2,
+          max: maxValue * 1.2,
           labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
           mainValue: requestedCount,
           subValues: [paidCount, requestedCount - paidCount],
@@ -338,8 +362,10 @@ const Statistics = () => {
 
       case '결제': {
         if (!stats.payments) return { values: [], max: 100, labels: [] };
-        const totalAmount = stats.payments.totalAmount;
-        const cancelAmount = stats.payments.cancelAmount;
+        const totalAmount = safeNumber(stats.payments.totalAmount, 0);
+        const cancelAmount = safeNumber(stats.payments.cancelAmount, 0);
+
+        const maxValue = Math.max(totalAmount, 1000);
 
         return {
           values: [
@@ -352,7 +378,7 @@ const Statistics = () => {
             totalAmount * 0.95,
             totalAmount,
           ],
-          max: totalAmount * 1.2,
+          max: maxValue * 1.2,
           labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
           mainValue: totalAmount,
           subValues: [totalAmount - cancelAmount, cancelAmount],
@@ -362,9 +388,11 @@ const Statistics = () => {
       case '매칭': {
         if (!stats.matching?.success || !stats.matching?.fail)
           return { values: [], max: 100, labels: [] };
-        const successCount = stats.matching.success.successCount;
-        const failCount = stats.matching.fail.failCount;
+        const successCount = safeNumber(stats.matching.success.successCount, 0);
+        const failCount = safeNumber(stats.matching.fail.failCount, 0);
         const totalMatching = successCount + failCount;
+
+        const maxValue = Math.max(totalMatching, 10);
 
         return {
           values: [
@@ -377,7 +405,7 @@ const Statistics = () => {
             totalMatching * 0.95,
             totalMatching,
           ],
-          max: totalMatching * 1.2,
+          max: maxValue * 1.2,
           labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
           mainValue: totalMatching,
           subValues: [successCount, failCount],
@@ -386,8 +414,16 @@ const Statistics = () => {
 
       case '예약': {
         if (!stats.reservations) return { values: [], max: 100, labels: [] };
-        const reservationCount = stats.reservations.reservationCount;
-        const avgProcessingMinutes = stats.reservations.avgProcessingMinutes;
+        const reservationCount = safeNumber(
+          stats.reservations.reservationCount,
+          0
+        );
+        const avgProcessingMinutes = safeNumber(
+          stats.reservations.avgProcessingMinutes,
+          0
+        );
+
+        const maxValue = Math.max(reservationCount, 10);
 
         return {
           values: [
@@ -400,7 +436,7 @@ const Statistics = () => {
             reservationCount * 0.95,
             reservationCount,
           ],
-          max: reservationCount * 1.2,
+          max: maxValue * 1.2,
           labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
           mainValue: reservationCount,
           subValues: [avgProcessingMinutes, Math.round(reservationCount / 365)],
@@ -414,7 +450,7 @@ const Statistics = () => {
 
   // SVG 좌표 계산 함수
   const generateChartPath = (values, max) => {
-    if (!values.length) return '';
+    if (!values || !values.length || !max || max <= 0) return '';
 
     const width = 700; // SVG 내부 차트 영역 너비
     const height = 160; // SVG 내부 차트 영역 높이
@@ -423,9 +459,19 @@ const Statistics = () => {
 
     return values
       .map((value, index) => {
+        // 안전한 숫자 변환
+        const safeValue = isNaN(value) || !isFinite(value) ? 0 : Number(value);
+        const safeMax =
+          isNaN(max) || !isFinite(max) || max <= 0 ? 100 : Number(max);
+
         const x = padding + index * stepX;
-        const y = height - (value / max) * height + 40; // 40은 상단 패딩
-        return `${index === 0 ? 'M' : 'L'}${x},${y}`;
+        const y = height - (safeValue / safeMax) * height + 40; // 40은 상단 패딩
+
+        // 좌표가 유효한 숫자인지 확인
+        const safeX = isNaN(x) || !isFinite(x) ? padding : x;
+        const safeY = isNaN(y) || !isFinite(y) ? height + 40 : y;
+
+        return `${index === 0 ? 'M' : 'L'}${safeX},${safeY}`;
       })
       .join(' ');
   };
@@ -455,7 +501,7 @@ const Statistics = () => {
           {
             title: '신규 가입자',
             value: stats.users ? formatNumber(stats.users.signupCount) : '0',
-            subValue: `${selectedYear}년`,
+            subValue: `${selectedYear}년 ${selectedMonth}월`,
             icon: (
               <svg
                 className="w-5 h-5 text-green-600"
@@ -475,7 +521,7 @@ const Statistics = () => {
             title: '탈퇴율',
             value: stats.users ? formatPercent(stats.users.withdrawRate) : '0%',
             subValue: stats.users
-              ? `탈퇴: ${formatNumber(stats.users.withdrawCount)}명`
+              ? `${selectedYear}년 ${selectedMonth}월\n탈퇴: ${formatNumber(stats.users.withdrawCount)}명`
               : '',
             icon: (
               <svg
@@ -494,9 +540,11 @@ const Statistics = () => {
           },
           {
             title: '휴면 회원',
-            value: stats.users ? formatNumber(stats.users.dormantCount) : '0',
+            value: stats.users
+              ? formatNumber(stats.users.inactiveUserCount || 0)
+              : '0',
             subValue: stats.users
-              ? `비활성: ${formatNumber(stats.users.inactiveUserCount)}명`
+              ? `${selectedYear}년 ${selectedMonth}월\n비활성 회원`
               : '',
             icon: (
               <svg
@@ -522,7 +570,7 @@ const Statistics = () => {
             value: stats.settlements
               ? formatNumber(stats.settlements.requestedCount)
               : '0',
-            subValue: `${selectedYear}년`,
+            subValue: `${selectedYear}년 ${selectedMonth}월`,
             icon: (
               <svg
                 className="w-5 h-5 text-blue-600"
@@ -544,7 +592,7 @@ const Statistics = () => {
             value: stats.settlements
               ? formatNumber(stats.settlements.paidCount)
               : '0',
-            subValue: `${selectedYear}년`,
+            subValue: `${selectedYear}년 ${selectedMonth}월`,
             icon: (
               <svg
                 className="w-5 h-5 text-green-600"
@@ -591,12 +639,10 @@ const Statistics = () => {
             value: stats.reservations
               ? formatNumber(stats.reservations.reservationCount)
               : '0',
-            subValue: stats.reservations
-              ? `평균 처리: ${stats.reservations.avgProcessingMinutes.toFixed(1)}분`
-              : '',
+            subValue: `${selectedYear}년 ${selectedMonth}월`,
             icon: (
               <svg
-                className="w-5 h-5 text-indigo-600"
+                className="w-5 h-5 text-blue-600"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -607,62 +653,16 @@ const Statistics = () => {
                 />
               </svg>
             ),
-            iconBg: 'bg-indigo-100',
+            iconBg: 'bg-blue-100',
           },
         ];
 
-      case '결제':
-        return [
+      case '결제': {
+        const basePaymentCards = [
           {
             title: '총 결제 금액',
             value: stats.payments
               ? formatCurrency(stats.payments.totalAmount)
-              : '₩0',
-            subValue: `${selectedYear}년`,
-            icon: (
-              <svg
-                className="w-5 h-5 text-green-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            ),
-            iconBg: 'bg-green-100',
-          },
-          {
-            title: '취소 금액',
-            value: stats.payments
-              ? formatCurrency(stats.payments.cancelAmount)
-              : '₩0',
-            subValue:
-              stats.payments && stats.payments.totalAmount > 0
-                ? `취소율: ${formatPercent((stats.payments.cancelAmount / stats.payments.totalAmount) * 100)}`
-                : '취소율: 0%',
-            icon: (
-              <svg
-                className="w-5 h-5 text-red-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            ),
-            iconBg: 'bg-red-100',
-          },
-          {
-            title: '카드 결제',
-            value: stats.paymentMethods
-              ? formatCurrency(stats.paymentMethods.card || 0)
               : '₩0',
             subValue: `${selectedYear}년 ${selectedMonth}월`,
             icon: (
@@ -671,49 +671,6 @@ const Statistics = () => {
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            ),
-            iconBg: 'bg-blue-100',
-          },
-          {
-            title: '계좌이체',
-            value: stats.paymentMethods
-              ? formatCurrency(stats.paymentMethods.transfer || 0)
-              : '₩0',
-            subValue: `${selectedYear}년 ${selectedMonth}월`,
-            icon: (
-              <svg
-                className="w-5 h-5 text-purple-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-                <path
-                  fillRule="evenodd"
-                  d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            ),
-            iconBg: 'bg-purple-100',
-          },
-          {
-            title: '현금 결제',
-            value: stats.paymentMethods
-              ? formatCurrency(stats.paymentMethods.cash || 0)
-              : '₩0',
-            subValue: `${selectedYear}년 ${selectedMonth}월`,
-            icon: (
-              <svg
-                className="w-5 h-5 text-yellow-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
                 <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
                 <path
                   fillRule="evenodd"
@@ -722,9 +679,89 @@ const Statistics = () => {
                 />
               </svg>
             ),
-            iconBg: 'bg-yellow-100',
+            iconBg: 'bg-blue-100',
+          },
+          {
+            title: '취소 금액',
+            value: stats.payments
+              ? formatCurrency(stats.payments.cancelAmount)
+              : '₩0',
+            subValue: `${selectedYear}년 ${selectedMonth}월`,
+            icon: (
+              <svg
+                className="w-5 h-5 text-red-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            ),
+            iconBg: 'bg-red-100',
           },
         ];
+
+        // 결제 수단별 카드 추가 (월별 조회일 때만)
+        if (stats.paymentMethods) {
+          basePaymentCards.push(
+            {
+              title: '카드 결제',
+              value: formatCurrency(stats.paymentMethods.card || 0),
+              subValue: `${selectedYear}년 ${selectedMonth}월`,
+              icon: (
+                <svg
+                  className="w-5 h-5 text-indigo-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" />
+                </svg>
+              ),
+              iconBg: 'bg-indigo-100',
+            },
+            {
+              title: '계좌이체',
+              value: formatCurrency(stats.paymentMethods.transfer || 0),
+              subValue: `${selectedYear}년 ${selectedMonth}월`,
+              icon: (
+                <svg
+                  className="w-5 h-5 text-purple-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 6a2 2 0 104 0 2 2 0 00-4 0zm8 0a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              ),
+              iconBg: 'bg-purple-100',
+            },
+            {
+              title: '현금 결제',
+              value: formatCurrency(stats.paymentMethods.cash || 0),
+              subValue: `${selectedYear}년 ${selectedMonth}월`,
+              icon: (
+                <svg
+                  className="w-5 h-5 text-green-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              ),
+              iconBg: 'bg-green-100',
+            }
+          );
+        }
+
+        return basePaymentCards;
+      }
 
       case '매칭':
         return [
@@ -733,7 +770,7 @@ const Statistics = () => {
             value: stats.matching?.success
               ? formatNumber(stats.matching.success.successCount)
               : '0',
-            subValue: `${selectedYear}년`,
+            subValue: `${selectedYear}년 ${selectedMonth}월`,
             icon: (
               <svg
                 className="w-5 h-5 text-green-600"
@@ -754,7 +791,7 @@ const Statistics = () => {
             value: stats.matching?.fail
               ? formatNumber(stats.matching.fail.failCount)
               : '0',
-            subValue: `${selectedYear}년`,
+            subValue: `${selectedYear}년 ${selectedMonth}월`,
             icon: (
               <svg
                 className="w-5 h-5 text-red-600"
@@ -946,26 +983,22 @@ const Statistics = () => {
                 </select>
               </div>
 
-              {/* Month Selector (for payment methods) */}
-              {activeMainTab === '결제' && (
-                <div className="flex items-center space-x-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    월:
-                  </label>
-                  <select
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={loading}
-                  >
-                    {months.map((month) => (
-                      <option key={month} value={month}>
-                        {month}월
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {/* Month Selector (for all tabs) */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-gray-700">월:</label>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
+                >
+                  {months.map((month) => (
+                    <option key={month} value={month}>
+                      {month}월
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               {/* Refresh Button */}
               <button
@@ -1166,14 +1199,29 @@ const Statistics = () => {
 
                             {/* Data points */}
                             {values.map((value, index) => {
+                              // 안전한 좌표 계산
+                              const safeValue =
+                                isNaN(value) || !isFinite(value)
+                                  ? 0
+                                  : Number(value);
+                              const safeMax =
+                                isNaN(max) || !isFinite(max) || max <= 0
+                                  ? 100
+                                  : Number(max);
+
                               const x =
                                 50 + index * (700 / (values.length - 1));
-                              const y = 160 - (value / max) * 160 + 40;
+                              const y = 160 - (safeValue / safeMax) * 160 + 40;
+
+                              // 좌표가 유효한 숫자인지 확인
+                              const safeX = isNaN(x) || !isFinite(x) ? 50 : x;
+                              const safeY = isNaN(y) || !isFinite(y) ? 200 : y;
+
                               return (
                                 <circle
                                   key={index}
-                                  cx={x}
-                                  cy={y}
+                                  cx={safeX}
+                                  cy={safeY}
                                   r="4"
                                   fill="#3B82F6"
                                   stroke="white"
@@ -1225,7 +1273,8 @@ const Statistics = () => {
                             <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
                             <span>휴면 회원</span>
                             <span className="ml-2 font-semibold text-yellow-600">
-                              {formatNumber(stats.users.dormantCount)}명
+                              {formatNumber(stats.users.inactiveUserCount || 0)}
+                              명
                             </span>
                           </div>
                         </>
@@ -1402,14 +1451,14 @@ const Statistics = () => {
                               <div
                                 className="bg-blue-500 h-4 rounded-full"
                                 style={{
-                                  width: `${((stats.users.totalUsers - stats.users.dormantCount) / stats.users.totalUsers) * 100}%`,
+                                  width: `${((stats.users.totalUsers - (stats.users.inactiveUserCount || 0)) / stats.users.totalUsers) * 100}%`,
                                 }}
                               ></div>
                             </div>
                             <div className="w-12 sm:w-16 text-sm text-gray-900 font-medium">
                               {formatPercent(
                                 ((stats.users.totalUsers -
-                                  stats.users.dormantCount) /
+                                  (stats.users.inactiveUserCount || 0)) /
                                   stats.users.totalUsers) *
                                   100
                               )}
@@ -1423,13 +1472,13 @@ const Statistics = () => {
                               <div
                                 className="bg-yellow-500 h-4 rounded-full"
                                 style={{
-                                  width: `${(stats.users.dormantCount / stats.users.totalUsers) * 100}%`,
+                                  width: `${((stats.users.inactiveUserCount || 0) / stats.users.totalUsers) * 100}%`,
                                 }}
                               ></div>
                             </div>
                             <div className="w-12 sm:w-16 text-sm text-gray-900 font-medium">
                               {formatPercent(
-                                (stats.users.dormantCount /
+                                ((stats.users.inactiveUserCount || 0) /
                                   stats.users.totalUsers) *
                                   100
                               )}
