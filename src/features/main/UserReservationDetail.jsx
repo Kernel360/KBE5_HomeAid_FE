@@ -68,34 +68,14 @@ const UserReservationDetail = () => {
             ),
             price: backendReservation.totalPrice || getServicePrice(null, 1, '청소', backendReservation),
 
-            // ⭐️ 백엔드 DTO에 맞게 주소 처리: address와 addressDetail을 합쳐서 표시
+            // ⭐️ address와 addressDetail을 모두 받아와서 조합
             address: (() => {
-              // 1. 백엔드에서 받은 주소 정보 확인
-              const backendAddress = backendReservation.address;
-              const backendAddressDetail = backendReservation.addressDetail;
-              
-              // 2. URL state에서 전달받은 주소 정보 확인 (예약 목록에서 넘어온 경우)
-              const stateAddress = location.state?.reservation?.address;
-              const stateAddressDetail = location.state?.reservation?.addressDetail;
-              
-              // 3. 우선순위: 백엔드 주소 > URL state 주소 > 기본값
-              const mainAddress = backendAddress || stateAddress || '주소 정보 없음';
-              const detailAddress = backendAddressDetail || stateAddressDetail || '';
-              
-              const fullAddress = detailAddress ? `${mainAddress} ${detailAddress}` : mainAddress;
-              
-              // ⭐️ 디버깅: 주소 조합 결과 확인
-              console.log('🔗 주소 조합 결과:', {
-                backendAddress,
-                backendAddressDetail,
-                stateAddress,
-                stateAddressDetail,
-                mainAddress,
-                detailAddress,
-                fullAddress,
-              });
-              
-              return fullAddress;
+              const mainAddress = backendReservation.address || location.state?.reservation?.address || '';
+              const detailAddress = backendReservation.addressDetail || location.state?.reservation?.addressDetail || '';
+              if (mainAddress && detailAddress) return `${mainAddress} ${detailAddress}`;
+              if (mainAddress) return mainAddress;
+              if (detailAddress) return detailAddress;
+              return '주소 정보 없음';
             })(),
             addressDetail: '', // 상세 주소는 별도로 표시하지 않음
 
