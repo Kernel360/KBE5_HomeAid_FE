@@ -95,11 +95,23 @@ const apiCall = async (url, options = {}) => {
 
   const result = await response.json();
 
+  // ⭐️ 디버깅: 백엔드 응답 구조 확인
+  console.log('🔍 API 응답 원본:', result);
+  console.log('🔍 API 응답 구조:', {
+    hasData: 'data' in result,
+    hasSuccess: 'success' in result,
+    hasCode: 'code' in result,
+    dataType: typeof result.data,
+    resultKeys: Object.keys(result),
+  });
+
   // Spring Boot CommonApiResponse 구조 처리
   if (result && typeof result === 'object' && 'data' in result) {
+    console.log('✅ data 필드 추출:', result.data);
     return result.data;
   }
 
+  console.log('⚠️ data 필드 없음, 전체 응답 반환:', result);
   return result;
 };
 
@@ -275,8 +287,7 @@ export const createCustomerReservation = async (reservationData) => {
         (reservationData.reservationTime
           ? `${reservationData.reservationTime}:00`
           : undefined), // LocalTime (HH:mm:ss)
-      subOptionId: Number(reservationData.subOptionId) || 2, // Long으로 변환
-      totalPrice: reservationData.totalPrice || 0, // Integer
+      optionId: reservationData.optionId || 1, // ⭐️ optionId 필드 추가
       totalDuration: reservationData.totalDuration || 0, // Integer
       customerMemo: reservationData.customerMemo || '', // String
       latitude: reservationData.latitude
@@ -286,12 +297,6 @@ export const createCustomerReservation = async (reservationData) => {
         ? Number(reservationData.longitude)
         : null, // Double로 변환
     };
-
-    // 위도/경도가 있는 경우 추가 (Google Maps 선택 시)
-    if (reservationData.latitude && reservationData.longitude) {
-      springBootData.latitude = Number(reservationData.latitude);
-      springBootData.longitude = Number(reservationData.longitude);
-    }
 
     // 기존 주소 ID가 있는 경우 추가 (저장된 주소 선택 시)
     if (
@@ -329,9 +334,7 @@ export const createCustomerReservation = async (reservationData) => {
     if (!springBootData.requestedTime) {
       throw new Error('예약 시간이 필요합니다.');
     }
-    if (!springBootData.subOptionId) {
-      throw new Error('서비스 옵션이 필요합니다.');
-    }
+ 
 
     // 위치 정보 검증 (위도/경도 또는 주소 중 하나는 있어야 함)
     const hasCoordinates = springBootData.latitude && springBootData.longitude;
