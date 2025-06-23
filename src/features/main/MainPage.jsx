@@ -8,7 +8,7 @@ import { memo } from 'react';
 // 메인 페이지 컴포넌트
 const MainPage = memo(() => {
   console.log('🟣 MainPage 렌더링됨', new Date().toLocaleTimeString());
-  
+
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
@@ -23,7 +23,7 @@ const MainPage = memo(() => {
       } else if (user.role === 'ROLE_MANAGER') {
         navigate('/manager/mypage');
       } else if (user.role === 'ROLE_ADMIN') {
-        navigate('/admin');
+        navigate('/admin/dashboard');
       }
     } else {
       // 비로그인 사용자는 로그인 페이지로 이동
@@ -61,87 +61,64 @@ const MainPage = memo(() => {
             </h1>
           </div>
 
-          {/* 슬라이드쇼 배너 - 별도 컴포넌트로 분리 */}
-          <SlideShow />
-
-          {/* 서비스 바로가기 버튼들 */}
-          <div className="mb-8">
-            {/* 비로그인 사용자와 고객을 위한 안내 텍스트 */}
-            {(!user || user?.role === 'ROLE_CUSTOMER') && (
-              <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
-                서비스를 선택해주세요
-              </h3>
-            )}
-
-            {/* 매니저가 아닌 경우에만 서비스 버튼들 표시 */}
-            {user?.role !== 'ROLE_MANAGER' && (
-              <div className="grid grid-cols-3 gap-4">
-                <button
-                  onClick={() => handleServiceClick('/customer/service-option')}
-                  className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
+          {/* 슬라이드쇼 배너 */}
+          <div className="relative mb-8 overflow-hidden rounded-3xl">
+            <div
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {slides.map((slide, index) => (
+                <div
+                  key={slide.id}
+                  className={`w-full flex-shrink-0 relative bg-gradient-to-r ${slide.bgGradient} rounded-3xl p-8 text-white overflow-hidden`}
                 >
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
-                    🧹
+                  {/* 슬라이드 인디케이터 */}
+                  <div className="absolute top-4 right-4 text-white/20">
+                    <div className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                      {index + 1} / {slides.length}
+                    </div>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    청소
-                  </span>
-                </button>
 
-                <button
-                  onClick={() => handleServiceClick('/customer/service-option')}
-                  className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
-                >
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-2">
-                    👕
+                  {/* 아이콘 */}
+                  <div className="absolute top-6 right-12">
+                    <div
+                      className={`w-16 h-16 ${slide.iconBg} rounded-full flex items-center justify-center transform rotate-12`}
+                    >
+                      <div
+                        className={`w-8 h-8 ${slide.iconInnerBg} rounded-full`}
+                      ></div>
+                    </div>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    빨래
-                  </span>
-                </button>
 
-                <button
-                  onClick={() => handleServiceClick('/customer/service-option')}
-                  className="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-shadow duration-200"
-                >
-                  <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-2">
-                    👶
+                  <div className="relative z-10">
+                    <p className="text-sm font-medium mb-2 opacity-90">
+                      {slide.badge}
+                    </p>
+                    <h2 className="text-2xl font-bold mb-4 leading-tight">
+                      {slide.title}
+                      <br />
+                      {slide.subtitle}
+                    </h2>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    육아
-                  </span>
-                </button>
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
 
-            {/* 로그인된 고객 사용자를 위한 추가 메뉴 */}
-            {/* TODO: 예약내역과 마이페이지 버튼 기능 구현 예정 */}
-            {/* {user && user.role === 'ROLE_CUSTOMER' && (
-              <div className="mt-6 grid grid-cols-2 gap-4">
+            {/* 슬라이드 점 인디케이터 */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1">
+              {slides.map((_, index) => (
                 <button
-                  onClick={() => navigate('/customer/reservations')}
-                  className="flex items-center justify-center p-4 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors duration-200"
-                >
-                  <span className="text-sm font-medium text-blue-700">
-                    예약 내역
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => navigate('/customer/mypage')}
-                  className="flex items-center justify-center p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <span className="text-sm font-medium text-gray-700">
-                    마이페이지
-                  </span>
-                </button>
-              </div>
-            )} */}
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                    currentSlide === index ? 'bg-white' : 'bg-white/50'
+                  }`}
+                ></button>
+              ))}
+            </div>
           </div>
         </main>
-
-        {/* 로그인된 사용자에게만 Footer 표시 */}
-        {user && <Footer current="/" />}
+        <Footer />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
@@ -20,11 +20,7 @@ const InquiryDetail = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`/api/v1/boards/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        });
+        const response = await api.get(`/boards/${id}`);
         setInquiry(response.data.data);
         setEditedTitle(response.data.data.title);
         setEditedContent(response.data.data.content);
@@ -49,16 +45,11 @@ const InquiryDetail = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.put(
-        `/api/v1/boards/${id}`,
+      const response = await api.put(
+        `/boards/${id}`,
         {
           title: editedTitle,
           content: editedContent,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
         }
       );
       setInquiry(response.data.data);
@@ -77,11 +68,7 @@ const InquiryDetail = () => {
       setLoading(true);
       setError(null);
       try {
-        await axios.delete(`/api/v1/boards/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        });
+        await api.delete(`/boards/${id}`);
         alert('문의글이 삭제되었습니다.');
         navigate('/manager/mypage/inquiry');
       } catch (err) {

@@ -14,7 +14,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   // 권한이 필요한 경우
   if (allowedRoles && allowedRoles.length > 0) {
     const hasRequiredRole = allowedRoles.includes(user.role);
-    
+
     if (!hasRequiredRole) {
       // 권한이 없는 경우 해당 역할의 기본 페이지로 리다이렉트
       switch (user.role) {
@@ -23,7 +23,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         case 'ROLE_MANAGER':
           return <Navigate to="/manager/mypage" replace />;
         case 'ROLE_ADMIN':
-          return <Navigate to="/admin" replace />;
+          return <Navigate to="/admin/dashboard" replace />;
         default:
           return <Navigate to="/403" replace />;
       }

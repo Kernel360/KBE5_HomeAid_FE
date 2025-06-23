@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
-import axios from 'axios';
+import { api } from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
@@ -22,11 +22,7 @@ const InquiryDetail = ({
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`/api/v1/boards/${boardId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        });
+        const response = await api.get(`/boards/${boardId}`);
         setInquiry(response.data.data);
         setEditedTitle(response.data.data.title);
         setEditedContent(response.data.data.content);
@@ -47,16 +43,11 @@ const InquiryDetail = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.put(
-        `/api/v1/boards/${boardId}`,
+      const response = await api.put(
+        `/boards/${boardId}`,
         {
           title: editedTitle,
           content: editedContent,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
         }
       );
       setInquiry(response.data.data);
@@ -77,11 +68,7 @@ const InquiryDetail = ({
       setLoading(true);
       setError(null);
       try {
-        await axios.delete(`/api/v1/boards/${boardId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        });
+        await api.delete(`/boards/${boardId}`);
         alert('문의글이 삭제되었습니다.');
         if (onInquiryDeleted) {
           onInquiryDeleted();

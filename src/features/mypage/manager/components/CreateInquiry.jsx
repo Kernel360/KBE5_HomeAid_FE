@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
@@ -21,18 +21,10 @@ const CreateInquiry = () => {
     setError(null);
 
     try {
-      await axios.post(
-        '/api/v1/boards',
-        {
-          title,
-          content,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        }
-      );
+      await api.post('/boards', {
+        title,
+        content,
+      });
       navigate('/manager/mypage/inquiry');
     } catch (err) {
       setError('문의글 작성에 실패했습니다.');

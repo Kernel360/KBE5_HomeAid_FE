@@ -16,6 +16,22 @@ const SignInPage = () => {
   const navigate = useNavigate();
   const { setUser, setAccessToken, logout } = useAuthStore();
 
+  const formatPhoneNumber = (value) => {
+    if (!value) return '';
+    const phoneNumber = value.replace(/[^0-9]/g, '');
+    let result = '';
+    if (phoneNumber.length < 4) {
+      result = phoneNumber;
+    } else if (phoneNumber.length < 7) {
+      result = `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3)}`;
+    } else if (phoneNumber.length < 11) {
+      result = `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7)}`;
+    } else {
+      result = `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7, 11)}`;
+    }
+    return result;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -31,7 +47,6 @@ const SignInPage = () => {
 
       // localStorage에서 토큰 꺼내 zustand에도 저장
       const token = localStorage.getItem('accessToken');
-
       // Zustand store에 사용자 정보와 토큰 저장
       setUser(data);
       setAccessToken(token);
@@ -42,7 +57,7 @@ const SignInPage = () => {
       if (data.role === 'ROLE_CUSTOMER') {
         navigate('/customer/service-option', { replace: true });
       } else if (data.role === 'ROLE_ADMIN') {
-        navigate('/admin', { replace: true });
+        navigate('/admin/dashboard', { replace: true });
       } else if (data.role === 'ROLE_MANAGER') {
         navigate('/matching/list', { replace: true }); // 매니저는 매칭내역 페이지로 이동
       } else {
@@ -132,7 +147,7 @@ const SignInPage = () => {
                   type="text"
                   placeholder="휴대폰 번호를 입력해 주세요."
                   value={phone}
-                  onChange={(e) => setphone(e.target.value)}
+                  onChange={(e) => setphone(formatPhoneNumber(e.target.value))}
                   required
                   style={{
                     width: 'calc(100% - 26px)',

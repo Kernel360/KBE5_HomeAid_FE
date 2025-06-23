@@ -44,9 +44,7 @@ const MyProfile = ({ onBack }) => {
   // 백엔드에서 받은 전화번호에 하이픈 추가하는 함수
   const addHyphensToPhone = (phone) => {
     if (!phone) return '';
-    // 이미 하이픈이 있으면 그대로 반환
     if (phone.includes('-')) return phone;
-    // 숫자만 있으면 하이픈 추가
     return formatPhoneNumber(phone);
   };
 
@@ -56,7 +54,6 @@ const MyProfile = ({ onBack }) => {
       try {
         const res = await apiService.user.getMyProfile();
         const data = res.data?.data || res.data;
-        console.log('프로필 응답:', data); // profileImageUrl 값 콘솔 출력
         setFormData({
           name: data.name || '',
           email: data.email || '',
@@ -77,10 +74,7 @@ const MyProfile = ({ onBack }) => {
 
   // 전화번호 포맷팅 함수
   const formatPhoneNumber = (value) => {
-    // 숫자만 추출
     const numbers = value.replace(/[^\d]/g, '');
-
-    // 길이에 따른 포맷팅
     if (numbers.length <= 3) {
       return numbers;
     } else if (numbers.length <= 7) {
@@ -88,7 +82,6 @@ const MyProfile = ({ onBack }) => {
     } else if (numbers.length <= 11) {
       return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
     } else {
-      // 11자리 초과시 11자리까지만 사용
       return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
     }
   };
@@ -96,36 +89,30 @@ const MyProfile = ({ onBack }) => {
   // 입력 필드 변경 핸들러
   const handleInputChange = (field, value) => {
     let formattedValue = value;
-
-    // 전화번호 필드인 경우 자동 포맷팅
     if (field === 'phone') {
       formattedValue = formatPhoneNumber(value);
     }
-
     setFormData((prev) => ({
       ...prev,
       [field]: formattedValue,
     }));
-    // 에러/성공 메시지 초기화
     setError('');
     setSuccess('');
   };
 
-  // 프로필 이미지 업로드/삭제 핸들러 (headers 옵션 없이 순수 FormData만 전달)
+  // 프로필 이미지 업로드/삭제 핸들러
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     try {
       setLoading(true);
       setError('');
-      // 중앙 정사각형 crop
       const croppedBlob = await cropToSquare(file);
-      const formData = new FormData();
-      formData.append('file', croppedBlob, file.name); // 파일명 유지
-      await apiService.user.uploadProfileImage(formData);
+      const formDataData = new FormData();
+      formDataData.append('file', croppedBlob, file.name);
+      await apiService.user.uploadProfileImage(formDataData);
       setSuccess('프로필 이미지가 업로드되었습니다.');
       setTimeout(() => setSuccess(''), 2000);
-      // 업로드 후 프로필 정보 새로고침
       const res = await apiService.user.getMyProfile();
       const data = res.data?.data || res.data;
       setFormData((prev) => ({ ...prev, profileImageUrl: data.profileImageUrl || '' }));
@@ -143,7 +130,6 @@ const MyProfile = ({ onBack }) => {
       await apiService.user.deleteProfileImage();
       setSuccess('프로필 이미지가 삭제되었습니다.');
       setTimeout(() => setSuccess(''), 2000);
-      // 삭제 후 프로필 정보 새로고침
       const res = await apiService.user.getMyProfile();
       const data = res.data?.data || res.data;
       setFormData((prev) => ({ ...prev, profileImageUrl: data.profileImageUrl || '' }));
@@ -173,7 +159,6 @@ const MyProfile = ({ onBack }) => {
         setError('올바른 이메일 형식을 입력해주세요.');
         return;
       }
-      // updateMyProfile로 변경
       await apiService.user.updateMyProfile({
         name: formData.name.trim(),
         email: formData.email.trim(),
@@ -200,7 +185,6 @@ const MyProfile = ({ onBack }) => {
     }
   };
 
-  // 회원탈퇴 버튼 클릭 핸들러
   const handleWithdrawal = () => {
     alert('관리자에게 문의 바랍니다.');
   };
@@ -272,15 +256,6 @@ const MyProfile = ({ onBack }) => {
           </div>
         )}
 
-        {/* 안내 메시지 */}
-        {/* <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl text-sm">
-          <p className="font-medium mb-1">📝 프로필 정보 수정</p>
-          <p>
-            이름과 이메일을 수정할 수 있습니다. 전화번호는 보안상의 이유로
-            수정이 제한됩니다.
-          </p>
-        </div> */}
-
         {/* 폼 입력 */}
         <div className="space-y-4">
           <div>
@@ -348,9 +323,6 @@ const MyProfile = ({ onBack }) => {
 
         {/* 추가 옵션 */}
         <div className="mt-8 pt-8 border-t border-gray-200">
-          {/* <button className="text-blue-600 text-sm mb-4 block">
-            비밀번호 변경
-          </button> */}
           <button
             onClick={handleWithdrawal}
             className="text-red-500 text-sm block"
@@ -360,9 +332,9 @@ const MyProfile = ({ onBack }) => {
         </div>
       </main>
 
-      <Footer current="/customer/mypage" />
+      <Footer current="/manager/mypage" />
     </div>
   );
 };
 
-export default MyProfile;
+export default MyProfile; 

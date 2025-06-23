@@ -95,11 +95,23 @@ const apiCall = async (url, options = {}) => {
 
   const result = await response.json();
 
+  // ⭐️ 디버깅: 백엔드 응답 구조 확인
+  console.log('🔍 API 응답 원본:', result);
+  console.log('🔍 API 응답 구조:', {
+    hasData: 'data' in result,
+    hasSuccess: 'success' in result,
+    hasCode: 'code' in result,
+    dataType: typeof result.data,
+    resultKeys: Object.keys(result),
+  });
+
   // Spring Boot CommonApiResponse 구조 처리
   if (result && typeof result === 'object' && 'data' in result) {
+    console.log('✅ data 필드 추출:', result.data);
     return result.data;
   }
 
+  console.log('⚠️ data 필드 없음, 전체 응답 반환:', result);
   return result;
 };
 
@@ -147,11 +159,11 @@ export const getCustomerServices = async () => {
 export const getCustomerAddresses = async () => {
   try {
     // ⭐️ URL 중복 수정: /api/v1 제거 (getBaseUrl에서 이미 추가됨)
-    const response = await apiCall('/customers/addresses');
+    const response = await api.get('/customers/addresses');
 
-    if (response && response.length > 0) {
+    if (response && response.data && response.data.length > 0) {
       // 백엔드 CustomerAddressResponseDto[]를 프론트엔드 형식으로 변환
-      const transformedAddresses = response.map((address, index) => {
+      const transformedAddresses = response.data.map((address, index) => {
         const transformed = {
           id: address.id,
           type: index === 0 ? '집' : index === 1 ? '회사' : '기타', // 임시 타입 할당
@@ -193,19 +205,16 @@ export const createCustomerAddress = async (addressData) => {
     };
 
     // ⭐️ URL 중복 수정: /api/v1 제거
-    const response = await apiCall('/customers/addresses', {
-      method: 'POST',
-      body: JSON.stringify(backendAddressData),
-    });
+    const response = await api.post('/customers/addresses', backendAddressData);
 
     // 백엔드 CustomerAddressResponseDto를 프론트엔드 형식으로 변환
     const transformedResponse = {
-      id: response.id,
+      id: response.data.id,
       type: '새 주소', // 기본 타입
-      main: response.address,
-      detail: response.addressDetail || '',
+      main: response.data.address,
+      detail: response.data.addressDetail || '',
       isDefault: false,
-      fullAddress: response.fullAddress,
+      fullAddress: response.data.fullAddress,
       // 위도/경도는 응답에서 제외되어 있지만 원본 데이터에서 가져옴
       coordinates: {
         lat: backendAddressData.latitude,
@@ -232,48 +241,36 @@ export const createCustomerAddress = async (addressData) => {
 
 // 주소 삭제
 export const deleteCustomerAddress = async (addressId) => {
-  return apiCall(`/customer/addresses/${addressId}`, {
-    method: 'DELETE',
-  });
+  const response = await api.delete(`/customer/addresses/${addressId}`);
+  return response.data;
 };
 
 // ==================== 예약 관련 API ====================
 
 // 고객의 예약 목록 조회 (페이징)
 export const getCustomerReservations = async (page = 0, size = 10) => {
-  return apiCall(`/reservations/customer?page=${page}&size=${size}`);
+  const response = await api.get(`/reservations/customer?page=${page}&size=${size}`);
+  return response.data;
 };
 
 // 예약에 매니저 할당 (단순화된 방식)
 export const assignManagerToReservation = async (reservationId, managerId) => {
   // 방법 1: 매니저 할당 전용 엔드포인트
   try {
-    const response = await apiCall(
-      `/reservations/${reservationId}/assign-manager`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ managerId: managerId }),
-      }
-    );
-    return response;
+    const response = await api.post(`/reservations/${reservationId}/assign-manager`, { managerId });
+    return response.data;
   } catch {
     // 방법 2: 예약 상태 업데이트와 함께 매니저 할당
     try {
-      const response = await apiCall(`/reservations/${reservationId}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          status: 'CONFIRMED',
-          managerId: managerId,
-        }),
+      const response = await api.patch(`/reservations/${reservationId}/status`, {
+        status: 'CONFIRMED',
+        managerId: managerId,
       });
-      return response;
+      return response.data;
     } catch {
       // 방법 3: 간단한 매니저 할당
-      const response = await apiCall(`/managers/${managerId}/assign`, {
-        method: 'POST',
-        body: JSON.stringify({ reservationId: reservationId }),
-      });
-      return response;
+      const response = await api.post(`/managers/${managerId}/assign`, { reservationId });
+      return response.data;
     }
   }
 };
@@ -290,8 +287,7 @@ export const createCustomerReservation = async (reservationData) => {
         (reservationData.reservationTime
           ? `${reservationData.reservationTime}:00`
           : undefined), // LocalTime (HH:mm:ss)
-      subOptionId: Number(reservationData.subOptionId) || 2, // Long으로 변환
-      totalPrice: reservationData.totalPrice || 0, // Integer
+      optionId: reservationData.optionId || 1, // ⭐️ optionId 필드 추가
       totalDuration: reservationData.totalDuration || 0, // Integer
       customerMemo: reservationData.customerMemo || '', // String
       latitude: reservationData.latitude
@@ -301,12 +297,6 @@ export const createCustomerReservation = async (reservationData) => {
         ? Number(reservationData.longitude)
         : null, // Double로 변환
     };
-
-    // 위도/경도가 있는 경우 추가 (Google Maps 선택 시)
-    if (reservationData.latitude && reservationData.longitude) {
-      springBootData.latitude = Number(reservationData.latitude);
-      springBootData.longitude = Number(reservationData.longitude);
-    }
 
     // 기존 주소 ID가 있는 경우 추가 (저장된 주소 선택 시)
     if (
@@ -344,9 +334,7 @@ export const createCustomerReservation = async (reservationData) => {
     if (!springBootData.requestedTime) {
       throw new Error('예약 시간이 필요합니다.');
     }
-    if (!springBootData.subOptionId) {
-      throw new Error('서비스 옵션이 필요합니다.');
-    }
+ 
 
     // 위치 정보 검증 (위도/경도 또는 주소 중 하나는 있어야 함)
     const hasCoordinates = springBootData.latitude && springBootData.longitude;
@@ -359,12 +347,9 @@ export const createCustomerReservation = async (reservationData) => {
       );
     }
 
-    const response = await apiCall('/reservations', {
-      method: 'POST',
-      body: JSON.stringify(springBootData),
-    });
+    const response = await api.post('/reservations', springBootData);
 
-    return response;
+    return response.data;
   } catch (error) {
     console.error('예약 생성 실패:', error);
 
@@ -411,33 +396,30 @@ export const createCustomerReservation = async (reservationData) => {
 
 // 예약 완료 조회
 export const getCustomerReservation = async (reservationId) => {
-  return apiCall(`/reservations/${reservationId}`);
+  return api.get(`/reservations/${reservationId}`);
 };
 
 // 예약 취소
 export const cancelCustomerReservation = async (reservationId) => {
-  return apiCall(`/reservations/${reservationId}/cancel`, {
-    method: 'POST',
-  });
+  return api.post(`/reservations/${reservationId}/cancel`, {});
 };
 
 // ==================== 매니저 관련 API ====================
 
 // 매니저 매칭 정보 조회
 export const getMatchedManagers = async (reservationId) => {
-  return apiCall(`/reservations/${reservationId}/matching`);
+  return api.get(`/reservations/${reservationId}/matching`);
 };
 
 // 매니저 상세 정보 조회
 export const getManagerProfile = async (managerId) => {
-  return apiCall(`/managers/${managerId}/profile`);
+  return api.get(`/managers/${managerId}/profile`);
 };
 
 // 매니저 메모 전달
 export const sendManagerMemo = async (reservationId, memoData) => {
-  return apiCall(`/customer/reservations/${reservationId}/memo`, {
-    method: 'PUT',
-    body: JSON.stringify(memoData),
+  return api.put(`/customer/reservations/${reservationId}/memo`, {
+    memo: memoData,
   });
 };
 
@@ -445,9 +427,9 @@ export const sendManagerMemo = async (reservationId, memoData) => {
 
 // 결제 요청
 export const requestPayment = async (reservationId, paymentData) => {
-  return apiCall(`/payments`, {
-    method: 'POST',
-    body: JSON.stringify(paymentData),
+  return api.post('/payments', {
+    reservationId: reservationId,
+    paymentData: paymentData,
   });
 };
 
@@ -487,51 +469,40 @@ export const handleApiError = (error) => {
 // 고객 서비스 API
 export const customerAPI = {
   // 서비스 목록 조회
-  getServices: () => apiCall('/services'),
+  getServices: () => api.get('/services'),
 
   // 서비스 세부 옵션 조회
-  getServiceOptions: (serviceId) => apiCall(`/services/${serviceId}/options`),
+  getServiceOptions: (serviceId) => api.get(`/services/${serviceId}/options`),
 
   // 서비스 추가 옵션 조회 (서브 옵션)
   getServiceSubOptions: (serviceId) =>
-    apiCall(`/services/${serviceId}/sub-options`),
+    api.get(`/services/${serviceId}/sub-options`),
 
   // 고객 주소 목록 조회
-  getCustomerAddresses: () => apiCall('/customer/addresses'),
+  getCustomerAddresses: () => api.get('/customer/addresses'),
 
   // 고객 주소 추가
   addCustomerAddress: (addressData) =>
-    apiCall('/customer/addresses', {
-      method: 'POST',
-      body: JSON.stringify(addressData),
-    }),
+    api.post('/customer/addresses', addressData),
 
   // 예약 생성 (Spring Boot 컨트롤러와 매칭)
   createReservation: (reservationData) =>
-    apiCall('/reservations', {
-      method: 'POST',
-      body: JSON.stringify(reservationData),
-    }),
+    api.post('/reservations', reservationData),
 
   // 예약 목록 조회
-  getReservations: () => apiCall('/reservations'),
+  getReservations: () => api.get('/reservations'),
 
   // 특정 예약 조회
-  getReservation: (reservationId) => apiCall(`/reservations/${reservationId}`),
+  getReservation: (reservationId) => api.get(`/reservations/${reservationId}`),
 
   // 매니저 매칭 요청
   requestManagerMatching: (reservationId) =>
-    apiCall(`/reservations/${reservationId}/matching`, {
-      method: 'POST',
-    }),
+    api.post(`/reservations/${reservationId}/matching`),
 
   // 결제 처리
   processPayment: (paymentData) =>
-    apiCall('/payments', {
-      method: 'POST',
-      body: JSON.stringify(paymentData),
-    }),
+    api.post('/payments', paymentData),
 
   // 결제 상태 확인
-  getPaymentStatus: (paymentId) => apiCall(`/payments/${paymentId}`),
+  getPaymentStatus: (paymentId) => api.get(`/payments/${paymentId}`),
 };
