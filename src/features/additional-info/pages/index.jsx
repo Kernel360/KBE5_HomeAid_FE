@@ -6,34 +6,26 @@ import ScheduleSetup from '../components/ScheduleSetup';
 import ProfileCompletion from '../components/ProfileCompletion';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
+import { useManagerProfileStore } from '../../../stores/managerProfileStore.js';
 
 const ServiceRegistration = () => {
   const navigate = useNavigate();
   const [stepView, setStepView] = useState('step1');
   const [serviceOptions, setServiceOptions] = useState([]);
-  const [allFormData, setAllFormData] = useState({
-    // Step 1
-    experience: '',
-    preferenceIds: [],
-    latitude: null,
-    longitude: null,
-    // Step 2 (이동된 데이터)
-    area: '',
-    availableDays: [1],
-    startTime: '09:00',
-    endTime: '18:00',
-    // Step 3
-    profileImage: null,
-    specialties: '',
-  });
+  const { formData, setFormData } = useManagerProfileStore();
 
   const handleServiceChange = (serviceId) => {
-    setAllFormData((prev) => ({
-      ...prev,
-      preferenceIds: prev.preferenceIds.includes(serviceId)
-        ? prev.preferenceIds.filter((id) => id !== serviceId)
-        : [...prev.preferenceIds, serviceId],
-    }));
+    setFormData({
+      preferenceIds: formData.preferenceIds.includes(serviceId)
+        ? formData.preferenceIds.filter((id) => id !== serviceId)
+        : [...formData.preferenceIds, serviceId],
+    });
+    console.log('[서비스선택] preferenceIds:', formData.preferenceIds.includes(serviceId)
+      ? formData.preferenceIds.filter((id) => id !== serviceId)
+      : [...formData.preferenceIds, serviceId]);
+    console.log('[서비스선택] formData:', { ...formData, preferenceIds: formData.preferenceIds.includes(serviceId)
+      ? formData.preferenceIds.filter((id) => id !== serviceId)
+      : [...formData.preferenceIds, serviceId] });
   };
 
   const fetchServiceOptions = async () => {
@@ -111,7 +103,7 @@ const ServiceRegistration = () => {
                         {/* 상위 서비스 (체크박스) */}
                         <div
                           className={`flex items-center p-4 cursor-pointer transition-colors ${
-                            allFormData.preferenceIds.includes(service.id)
+                            formData.preferenceIds.includes(service.id)
                               ? 'bg-blue-50 border-blue-200'
                               : 'bg-gray-50 hover:bg-gray-100'
                           }`}
@@ -119,12 +111,12 @@ const ServiceRegistration = () => {
                         >
                           <div
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center mr-3 ${
-                              allFormData.preferenceIds.includes(service.id)
+                              formData.preferenceIds.includes(service.id)
                                 ? 'bg-blue-500 border-blue-500'
                                 : 'border-gray-300'
                             }`}
                           >
-                            {allFormData.preferenceIds.includes(service.id) && (
+                            {formData.preferenceIds.includes(service.id) && (
                               <svg
                                 className="w-3 h-3 text-white"
                                 fill="currentColor"
@@ -141,7 +133,7 @@ const ServiceRegistration = () => {
                           <div className="flex-1">
                             <span
                               className={`text-lg font-medium ${
-                                allFormData.preferenceIds.includes(service.id)
+                                formData.preferenceIds.includes(service.id)
                                   ? 'text-blue-700'
                                   : 'text-gray-800'
                               }`}
@@ -154,8 +146,8 @@ const ServiceRegistration = () => {
                           </div>
                         </div>
 
-                        {/* 하위 옵션들 (표시만) */}
-                        {service.subOptions.length > 0 && (
+                        {/* 세부 서비스(features) */}
+                        {Array.isArray(service.features) && service.features.length > 0 && (
                           <div className="bg-white border-t border-gray-100">
                             <div className="px-4 py-2">
                               <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -163,26 +155,15 @@ const ServiceRegistration = () => {
                               </span>
                             </div>
                             <div className="space-y-2 px-4 pb-4">
-                              {service.subOptions.map((subOption) => (
+                              {service.features.map((feature, idx) => (
                                 <div
-                                  key={subOption.id}
+                                  key={idx}
                                   className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
                                 >
                                   <div className="flex-1">
                                     <span className="text-sm font-medium text-gray-700">
-                                      {subOption.name}
+                                      {feature}
                                     </span>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {subOption.description}
-                                    </p>
-                                  </div>
-                                  <div className="text-right ml-4">
-                                    <div className="text-sm font-medium text-gray-800">
-                                      {subOption.basePrice.toLocaleString()}원
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {subOption.durationMinutes}분
-                                    </div>
                                   </div>
                                 </div>
                               ))}
@@ -222,6 +203,7 @@ const ServiceRegistration = () => {
   //조건부 렌더링
   switch (stepView) {
     case 'step2':
+      console.log('[스텝2 진입] formData:', formData);
       return (
         <div
           className="w-full bg-gray-50 min-h-screen flex flex-col"
@@ -233,8 +215,8 @@ const ServiceRegistration = () => {
             style={{ paddingTop: '80px', paddingBottom: '100px' }}
           >
             <ScheduleSetup
-              allFormData={allFormData}
-              setAllFormData={setAllFormData}
+              allFormData={formData}
+              setAllFormData={setFormData}
               onBack={() => setStepView('step1')}
               nextStep={() => setStepView('step3')}
             />
@@ -243,6 +225,7 @@ const ServiceRegistration = () => {
         </div>
       );
     case 'step3':
+      console.log('[스텝3 진입] formData:', formData);
       return (
         <div
           className="w-full bg-gray-50 min-h-screen flex flex-col"
@@ -255,8 +238,8 @@ const ServiceRegistration = () => {
           >
             <ProfileCompletion
               onBack={() => setStepView('step2')}
-              allFormData={allFormData}
-              setAllFormData={setAllFormData}
+              allFormData={formData}
+              setAllFormData={setFormData}
             />
           </main>
           <Footer />

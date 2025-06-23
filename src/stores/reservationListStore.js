@@ -271,6 +271,17 @@ const useReservationListStore = create(
             cancelledList.length,
         };
       },
+
+      // 전체 예약 목록을 한 번에 덮어쓰기 (API 응답 가로채기용)
+      setReservations: (newReservations) =>
+        set({
+          reservations: {
+            pending: newReservations.pending || [],
+            completed: newReservations.completed || [],
+            visited: newReservations.visited || [],
+            cancelled: newReservations.cancelled || [],
+          },
+        }),
     }),
     {
       name: 'reservation-list-storage-v2', // localStorage 키 이름 변경 (새 데이터 적용)

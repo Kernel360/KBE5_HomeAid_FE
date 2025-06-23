@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../../stores/authStore';
+import useReservationListStore from '../../stores/reservationListStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
@@ -53,6 +54,18 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     console.log('API 응답 성공:', response.status, response.config.url);
+    // 예약 목록 API 응답이면 zustand store에 저장
+    if (response.config.url && response.config.url.includes('/reservations') && response.data && response.data.data && Array.isArray(response.data.data.content)) {
+      const reservationList = response.data.data.content;
+      // 상태별로 분류
+      const categorized = {
+        pending: reservationList.filter(r => r.status === 'REQUESTED' || r.status === 'MATCHING'),
+        completed: reservationList.filter(r => r.status === 'MATCHED'),
+        visited: reservationList.filter(r => r.status === 'COMPLETED'),
+        cancelled: reservationList.filter(r => r.status === 'CANCELLED'),
+      };
+      useReservationListStore.getState().setReservations(categorized);
+    }
     return response;
   },
   async (error) => {

@@ -1,14 +1,16 @@
 import React from 'react';
 import { apiService } from '@/api';
 import { useNavigate } from 'react-router-dom';
+import { useManagerProfileStore } from '../../../stores/managerProfileStore.js';
 
-// eslint-disable-next-line no-unused-vars
-const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
+const ProfileCompletion = ({ onBack }) => {
+  const { formData } = useManagerProfileStore();
   const navigate = useNavigate();
 
   function validateFormData() {
     const { preferenceIds, area, availableDays, startTime, endTime } =
-      allFormData;
+      formData;
+    console.log('[유효성검사] formData:', formData);
     if (!preferenceIds || preferenceIds.length === 0) {
       alert('제공 가능 서비스 선택해주세요.');
       throw new Error('제공 가능 서비스를 선택해주세요.');
@@ -29,7 +31,7 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
       alert('근무 시작 시간이 종료 시간보다 늦을 수 없습니다.');
       throw new Error('근무 시작 시간이 종료 시간보다 늦을 수 없습니다.');
     }
-    console.log('폼 데이터 유효성 검사 통과');
+    console.log('[유효성검사 통과] formData:', formData);
     return true;
   }
 
@@ -38,9 +40,9 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
       console.error('폼 데이터 유효성 검사 실패');
       return;
     }
-    console.log('🎯 최종 전체 데이터:', allFormData);
-    apiService.serviceOption
-      .create(allFormData)
+    console.log('[서버전송 직전] 최종 formData:', formData);
+    apiService.managers
+      .createProfile(formData)
       .then((response) => {
         console.log('프로필 등록 성공:', response);
         navigate('/manager/mypage');
@@ -62,7 +64,7 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
   };
 
   const getDisplayDays = () => {
-    return allFormData.availableDays
+    return formData.availableDays
       .map((dayNum) => reverseDayMapping[dayNum])
       .filter(Boolean);
   };
@@ -89,12 +91,12 @@ const ProfileCompletion = ({ onBack, allFormData, setAllFormData }) => {
               입력된 정보 요약
             </h4>
             <p className="text-xs text-blue-700">
-              제공 서비스: {allFormData.preferenceIds?.length || 0}개<br />
-              활동 지역: {allFormData.area}
+              제공 서비스: {formData.preferenceIds?.length || 0}개<br />
+              활동 지역: {formData.area}
               <br />
               근무 요일: {getDisplayDays().join(', ') || '없음'}요일
               <br />
-              근무 시간: {allFormData.startTime} - {allFormData.endTime}
+              근무 시간: {formData.startTime} - {formData.endTime}
             </p>
           </div>
         </div>
