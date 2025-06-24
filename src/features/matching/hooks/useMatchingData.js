@@ -49,7 +49,7 @@ export const useMatchingData = () => {
       status: getTabNameFromStatus(item.status),
       statusColor: getStatusColor(item.status),
       originalStatus: item.status,
-      estimatedDuration: item.estimatedDuration || 0,
+      estimatedDuration: (item.estimatedDuration !== null && item.estimatedDuration !== undefined) ? item.estimatedDuration : 0,
       customerRequest: item.customerRequest,
       address: `${item.latitude}, ${item.longitude}`,
       reservationId: item.reservationId,

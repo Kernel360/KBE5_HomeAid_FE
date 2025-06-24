@@ -34,6 +34,7 @@ import ManagerMatchingListPage from '../features/matching/pages/ManagerMatchingL
 import MyReviewListPage from '../features/review/pages/MyReviewListPage';
 import ReservationDetailWithManagerList from '@/features/admin/pages/ReservationDetailWithManagerList';
 
+
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
   // 관리자(ADMIN) 권한이 필요한 라우트
