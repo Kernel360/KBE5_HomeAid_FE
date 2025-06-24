@@ -1,6 +1,8 @@
 import { useAlertStore } from "@/stores/alertStore";
 import { useAuthStore } from "@/stores/authStore";
 import { EventSourcePolyfill } from "event-source-polyfill";
+import { refreshAccessToken } from "@/api/config/api"; // 토큰 재발급 함수
+import apiClient from "@/api/config/api"; // API 클라이언트 인스턴스
 
 const sseEmitter = {
     eventSource: null, // 연결 인스턴스 저장
@@ -37,21 +39,49 @@ const sseEmitter = {
         };
 
         // 에러 처리 - 자동 재연결 로직 추가
-        eventSource.onerror = (error) => {
+        eventSource.onerror = async (error) => {
+            const originalRequest = error.config;
             console.error('❌ SSE 연결 에러:', error);
-            
+            console.log(error)
+
             // 스토어 비우기
             useAlertStore.getState().clearNotificationAlert();
-            
-            if (error.status === 403) {
-                console.error('🚫 403 Forbidden - 토큰 문제일 가능성');
+
+            if (error.status === 401) {
+                console.log('🔄 sse instance 토큰 만료');
+
+                try {
+                    // 토큰 재발급 시도
+                    const newToken = await refreshAccessToken();
+
+                    console.log('✅ SSE 토큰 재발급 성공, 재연결 시도');
+                    // 새로운 토큰으로 원래 요청의 헤더를 교체
+                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+
+                    // 기존 연결 종료
+                    if (sseEmitter.eventSource) {
+                        sseEmitter.eventSource.close();
+                    }
+                    // 새로운 토큰으로 재연결
+                    setTimeout(() => {
+                        sseEmitter.connection();
+                    }, 1000);
+
+                    // 원래 요청 재시도
+                    return apiClient(originalRequest);
+
+                } catch (refreshError) {
+                    console.error('❌ SSE 토큰 재발급 실패:', refreshError);
+                    // 로그아웃 처리는 refreshAccessToken 함수에서 이미 처리됨
+                }
             } else {
                 // 3초 후 자동 재연결 시도
                 console.log('🔄 3초 후 SSE 재연결 시도...');
                 setTimeout(() => {
                     const currentToken = useAuthStore.getState().accessToken;
                     const currentUser = useAuthStore.getState().user;
-                    
+
                     if (currentToken && currentUser) {
                         sseEmitter.connection();
                     }
@@ -60,8 +90,8 @@ const sseEmitter = {
         };
 
         eventSource.addEventListener('unread-notification', (e) => {
-            const { data: receivedConnectData } = e;  
-            
+            const { data: receivedConnectData } = e;
+
             try {
                 const parsedData = JSON.parse(receivedConnectData);
                 useAlertStore.getState().setNotificationAlert(parsedData);
@@ -72,8 +102,8 @@ const sseEmitter = {
 
         eventSource.addEventListener('new-notification', (e) => {
             console.log('🔔 new-notification 스케쥴러 메세지 수신');
-            const { data: receivedConnectData } = e;  
-            console.log("새로운 알림 데이터:", receivedConnectData);  
+            const { data: receivedConnectData } = e;
+            console.log("새로운 알림 데이터:", receivedConnectData);
             useAlertStore.getState().addNotificationAlert(JSON.parse(receivedConnectData));
         });
 
@@ -94,7 +124,7 @@ const sseEmitter = {
             console.log('🔌 SSE 연결 수동 종료');
             sseEmitter.eventSource.close();
             sseEmitter.eventSource = null;
-            
+
             // 연결 종료 시 스토어도 비우기
             useAlertStore.getState().clearNotificationAlert();
             console.log('🗑️ SSE 연결 종료로 인한 알림 스토어 초기화');

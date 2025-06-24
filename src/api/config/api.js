@@ -65,50 +65,10 @@ apiClient.interceptors.response.use(
 
     // 401 에러 + JWT 만료 에러코드일 경우
     if (error.response?.status === 401 && error.response?.data?.error === 'JWT_EXPIRED') {
-      if (!isRefreshing) {
-        isRefreshing = true;
-        // 새로운 토큰을 발급받는 비동기 작업을 Promise로 감싸 refreshPromise에 할당
-        refreshPromise = (async () => {
-          try {
-            console.log('Access Token 재발급을 시도합니다.');
-
-            // 1. 본문 없이 재발급 요청 (HttpOnly 쿠키 자동 전송)
-            const res = await apiClient.post('/auth/refresh/reissue');
-
-            // 2. 응답 헤더에서 새로 발급된 Access Token 추출
-            const authHeader = res.headers.authorization || res.headers.Authorization;
-            if (!authHeader) {
-              throw new Error('재발급 응답 헤더에 Access Token이 없습니다.');
-            }
-            
-            const newAccessToken = authHeader.replace('Bearer ', '');
-
-            console.log('새로운 Access Token 발급 성공.');
-            
-            // 3. 새로운 Access Token 저장
-            localStorage.setItem('accessToken', newAccessToken);
-            useAuthStore.getState().setAccessToken(newAccessToken);
-
-            apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-
-            return newAccessToken;
-          } catch (refreshError) {
-            console.error('토큰 재발급 실패:', refreshError);
-            // 재발급 실패 시 Access Token 정보만 삭제
-            localStorage.removeItem('accessToken');
-            useAuthStore.getState().logout(); // user, accessToken, refreshToken 모두 null로
-            window.location.href = '/auth/signin';
-            return Promise.reject(refreshError);
-          } finally {
-            isRefreshing = false;
-            refreshPromise = null;
-          }
-        })();
-      }
-
       try {
         // 진행중인 토큰 재발급 작업이 끝나기를 기다림
-        const token = await refreshPromise;
+        // const token = await refreshPromise;
+        const token = await refreshAccessToken();
         // 새로운 토큰으로 원래 요청의 헤더를 교체
         originalRequest.headers.Authorization = `Bearer ${token}`;
         // 원래 요청 재시도
@@ -176,3 +136,52 @@ api.post('/manager/all')
     .then(response => console.log(response.data))
     .catch(error => console.error(error));
 */
+
+// 공통 토큰 재발급 함수
+const refreshAccessToken = async () => {
+  if (!isRefreshing) {
+    isRefreshing = true;
+    refreshPromise = (async () => {
+      try {
+        console.log('Access Token 재발급을 시도합니다.');
+
+        // 1. 본문 없이 재발급 요청 (HttpOnly 쿠키 자동 전송)
+        const res = await apiClient.post('/auth/refresh/reissue');
+
+        // 2. 응답 헤더에서 새로 발급된 Access Token 추출
+        const authHeader = res.headers.authorization || res.headers.Authorization;
+        if (!authHeader) {
+          throw new Error('재발급 응답 헤더에 Access Token이 없습니다.');
+        }
+        
+        const newAccessToken = authHeader.replace('Bearer ', '');
+
+        console.log('새로운 Access Token 발급 성공.');
+        
+        // 3. 새로운 Access Token 저장
+        localStorage.setItem('accessToken', newAccessToken);
+        useAuthStore.getState().setAccessToken(newAccessToken);
+
+        apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+
+        return newAccessToken;
+      } catch (refreshError) {
+        console.error('토큰 재발급 실패:', refreshError);
+        // 재발급 실패 시 Access Token 정보만 삭제
+        localStorage.removeItem('accessToken');
+        useAuthStore.getState().logout(); // user, accessToken, refreshToken 모두 null로
+        window.location.href = '/auth/signin';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+        refreshPromise = null;
+      }
+    })();
+  }
+
+  // 진행중인 토큰 재발급 작업이 끝나기를 기다림
+  return await refreshPromise;
+};
+
+// export로 내보내기
+export { refreshAccessToken };
