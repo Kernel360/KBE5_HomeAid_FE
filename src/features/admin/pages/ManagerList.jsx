@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 const StatCard = ({ title, value, subValue, icon, iconBg }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
     <div className="flex items-start justify-between mb-3 min-h-0">
@@ -202,7 +204,7 @@ const ManagerList = () => {
       console.log('Filter status:', filterStatus, '-> API status:', apiStatus);
       console.log('Search params:', searchData);
 
-      const response = await fetch(`/api/v1/admin/managers?${params}`, {
+      const response = await fetch(`${API_URL}/api/v1/admin/managers?${params}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -251,7 +253,7 @@ const ManagerList = () => {
       if (!token) return;
 
       // 전체 데이터를 가져와서 상태별 카운트 계산
-      const response = await fetch('/api/v1/admin/managers?page=0&size=1000', {
+      const response = await fetch(`${API_URL}/api/v1/admin/managers?page=0&size=1000`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -337,7 +339,7 @@ const ManagerList = () => {
       }
 
       const response = await fetch(
-        `/api/v1/admin/managers/${managerId}/status`,
+        `${API_URL}/api/v1/admin/managers/${managerId}/status`,
         {
           method: 'PATCH',
           headers: {
