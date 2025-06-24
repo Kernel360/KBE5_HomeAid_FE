@@ -36,7 +36,7 @@ const CustomerList = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 0,
-    size: 20, // 성능 최적화를 위해 증가
+    size: 10, // 한 페이지에 10개씩 표시
     totalElements: 0,
     totalPages: 0,
   });
@@ -99,6 +99,46 @@ const CustomerList = () => {
   };
 
   const filteredCustomers = getFilteredCustomers();
+
+  // 페이지네이션 적용된 고객 목록
+  const getPaginatedCustomers = () => {
+    const startIndex = pagination.page * pagination.size;
+    const endIndex = startIndex + pagination.size;
+    return filteredCustomers.slice(startIndex, endIndex);
+  };
+
+  const paginatedCustomers = getPaginatedCustomers();
+
+  // 페이지네이션 정보 업데이트
+  const updatePaginationInfo = () => {
+    const totalElements = filteredCustomers.length;
+    const totalPages = Math.ceil(totalElements / pagination.size);
+
+    setPagination((prev) => ({
+      ...prev,
+      totalElements,
+      totalPages,
+    }));
+  };
+
+  // 검색어나 필터가 변경될 때 페이지네이션 정보 업데이트
+  useEffect(() => {
+    updatePaginationInfo();
+    // 현재 페이지가 총 페이지 수를 초과하면 첫 페이지로 이동
+    if (
+      pagination.page > 0 &&
+      pagination.page >= Math.ceil(filteredCustomers.length / pagination.size)
+    ) {
+      setPagination((prev) => ({ ...prev, page: 0 }));
+    }
+  }, [filteredCustomers.length, pagination.size]);
+
+  // 페이지 변경 핸들러 - 클라이언트 사이드 페이지네이션
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < pagination.totalPages) {
+      setPagination((prev) => ({ ...prev, page: newPage }));
+    }
+  };
 
   // API 호출 함수
   const fetchCustomers = async (page = 0, searchData = null) => {
@@ -240,17 +280,16 @@ const CustomerList = () => {
 
   // 검색 실행
   const handleSearch = () => {
-    const searchData = searchTerm.trim()
-      ? { query: searchTerm.trim(), scope: searchType }
-      : null;
-    fetchCustomers(0, searchData);
+    // 검색 시 첫 페이지로 이동
+    setPagination((prev) => ({ ...prev, page: 0 }));
   };
 
   // 검색 초기화
   const handleReset = () => {
     setSearchTerm('');
     setSearchType('all');
-    fetchCustomers(0, null);
+    // 초기화 시 첫 페이지로 이동
+    setPagination((prev) => ({ ...prev, page: 0 }));
   };
 
   // 엔터 키 검색 핸들러
@@ -258,14 +297,6 @@ const CustomerList = () => {
     if (e.key === 'Enter') {
       handleSearch();
     }
-  };
-
-  // 페이지 변경
-  const handlePageChange = (newPage) => {
-    const searchData = searchTerm.trim()
-      ? { query: searchTerm.trim(), scope: searchType }
-      : null;
-    fetchCustomers(newPage, searchData);
   };
 
   // 활동 상태 표시 함수
@@ -616,7 +647,7 @@ const CustomerList = () => {
                       </tr>
                     ) : (
                       // 실제 데이터
-                      filteredCustomers.map((customer, index) => (
+                      paginatedCustomers.map((customer, index) => (
                         <tr
                           key={customer.id || index}
                           className="hover:bg-gray-50"
@@ -666,42 +697,65 @@ const CustomerList = () => {
                 </table>
               </div>
 
-              {/* Pagination */}
-              <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
-                <div className="text-sm text-gray-700">
-                  총 {pagination.totalElements}개 중{' '}
-                  {pagination.page * pagination.size + 1}-
-                  {Math.min(
-                    (pagination.page + 1) * pagination.size,
-                    pagination.totalElements
-                  )}
-                  개 표시
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 0 || loading}
-                  >
-                    ‹
-                  </button>
-                  <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
-                    {pagination.page + 1}
-                  </span>
-                  <span className="px-3 py-1 text-sm text-gray-500">
-                    / {pagination.totalPages}
-                  </span>
-                  <button
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={
-                      pagination.page >= pagination.totalPages - 1 || loading
-                    }
-                  >
-                    ›
-                  </button>
-                </div>
-              </div>
+              {/* Pagination - 매니저 목록과 동일한 스타일 적용 */}
+              {!loading &&
+                filteredCustomers.length > 0 &&
+                pagination.totalPages > 1 && (
+                  <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
+                    <div className="text-sm text-gray-700">
+                      {searchTerm ? (
+                        <>
+                          검색 결과:{' '}
+                          <span className="font-medium">
+                            {filteredCustomers.length}
+                          </span>
+                          개{searchTerm && ` (검색어: "${searchTerm}")`}
+                        </>
+                      ) : (
+                        <>
+                          총{' '}
+                          <span className="font-medium">
+                            {pagination.totalElements}
+                          </span>
+                          건 중{' '}
+                          <span className="font-medium">
+                            {pagination.page * pagination.size + 1}-
+                            {Math.min(
+                              (pagination.page + 1) * pagination.size,
+                              pagination.totalElements
+                            )}
+                          </span>
+                          건 표시
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={pagination.page === 0 || loading}
+                      >
+                        ‹
+                      </button>
+                      <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
+                        {pagination.page + 1}
+                      </span>
+                      <span className="px-3 py-1 text-sm text-gray-500">
+                        / {pagination.totalPages}
+                      </span>
+                      <button
+                        className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={
+                          pagination.page >= pagination.totalPages - 1 ||
+                          loading
+                        }
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
         </div>

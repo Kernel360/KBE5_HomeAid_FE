@@ -633,7 +633,7 @@ const UserReservationDetail = () => {
           status === 'MATCHING' ? (
             <div className="waiting-section">
               <div className="waiting-info">
-                {reservation?.backendData?.matchingStatus === 'ACCEPTED' ? (
+                {reservation?.backendData?.data?.matchingStatus === 'ACCEPTED' ? (
                   <>
                     <p className="waiting-notice">
                       🎉 매니저가 매칭되었습니다!

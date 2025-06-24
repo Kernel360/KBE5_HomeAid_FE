@@ -221,10 +221,13 @@ const BoardList = () => {
   };
 
   return (
-    <div className="board-page">
-      <Header showBackButton={true} />
-      <div className="page-content-wrapper">
-        <div className="board-container">
+    <div className="min-h-screen flex justify-center">
+      <div className="w-full max-w-lg relative bg-white">
+        <Header showBackButton={true} />
+        <main
+          className="px-6 py-6 min-h-screen flex flex-col"
+          style={{ marginTop: '64px', paddingBottom: '100px' }}
+        >
           <div className="board-tabs">
             <button
               className={`tab-button ${activeTab === 'notice' ? 'active' : ''}`}
@@ -349,9 +352,9 @@ const BoardList = () => {
               </button>
             </div>
           )}
-        </div>
+        </main>
+        <Footer current="/board" />
       </div>
-      <Footer current="/board" />
     </div>
   );
 };

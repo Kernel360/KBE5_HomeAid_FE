@@ -87,8 +87,9 @@ export const apiService = {
     cancel: (id) => api.post(`/reservations/${id}/cancel`),
   },
   matching: {
-    acceptMatching: (matchingId, data) =>
-      api.patch(`/manager/matchings/${matchingId}/to-customer`, data),
+    acceptMatching: (matchingId, data) => api.patch(`/manager/matchings/${matchingId}/to-customer`, data),
+    getRecommendedManagers: (reservationId) => api.post(`admin/matchings/${reservationId}/recommendations`),
+    createMatching: (reservationId, managerId) => api.post('/admin/matchings', { reservationId, managerId }),
   },
   workLog: {
     checkIn: (data) => api.post('/managers/work-logs', data),

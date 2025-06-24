@@ -32,6 +32,8 @@ import CustomerMyAddress from '../features/mypage/customer/components/MyAddress'
 import CustomerAddressRegister from '../features/mypage/customer/components/AddressRegister';
 import ManagerMatchingListPage from '../features/matching/pages/ManagerMatchingListPage';
 import MyReviewListPage from '../features/review/pages/MyReviewListPage';
+import ReservationDetailWithManagerList from '@/features/admin/pages/ReservationDetailWithManagerList';
+
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -47,6 +49,7 @@ export const protectedAppRoutes = [
       { path: 'customer-payments', element: <CustomerPayment /> },
       { path: 'managers', element: <ManagerList /> },
       { path: 'matches', element: <MatchingManagement /> },
+      { path: 'matches/reservations/:reservationId/detail', element: <ReservationDetailWithManagerList /> },
       { path: 'reviews', element: <ReviewManagement /> },
       { path: 'statistics', element: <Statistics /> },
       { path: 'settlements', element: <ManagerSettlement /> },

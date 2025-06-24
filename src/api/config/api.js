@@ -29,22 +29,13 @@ apiClient.interceptors.request.use(
     // 3. 우선순위: localStorage > authStore
     const token = localStorageToken || authStoreToken;
 
-    console.log('=== 토큰 확인 ===');
-    console.log('localStorage 토큰:', localStorageToken ? '있음' : '없음');
-    console.log('authStore 토큰:', authStoreToken ? '있음' : '없음');
-    console.log('사용할 토큰:', token ? '있음' : '없음');
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('토큰 사용:', token.substring(0, 20) + '...');
-    } else {
-      console.log('토큰이 없습니다. 로그인이 필요할 수 있습니다.');
     }
 
     return config;
   },
   (error) => {
-    console.error('요청 에러:', error);
     return Promise.reject(error);
   }
 );
@@ -53,14 +44,22 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     // 예약 목록 API 응답이면 zustand store에 저장
-    if (response.config.url && response.config.url.includes('/reservations') && response.data && response.data.data && Array.isArray(response.data.data.content)) {
+    if (
+      response.config.url &&
+      response.config.url.includes('/reservations') &&
+      response.data &&
+      response.data.data &&
+      Array.isArray(response.data.data.content)
+    ) {
       const reservationList = response.data.data.content;
       // 상태별로 분류
       const categorized = {
-        pending: reservationList.filter(r => r.status === 'REQUESTED' || r.status === 'MATCHING'),
-        completed: reservationList.filter(r => r.status === 'MATCHED'),
-        visited: reservationList.filter(r => r.status === 'COMPLETED'),
-        cancelled: reservationList.filter(r => r.status === 'CANCELLED'),
+        pending: reservationList.filter(
+          (r) => r.status === 'REQUESTED' || r.status === 'MATCHING'
+        ),
+        completed: reservationList.filter((r) => r.status === 'MATCHED'),
+        visited: reservationList.filter((r) => r.status === 'COMPLETED'),
+        cancelled: reservationList.filter((r) => r.status === 'CANCELLED'),
       };
       useReservationListStore.getState().setReservations(categorized);
     }
@@ -69,33 +68,28 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    console.error('=== API 응답 에러 ===');
-    console.error('상태 코드:', error.response?.status);
-    console.error('에러 메시지:', error.response?.data);
-    console.error('요청 URL:', error.config?.url);
-
     // 401 에러 + JWT 만료 에러코드일 경우
-    if (error.response?.status === 401 && error.response?.data?.error === 'JWT_EXPIRED') {
+    if (
+      error.response?.status === 401 &&
+      error.response?.data?.error === 'JWT_EXPIRED'
+    ) {
       if (!isRefreshing) {
         isRefreshing = true;
         // 새로운 토큰을 발급받는 비동기 작업을 Promise로 감싸 refreshPromise에 할당
         refreshPromise = (async () => {
           try {
-            console.log('Access Token 재발급을 시도합니다.');
-
             // 1. 본문 없이 재발급 요청 (HttpOnly 쿠키 자동 전송)
             const res = await apiClient.post('/auth/refresh/reissue');
 
             // 2. 응답 헤더에서 새로 발급된 Access Token 추출
-            const authHeader = res.headers.authorization || res.headers.Authorization;
+            const authHeader =
+              res.headers.authorization || res.headers.Authorization;
             if (!authHeader) {
               throw new Error('재발급 응답 헤더에 Access Token이 없습니다.');
             }
-            
+
             const newAccessToken = authHeader.replace('Bearer ', '');
 
-            console.log('새로운 Access Token 발급 성공.');
-            
             // 3. 새로운 Access Token 저장
             localStorage.setItem('accessToken', newAccessToken);
             useAuthStore.getState().setAccessToken(newAccessToken);
@@ -104,7 +98,6 @@ apiClient.interceptors.response.use(
 
             return newAccessToken;
           } catch (refreshError) {
-            console.error('토큰 재발급 실패:', refreshError);
             // 재발급 실패 시 Access Token 정보만 삭제
             localStorage.removeItem('accessToken');
             useAuthStore.getState().logout(); // user, accessToken, refreshToken 모두 null로
