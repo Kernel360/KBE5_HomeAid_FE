@@ -260,161 +260,476 @@ const Inquiries = () => {
     },
   ];
 
-  // 문의 데이터 가져오기
-  const fetchInquiries = async () => {
-    try {
-      setLoading(true);
+  // 각 문의글의 답변 상태를 확인하는 함수
+  const checkReplyStatus = async (inquiry) => {
+    // 백엔드 API 구조에 맞는 답변 조회 엔드포인트들
+    const replyEndpoints = [
+      // 가장 가능성이 높은 엔드포인트들을 우선으로
+      `/admin/inquiries/board/${inquiry.id}/reply`,
+      `/admin/inquiries/board/${inquiry.id}`,
+      `/boards/${inquiry.id}/reply`,
+      `/boards/${inquiry.id}`,
+      // 기타 가능한 엔드포인트들
+      `/admin/inquiries/${inquiry.id}/reply`,
+      `/inquiries/board/${inquiry.id}/reply`,
+      `/api/admin/inquiries/board/${inquiry.id}/reply`,
+      `/api/boards/${inquiry.id}/reply`,
+      `/v1/admin/inquiries/board/${inquiry.id}/reply`,
+      `/admin/boards/${inquiry.id}/reply`,
+      `/boards/${inquiry.id}/replies`,
+      `/admin/inquiries/board/${inquiry.id}/replies`,
+    ];
 
-      const token = localStorage.getItem('accessToken');
-
-      // 토큰 상태 디버깅
-      if (import.meta.env.DEV) {
-        console.log('=== 토큰 상태 확인 ===');
-        console.log('토큰 존재:', token ? '✅' : '❌');
-
-        if (token) {
-          console.log('토큰 길이:', token.length);
-          console.log('토큰 시작:', token.substring(0, 20) + '...');
-
-          // JWT 토큰 디코딩 시도
-          try {
-            const parts = token.split('.');
-            if (parts.length === 3) {
-              const payload = JSON.parse(atob(parts[1]));
-              console.log('토큰 페이로드:', {
-                userId: payload.userId || payload.sub,
-                role: payload.role || payload.authorities,
-                exp: payload.exp,
-                iat: payload.iat,
-                현재시간: Math.floor(Date.now() / 1000),
-                만료여부:
-                  payload.exp < Math.floor(Date.now() / 1000)
-                    ? '만료됨'
-                    : '유효함',
-              });
-            }
-          } catch (decodeError) {
-            console.error('토큰 디코딩 실패:', decodeError);
-          }
+    for (const endpoint of replyEndpoints) {
+      try {
+        if (import.meta.env.DEV) {
+          console.log(`답변 조회 시도 (문의 ID: ${inquiry.id}): ${endpoint}`);
         }
 
-        // Zustand store 상태 확인
-        const authState = useAuthStore.getState();
-        console.log('Zustand 인증 상태:', {
-          user: authState.user,
-          accessToken: authState.accessToken ? '있음' : '없음',
-          refreshToken: authState.refreshToken ? '있음' : '없음',
-        });
-      }
+        const response = await api.get(endpoint);
 
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
-      }
+        if (import.meta.env.DEV) {
+          console.log(`API 응답 (${endpoint}):`, response.data);
+        }
 
-      // 백엔드 AdminInquiryController의 정확한 경로 사용
-      // @RequestMapping("/api/v1/admin/inquiries") + @GetMapping("/boards")
+        // 다양한 응답 구조 처리
+        let replyData = null;
+
+        // Case 1: CommonApiResponse<BoardReplyListResponseDto> 구조
+        if (response.data && response.data.success && response.data.data) {
+          replyData = response.data.data;
+        }
+        // Case 2: 직접 답변 데이터가 반환되는 경우
+        else if (response.data && response.data.id && response.data.content) {
+          replyData = response.data;
+        }
+        // Case 3: 문의글 상세 정보에 답변이 포함된 경우
+        else if (
+          response.data &&
+          response.data.data &&
+          response.data.data.reply
+        ) {
+          replyData = response.data.data.reply;
+        }
+        // Case 4: 배열 형태로 답변이 반환되는 경우
+        else if (
+          response.data &&
+          Array.isArray(response.data) &&
+          response.data.length > 0
+        ) {
+          replyData = response.data[0]; // 첫 번째 답변 사용
+        }
+        // Case 5: data 배열 형태
+        else if (
+          response.data &&
+          response.data.data &&
+          Array.isArray(response.data.data) &&
+          response.data.data.length > 0
+        ) {
+          replyData = response.data.data[0];
+        }
+
+        if (replyData && replyData.content) {
+          if (import.meta.env.DEV) {
+            console.log(
+              `✅ 답변 발견 (문의 ID: ${inquiry.id}, 엔드포인트: ${endpoint}):`,
+              replyData
+            );
+          }
+
+          return {
+            ...inquiry,
+            isAnswered: true,
+            reply: {
+              id: replyData.id,
+              content: replyData.content,
+              createdAt: replyData.createdAt,
+              updatedAt: replyData.updatedAt,
+              adminId: replyData.adminId || replyData.userId,
+              adminName: replyData.userName || replyData.adminName || '관리자',
+              userRole: replyData.userRole || 'ADMIN',
+            },
+          };
+        }
+      } catch (err) {
+        // 404는 답변이 없다는 의미이므로 정상
+        if (err.response?.status === 404) {
+          if (import.meta.env.DEV) {
+            console.log(
+              `답변 없음 (문의 ID: ${inquiry.id}): ${endpoint} - 404`
+            );
+          }
+          // 404인 경우 다음 엔드포인트 시도 (다른 구조일 수 있음)
+          continue;
+        }
+
+        // 403이나 다른 오류는 다음 엔드포인트 시도
+        if (import.meta.env.DEV) {
+          console.log(
+            `답변 확인 실패 (문의 ID: ${inquiry.id}, 엔드포인트: ${endpoint}):`,
+            err.response?.status,
+            err.response?.data?.message || err.message
+          );
+        }
+        continue;
+      }
+    }
+
+    // 모든 엔드포인트에서 실패한 경우 기본값
+    if (import.meta.env.DEV) {
+      console.log(
+        `⚠️ 모든 답변 조회 엔드포인트 실패 (문의 ID: ${inquiry.id}) - 기본값 사용`
+      );
+    }
+
+    return {
+      ...inquiry,
+      isAnswered: false,
+      reply: null,
+    };
+  };
+
+  // 모든 문의글의 답변 상태를 확인하는 함수
+  const checkAllRepliesStatus = async (inquiries) => {
+    if (import.meta.env.DEV) {
+      console.log('=== 모든 문의글 답변 상태 확인 시작 ===');
+    }
+
+    try {
+      // 모든 문의글에 대해 병렬로 답변 상태 확인
+      const inquiriesWithReplies = await Promise.all(
+        inquiries.map(async (inquiry) => {
+          return await checkReplyStatus(inquiry);
+        })
+      );
+
+      const answeredCount = inquiriesWithReplies.filter(
+        (i) => i.isAnswered
+      ).length;
+
       if (import.meta.env.DEV) {
-        console.log('=== API 요청 정보 ===');
-        console.log('요청 URL:', '/admin/inquiries/boards');
-        console.log('요청 파라미터:', {
-          page: currentPage,
-          size: pageSize,
-        });
         console.log(
-          'Authorization 헤더:',
-          `Bearer ${token.substring(0, 20)}...`
+          `✅ 답변 상태 확인 완료: ${answeredCount}/${inquiriesWithReplies.length}개 답변됨`
         );
       }
 
-      const response = await api.get('/admin/inquiries/boards', {
-        params: {
-          page: currentPage,
-          size: pageSize,
-        },
-      });
+      // localStorage에서 답변 데이터 가져오기
+      const savedAnsweredIds = JSON.parse(
+        localStorage.getItem('answeredInquiries') || '[]'
+      );
+      const savedReplies = JSON.parse(
+        localStorage.getItem('inquiryReplies') || '{}'
+      );
 
-      if (response.data && response.data.success) {
-        const responseData = response.data.data;
-        setIsBackendConnected(true);
+      // 서버에서 답변을 찾지 못한 경우 localStorage에서 복원
+      const inquiriesWithRestoredReplies = inquiriesWithReplies.map(
+        (inquiry) => {
+          const isAnsweredFromStorage = savedAnsweredIds.includes(inquiry.id);
+          const savedReply = savedReplies[inquiry.id];
 
-        // PagedResponseDto 구조 처리
-        const boardsData = responseData.content || responseData || [];
+          // 서버에서 답변을 찾지 못했지만 localStorage에 있는 경우
+          if (!inquiry.isAnswered && isAnsweredFromStorage && savedReply) {
+            if (import.meta.env.DEV) {
+              console.log(
+                `📦 localStorage에서 답변 복원 (문의 ID: ${inquiry.id}):`,
+                savedReply
+              );
+            }
 
-        // 페이징 정보 업데이트
-        setTotalPages(responseData.totalPages || 0);
-        setTotalElements(responseData.totalElements || boardsData.length);
-
-        // 개발 모드에서 API 응답 구조 로그
-        if (import.meta.env.DEV) {
-          console.log('=== BOARDS API Response ANALYSIS ===');
-          console.log('Full response:', response.data);
-          console.log('Response data:', responseData);
-          console.log('Boards array length:', boardsData.length);
-          console.log('Total elements:', responseData.totalElements);
-          console.log('Total pages:', responseData.totalPages);
-          console.log('Current page:', currentPage);
-
-          if (boardsData.length > 0) {
-            console.log('=== BOARD DATA STRUCTURE ANALYSIS ===');
-            boardsData.forEach((board, index) => {
-              console.log(`--- Board ${index + 1} (ID: ${board.id}) ---`);
-              console.log('Full object:', board);
-              console.log('Keys:', Object.keys(board));
-              Object.keys(board).forEach((key) => {
-                console.log(
-                  `  ${key}:`,
-                  board[key],
-                  `(type: ${typeof board[key]})`
-                );
-              });
-              console.log('---');
-            });
+            return {
+              ...inquiry,
+              isAnswered: true,
+              reply: {
+                ...savedReply,
+                id: savedReply.id || `restored_${inquiry.id}`,
+                content:
+                  savedReply.content ||
+                  '답변이 등록되어 있습니다. (답변 내용을 불러올 수 없습니다)',
+              },
+            };
           }
-          console.log('==========================================');
+
+          // 서버에서 답변을 찾았으면 localStorage에도 저장
+          if (inquiry.isAnswered && inquiry.reply) {
+            // localStorage 업데이트
+            if (!savedAnsweredIds.includes(inquiry.id)) {
+              savedAnsweredIds.push(inquiry.id);
+              localStorage.setItem(
+                'answeredInquiries',
+                JSON.stringify(savedAnsweredIds)
+              );
+            }
+
+            savedReplies[inquiry.id] = inquiry.reply;
+            localStorage.setItem(
+              'inquiryReplies',
+              JSON.stringify(savedReplies)
+            );
+
+            if (import.meta.env.DEV) {
+              console.log(
+                `💾 답변 데이터 localStorage에 저장 (문의 ID: ${inquiry.id})`
+              );
+            }
+          }
+
+          return inquiry;
+        }
+      );
+
+      const finalAnsweredCount = inquiriesWithRestoredReplies.filter(
+        (i) => i.isAnswered
+      ).length;
+
+      if (import.meta.env.DEV && finalAnsweredCount > answeredCount) {
+        console.log(
+          `📦 localStorage에서 ${finalAnsweredCount - answeredCount}개 답변 상태 복원됨`
+        );
+      }
+
+      return inquiriesWithRestoredReplies;
+    } catch (err) {
+      console.error('답변 상태 확인 중 오류:', err);
+
+      // 오류 발생 시에도 localStorage에서 답변 상태 복원 시도
+      if (import.meta.env.DEV) {
+        console.log(
+          '❌ 답변 상태 확인 오류 - localStorage에서 답변 상태 복원 시도'
+        );
+      }
+
+      const savedAnsweredIds = JSON.parse(
+        localStorage.getItem('answeredInquiries') || '[]'
+      );
+      const savedReplies = JSON.parse(
+        localStorage.getItem('inquiryReplies') || '{}'
+      );
+
+      return inquiries.map((inquiry) => {
+        const isAnsweredFromStorage = savedAnsweredIds.includes(inquiry.id);
+        const savedReply = savedReplies[inquiry.id];
+
+        return {
+          ...inquiry,
+          isAnswered: isAnsweredFromStorage,
+          reply:
+            isAnsweredFromStorage && savedReply
+              ? {
+                  ...savedReply,
+                  id: savedReply.id || `restored_${inquiry.id}`,
+                }
+              : null,
+        };
+      });
+    }
+  };
+
+  // 문의글 목록 조회
+  const fetchInquiries = async () => {
+    setLoading(true);
+
+    const token = localStorage.getItem('accessToken');
+
+    if (import.meta.env.DEV) {
+      console.log('=== 토큰 상태 확인 ===');
+      console.log('토큰 존재:', token ? '✅' : '❌');
+      if (token) {
+        console.log('토큰 길이:', token.length);
+        console.log('토큰 시작:', token.substring(0, 20) + '...');
+
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log('토큰 페이로드:', {
+            ...payload,
+            현재시간: Math.floor(Date.now() / 1000),
+            만료여부:
+              payload.exp < Math.floor(Date.now() / 1000) ? '만료됨' : '유효함',
+          });
+        } catch (e) {
+          console.log('토큰 파싱 실패:', e.message);
+        }
+      }
+
+      const authState = useAuthStore.getState();
+      console.log('Zustand 인증 상태:', {
+        user: authState.user,
+        accessToken: authState.accessToken ? '있음' : '없음',
+        refreshToken: authState.refreshToken ? '있음' : '없음',
+      });
+    }
+
+    // 여러 엔드포인트와 파라미터 조합 시도
+    const endpoints = [
+      '/boards',
+      '/admin/inquiries',
+      '/admin/inquiries/boards',
+      '/admin/boards',
+      '/api/boards',
+      '/api/admin/inquiries',
+      '/v1/boards',
+      '/v1/admin/inquiries',
+      '/admin/inquiries/all',
+      '/boards/all',
+    ];
+
+    const parameterSets = [
+      { page: currentPage, size: 10 },
+      {},
+      { page: currentPage, size: 100 },
+      {
+        page: currentPage,
+        size: 10,
+        sortBy: 'createdAt',
+        sortDirection: 'desc',
+      },
+      {
+        keyword: '',
+        page: currentPage,
+        size: 10,
+        sortBy: 'createdAt',
+        sortDirection: 'desc',
+      },
+      { admin: true, page: currentPage, size: 10 },
+      { includeAll: true, page: currentPage, size: 50 },
+    ];
+
+    try {
+      let response = null;
+
+      // 각 엔드포인트 시도
+      for (const endpoint of endpoints) {
+        if (import.meta.env.DEV) {
+          console.log(`=== API 엔드포인트 시도: ${endpoint} ===`);
         }
 
-        // UserBoardListResponseDto 구조에 맞게 매핑
-        const mappedInquiries = boardsData.map((board) => {
-          // 사용자 역할 결정 로직 개선
-          let userRole = 'CUSTOMER'; // 기본값
+        // 각 파라미터 세트 시도
+        for (const params of parameterSets) {
+          try {
+            if (import.meta.env.DEV) {
+              console.log('요청 파라미터:', params);
+              console.log(
+                'Authorization 헤더:',
+                `Bearer ${token?.substring(0, 20)}...`
+              );
+            }
 
-          // userName 기반으로 역할 추론 (임시 로직)
-          if (board.userName && board.userName.includes('매니저')) {
-            userRole = 'MANAGER';
+            const testResponse = await api.get(endpoint, { params });
+
+            if (import.meta.env.DEV) {
+              console.log(`${endpoint} 응답:`, testResponse.data);
+            }
+
+            // 성공적인 응답이고 데이터가 있는지 확인
+            if (testResponse.data && testResponse.data.success !== false) {
+              const responseData = testResponse.data.data || testResponse.data;
+
+              if (
+                responseData &&
+                responseData.content &&
+                responseData.content.length > 0
+              ) {
+                if (import.meta.env.DEV) {
+                  console.log(
+                    `🎯 데이터 발견! 엔드포인트: ${endpoint}, 데이터 개수: ${responseData.content.length}`
+                  );
+                }
+                response = testResponse;
+                break;
+              } else if (
+                responseData &&
+                responseData.content &&
+                responseData.content.length === 0
+              ) {
+                if (import.meta.env.DEV) {
+                  console.log(
+                    `⚠️ ${endpoint}에서 빈 데이터 반환 - 다른 파라미터 시도`
+                  );
+                }
+                continue;
+              }
+            }
+          } catch (paramError) {
+            if (import.meta.env.DEV) {
+              console.log(
+                `❌ 파라미터 ${JSON.stringify(params)} 실패:`,
+                paramError.response?.status
+              );
+            }
+            continue;
           }
+        }
 
-          // 또는 userId 기반으로 역할 추론 (필요시)
-          // 실제로는 백엔드에서 role 필드를 제공해야 함
+        if (response) break;
+      }
 
-          // UserBoardListResponseDto 구조에 맞게 매핑
-          // 백엔드에서 답변 정보를 제공하지 않으므로 기본적으로 미답변으로 처리
+      if (!response) {
+        throw new Error('모든 엔드포인트에서 데이터를 가져올 수 없습니다.');
+      }
+
+      const responseData = response.data.data || response.data;
+      const inquiriesData = responseData.content || [];
+
+      if (import.meta.env.DEV) {
+        console.log('=== INQUIRIES API Response ANALYSIS ===');
+        console.log('Full response:', response.data);
+        console.log('Response data:', responseData);
+        console.log('Inquiries array length:', inquiriesData.length);
+        console.log('Total elements:', responseData.totalElements);
+        console.log('Total pages:', responseData.totalPages);
+        console.log('Current page:', responseData.currentPage);
+
+        console.log('\n=== INQUIRY DATA STRUCTURE ANALYSIS ===');
+        inquiriesData.slice(0, 10).forEach((inquiry, index) => {
+          console.log(`--- Inquiry ${index + 1} (ID: ${inquiry.id}) ---`);
+          console.log('Full object:', inquiry);
+          console.log('Keys:', Object.keys(inquiry));
+          Object.entries(inquiry).forEach(([key, value]) => {
+            console.log(`  ${key}: ${value} (type: ${typeof value})`);
+          });
+          console.log('---');
+        });
+        console.log('==========================================');
+      }
+
+      // 페이지네이션 정보 업데이트
+      setTotalPages(responseData.totalPages || 1);
+      setTotalElements(responseData.totalElements || inquiriesData.length);
+
+      if (inquiriesData.length > 0) {
+        // 사용자 역할 매핑 함수
+        const mapUserRole = (userName) => {
+          if (userName && userName.includes('매니저')) {
+            return 'MANAGER';
+          }
+          return 'CUSTOMER';
+        };
+
+        // 실제 백엔드 응답 구조에 맞게 매핑
+        const mappedInquiries = inquiriesData.map((inquiry) => {
           const mappedInquiry = {
-            id: board.id,
-            title: board.title || '제목 없음',
-            content: board.content || '내용 없음',
-            userId: board.userId,
-            userName: board.userName || `사용자${board.userId}`,
-            userRole: userRole, // 개선된 역할 매핑
-            createdAt: board.createdAt,
-            updatedAt: board.updatedAt,
-            // 답변 상태 처리 - 백엔드에서 답변 정보를 제공하지 않으므로 기본값 false
-            // 중복 오류 발생 시에만 true로 업데이트됨
-            isAnswered: false,
-            // 답변 정보 - 기본적으로 null, 필요시 별도 API로 조회
-            reply: null,
+            id: inquiry.id,
+            title: inquiry.title || '제목 없음',
+            content: inquiry.content || '내용 없음',
+            userId: inquiry.userId,
+            userName: inquiry.userName || `사용자${inquiry.userId}`,
+            userRole:
+              inquiry.userRole || inquiry.role || mapUserRole(inquiry.userName),
+            createdAt: inquiry.createdAt,
+            updatedAt: inquiry.updatedAt,
+            // 백엔드에서 답변 정보를 제공한다면 그대로 사용, 없으면 null로 초기화
+            isAnswered: inquiry.isAnswered || false,
+            reply: inquiry.reply || null,
           };
 
           return mappedInquiry;
         });
 
-        setInquiries(mappedInquiries);
-        calculateStats(mappedInquiries);
+        // 모든 문의글의 답변 상태 확인
+        const inquiriesWithReplies =
+          await checkAllRepliesStatus(mappedInquiries);
 
-        // 정확한 통계를 위해 별도 통계 API 호출
-        fetchStatistics();
-
-        // 각 문의의 실제 답변 상태 확인
-        await checkRepliesForInquiries(mappedInquiries);
+        setInquiries(inquiriesWithReplies);
+        calculateStats(inquiriesWithReplies);
       } else {
         throw new Error(
           response.data?.message ||
@@ -429,80 +744,6 @@ const Inquiries = () => {
         setIsBackendConnected(false);
       } else {
         setIsBackendConnected(true);
-
-        // 개발 모드에서 API 오류 시 샘플 데이터 사용
-        if (
-          import.meta.env.DEV &&
-          (err.response?.status === 403 || err.response?.status === 404)
-        ) {
-          console.log('API 오류 발생 - 개발용 샘플 데이터 사용');
-          const sampleInquiries = [
-            {
-              id: 1,
-              boardId: 1,
-              title: '서비스 이용 문의',
-              content: '홈케어 서비스 이용 방법에 대해 문의드립니다.',
-              userName: '김고객',
-              userRole: 'CUSTOMER',
-              userId: 101,
-              adminId: 1,
-              isAnswered: true,
-              createdAt: '2024-01-15T10:30:00',
-              reply: {
-                id: 1,
-                content:
-                  '안녕하세요. 홈케어 서비스 이용 방법에 대해 안내드리겠습니다.',
-                createdAt: '2024-01-15T14:20:00',
-                adminId: 1,
-              },
-            },
-            {
-              id: 2,
-              boardId: 2,
-              title: '매니저 등록 절차 문의',
-              content: '매니저로 등록하고 싶은데 절차가 어떻게 되나요?',
-              userName: '이매니저',
-              userRole: 'MANAGER',
-              userId: 201,
-              adminId: 1,
-              isAnswered: true,
-              createdAt: '2024-01-14T09:15:00',
-              reply: {
-                id: 2,
-                content:
-                  '매니저 등록 절차에 대해 안내드리겠습니다. 먼저 회원가입 후...',
-                createdAt: '2024-01-14T16:45:00',
-                adminId: 1,
-              },
-            },
-            {
-              id: 3,
-              boardId: 3,
-              title: '결제 관련 문의',
-              content: '결제 시스템에 문제가 있는 것 같습니다.',
-              userName: '박사용자',
-              userRole: 'CUSTOMER',
-              userId: 102,
-              adminId: 1,
-              isAnswered: true,
-              createdAt: '2024-01-13T16:20:00',
-              reply: {
-                id: 3,
-                content:
-                  '결제 시스템 관련 문의 주셔서 감사합니다. 확인 후 답변드리겠습니다.',
-                createdAt: '2024-01-13T18:30:00',
-                adminId: 1,
-              },
-            },
-          ];
-
-          setInquiries(sampleInquiries);
-          calculateStats(sampleInquiries);
-          setTotalPages(1);
-          setTotalElements(3);
-          setLoading(false);
-          return;
-        }
       }
 
       // API 오류 시 빈 배열로 설정
@@ -510,57 +751,6 @@ const Inquiries = () => {
       calculateStats([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // 통계 데이터 가져오기 (전체 데이터 기반)
-  const fetchStatistics = async () => {
-    try {
-      // 전체 답변 수 (답변이 있는 문의 = 답변완료)
-      const totalResponse = await api.get('/admin/inquiries', {
-        params: { page: 0, size: 1 }, // 최소한의 데이터만 요청
-      });
-
-      // 고객 답변 수
-      const customerResponse = await api.get('/admin/inquiries', {
-        params: { role: 'CUSTOMER', page: 0, size: 1 },
-      });
-
-      // 매니저 답변 수
-      const managerResponse = await api.get('/admin/inquiries', {
-        params: { role: 'MANAGER', page: 0, size: 1 },
-      });
-
-      const totalAnswered = totalResponse.data?.data?.totalElements || 0;
-      const customerAnswered = customerResponse.data?.data?.totalElements || 0;
-      const managerAnswered = managerResponse.data?.data?.totalElements || 0;
-
-      // 새로운 API는 답변이 있는 문의만 반환하므로 미답변 수는 별도 계산 필요
-      // 실제 전체 문의 수는 별도 API나 로직으로 계산해야 함
-      // 현재는 답변이 있는 문의만 표시하므로 미답변은 0으로 설정
-      const totalInquiries = totalAnswered; // 답변이 있는 문의만 표시
-      const unanswered = 0; // 새로운 API 구조에서는 미답변 문의를 별도로 가져와야 함
-
-      setStats({
-        total: totalInquiries,
-        answered: totalAnswered,
-        unanswered: unanswered,
-        customer: customerAnswered,
-        manager: managerAnswered,
-      });
-
-      // 통계 API 호출 성공 시 연결 상태 업데이트
-      setIsBackendConnected(true);
-    } catch (err) {
-      console.error('Statistics fetch error:', err);
-
-      // 네트워크 에러인 경우 백엔드 연결 상태 업데이트
-      if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
-        setIsBackendConnected(false);
-      }
-
-      // 통계 API 실패 시 현재 데이터 기반으로 계산
-      calculateStats(inquiries);
     }
   };
 
@@ -585,89 +775,6 @@ const Inquiries = () => {
       customer,
       manager,
     });
-  };
-
-  // 각 문의의 답변 상태 확인
-  const checkRepliesForInquiries = async (inquiriesData) => {
-    if (!inquiriesData || inquiriesData.length === 0) return;
-
-    try {
-      if (import.meta.env.DEV) {
-        console.log('=== 답변 상태 확인 시작 ===');
-        console.log('확인할 문의 수:', inquiriesData.length);
-      }
-
-      // 각 문의에 대해 답변 존재 여부 확인
-      const updatedInquiries = await Promise.all(
-        inquiriesData.map(async (inquiry) => {
-          try {
-            // 답변 조회 API 호출
-            const response = await api.get('/admin/inquiries', {
-              params: {
-                boardId: inquiry.id,
-                page: 0,
-                size: 1,
-              },
-            });
-
-            if (response.data && response.data.success && response.data.data) {
-              const replies = response.data.data.content || [];
-
-              if (import.meta.env.DEV) {
-                console.log(
-                  `문의 ${inquiry.id} 답변 조회 결과:`,
-                  replies.length,
-                  '개'
-                );
-              }
-
-              if (replies.length > 0) {
-                // 답변이 있는 경우
-                const reply = replies[0];
-                return {
-                  ...inquiry,
-                  isAnswered: true,
-                  reply: {
-                    id: reply.id,
-                    content: reply.content,
-                    createdAt: reply.createdAt,
-                    adminId: reply.adminId,
-                  },
-                };
-              }
-            }
-          } catch (error) {
-            if (import.meta.env.DEV) {
-              console.log(
-                `문의 ${inquiry.id} 답변 조회 실패:`,
-                error.response?.status
-              );
-            }
-          }
-
-          // 답변이 없거나 조회 실패한 경우 원본 반환
-          return inquiry;
-        })
-      );
-
-      // 상태 업데이트
-      setInquiries(updatedInquiries);
-      calculateStats(updatedInquiries);
-
-      if (import.meta.env.DEV) {
-        const answeredCount = updatedInquiries.filter(
-          (inq) => inq.isAnswered
-        ).length;
-        console.log('✅ 답변 상태 확인 완료');
-        console.log(
-          `답변완료: ${answeredCount}개, 미답변: ${updatedInquiries.length - answeredCount}개`
-        );
-      }
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('답변 상태 확인 중 오류:', error);
-      }
-    }
   };
 
   // 컴포넌트 마운트 시 데이터 로드
@@ -853,18 +960,60 @@ const Inquiries = () => {
         console.log('답변 작성 응답:', response);
       }
 
-      if (response.data && response.data.success !== false) {
-        const newReply = response.data.data;
+      // 새로운 응답 구조: CommonApiResponse<BoardReplyListResponseDto>
+      if (response.data && response.data.success) {
+        const newReplyData = response.data.data; // BoardReplyListResponseDto
+
+        if (import.meta.env.DEV) {
+          console.log('새로운 답변 데이터:', newReplyData);
+        }
+
+        // localStorage에 답변된 문의 ID 저장
+        const savedAnsweredIds = JSON.parse(
+          localStorage.getItem('answeredInquiries') || '[]'
+        );
+        if (!savedAnsweredIds.includes(boardId)) {
+          savedAnsweredIds.push(boardId);
+          localStorage.setItem(
+            'answeredInquiries',
+            JSON.stringify(savedAnsweredIds)
+          );
+
+          if (import.meta.env.DEV) {
+            console.log('📦 답변된 문의 ID localStorage에 저장:', boardId);
+          }
+        }
+
+        // localStorage에 답변 내용도 저장
+        const savedReplies = JSON.parse(
+          localStorage.getItem('inquiryReplies') || '{}'
+        );
+        const replyToSave = {
+          id: newReplyData.id,
+          content: newReplyData.content,
+          createdAt: newReplyData.createdAt || new Date().toISOString(),
+          adminId: newReplyData.adminId || newReplyData.userId,
+          adminName: newReplyData.userName || '관리자',
+          userRole: newReplyData.userRole || 'ADMIN',
+        };
+        savedReplies[boardId] = replyToSave;
+        localStorage.setItem('inquiryReplies', JSON.stringify(savedReplies));
+
+        if (import.meta.env.DEV) {
+          console.log('💾 답변 내용 localStorage에 저장:', replyToSave);
+        }
 
         // 성공 시 로컬 상태 업데이트
         const updatedInquiry = {
           ...replyModal.inquiry,
           isAnswered: true,
           reply: {
-            id: newReply.id,
-            content: content,
-            createdAt: newReply.createdAt || new Date().toISOString(),
-            adminId: newReply.adminId,
+            id: newReplyData.id,
+            content: newReplyData.content,
+            createdAt: newReplyData.createdAt || new Date().toISOString(),
+            adminId: newReplyData.adminId || newReplyData.userId,
+            adminName: newReplyData.userName || '관리자',
+            userRole: newReplyData.userRole || 'ADMIN',
           },
         };
 
@@ -885,8 +1034,11 @@ const Inquiries = () => {
         alert('답변이 성공적으로 작성되었습니다.');
         setReplyModal({ isOpen: false, inquiry: null, existingReply: null });
 
-        // 데이터 새로고침 제거 - 이미 상태를 업데이트했으므로 불필요
-        // fetchInquiries();
+        // 답변 작성 후 데이터 새로고침하여 DB 상태와 동기화
+        if (import.meta.env.DEV) {
+          console.log('✅ 답변 작성 완료 - 데이터 새로고침 시작');
+        }
+        await fetchInquiries();
       } else {
         throw new Error(response.data?.message || '답변 작성에 실패했습니다.');
       }
@@ -904,6 +1056,76 @@ const Inquiries = () => {
         console.log('Request method:', err.config?.method);
         console.log('Request data:', err.config?.data);
         console.log('Request headers:', err.config?.headers);
+      }
+
+      // 이미 답변이 존재하는 경우 처리
+      if (
+        err.response?.status === 409 || // Conflict
+        (err.response?.status === 400 &&
+          (err.response?.data?.code === 'REPLY_ALREADY_EXISTS' ||
+            err.response?.data?.message?.includes('이미 답변이 존재')))
+      ) {
+        if (import.meta.env.DEV) {
+          console.log('🚨 답변이 이미 존재함 - 데이터 새로고침');
+          console.log('boardId:', replyModal.inquiry.id);
+        }
+
+        // localStorage에 답변된 문의 ID 저장
+        const savedAnsweredIds = JSON.parse(
+          localStorage.getItem('answeredInquiries') || '[]'
+        );
+        if (!savedAnsweredIds.includes(replyModal.inquiry.id)) {
+          savedAnsweredIds.push(replyModal.inquiry.id);
+          localStorage.setItem(
+            'answeredInquiries',
+            JSON.stringify(savedAnsweredIds)
+          );
+
+          if (import.meta.env.DEV) {
+            console.log(
+              '📦 기존 답변 존재 - 문의 ID localStorage에 저장:',
+              replyModal.inquiry.id
+            );
+          }
+        }
+
+        // localStorage에 기본 답변 내용도 저장 (실제 내용은 나중에 서버에서 가져올 예정)
+        const savedReplies = JSON.parse(
+          localStorage.getItem('inquiryReplies') || '{}'
+        );
+        if (!savedReplies[replyModal.inquiry.id]) {
+          savedReplies[replyModal.inquiry.id] = {
+            id: `existing_${replyModal.inquiry.id}`,
+            content: content, // 사용자가 입력한 내용 (실제로는 기존 답변이 있음)
+            createdAt: new Date().toISOString(),
+            adminId: 1,
+            adminName: '관리자',
+            userRole: 'ADMIN',
+          };
+          localStorage.setItem('inquiryReplies', JSON.stringify(savedReplies));
+
+          if (import.meta.env.DEV) {
+            console.log('💾 기존 답변 정보 localStorage에 저장');
+          }
+        }
+
+        // 모달 닫기
+        setReplyModal({
+          isOpen: false,
+          inquiry: null,
+          existingReply: null,
+        });
+
+        alert('해당 문의에는 이미 답변이 등록되어 있습니다.');
+
+        // 실제 데이터 상태를 확인하기 위해 새로고침
+        await fetchInquiries();
+
+        if (import.meta.env.DEV) {
+          console.log('✅ 기존 답변 처리 완료 - 데이터 새로고침 완료');
+        }
+
+        return; // 함수 종료
       }
 
       // 400 오류인 경우 더 자세한 정보 제공
@@ -928,193 +1150,13 @@ const Inquiries = () => {
           }
         }
 
-        // 중복 답변 오류인 경우 특별 처리
-        if (
-          errorData?.code === 'duplicate value' ||
-          errorMessage.includes('이미 처리된 요청')
-        ) {
-          if (import.meta.env.DEV) {
-            console.log('🚨 중복 답변 오류 감지 - 실제 답변 확인');
-            console.log('boardId:', replyModal.inquiry.id);
-          }
-
-          // 실제로 답변이 생성되었는지 확인
-          try {
-            const replyCheckResponse = await api.get('/admin/inquiries', {
-              params: {
-                boardId: replyModal.inquiry.id,
-                page: 0,
-                size: 1,
-              },
-            });
-
-            if (import.meta.env.DEV) {
-              console.log('답변 확인 API 응답:', replyCheckResponse.data);
-            }
-
-            if (
-              replyCheckResponse.data &&
-              replyCheckResponse.data.success &&
-              replyCheckResponse.data.data
-            ) {
-              const replies = replyCheckResponse.data.data.content || [];
-
-              if (replies.length > 0) {
-                // 실제 답변이 존재하는 경우
-                const actualReply = replies[0];
-
-                if (import.meta.env.DEV) {
-                  console.log('✅ 실제 답변 발견:', actualReply);
-                }
-
-                const updatedInquiry = {
-                  ...replyModal.inquiry,
-                  isAnswered: true,
-                  reply: {
-                    id: actualReply.id,
-                    content: actualReply.content,
-                    createdAt: actualReply.createdAt,
-                    adminId: actualReply.adminId,
-                  },
-                };
-
-                // 즉시 상태 업데이트
-                setInquiries((prevInquiries) => {
-                  const newInquiries = prevInquiries.map((inquiry) =>
-                    inquiry.id === replyModal.inquiry.id
-                      ? updatedInquiry
-                      : inquiry
-                  );
-
-                  if (import.meta.env.DEV) {
-                    console.log('✅ 실제 답변으로 문의 목록 업데이트 완료');
-                  }
-
-                  return newInquiries;
-                });
-
-                // 통계 즉시 업데이트
-                setStats((prevStats) => {
-                  const newStats = {
-                    ...prevStats,
-                    answered: prevStats.answered + 1,
-                    unanswered: Math.max(0, prevStats.unanswered - 1),
-                  };
-
-                  if (import.meta.env.DEV) {
-                    console.log('✅ 통계 업데이트 (실제 답변):', {
-                      이전: prevStats,
-                      새로운: newStats,
-                    });
-                  }
-
-                  return newStats;
-                });
-
-                // 모달 즉시 닫기
-                setReplyModal({
-                  isOpen: false,
-                  inquiry: null,
-                  existingReply: null,
-                });
-
-                alert('답변이 성공적으로 작성되었습니다.');
-
-                if (import.meta.env.DEV) {
-                  console.log('✅ 실제 답변 처리 완료');
-                }
-
-                return; // 함수 종료
-              }
-            }
-          } catch (replyCheckError) {
-            if (import.meta.env.DEV) {
-              console.log('답변 확인 API 호출 실패:', replyCheckError);
-            }
-          }
-
-          // 실제 답변을 찾지 못한 경우 임시 답변 생성 (기존 로직)
-          if (import.meta.env.DEV) {
-            console.log('⚠️ 실제 답변을 찾지 못함 - 임시 답변 생성');
-          }
-
-          // 즉시 UI 상태 업데이트 (백엔드 API 버그 우회)
-          const tempReply = {
-            id: `temp_${replyModal.inquiry.id}_${Date.now()}`,
-            content: content, // 사용자가 입력한 내용 사용
-            createdAt: new Date().toISOString(),
-            adminId: 1,
-          };
-
-          const updatedInquiry = {
-            ...replyModal.inquiry,
-            isAnswered: true,
-            reply: tempReply,
-          };
-
-          if (import.meta.env.DEV) {
-            console.log('✅ 임시 답변 생성:', tempReply);
-            console.log('✅ 업데이트될 문의:', updatedInquiry);
-          }
-
-          // 즉시 상태 업데이트
-          setInquiries((prevInquiries) => {
-            const newInquiries = prevInquiries.map((inquiry) =>
-              inquiry.id === replyModal.inquiry.id ? updatedInquiry : inquiry
-            );
-
-            if (import.meta.env.DEV) {
-              console.log('✅ 문의 목록 상태 업데이트 완료');
-              const updatedItem = newInquiries.find(
-                (inq) => inq.id === replyModal.inquiry.id
-              );
-              console.log('✅ 업데이트된 문의 확인:', updatedItem);
-              console.log('✅ isAnswered:', updatedItem?.isAnswered);
-              console.log('✅ reply:', updatedItem?.reply);
-            }
-
-            return newInquiries;
-          });
-
-          // 통계 즉시 업데이트
-          setStats((prevStats) => {
-            const newStats = {
-              ...prevStats,
-              answered: prevStats.answered + 1,
-              unanswered: Math.max(0, prevStats.unanswered - 1),
-            };
-
-            if (import.meta.env.DEV) {
-              console.log('✅ 통계 업데이트:', {
-                이전: prevStats,
-                새로운: newStats,
-              });
-            }
-
-            return newStats;
-          });
-
-          // 모달 즉시 닫기
-          setReplyModal({ isOpen: false, inquiry: null, existingReply: null });
-
-          if (import.meta.env.DEV) {
-            console.log('✅ 모달 닫기 완료');
-          }
-
-          // 성공 메시지
-          alert(
-            '답변이 성공적으로 작성되었습니다.\n(백엔드 중복 처리 오류를 우회하여 정상 처리되었습니다.)'
-          );
-
-          // fetchInquiries 호출 제거 - 이미 상태를 업데이트했으므로 불필요하고 오히려 방해됨
-          if (import.meta.env.DEV) {
-            console.log('✅ 답변 작성 처리 완료 - fetchInquiries 생략');
-          }
-        } else {
-          alert(`답변 작성 중 오류가 발생했습니다: ${errorMessage}`);
-        }
+        alert(`답변 작성 실패: ${errorMessage}`);
       } else {
-        alert(`답변 작성 중 오류가 발생했습니다: ${err.message}`);
+        alert(
+          err.response?.data?.message ||
+            err.message ||
+            '답변 작성 중 오류가 발생했습니다.'
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -1127,7 +1169,14 @@ const Inquiries = () => {
       setIsSubmitting(true);
 
       const existingReply = replyModal.existingReply;
-      const boardId = replyModal.inquiry.boardId || replyModal.inquiry.id;
+      const boardId = replyModal.inquiry.id; // 문의글 ID 사용
+
+      if (import.meta.env.DEV) {
+        console.log('=== 답변 수정 API 호출 ===');
+        console.log('boardId:', boardId);
+        console.log('replyId:', existingReply.id);
+        console.log('content:', content);
+      }
 
       // 새로운 백엔드 API: PUT /api/v1/admin/inquiries/board/{boardId}/reply/{replyId}
       const response = await api.put(
@@ -1137,20 +1186,73 @@ const Inquiries = () => {
         }
       );
 
-      if (response.data && response.data.success !== false) {
-        const updatedReply = response.data.data;
+      if (import.meta.env.DEV) {
+        console.log('답변 수정 응답:', response);
+      }
 
-        // 성공 시 로컬 상태 업데이트
+      // 새로운 응답 구조: CommonApiResponse<BoardReplyListResponseDto>
+      if (response.data && response.data.success) {
+        const updatedReplyData = response.data.data; // BoardReplyListResponseDto
+
+        if (import.meta.env.DEV) {
+          console.log('수정된 답변 데이터:', updatedReplyData);
+        }
+
+        // localStorage에 답변된 문의 ID 저장 (업데이트 시에도 확실히 저장)
+        const savedAnsweredIds = JSON.parse(
+          localStorage.getItem('answeredInquiries') || '[]'
+        );
+        if (!savedAnsweredIds.includes(boardId)) {
+          savedAnsweredIds.push(boardId);
+          localStorage.setItem(
+            'answeredInquiries',
+            JSON.stringify(savedAnsweredIds)
+          );
+
+          if (import.meta.env.DEV) {
+            console.log(
+              '📦 답변 수정 시 문의 ID localStorage에 저장:',
+              boardId
+            );
+          }
+        }
+
+        // localStorage에 수정된 답변 내용도 저장
+        const savedReplies = JSON.parse(
+          localStorage.getItem('inquiryReplies') || '{}'
+        );
+        const replyToSave = {
+          id: updatedReplyData.id,
+          content: updatedReplyData.content,
+          createdAt: updatedReplyData.createdAt,
+          updatedAt: updatedReplyData.updatedAt,
+          adminId: updatedReplyData.adminId || updatedReplyData.userId,
+          adminName: updatedReplyData.userName || '관리자',
+          userRole: updatedReplyData.userRole || 'ADMIN',
+        };
+        savedReplies[boardId] = replyToSave;
+        localStorage.setItem('inquiryReplies', JSON.stringify(savedReplies));
+
+        if (import.meta.env.DEV) {
+          console.log('💾 수정된 답변 내용 localStorage에 저장:', replyToSave);
+        }
+
+        // 성공 시 즉시 로컬 상태 업데이트
         const updatedInquiry = {
           ...replyModal.inquiry,
           isAnswered: true,
           reply: {
-            ...existingReply,
-            content: content,
-            updatedAt: updatedReply.updatedAt || new Date().toISOString(),
+            id: updatedReplyData.id,
+            content: updatedReplyData.content,
+            createdAt: updatedReplyData.createdAt,
+            updatedAt: updatedReplyData.updatedAt,
+            adminId: updatedReplyData.adminId || updatedReplyData.userId,
+            adminName: updatedReplyData.userName || '관리자',
+            userRole: updatedReplyData.userRole || 'ADMIN',
           },
         };
 
+        // 기존 문의 목록에서 해당 문의를 업데이트
         setInquiries((prevInquiries) =>
           prevInquiries.map((inquiry) =>
             inquiry.id === replyModal.inquiry.id ? updatedInquiry : inquiry
@@ -1161,13 +1263,28 @@ const Inquiries = () => {
         setReplyModal({ isOpen: false, inquiry: null, existingReply: null });
 
         // 데이터 새로고침
-        fetchInquiries();
+        if (import.meta.env.DEV) {
+          console.log('✅ 답변 수정 완료 - 데이터 새로고침 시작');
+        }
+        await fetchInquiries();
       } else {
         throw new Error(response.data?.message || '답변 수정에 실패했습니다.');
       }
     } catch (err) {
       console.error('Reply update error:', err);
-      alert(`답변 수정 중 오류가 발생했습니다: ${err.message}`);
+
+      if (import.meta.env.DEV) {
+        console.log('=== 답변 수정 오류 상세 ===');
+        console.log('Error object:', err);
+        console.log('Response status:', err.response?.status);
+        console.log('Response data:', err.response?.data);
+      }
+
+      alert(
+        err.response?.data?.message ||
+          err.message ||
+          '답변 수정 중 오류가 발생했습니다.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -1182,12 +1299,51 @@ const Inquiries = () => {
     try {
       const boardId = inquiry.id; // 문의글 ID 사용
 
+      if (import.meta.env.DEV) {
+        console.log('=== 답변 삭제 API 호출 ===');
+        console.log('boardId:', boardId);
+        console.log('replyId:', inquiry.reply.id);
+      }
+
       // 새로운 백엔드 API: DELETE /api/v1/admin/inquiries/board/{boardId}/reply/{replyId}
       const response = await api.delete(
         `/admin/inquiries/board/${boardId}/reply/${inquiry.reply.id}`
       );
 
-      if (response.data && response.data.success !== false) {
+      if (import.meta.env.DEV) {
+        console.log('답변 삭제 응답:', response);
+      }
+
+      // 새로운 응답 구조: CommonApiResponse (삭제는 보통 data가 없을 수 있음)
+      if (response.data && response.data.success) {
+        if (import.meta.env.DEV) {
+          console.log('✅ 답변 삭제 성공');
+        }
+
+        // localStorage에서 답변된 문의 ID 제거
+        const savedAnsweredIds = JSON.parse(
+          localStorage.getItem('answeredInquiries') || '[]'
+        );
+        const updatedAnsweredIds = savedAnsweredIds.filter(
+          (id) => id !== boardId
+        );
+        localStorage.setItem(
+          'answeredInquiries',
+          JSON.stringify(updatedAnsweredIds)
+        );
+
+        // localStorage에서 답변 내용도 제거
+        const savedReplies = JSON.parse(
+          localStorage.getItem('inquiryReplies') || '{}'
+        );
+        delete savedReplies[boardId];
+        localStorage.setItem('inquiryReplies', JSON.stringify(savedReplies));
+
+        if (import.meta.env.DEV) {
+          console.log('📦 답변된 문의 ID localStorage에서 제거:', boardId);
+          console.log('💾 답변 내용 localStorage에서 제거');
+        }
+
         // 성공 시 즉시 로컬 상태 업데이트
         const updatedInquiry = {
           ...inquiry,
@@ -1212,13 +1368,28 @@ const Inquiries = () => {
         alert('답변이 성공적으로 삭제되었습니다.');
 
         // 데이터 새로고침
-        fetchInquiries();
+        if (import.meta.env.DEV) {
+          console.log('✅ 답변 삭제 완료 - 데이터 새로고침 시작');
+        }
+        await fetchInquiries();
       } else {
         throw new Error(response.data?.message || '답변 삭제에 실패했습니다.');
       }
     } catch (err) {
       console.error('Reply deletion error:', err);
-      alert(`답변 삭제 중 오류가 발생했습니다: ${err.message}`);
+
+      if (import.meta.env.DEV) {
+        console.log('=== 답변 삭제 오류 상세 ===');
+        console.log('Error object:', err);
+        console.log('Response status:', err.response?.status);
+        console.log('Response data:', err.response?.data);
+      }
+
+      alert(
+        err.response?.data?.message ||
+          err.message ||
+          '답변 삭제 중 오류가 발생했습니다.'
+      );
     }
   };
 
