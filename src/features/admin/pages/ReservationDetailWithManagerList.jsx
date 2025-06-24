@@ -32,6 +32,17 @@ const ReservationDetailWithManagerList = () => {
     fetchData();
   }, [reservationId]);
 
+  const handleSelectManager = async (managerId) => {
+    try {
+      await apiService.matching.createMatching(Number(reservationId), managerId);
+      alert('매칭이 성공적으로 생성되었습니다!');
+      // 필요하다면 이동 또는 새로고침 등 추가
+    } catch (error) {
+      alert('매칭 생성에 실패했습니다.');
+      console.error(error);
+    }
+  };
+
   if (loading) return <div className="p-8 text-center">불러오는 중...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
   if (!reservation) return <div className="p-8 text-center">예약 정보 없음</div>;
@@ -100,7 +111,12 @@ const ReservationDetailWithManagerList = () => {
                 </div>
                 <div className="flex flex-col gap-2">
                   <button className="px-4 py-2 bg-white border border-blue-500 text-blue-600 rounded-lg font-medium hover:bg-blue-50">프로필</button>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">선택</button>
+                  <button
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                    onClick={() => handleSelectManager(m.managerId)}
+                  >
+                    선택
+                  </button>
                 </div>
               </div>
             ))
