@@ -19,6 +19,9 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   const getPageTitle = () => {
     const path = location.pathname;
+    if (path.startsWith('/admin/matches/reservations/') && path.endsWith('/detail')) {
+      return '매니저 추천 리스트';
+    }
     switch (path) {
       case '/admin/dashboard':
         return '대시보드';
@@ -30,6 +33,8 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         return '매니저 조회';
       case '/admin/matches':
         return '매칭 관리';
+      case '/admin/reviews':
+        return '리뷰 관리';
       case '/admin/statistics':
         return '통계';
       case '/admin/settlements':

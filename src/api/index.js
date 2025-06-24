@@ -13,6 +13,7 @@ export const apiService = {
     delete: (id) => api.delete(`/manager/${id}`),
     getManagerList: () => api.get('/managers/list'),
     changeStatus: (id, status) => api.patch(`/managers/${id}/status`, status),
+    createProfile: (data) => api.post('/managers/profile', data),
   },
 
   // 사용자 관련 API
@@ -83,8 +84,9 @@ export const apiService = {
     cancel: (id) => api.post(`/reservations/${id}/cancel`),
   },
   matching: {
-    acceptMatching: (matchingId, data) =>
-      api.patch(`/manager/matchings/${matchingId}/to-customer`, data),
+    acceptMatching: (matchingId, data) => api.patch(`/manager/matchings/${matchingId}/to-customer`, data),
+    getRecommendedManagers: (reservationId) => api.post(`admin/matchings/${reservationId}/recommendations`),
+    createMatching: (reservationId, managerId) => api.post('/admin/matchings', { reservationId, managerId }),
   },
   workLog: {
     checkIn: (data) => api.post('/managers/work-logs', data),

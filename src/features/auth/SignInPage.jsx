@@ -8,7 +8,7 @@ import { authService } from './services/authService.js';
 import sseEmitter from '../alert/sseEmitter.js';
 
 const SignInPage = () => {
-  const [phone, setphone] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -16,20 +16,35 @@ const SignInPage = () => {
   const navigate = useNavigate();
   const { setUser, setAccessToken, logout } = useAuthStore();
 
-  const formatPhoneNumber = (value) => {
-    if (!value) return '';
-    const phoneNumber = value.replace(/[^0-9]/g, '');
-    let result = '';
-    if (phoneNumber.length < 4) {
-      result = phoneNumber;
-    } else if (phoneNumber.length < 7) {
-      result = `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3)}`;
-    } else if (phoneNumber.length < 11) {
-      result = `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7)}`;
+  const handlePhoneChange = (e) => {
+    const value = e.target.value;
+    // 이전 값
+    const prev = phone;
+    // 하이픈 없는 숫자만 추출
+    const onlyNums = value.replace(/[^0-9]/g, '');
+
+    // 하이픈 자동완성
+    let formatted = '';
+    if (onlyNums.length < 4) {
+      formatted = onlyNums;
+    } else if (onlyNums.length < 7) {
+      formatted = `${onlyNums.slice(0, 3)}-${onlyNums.slice(3)}`;
+    } else if (onlyNums.length < 11) {
+      formatted = `${onlyNums.slice(0, 3)}-${onlyNums.slice(3, 7)}-${onlyNums.slice(7)}`;
     } else {
-      result = `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3, 7)}-${phoneNumber.slice(7, 11)}`;
+      formatted = `${onlyNums.slice(0, 3)}-${onlyNums.slice(3, 7)}-${onlyNums.slice(7, 11)}`;
     }
-    return result;
+
+    // 하이픈 앞에서 백스페이스로 지울 때 하이픈도 같이 지우기
+    if (
+      prev.length > value.length && // 입력값이 줄었고
+      prev[prev.length - 1] === '-' // 이전 마지막이 하이픈
+    ) {
+      // 하이픈 앞 숫자도 같이 지움
+      setPhone(formatted.slice(0, -1));
+    } else {
+      setPhone(formatted);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -147,7 +162,7 @@ const SignInPage = () => {
                   type="text"
                   placeholder="휴대폰 번호를 입력해 주세요."
                   value={phone}
-                  onChange={(e) => setphone(formatPhoneNumber(e.target.value))}
+                  onChange={handlePhoneChange}
                   required
                   style={{
                     width: 'calc(100% - 26px)',

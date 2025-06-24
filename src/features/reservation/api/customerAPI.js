@@ -1,3 +1,4 @@
+import { api } from '../../../api/config/api.js'
 /* eslint-env node */
 // Base API URL - 환경변수 사용
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';

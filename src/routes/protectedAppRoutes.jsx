@@ -8,6 +8,7 @@ import MatchingManagement from '../features/admin/pages/MatchingManagement';
 import Statistics from '../features/admin/pages/Statistics';
 import ManagerSettlement from '../features/admin/pages/ManagerSettlement';
 import Inquiries from '../features/admin/pages/Inquiries';
+import ReviewManagement from '../features/admin/pages/ReviewManagement';
 import ManagerServiceCheckIn from '../features/matching/pages/ManagerServiceCheckIn';
 import ManagerMatchingRequest from '../features/matching/pages/ManagerMatchingRequest';
 import UserServiceOption from '../features/reservation/components/UserServiceOption';
@@ -32,6 +33,7 @@ import CreateInquiry from '../features/mypage/manager/components/CreateInquiry';
 import CustomerMyAddress from '../features/mypage/customer/components/MyAddress';
 import CustomerAddressRegister from '../features/mypage/customer/components/AddressRegister';
 import ManagerMatchingListPage from '../features/matching/pages/ManagerMatchingListPage';
+import ReservationDetailWithManagerList from '@/features/admin/pages/ReservationDetailWithManagerList';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -47,6 +49,8 @@ export const protectedAppRoutes = [
       { path: 'customer-payments', element: <CustomerPayment /> },
       { path: 'managers', element: <ManagerList /> },
       { path: 'matches', element: <MatchingManagement /> },
+      { path: 'matches/reservations/:reservationId/detail', element: <ReservationDetailWithManagerList /> },
+      { path: 'reviews', element: <ReviewManagement /> },
       { path: 'statistics', element: <Statistics /> },
       { path: 'settlements', element: <ManagerSettlement /> },
       { path: 'inquiries', element: <Inquiries /> },

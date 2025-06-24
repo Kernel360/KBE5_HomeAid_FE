@@ -199,54 +199,55 @@
 
 .post-main {
   flex: 1;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .post-title {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   color: #111827;
-  margin: 0 0 10px 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  line-height: 1.5;
+  margin: 0;
+  line-height: 1.4;
+  word-break: keep-all;
 }
 
 .post-title-container {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .important-badge {
   background-color: #ef4444;
   color: white;
+  font-size: 10px;
+  font-weight: 700;
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  align-self: flex-start;
-  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .private-badge {
-  background-color: #9ca3af;
+  background-color: #f59e0b;
   color: white;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .post-info {
   display: flex;
-  gap: 16px;
-  font-size: 14px;
-  color: #666;
-  line-height: 1.2;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
 }
 
 .post-author {
@@ -258,29 +259,30 @@
 }
 
 .post-views {
-  font-size: 13px;
+  font-size: 12px;
   color: #9ca3af;
   font-weight: 500;
 }
 
 .post-stats {
   display: flex;
-  align-items: center;
-  margin-left: 16px;
-  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 .post-status {
   display: flex;
   align-items: center;
-  margin-left: 16px;
+  gap: 4px;
 }
 
 .status-badge {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: #fbbf24;
   color: white;
 }
 
@@ -292,49 +294,49 @@
   background-color: #f59e0b;
 }
 
-/* 페이지네이션 스타일 */
+/* 페이지네이션 */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
   margin-top: 32px;
-  padding: 20px 0;
+  padding: 16px 0;
 }
 
 .page-btn {
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid #e5e7eb;
-  background-color: white;
-  color: #6b7280;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
 }
 
 .page-btn:hover:not(:disabled) {
   border-color: #4f6ef7;
-  color: #4f6ef7;
   background-color: #f8faff;
+  color: #4f6ef7;
 }
 
 .page-btn.active {
-  background-color: #4f6ef7;
   border-color: #4f6ef7;
+  background-color: #4f6ef7;
   color: white;
   font-weight: 600;
 }
 
 .page-btn:disabled {
-  cursor: not-allowed;
   opacity: 0.5;
-  background-color: #f9fafb;
+  cursor: not-allowed;
+  color: #9ca3af;
 }
 
 .prev-btn,
@@ -343,153 +345,25 @@
   font-weight: bold;
 }
 
-/* 모바일 반응형 */
-@media (max-width: 480px) {
-  .page-content-wrapper {
-    padding: 16px 12px;
-    margin-top: 64px;
-    margin-bottom: 96px; /* Footer 높이 + 여백 */
-  }
-
-  .board-container {
-    padding: 16px;
-    border-radius: 8px;
-  }
-
-  .tab-button {
-    padding: 8px 8px;
-    font-size: 14px;
-  }
-
-  .post-item {
-    padding: 16px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .post-title {
-    font-size: 15px;
-  }
-
-  .post-info,
-  .post-views {
-    font-size: 13px;
-  }
-
-  .status-badge {
-    font-size: 11px;
-    padding: 3px 6px;
-  }
-
-  .write-button {
-    padding: 12px 14px;
-    font-size: 15px;
-  }
-
-  .important-badge,
-  .private-badge {
-    font-size: 10px;
-    padding: 2px 5px;
-  }
-
-  /* 모바일 페이지네이션 */
-  .pagination {
-    gap: 4px;
-    margin-top: 24px;
-    padding: 16px 0;
-  }
-
-  .page-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 13px;
-  }
-
-  .prev-btn,
-  .next-btn {
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 360px) {
-  .page-content-wrapper {
-    padding: 12px 8px;
-    margin-top: 60px;
-    margin-bottom: 92px; /* Footer 높이 + 여백 */
-  }
-
-  .board-container {
-    padding: 12px;
-  }
-
-  .tab-button {
-    padding: 8px 8px;
-    font-size: 14px;
-  }
-
-  .post-item {
-    padding: 12px;
-  }
-
-  .post-title {
-    font-size: 14px;
-  }
-
-  .post-info,
-  .post-views {
-    font-size: 12px;
-  }
-
-  .write-button {
-    padding: 10px 12px;
-    font-size: 14px;
-  }
-
-  .important-badge {
-    font-size: 9px;
-    padding: 2px 4px;
-  }
-
-  /* 작은 화면 페이지네이션 */
-  .pagination {
-    gap: 2px;
-    margin-top: 20px;
-    padding: 12px 0;
-  }
-
-  .page-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
-  }
-
-  .prev-btn,
-  .next-btn {
-    font-size: 14px;
-  }
-}
-
-/* FAQ 아이템 스타일 */
+/* FAQ 관련 스타일 */
 .faq-item {
   background-color: #f8feff;
-  border-color: #06b6d4;
+  border-color: #ecfeff;
 }
 
 .faq-item:hover {
-  background-color: #ecfeff;
-  border-color: #0891b2;
+  border-color: #06b6d4;
+  background-color: #f0fdff;
 }
 
-/* 카테고리 배지 스타일 */
 .category-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
-  margin-right: 8px;
-  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .category-예약 {
@@ -514,10 +388,101 @@
 
 .category-쿠폰 {
   background-color: #e0e7ff;
-  color: #3730a3;
+  color: #5b21b6;
 }
 
 .category-평가 {
   background-color: #f3e8ff;
   color: #6b21a8;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 480px) {
+  .tab-button {
+    padding: 6px 4px;
+    font-size: 13px;
+  }
+
+  .post-item {
+    padding: 16px;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .post-title {
+    font-size: 15px;
+  }
+
+  .post-info,
+  .post-stats {
+    font-size: 11px;
+  }
+
+  .write-button {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .important-badge,
+  .private-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .pagination {
+    gap: 4px;
+    margin-top: 24px;
+  }
+
+  .page-btn {
+    min-width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .prev-btn,
+  .next-btn {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .tab-button {
+    padding: 5px 3px;
+    font-size: 12px;
+  }
+
+  .post-item {
+    padding: 14px;
+  }
+
+  .post-title {
+    font-size: 14px;
+  }
+
+  .write-button {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .important-badge {
+    font-size: 8px;
+    padding: 1px 3px;
+  }
+
+  .pagination {
+    gap: 2px;
+    margin-top: 20px;
+  }
+
+  .page-btn {
+    min-width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .prev-btn,
+  .next-btn {
+    font-size: 14px;
+  }
 }

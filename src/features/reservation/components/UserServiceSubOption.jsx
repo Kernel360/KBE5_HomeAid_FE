@@ -8,12 +8,16 @@ import { useAuthStore } from '../../../stores/authStore.js';
 import { SERVICE_DESCRIPTIONS, USER_INFO } from '../constants/serviceData.js';
 import { useCustomerServices } from '../hooks/useCustomerAPI.js';
 import useReservationStore from '../../../stores/reservationStore.js';
+import balconyIcon from '../../../assets/images/balcony.png';
+import hotTubIcon from '../../../assets/images/hot-tub.png';
+import windowIcon from '../../../assets/images/window.png';
 
 const UserServiceSubOption = () => {
   const navigate = useNavigate();
 
   // ⭐️ 하위 옵션 선택 상태 관리
   const [selectedSubOption, setSelectedSubOption] = useState(null);
+  const [memo, setMemo] = useState('');
 
   // zustand store 사용
   const {
@@ -81,6 +85,12 @@ const UserServiceSubOption = () => {
       alert('서비스 옵션을 선택해주세요.');
       return;
     }
+
+    // 메모를 store에 저장
+    setReservationInfo({
+      memo: memo,
+    });
+
     navigate('/customer/service-request');
   };
 
@@ -119,6 +129,36 @@ const UserServiceSubOption = () => {
           { name: '세탁 후 정리정돈', price: 5000 },
         ],
       },
+      general_cleaning: {
+        title: '베란다 청소 서비스',
+        duration: '약 1-2시간 소요',
+        services: [
+          { name: '베란다 바닥 청소', price: 18000 },
+          { name: '난간 및 창틀 청소', price: 15000 },
+          { name: '베란다 유리창 청소', price: 12000 },
+          { name: '베란다 정리정돈', price: 10000 },
+        ],
+      },
+      bathroom_cleaning: {
+        title: '욕실 청소 서비스',
+        duration: '약 1-2시간 소요',
+        services: [
+          { name: '욕조 및 샤워부스 청소', price: 25000 },
+          { name: '화장실 변기 청소', price: 15000 },
+          { name: '타일 및 바닥 청소', price: 18000 },
+          { name: '거울 및 세면대 청소', price: 12000 },
+        ],
+      },
+      window_cleaning: {
+        title: '창문 청소 서비스',
+        duration: '약 1-2시간 소요',
+        services: [
+          { name: '창문 유리 청소', price: 20000 },
+          { name: '창틀 및 방충망 청소', price: 15000 },
+          { name: '베란다 바닥 청소', price: 12000 },
+          { name: '창문 주변 정리', price: 8000 },
+        ],
+      },
       cleaning: {
         title: '기본 청소 서비스',
         duration: '약 2-3시간 소요',
@@ -141,20 +181,7 @@ const UserServiceSubOption = () => {
       },
     };
 
-    return serviceData[subOptionId] || serviceData.cleaning; // 기본값은 청소
-  };
-
-  // 현재 선택된 서브옵션의 서비스 데이터 가져오기
-  const currentServiceData = selectedSubOption
-    ? getServiceData(selectedSubOption.id)
-    : getServiceData('cleaning');
-
-  // 총 가격 계산
-  const getTotalPrice = () => {
-    return currentServiceData.services.reduce(
-      (total, service) => total + service.price,
-      0
-    );
+    return serviceData[subOptionId] || serviceData.general_cleaning; // 기본값은 일반 청소
   };
 
   // 로딩 상태 표시 (단순화)
@@ -221,7 +248,8 @@ const UserServiceSubOption = () => {
 
           {/* 하위 서비스 옵션 섹션 */}
           <div className="sub-service-options">
-            {/* 빨래 옵션 */}
+            {/* 빨래 옵션 - 주석처리 */}
+            {/* 
             <div
               className={`service-card sub-service-option ${
                 selectedSubOption && selectedSubOption.id === 'laundry'
@@ -243,31 +271,75 @@ const UserServiceSubOption = () => {
               </div>
               <div className="option-label">빨래</div>
             </div>
+            */}
 
-            {/* 청소 옵션 */}
+            {/* 베란다 청소 옵션 */}
             <div
               className={`service-card sub-service-option ${
-                selectedSubOption && selectedSubOption.id === 'cleaning'
+                selectedSubOption && selectedSubOption.id === 'general_cleaning'
                   ? 'selected'
                   : ''
               }`}
-              onClick={() => handleOptionSelect('청소', 'cleaning')}
+              onClick={() =>
+                handleOptionSelect('베란다 청소', 'general_cleaning')
+              }
+              style={{ backgroundColor: 'white', background: 'white' }}
             >
               <div className="cleaning-icon">
-                <div className="cleaning-tools">
-                  <div className="broom"></div>
-                  <div className="dustpan"></div>
-                  <div className="sparkles">
-                    <span>✨</span>
-                    <span>✨</span>
-                    <span>✨</span>
-                  </div>
-                </div>
+                <img
+                  src={balconyIcon}
+                  alt="베란다 청소"
+                  className="cleaning-image"
+                />
               </div>
-              <div className="option-label">청소</div>
+              <div className="option-label">베란다 청소</div>
             </div>
 
-            {/* 육아 옵션 */}
+            {/* 욕실 청소 옵션 */}
+            <div
+              className={`service-card sub-service-option ${
+                selectedSubOption &&
+                selectedSubOption.id === 'bathroom_cleaning'
+                  ? 'selected'
+                  : ''
+              }`}
+              onClick={() =>
+                handleOptionSelect('욕실 청소', 'bathroom_cleaning')
+              }
+              style={{ backgroundColor: 'white', background: 'white' }}
+            >
+              <div className="cleaning-icon">
+                <img
+                  src={hotTubIcon}
+                  alt="욕실 청소"
+                  className="cleaning-image"
+                />
+              </div>
+              <div className="option-label">욕실 청소</div>
+            </div>
+
+            {/* 창문 청소 옵션 */}
+            <div
+              className={`service-card sub-service-option ${
+                selectedSubOption && selectedSubOption.id === 'window_cleaning'
+                  ? 'selected'
+                  : ''
+              }`}
+              onClick={() => handleOptionSelect('창문 청소', 'window_cleaning')}
+              style={{ backgroundColor: 'white', background: 'white' }}
+            >
+              <div className="cleaning-icon">
+                <img
+                  src={windowIcon}
+                  alt="창문 청소"
+                  className="cleaning-image"
+                />
+              </div>
+              <div className="option-label">창문 청소</div>
+            </div>
+
+            {/* 육아 옵션 - 주석처리 */}
+            {/* 
             <div
               className={`service-card sub-service-option ${
                 selectedSubOption && selectedSubOption.id === 'childcare'
@@ -288,51 +360,44 @@ const UserServiceSubOption = () => {
               </div>
               <div className="option-label">육아</div>
             </div>
+            */}
           </div>
 
           {/* 기본 서비스 섹션 */}
           <div className="basic-service-section">
             <div className="service-header">
-              <div className="service-icon-small">
-                <span className="clock-icon">🕐</span>
-              </div>
               <div className="service-title">
-                <h3>{currentServiceData.title}</h3>
+                <h3>서비스 메모</h3>
                 <span className="service-duration">
-                  {currentServiceData.duration}
+                  추가 요청사항이나 특별한 사항을 적어주세요
                 </span>
               </div>
             </div>
 
-            {/* 동적 서비스 목록 */}
-            <div className="service-checklist">
-              {currentServiceData.services.map((service, index) => (
-                <div key={index} className="checklist-item">
-                  <label className="service-checkbox-label">
-                    <input type="checkbox" disabled checked={true} />
-                    <span className="service-checkmark"></span>
-                    <span className="service-name">{service.name}</span>
-                    <span className="service-price">
-                      {service.price.toLocaleString()}원
-                    </span>
-                  </label>
-                </div>
-              ))}
-            </div>
-
-            {/* 총 가격 표시 */}
-            <div className="total-price-section">
-              <div className="total-price-item">
-                <span className="total-label">총 예상 금액:</span>
-                <span className="total-amount">
-                  {getTotalPrice().toLocaleString()}원
-                </span>
+            {/* 메모 입력 칸 */}
+            <div className="memo-section">
+              <textarea
+                className="memo-textarea"
+                placeholder="예: 반려동물이 있어요, 특정 시간에 조용히 해주세요, 특별히 신경써야 할 부분이 있어요 등..."
+                value={memo}
+                onChange={(e) => {
+                  if (e.target.value.length <= 500) {
+                    setMemo(e.target.value);
+                  }
+                }}
+                rows={6}
+                maxLength={500}
+              />
+              <div
+                className={`memo-counter ${memo.length > 450 ? 'over-limit' : ''}`}
+              >
+                {memo.length}/500자
               </div>
             </div>
 
             <div className="service-note">
               <span>
-                * 기본 서비스 외 추가 요청사항은 매니저와 상담 후 결정됩니다.
+                * 메모 내용은 매니저에게 전달되어 서비스 시 참고됩니다.
               </span>
             </div>
           </div>

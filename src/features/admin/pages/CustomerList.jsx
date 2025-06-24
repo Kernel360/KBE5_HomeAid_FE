@@ -36,7 +36,7 @@ const CustomerList = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 0,
-    size: 10,
+    size: 10, // 한 페이지에 10개씩 표시
     totalElements: 0,
     totalPages: 0,
   });
@@ -47,14 +47,98 @@ const CustomerList = () => {
     newToday: 0,
   });
 
-  // 검색 필터 상태 추가
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchScope, setSearchScope] = useState('all'); // 체크박스 대신 단일 선택
-  const [isSearching, setIsSearching] = useState(false);
+  // 검색 관련 상태 - 리뷰 관리와 동일한 패턴
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchType, setSearchType] = useState('all');
 
-  // 체크박스 선택 상태 추가
+  // 체크박스 선택 상태
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [isAllSelected, setIsAllSelected] = useState(false);
+
+  // 디바운스된 검색 - 성능 최적화
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // 검색어가 변경된 후 300ms 후에 실행
+      if (searchTerm.trim()) {
+        handleSearch();
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // 검색과 필터를 적용한 고객 필터링 - 성능 최적화
+  const getFilteredCustomers = () => {
+    if (!customers.length) return [];
+
+    let filtered = customers;
+
+    // 검색어 필터링 - 최적화된 버전
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter((customer) => {
+        switch (searchType) {
+          case 'name':
+            return customer.name?.toLowerCase().includes(term);
+          case 'email':
+            return customer.email?.toLowerCase().includes(term);
+          case 'phone':
+            return customer.phone?.toLowerCase().includes(term);
+          case 'all':
+          default:
+            return (
+              customer.name?.toLowerCase().includes(term) ||
+              customer.email?.toLowerCase().includes(term) ||
+              customer.phone?.toLowerCase().includes(term)
+            );
+        }
+      });
+    }
+
+    return filtered;
+  };
+
+  const filteredCustomers = getFilteredCustomers();
+
+  // 페이지네이션 적용된 고객 목록
+  const getPaginatedCustomers = () => {
+    const startIndex = pagination.page * pagination.size;
+    const endIndex = startIndex + pagination.size;
+    return filteredCustomers.slice(startIndex, endIndex);
+  };
+
+  const paginatedCustomers = getPaginatedCustomers();
+
+  // 페이지네이션 정보 업데이트
+  const updatePaginationInfo = () => {
+    const totalElements = filteredCustomers.length;
+    const totalPages = Math.ceil(totalElements / pagination.size);
+
+    setPagination((prev) => ({
+      ...prev,
+      totalElements,
+      totalPages,
+    }));
+  };
+
+  // 검색어나 필터가 변경될 때 페이지네이션 정보 업데이트
+  useEffect(() => {
+    updatePaginationInfo();
+    // 현재 페이지가 총 페이지 수를 초과하면 첫 페이지로 이동
+    if (
+      pagination.page > 0 &&
+      pagination.page >= Math.ceil(filteredCustomers.length / pagination.size)
+    ) {
+      setPagination((prev) => ({ ...prev, page: 0 }));
+    }
+  }, [filteredCustomers.length, pagination.size]);
+
+  // 페이지 변경 핸들러 - 클라이언트 사이드 페이지네이션
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < pagination.totalPages) {
+      setPagination((prev) => ({ ...prev, page: newPage }));
+    }
+  };
 
   // API 호출 함수
   const fetchCustomers = async (page = 0, searchData = null) => {
@@ -134,7 +218,6 @@ const CustomerList = () => {
       });
     } finally {
       setLoading(false);
-      setIsSearching(false);
     }
   };
 
@@ -159,10 +242,22 @@ const CustomerList = () => {
           const allCustomers = data.data.content || [];
           const today = new Date().toDateString();
 
+          // 탈퇴 여부를 확인하는 함수
+          const isWithdrawn = (customer) => {
+            return (
+              customer.withdrawnAt ||
+              customer.deletedAt ||
+              customer.isWithdrawn ||
+              customer.isDeleted ||
+              customer.status === 'WITHDRAWN' ||
+              customer.status === 'DELETED'
+            );
+          };
+
           const stats = {
             total: allCustomers.length,
-            active: allCustomers.filter((c) => c.isActive).length,
-            inactive: allCustomers.filter((c) => !c.isActive).length,
+            active: allCustomers.filter((c) => !isWithdrawn(c)).length, // 탈퇴하지 않은 회원
+            inactive: allCustomers.filter((c) => isWithdrawn(c)).length, // 탈퇴한 회원
             newToday: allCustomers.filter((c) => {
               const createdDate = new Date(c.createdAt || c.joinDate);
               return createdDate.toDateString() === today;
@@ -185,19 +280,16 @@ const CustomerList = () => {
 
   // 검색 실행
   const handleSearch = () => {
-    setIsSearching(true);
-    const searchData = searchQuery.trim()
-      ? { query: searchQuery.trim(), scope: searchScope }
-      : null;
-    fetchCustomers(0, searchData);
+    // 검색 시 첫 페이지로 이동
+    setPagination((prev) => ({ ...prev, page: 0 }));
   };
 
   // 검색 초기화
   const handleReset = () => {
-    setSearchQuery('');
-    setSearchScope('all');
-    setIsSearching(false);
-    fetchCustomers(0, null);
+    setSearchTerm('');
+    setSearchType('all');
+    // 초기화 시 첫 페이지로 이동
+    setPagination((prev) => ({ ...prev, page: 0 }));
   };
 
   // 엔터 키 검색 핸들러
@@ -207,18 +299,19 @@ const CustomerList = () => {
     }
   };
 
-  // 페이지 변경
-  const handlePageChange = (newPage) => {
-    const searchData = searchQuery.trim()
-      ? { query: searchQuery.trim(), scope: searchScope }
-      : null;
-    fetchCustomers(newPage, searchData);
-  };
-
   // 활동 상태 표시 함수
   const getActivityStatus = (customer) => {
-    // 백엔드에서 받은 isActive 필드를 기반으로 상태 표시
-    return customer.isActive ? '활성' : '비활성';
+    // 탈퇴 여부 확인 - 여러 가능한 필드명 체크
+    const isWithdrawn =
+      customer.withdrawnAt ||
+      customer.deletedAt ||
+      customer.isWithdrawn ||
+      customer.isDeleted ||
+      customer.status === 'WITHDRAWN' ||
+      customer.status === 'DELETED';
+
+    // 탈퇴한 회원은 비활성, 그 외는 활성
+    return isWithdrawn ? '비활성' : '활성';
   };
 
   // 전체 선택/해제 핸들러
@@ -287,7 +380,7 @@ const CustomerList = () => {
     {
       title: '활성 고객',
       value: customerStats.active.toString(),
-      subValue: '서비스 이용 중',
+      subValue: '정상 이용 중',
       icon: (
         <svg
           className="w-5 h-5 text-green-600"
@@ -306,21 +399,21 @@ const CustomerList = () => {
     {
       title: '비활성 고객',
       value: customerStats.inactive.toString(),
-      subValue: '휴면 상태',
+      subValue: '탈퇴한 회원',
       icon: (
         <svg
-          className="w-5 h-5 text-gray-600"
+          className="w-5 h-5 text-red-600"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
           <path
             fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
             clipRule="evenodd"
           />
         </svg>
       ),
-      iconBg: 'bg-gray-100',
+      iconBg: 'bg-red-100',
     },
     {
       title: '신규 가입',
@@ -372,8 +465,8 @@ const CustomerList = () => {
                 <div className="flex items-center space-x-3">
                   {/* 검색 범위 선택 */}
                   <select
-                    value={searchScope}
-                    onChange={(e) => setSearchScope(e.target.value)}
+                    value={searchType}
+                    onChange={(e) => setSearchType(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="all">전체</option>
@@ -400,12 +493,11 @@ const CustomerList = () => {
                     </div>
                     <input
                       type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder="검색어를 입력하세요"
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isSearching}
                     />
                   </div>
 
@@ -417,10 +509,9 @@ const CustomerList = () => {
                   </button>
                   <button
                     onClick={handleSearch}
-                    disabled={isSearching}
-                    className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    {isSearching ? '검색 중...' : '검색'}
+                    검색
                   </button>
                 </div>
               </div>
@@ -556,7 +647,7 @@ const CustomerList = () => {
                       </tr>
                     ) : (
                       // 실제 데이터
-                      customers.map((customer, index) => (
+                      paginatedCustomers.map((customer, index) => (
                         <tr
                           key={customer.id || index}
                           className="hover:bg-gray-50"
@@ -585,7 +676,7 @@ const CustomerList = () => {
                               className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                 getActivityStatus(customer) === '활성'
                                   ? 'bg-green-100 text-green-800'
-                                  : 'bg-gray-100 text-gray-800'
+                                  : 'bg-red-100 text-red-800'
                               }`}
                             >
                               {getActivityStatus(customer)}
@@ -606,42 +697,65 @@ const CustomerList = () => {
                 </table>
               </div>
 
-              {/* Pagination */}
-              <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
-                <div className="text-sm text-gray-700">
-                  총 {pagination.totalElements}개 중{' '}
-                  {pagination.page * pagination.size + 1}-
-                  {Math.min(
-                    (pagination.page + 1) * pagination.size,
-                    pagination.totalElements
-                  )}
-                  개 표시
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 0 || loading}
-                  >
-                    ‹
-                  </button>
-                  <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
-                    {pagination.page + 1}
-                  </span>
-                  <span className="px-3 py-1 text-sm text-gray-500">
-                    / {pagination.totalPages}
-                  </span>
-                  <button
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={
-                      pagination.page >= pagination.totalPages - 1 || loading
-                    }
-                  >
-                    ›
-                  </button>
-                </div>
-              </div>
+              {/* Pagination - 매니저 목록과 동일한 스타일 적용 */}
+              {!loading &&
+                filteredCustomers.length > 0 &&
+                pagination.totalPages > 1 && (
+                  <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
+                    <div className="text-sm text-gray-700">
+                      {searchTerm ? (
+                        <>
+                          검색 결과:{' '}
+                          <span className="font-medium">
+                            {filteredCustomers.length}
+                          </span>
+                          개{searchTerm && ` (검색어: "${searchTerm}")`}
+                        </>
+                      ) : (
+                        <>
+                          총{' '}
+                          <span className="font-medium">
+                            {pagination.totalElements}
+                          </span>
+                          건 중{' '}
+                          <span className="font-medium">
+                            {pagination.page * pagination.size + 1}-
+                            {Math.min(
+                              (pagination.page + 1) * pagination.size,
+                              pagination.totalElements
+                            )}
+                          </span>
+                          건 표시
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={pagination.page === 0 || loading}
+                      >
+                        ‹
+                      </button>
+                      <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
+                        {pagination.page + 1}
+                      </span>
+                      <span className="px-3 py-1 text-sm text-gray-500">
+                        / {pagination.totalPages}
+                      </span>
+                      <button
+                        className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={
+                          pagination.page >= pagination.totalPages - 1 ||
+                          loading
+                        }
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
         </div>

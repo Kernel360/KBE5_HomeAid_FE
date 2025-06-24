@@ -15,22 +15,6 @@ const MainPage = memo(() => {
   // 슬라이드 데이터는 이제 SlideShow 컴포넌트로 이동
   // 자동 슬라이드 기능도 SlideShow 컴포넌트로 이동
 
-  const handleServiceClick = (servicePath) => {
-    if (user) {
-      // 로그인된 사용자는 바로 서비스로 이동
-      if (user.role === 'ROLE_CUSTOMER') {
-        navigate(servicePath);
-      } else if (user.role === 'ROLE_MANAGER') {
-        navigate('/manager/mypage');
-      } else if (user.role === 'ROLE_ADMIN') {
-        navigate('/admin/dashboard');
-      }
-    } else {
-      // 비로그인 사용자는 로그인 페이지로 이동
-      navigate('/auth/signin');
-    }
-  };
-
   return (
     <div className="min-h-screen flex justify-center">
       <div className="w-full max-w-lg relative bg-white">
