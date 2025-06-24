@@ -176,7 +176,7 @@ html {
 
 .service-card:hover {
   border-color: #4285f4;
-  background-color: #f8f9ff;
+  background-color: transparent;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
