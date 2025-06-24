@@ -57,8 +57,7 @@ export const apiService = {
   },
 
   review: {
-    getAll: () => api.get('/review'),
-    getByUserId: (reviewer) => api.get(`/reviews/${reviewer}`),
+    getMyReviews: (page = 0, size = 10) => api.get(`/reviews/my?page=${page}&size=${size}`),
     create: (data) => api.post('/reviews', data),
     update: (id, data) => api.put(`/reviews/${id}`, data),
     delete: (id) => api.delete(`/reviews/${id}`),

@@ -13,6 +13,7 @@ import CreateInquiry from '../components/CreateInquiry.jsx';
 import InquiryDetail from '../components/InquiryDetail.jsx';
 import ManagerDocumentUpload from '../components/ManagerDocumentUpload.jsx';
 import ServiceRegistration from '../../../additional-info/pages/index.jsx'
+import api from '@/api/config/api';
 
 // 더미 포인트/수익 데이터
 const pointsHistory = [

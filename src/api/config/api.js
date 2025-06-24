@@ -187,3 +187,6 @@ api.post('/manager/all')
     .then(response => console.log(response.data))
     .catch(error => console.error(error));
 */
+
+export const getMyReviews = (page = 0, size = 10) =>
+  api.get(`/reviews/my?page=${page}&size=${size}`);

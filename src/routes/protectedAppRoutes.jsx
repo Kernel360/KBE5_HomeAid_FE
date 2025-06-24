@@ -33,6 +33,7 @@ import CreateInquiry from '../features/mypage/manager/components/CreateInquiry';
 import CustomerMyAddress from '../features/mypage/customer/components/MyAddress';
 import CustomerAddressRegister from '../features/mypage/customer/components/AddressRegister';
 import ManagerMatchingListPage from '../features/matching/pages/ManagerMatchingListPage';
+import MyReviewListPage from '../features/review/pages/MyReviewListPage';
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -102,7 +103,7 @@ export const protectedAppRoutes = [
       },
       { path: 'payment', element: <UserPayment /> },
       { path: 'payment-complete', element: <UserPaymentComplete /> },
-      { path: 'review/history', element: <ReservationHistoryPage /> },
+      { path: 'review/history', element: <MyReviewListPage /> },
       {
         path: 'review/detail/:reservationId',
         element: <ReservationDetailPage />,
