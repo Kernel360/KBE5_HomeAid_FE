@@ -6,13 +6,11 @@ import { apiService } from '@/api';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import MyProfile from '../components/MyProfile.jsx';
-import MyAddress from '../components/MyAddress.jsx';
 import InquiryBoard from '../components/InquiryBoard.jsx';
-import AddressRegister from '../components/AddressRegister.jsx';
 import CreateInquiry from '../components/CreateInquiry.jsx';
 import InquiryDetail from '../components/InquiryDetail.jsx';
 import ManagerDocumentUpload from '../components/ManagerDocumentUpload.jsx';
-import ServiceRegistration from '../../../additional-info/pages/index.jsx'
+import ServiceRegistration from '../../../additional-info/pages/index.jsx';
 
 // 더미 포인트/수익 데이터
 const pointsHistory = [
@@ -250,7 +248,7 @@ function MatchingInfoView({ onBack }) {
         <Header showBackButton={true} onBackClick={onBack} />
         <main className="px-6 py-6 flex-1 overflow-y-auto" style={{ paddingBottom: '100px', paddingTop: '80px' }}>
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-900">매칭 정보 입력</h3>
+            <h3 className="text-xl font-bold text-gray-900">근무 정보 입력</h3>
             <p className="text-sm text-gray-500 mt-1">여기에 매칭 정보 입력 폼/컴포넌트가 들어갑니다.</p>
           </div>
           <ServiceRegistration />
@@ -368,7 +366,7 @@ export default function ManagerMypage() {
             onClick={() => setCurrentView('matchingInfo')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">📝 매칭 정보 입력</span>
+            <span className="text-gray-900">📝 근무 정보 입력</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
           <button
@@ -401,10 +399,6 @@ export default function ManagerMypage() {
   switch (currentView) {
     case 'profile':
       return <MyProfile onBack={() => setCurrentView('main')} userProfile={userProfile} setUserProfile={setUserProfile} />;
-    case 'address':
-      return <MyAddress onBack={() => setCurrentView('main')} onAddAddress={() => setCurrentView('addressRegister')} />;
-    case 'addressRegister':
-      return <AddressRegister onBack={() => setCurrentView('address')} />;
     case 'inquiry':
       return <InquiryBoard onBack={() => setCurrentView('main')} onNavigateToCreate={handleNavigateToCreate} onNavigateToDetail={handleNavigateToDetail} />;
     case 'createInquiry':
@@ -416,7 +410,7 @@ export default function ManagerMypage() {
     case 'earnings':
       return <EarningsView onBack={() => setCurrentView('main')} />;
     case 'matchingInfo':
-      return <MatchingInfoView onBack={() => setCurrentView('main')} />;
+      return <ServiceRegistration onBack={() => setCurrentView('main')} />;
     case 'documentUpload':
       return <ManagerDocumentUpload onBack={() => setCurrentView('main')} />;
     default:

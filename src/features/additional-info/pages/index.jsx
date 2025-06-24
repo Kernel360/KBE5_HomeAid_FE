@@ -8,11 +8,19 @@ import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import { useManagerProfileStore } from '../../../stores/managerProfileStore.js';
 
-const ServiceRegistration = () => {
+const ServiceRegistration = ({ onBack }) => {
   const navigate = useNavigate();
   const [stepView, setStepView] = useState('step1');
   const [serviceOptions, setServiceOptions] = useState([]);
   const { formData, setFormData } = useManagerProfileStore();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/manager/mypage');
+    }
+  };
 
   const handleServiceChange = (serviceId) => {
     setFormData({
@@ -49,7 +57,7 @@ const ServiceRegistration = () => {
         className="w-full bg-gray-50 min-h-screen flex flex-col"
         style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
       >
-        <Header showBackButton={true} />
+        <Header showBackButton={true} onBackClick={handleBack} />
 
         <main
           className="flex-1"
@@ -209,7 +217,7 @@ const ServiceRegistration = () => {
           className="w-full bg-gray-50 min-h-screen flex flex-col"
           style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
         >
-          <Header showBackButton={true} />
+          <Header showBackButton={true} onBackClick={handleBack} />
           <main
             className="flex-1"
             style={{ paddingTop: '80px', paddingBottom: '100px' }}
@@ -229,7 +237,7 @@ const ServiceRegistration = () => {
           className="w-full bg-gray-50 min-h-screen flex flex-col"
           style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
         >
-          <Header showBackButton={true} />
+          <Header showBackButton={true} onBackClick={handleBack} />
           <main
             className="flex-1"
             style={{ paddingTop: '80px', paddingBottom: '100px' }}

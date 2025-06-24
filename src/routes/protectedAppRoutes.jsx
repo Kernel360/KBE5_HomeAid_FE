@@ -22,8 +22,6 @@ import UserReservationDetail from '../features/main/UserReservationDetail';
 import ServiceRegistration from '../features/additional-info/pages';
 import Mypage from '../features/mypage/customer/pages/Mypage';
 import ManagerMypage from '../features/mypage/manager/pages/ManagerMypage.jsx';
-import MyAddress from '../features/mypage/manager/components/MyAddress';
-import AddressRegister from '../features/mypage/manager/components/AddressRegister';
 import ReservationHistoryPage from '../features/review/pages/ReservationHistoryPage';
 import ReservationDetailPage from '../features/review/pages/ReservationDetailPage';
 import ReviewWritePage from '../features/review/pages/ReviewWritePage';
@@ -33,7 +31,9 @@ import CreateInquiry from '../features/mypage/manager/components/CreateInquiry';
 import CustomerMyAddress from '../features/mypage/customer/components/MyAddress';
 import CustomerAddressRegister from '../features/mypage/customer/components/AddressRegister';
 import ManagerMatchingListPage from '../features/matching/pages/ManagerMatchingListPage';
+import MyReviewListPage from '../features/review/pages/MyReviewListPage';
 import ReservationDetailWithManagerList from '@/features/admin/pages/ReservationDetailWithManagerList';
+
 
 // 보호된 라우트 라우트 목록/설정
 export const protectedAppRoutes = [
@@ -91,8 +91,6 @@ export const protectedAppRoutes = [
     allowedRoles: ['ROLE_MANAGER'],
     children: [
       { path: 'mypage', element: <ManagerMypage /> },
-      { path: 'mypage/address', element: <MyAddress /> },
-      { path: 'mypage/address/register', element: <AddressRegister /> },
       { path: 'mypage/inquiry', element: <InquiryBoard /> },
       { path: 'mypage/inquiry/create', element: <CreateInquiry /> },
       { path: 'mypage/inquiry/:id', element: <InquiryDetail /> },
@@ -104,7 +102,7 @@ export const protectedAppRoutes = [
       },
       { path: 'payment', element: <UserPayment /> },
       { path: 'payment-complete', element: <UserPaymentComplete /> },
-      { path: 'review/history', element: <ReservationHistoryPage /> },
+      { path: 'review/history', element: <MyReviewListPage /> },
       {
         path: 'review/detail/:reservationId',
         element: <ReservationDetailPage />,

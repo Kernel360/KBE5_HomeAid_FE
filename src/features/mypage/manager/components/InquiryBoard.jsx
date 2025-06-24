@@ -6,7 +6,7 @@ import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
 // 문의 게시판 페이지
-const InquiryBoard = () => {
+const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
   const navigate = useNavigate();
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +83,7 @@ const InquiryBoard = () => {
         margin: '0 auto',
       }}
     >
-      <Header showBackButton={true} onBackClick={handleBack} />
+      <Header showBackButton={true} onBackClick={onBack || handleBack} />
 
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
         {/* 페이지 제목과 설명 */}
