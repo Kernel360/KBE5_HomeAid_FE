@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiService } from '@/api';
+import { useNavigate } from 'react-router-dom';
 
 const StatCard = ({ title, value, subValue, icon, iconBg }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
@@ -32,6 +34,37 @@ const StatCard = ({ title, value, subValue, icon, iconBg }) => (
 
 const MatchingManagement = () => {
   const [activeTab, setActiveTab] = useState('전체');
+  const [matchingData, setMatchingData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  // API에서 예약 데이터 가져오기
+  useEffect(() => {
+    const fetchReservations = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('🔍 예약 데이터 가져오기 시작');
+        
+        const response = await apiService.reservation.getAll();
+        console.log('✅ 예약 데이터 가져오기 성공!!!!!!!:', response);
+        
+        // API 응답 구조에 따라 데이터 추출
+        const reservations = response.data?.data?.content || response.data?.data || response.data || [];
+        console.log('📋 추출된 예약 데이터:', reservations);
+        
+        setMatchingData(reservations);
+      } catch (err) {
+        console.error('❌ 예약 데이터 가져오기 실패:', err);
+        setError('예약 데이터를 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReservations();
+  }, []);
 
   const tabs = [
     '전체 (234)',
@@ -131,99 +164,6 @@ const MatchingManagement = () => {
     },
   ];
 
-  const matchingData = [
-    {
-      id: '#M2024001',
-      customer: {
-        name: '김철수',
-        address: 'IT컨설팅 요청',
-      },
-      manager: {
-        name: '박민수',
-        rating: '4.8',
-      },
-      service: {
-        name: 'IT컨설팅',
-        description: '시스템 분석 및 설계',
-      },
-      status: '진행중',
-      requestDate: '2024.01.10',
-      amount: '₩150,000',
-    },
-    {
-      id: '#M2024002',
-      customer: {
-        name: '이영희',
-        address: '마케팅 컨설팅',
-      },
-      manager: {
-        name: '김영수',
-        rating: '4.6',
-      },
-      service: {
-        name: '마케팅',
-        description: '디지털 마케팅 전략',
-      },
-      status: '대기',
-      requestDate: '2024.01.12',
-      amount: '₩200,000',
-    },
-    {
-      id: '#M2024003',
-      customer: {
-        name: '박지훈',
-        address: '웹개발 프로젝트',
-      },
-      manager: {
-        name: '최민호',
-        rating: '4.9',
-      },
-      service: {
-        name: '웹개발',
-        description: '풀스택 개발',
-      },
-      status: '완료',
-      requestDate: '2024.01.08',
-      amount: '₩300,000',
-    },
-    {
-      id: '#M2024004',
-      customer: {
-        name: '정수연',
-        address: '디자인 컨설팅',
-      },
-      manager: {
-        name: '한지민',
-        rating: '4.7',
-      },
-      service: {
-        name: '디자인',
-        description: 'UX/UI 디자인',
-      },
-      status: '진행중',
-      requestDate: '2024.01.13',
-      amount: '₩180,000',
-    },
-    {
-      id: '#M2024005',
-      customer: {
-        name: '송민재',
-        address: '법무 컨설팅',
-      },
-      manager: {
-        name: '이준호',
-        rating: '4.5',
-      },
-      service: {
-        name: '법무',
-        description: '계약서 검토',
-      },
-      status: '실패',
-      requestDate: '2024.01.09',
-      amount: '₩0',
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="px-4 sm:px-6 lg:px-8 py-6">
@@ -277,101 +217,129 @@ const MatchingManagement = () => {
 
               {/* Table */}
               <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[1400px]">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        매칭 ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        수요자
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        매니저
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        서비스
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        상태
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        요청일
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        요금
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        상세보기
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {matchingData.map((item, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                          {item.id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {item.customer.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {item.customer.address}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {item.manager.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              평점 {item.manager.rating} ⭐
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {item.service.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {item.service.description}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              item.status === '완료'
-                                ? 'bg-green-100 text-green-800'
-                                : item.status === '진행중'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : item.status === '대기'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {item.requestDate}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {item.amount}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <button className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                            상세보기
-                          </button>
-                        </td>
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="text-gray-500">예약 데이터를 불러오는 중...</div>
+                  </div>
+                ) : error ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="text-red-500">{error}</div>
+                  </div>
+                ) : matchingData.length === 0 ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="text-gray-500">등록된 예약이 없습니다.</div>
+                  </div>
+                ) : (
+                  <table className="w-full min-w-[1400px]">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          예약 ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          고객
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          매니저
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          서비스
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          상태
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          요청일
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          요금
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          상세보기
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {matchingData.map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                            #{item.reservationId || item.id || index + 1}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {item.customerName || '고객명 없음'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {item.address || '주소 정보 없음'}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {item.matchedManagerName || '배정 대기중'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {item.managerRating ? `평점 ${item.managerRating} ⭐` : '평점 없음'}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {item.serviceOptionName || '서비스명 없음'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {item.customerMemo || '요청사항 없음'}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                item.status === 'COMPLETED'
+                                  ? 'bg-green-100 text-green-800'
+                                  : item.status === 'MATCHED'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : item.status === 'REQUESTED'
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : item.status == 'MATCHING'
+                                        ? 'bg-white-100 text-black-800'
+                                        : item.status === 'CANCELLED'
+                                          ? 'bg-red-100 text-red-800'
+                                          : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {item.status === 'COMPLETED' ? '서비스 완료' :
+                               item.status === 'MATCHED' ? '매칭 완료' :
+                               item.status === 'MATCHING' ? '매칭 중' :
+                               item.status === 'REQUESTED' ? '매칭 필요' :
+                               item.status === 'CANCELLED' ? '취소됨' :
+                               item.status || '상태 미확인'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.startTime || item.createdAt ? 
+                              new Date(item.startTime || item.createdAt).toLocaleDateString('ko-KR') : 
+                              '날짜 없음'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {item.totalPrice ? `₩${item.totalPrice.toLocaleString()}` : '₩0'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <button
+                              className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                              onClick={() => navigate(`/admin/matches/reservations/${item.reservationId || item.id}/detail`)}
+                            >
+                              상세보기
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
 
               {/* Pagination */}
