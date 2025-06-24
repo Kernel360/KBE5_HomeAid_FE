@@ -82,8 +82,6 @@ const Dashboard = () => {
     totalUsers: 0,
     activeManagers: 0,
     totalPayments: 0,
-    totalPaymentAmount: 0,
-    totalSettlementAmount: 0,
     todayReservations: 0,
     pendingApprovals: 0,
     managerStatusDetails: {

@@ -16,7 +16,10 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path.startsWith('/admin/matches/reservations/') && path.endsWith('/detail')) {
+    if (
+      path.startsWith('/admin/matches/reservations/') &&
+      path.endsWith('/detail')
+    ) {
       return '매니저 추천 리스트';
     }
     switch (path) {
@@ -44,18 +47,12 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 lg:left-64 right-0 h-20 bg-white border-b border-gray-200 z-30 shadow-sm">
+    <header className="fixed top-0 left-0 lg:left-64 right-0 h-20 bg-white border-b border-gray-200 z-50 shadow-sm">
       <div className="flex items-center justify-between h-full w-full">
         {/* Mobile Menu Button */}
         <div className="flex items-center lg:hidden px-3">
           <button
-            onClick={() => {
-              console.log(
-                'Hamburger menu clicked, current state:',
-                isMobileMenuOpen
-              );
-              setIsMobileMenuOpen(!isMobileMenuOpen);
-            }}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <svg
@@ -105,6 +102,14 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
     </header>
   );
 };

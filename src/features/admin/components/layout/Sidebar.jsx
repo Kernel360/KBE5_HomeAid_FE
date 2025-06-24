@@ -346,7 +346,11 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         {/* Mobile Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="px-3">
-            <div className="mb-2"></div>
+            <div className="mb-2">
+              <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                NAVIGATION
+              </p>
+            </div>
             <div className="space-y-1">
               {menuItems.map((item) => (
                 <Link
@@ -424,7 +428,7 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
       {/* Logout Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+        <div className="fixed inset-0 bg-black bg-opacity-5 flex items-center justify-center z-[100]">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
               <svg
