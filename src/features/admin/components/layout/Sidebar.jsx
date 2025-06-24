@@ -346,11 +346,7 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         {/* Mobile Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="px-3">
-            <div className="mb-2">
-              <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                NAVIGATION
-              </p>
-            </div>
+            <div className="mb-2"></div>
             <div className="space-y-1">
               {menuItems.map((item) => (
                 <Link
