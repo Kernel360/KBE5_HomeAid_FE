@@ -17,45 +17,10 @@ const ReservationDetailWithManagerList = () => {
         // 예약 상세 정보 가져오기
         const res = await apiService.reservation.getById(reservationId);
         setReservation(res.data?.data || res.data);
-        // 매칭 가능한 매니저 리스트 가져오기 (여기선 더미)
-        const managerList = [
-          {
-            id: 1,
-            name: '김서현',
-            username: 'manager_8901',
-            rating: 4.8,
-            reviewCount: 127,
-            experience: '3년 2개월',
-            distance: 2.3,
-            address: '인천 연수구 거주',
-            tags: ['홈케어', '반려동물 케어', '야간 서비스'],
-            availableTime: '오후 6시 ~ 10시',
-          },
-          {
-            id: 2,
-            name: '박민준',
-            username: 'manager_7654',
-            rating: 4.6,
-            reviewCount: 89,
-            experience: '2년 8개월',
-            distance: 5.1,
-            address: '인천 남동구 거주',
-            tags: ['홈케어', '청소 서비스'],
-            availableTime: '오후 7시 ~ 11시',
-          },
-          {
-            id: 3,
-            name: '이수진',
-            username: 'manager_3456',
-            rating: 4.9,
-            reviewCount: 203,
-            experience: '5년 1개월',
-            distance: 1.8,
-            address: '인천 연수구 거주',
-            tags: ['홈케어'],
-            availableTime: '오후 6시 ~ 9시',
-          },
-        ];
+        // 추천 매니저 API 연동
+        const recRes = await apiService.matching.getRecommendedManagers(reservationId);
+        const managerList = recRes.data?.data || [];
+        
         setManagers(managerList);
       } catch (error) {
         console.error(error);
@@ -120,37 +85,26 @@ const ReservationDetailWithManagerList = () => {
           </div>
         </div>
         <div className="space-y-4">
-          {managers.map((m) => (
-            <div key={m.id} className="flex items-start gap-4 bg-gray-50 rounded-lg p-4">
-              <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-3xl text-gray-400">
-                <span>👤</span>
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-base">{m.name}</span>
-                  <span className="text-xs text-gray-500">{m.username}</span>
-                  <span className="ml-2 text-yellow-500 font-bold flex items-center text-sm">
-                    ★ {m.rating} <span className="ml-1 text-xs text-gray-500">({m.reviewCount}경력)</span>
-                  </span>
-                  <span className="ml-2 text-xs text-gray-500">{m.experience}</span>
+          {managers.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">매칭된 매니저가 없습니다.</div>
+          ) : (
+            managers.map((m) => (
+              <div key={m.managerId} className="flex items-start gap-4 bg-gray-50 rounded-lg p-4">
+                <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-3xl text-gray-400">
+                  <span>👤</span>
                 </div>
-                <div className="text-xs text-gray-500 mb-1">{m.address}</div>
-                <div className="flex gap-2 mb-1 flex-wrap">
-                  {m.tags.map((tag, idx) => (
-                    <span key={idx} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">{tag}</span>
-                  ))}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-base">{m.managerName}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 mt-1">
-                  <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">{m.distance}km</span>
-                  <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">가능 시간: {m.availableTime}</span>
+                <div className="flex flex-col gap-2">
+                  <button className="px-4 py-2 bg-white border border-blue-500 text-blue-600 rounded-lg font-medium hover:bg-blue-50">프로필</button>
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">선택</button>
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <button className="px-4 py-2 bg-white border border-blue-500 text-blue-600 rounded-lg font-medium hover:bg-blue-50">프로필</button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">선택</button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
