@@ -368,13 +368,21 @@ export const useCustomerReservationList = () => {
 
   // 예약 목록 로드
   const loadReservations = useCallback(
-    async (page = 0, size = 20) => {
+    async (page = 0, size = 10) => {
       try {
         const response = await apiCall(getCustomerReservations, page, size);
+      
 
-        // Spring Boot PagedResponseDto 구조 처리
+        // ⭐️ 여기서 정확하게 파싱
         const reservationList =
-          response.content || response.data || response || [];
+          (response.data && response.data.content) ||
+          response.content ||
+          response.data ||
+          response ||
+          [];
+
+        console.log('***');
+        console.log(reservationList);
 
         // ⭐️ 각 예약에 대해 상세 정보 추가 조회
         const enrichedReservations = await Promise.all(

@@ -43,35 +43,33 @@ const UserReservationDetail = () => {
         console.log('🔍 예약 상세 조회 시작 - reservationId:', reservationId);
         
         const backendReservation = await getReservationById(reservationId);
+        const data = backendReservation.data;
         
         console.log('✅ API 호출 완료 - 백엔드 응답:', backendReservation);
 
-        if (backendReservation) {
+        if (data) {
           // ⭐️ 디버깅: 백엔드에서 받은 주소 데이터 확인
-          console.log('📋 백엔드 예약 데이터 전체:', backendReservation);
+          console.log('📋 백엔드 예약 데이터 전체:', data);
           console.log('📍 주소 관련 필드들:', {
-            address: backendReservation.address,
-            addressDetail: backendReservation.addressDetail,
-            customerAddress: backendReservation.customerAddress,
-            fullAddress: backendReservation.fullAddress,
+            address: data.address,
+            addressDetail: data.addressDetail,
+            customerAddress: data.customerAddress,
+            fullAddress: data.fullAddress,
           });
 
           const transformedReservation = {
-            id: backendReservation.reservationId || backendReservation.id || reservationId,
-            type: backendReservation.serviceOptionName || getServiceName(1, '청소', backendReservation),
+            id: data.reservationId || data.id || reservationId,
+            type: data.serviceOptionName || getServiceName(1, '청소', data),
             icon: getServiceIcon(1),
-            status: backendReservation.status || 'REQUESTED',
-            date: backendReservation.requestedDate || '날짜 정보 없음',
-            time: formatTimeRange(
-              backendReservation.requestedTime,
-              (backendReservation.totalDuration || 3) * 60 // 시간을 분으로 변환
-            ),
-            price: backendReservation.totalPrice || getServicePrice(null, 1, '청소', backendReservation),
+            status: data.status || 'REQUESTED',
+            date: data.requestedDate,
+            time: data.requestedTime,
+            price: data.totalPrice || getServicePrice(null, 1, '청소', data),
 
             // ⭐️ address와 addressDetail을 모두 받아와서 조합
             address: (() => {
-              const mainAddress = backendReservation.address || location.state?.reservation?.address || '';
-              const detailAddress = backendReservation.addressDetail || location.state?.reservation?.addressDetail || '';
+              const mainAddress = data.address || location.state?.reservation?.address || '';
+              const detailAddress = data.addressDetail || location.state?.reservation?.addressDetail || '';
               if (mainAddress && detailAddress) return `${mainAddress} ${detailAddress}`;
               if (mainAddress) return mainAddress;
               if (detailAddress) return detailAddress;
@@ -79,18 +77,11 @@ const UserReservationDetail = () => {
             })(),
             addressDetail: '', // 상세 주소는 별도로 표시하지 않음
 
-            customerNote: backendReservation.customerMemo || '',
-            createdAt: backendReservation.startTime || new Date().toISOString(),
+            customerNote: data.customerMemo || '',
+            createdAt: data.startTime || new Date().toISOString(),
 
             // ⭐️ 백엔드 DTO의 추가 필드들도 보존
-            backendData: {
-              ...backendReservation,
-              customerId: backendReservation.customerId,
-              managerId: backendReservation.managerId,
-              customerName: backendReservation.customerName,
-              matchedManagerName: backendReservation.matchedManagerName,
-              matchingStatus: backendReservation.matchingStatus,
-            },
+            backendData: data,
           };
 
           // ⭐️ 디버깅: 최종 변환된 예약 데이터 확인
@@ -431,6 +422,39 @@ const UserReservationDetail = () => {
     setReservation(defaultReservation);
   }
 
+  const detail = reservation.backendData?.data || {};
+
+  const address =
+    (detail.address && detail.addressDetail
+      ? `${detail.address} ${detail.addressDetail}`
+      : detail.address
+      ? detail.address
+      : detail.addressDetail
+      ? detail.addressDetail
+      : reservation.address) || '주소 정보 없음';
+
+  const customerNote =
+    detail.customerMemo ?? reservation.customerNote ?? '요청사항 없음';
+
+  const managerName =
+    detail.matchedManagerName ?? reservation.backendData?.matchedManagerName ?? '배정된 매니저 없음';
+
+  const price =
+    detail.totalPrice ?? reservation.price ?? 0;
+
+  const type =
+    detail.serviceOptionName ?? reservation.type ?? '서비스';
+
+  const date =
+    detail.requestedDate ?? reservation.date ?? '날짜 정보 없음';
+
+  const time =
+    detail.requestedTime
+      ? formatTimeRange(detail.requestedTime, (detail.totalDuration ?? 3) * 60)
+      : reservation.time ?? '시간 정보 없음';
+
+  const status = detail.status || reservation.status || 'REQUESTED';
+
   return (
     <div
       className="min-h-screen bg-white flex flex-col"
@@ -457,11 +481,11 @@ const UserReservationDetail = () => {
               className="status-badge"
               style={{
                 backgroundColor: getStatusColor(
-                  reservation?.status || 'REQUESTED'
+                  status
                 ),
               }}
             >
-              {getStatusText(reservation?.status || 'REQUESTED')}
+              {getStatusText(status)}
             </div>
           </div>
 
@@ -476,13 +500,13 @@ const UserReservationDetail = () => {
               <div className="info-row">
                 <span className="info-label">서비스 유형</span>
                 <span className="info-value">
-                  {reservation?.type || '서비스'}
+                  {type}
                 </span>
               </div>
               <div className="info-row">
                 <span className="info-label">예약 금액</span>
                 <span className="info-value price">
-                  {(reservation?.price || 0).toLocaleString()}원
+                  {price.toLocaleString()}원
                 </span>
               </div>
             </div>
@@ -497,13 +521,13 @@ const UserReservationDetail = () => {
               <div className="info-row">
                 <span className="info-label">예약 날짜</span>
                 <span className="info-value">
-                  {reservation?.date || '날짜 정보 없음'}
+                  {date}
                 </span>
               </div>
               <div className="info-row">
                 <span className="info-label">예약 시간</span>
                 <span className="info-value">
-                  {reservation?.time || '시간 정보 없음'}
+                  {time}
                 </span>
               </div>
             </div>
@@ -518,20 +542,20 @@ const UserReservationDetail = () => {
               <div className="info-row">
                 <span className="info-label">서비스 주소</span>
                 <span className="info-value">
-                  {reservation?.address || '주소 정보 없음'}
+                  {address}
                 </span>
               </div>
             </div>
           </div>
 
-          {reservation?.customerNote && (
+          {customerNote && (
             <div className="info-section">
               <h3 className="section-title">
                 <span className="section-icon">📝</span>
                 고객 요청사항
               </h3>
               <div className="info-card">
-                <div className="note-content">{reservation.customerNote}</div>
+                <div className="note-content">{customerNote}</div>
               </div>
             </div>
           )}
@@ -559,7 +583,7 @@ const UserReservationDetail = () => {
             </div>
           </div>
 
-          {canMakePayment(reservation?.status) && (
+          {canMakePayment(status) && (
             <div className="payment-section">
               <div className="payment-info">
                 <p className="payment-notice">
@@ -567,18 +591,18 @@ const UserReservationDetail = () => {
                 </p>
                 <div className="manager-info">
                   <span className="manager-label">배정된 매니저:</span>
-                  <span className="manager-value">매니저 (ID: 10)</span>
+                  <span className="manager-value">{managerName}</span>
                 </div>
               </div>
               <button className="payment-btn" onClick={handlePayment}>
-                💳 {(reservation?.price || 0).toLocaleString()}원 결제하기
+                💳 {price.toLocaleString()}원 결제하기
               </button>
             </div>
           )}
 
-          {!canMakePayment(reservation?.status) &&
-            (reservation?.status === 'MATCHED' ||
-              reservation?.status === 'completed') && (
+          {!canMakePayment(status) &&
+            (status === 'MATCHED' ||
+              status === 'completed') && (
               <div className="payment-completed-section">
                 <div className="payment-completed-info">
                   <p className="payment-completed-notice">
@@ -604,9 +628,9 @@ const UserReservationDetail = () => {
               </div>
             )}
 
-          {reservation?.status === 'pending' ||
-          reservation?.status === 'REQUESTED' ||
-          reservation?.status === 'MATCHING' ? (
+          {status === 'pending' ||
+          status === 'REQUESTED' ||
+          status === 'MATCHING' ? (
             <div className="waiting-section">
               <div className="waiting-info">
                 {reservation?.backendData?.matchingStatus === 'ACCEPTED' ? (
@@ -681,8 +705,8 @@ const UserReservationDetail = () => {
             </div>
           )}
 
-          {(reservation?.status === 'COMPLETED' ||
-            reservation?.status === 'visited') && (
+          {(status === 'COMPLETED' ||
+            status === 'visited') && (
             <div className="service-completed-section">
               <div className="service-completed-info">
                 <p className="service-completed-notice">
@@ -727,8 +751,8 @@ const UserReservationDetail = () => {
             </div>
           )}
 
-          {(reservation?.status === 'CANCELLED' ||
-            reservation?.status === 'cancelled') && (
+          {(status === 'CANCELLED' ||
+            status === 'cancelled') && (
             <div className="cancelled-section">
               <div className="cancelled-info">
                 <p className="cancelled-notice">❌ 예약이 취소되었습니다.</p>

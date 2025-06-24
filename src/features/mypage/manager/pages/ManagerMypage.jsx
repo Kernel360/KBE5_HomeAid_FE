@@ -12,6 +12,7 @@ import AddressRegister from '../components/AddressRegister.jsx';
 import CreateInquiry from '../components/CreateInquiry.jsx';
 import InquiryDetail from '../components/InquiryDetail.jsx';
 import ManagerDocumentUpload from '../components/ManagerDocumentUpload.jsx';
+import ServiceRegistration from '../../../additional-info/pages/index.jsx'
 
 // 더미 포인트/수익 데이터
 const pointsHistory = [
@@ -252,10 +253,7 @@ function MatchingInfoView({ onBack }) {
             <h3 className="text-xl font-bold text-gray-900">매칭 정보 입력</h3>
             <p className="text-sm text-gray-500 mt-1">여기에 매칭 정보 입력 폼/컴포넌트가 들어갑니다.</p>
           </div>
-          {/* TODO: 실제 매칭 정보 입력 폼/컴포넌트로 교체 */}
-          <div className="bg-white rounded-lg p-6 shadow-sm text-center text-gray-400">
-            (매칭 정보 입력 더미 화면)
-          </div>
+          <ServiceRegistration />
         </main>
         <Footer current="/manager/mypage" />
       </div>

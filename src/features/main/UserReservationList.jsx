@@ -33,14 +33,7 @@ const UserReservationList = () => {
   // 로컬 스토어 훅 (백업용)
   const { getAllReservations } = useReservationListStore();
 
-  const [activeTab, setActiveTab] = useState('pending');
-  const [isLoading, setIsLoading] = useState(true);
-  const [reservations, setReservations] = useState({
-    pending: [],
-    completed: [],
-    visited: [],
-    cancelled: [],
-  });
+  const reservations = useReservationListStore((state) => state.reservations);
 
   // ⭐️ 인증 상태 확인
   useEffect(() => {
@@ -55,14 +48,8 @@ const UserReservationList = () => {
     }
   }, [user, accessToken, navigate]);
 
-  // ⭐️ 페이징 상태 추가
-  const [currentPage, setCurrentPage] = useState({
-    pending: 1,
-    completed: 1,
-    visited: 1,
-    cancelled: 1,
-  });
-  const itemsPerPage = 5; // 페이지당 5개의 아이템으로 변경
+  const [activeTab, setActiveTab] = useState('pending');
+  const [isLoading, setIsLoading] = useState(true);
 
   // 데이터 새로고침 함수 - 캐시 추가
   const refreshData = useCallback(async () => {
@@ -73,7 +60,6 @@ const UserReservationList = () => {
     setIsLoading(true);
     try {
       const backendData = await loadReservations();
-      setReservations(backendData);
       setIsLoading(false);
       return true;
     } catch (error) {
@@ -87,12 +73,6 @@ const UserReservationList = () => {
       }
 
       const localData = getAllReservations();
-      setReservations({
-        pending: localData.pending || [],
-        completed: localData.completed || [],
-        visited: localData.visited || [],
-        cancelled: localData.cancelled || [],
-      });
       setIsLoading(false);
       return false;
     }
@@ -120,13 +100,12 @@ const UserReservationList = () => {
   // 탭 변경 시 페이지 초기화
   const handleTabChange = useCallback((tabKey) => {
     setActiveTab(tabKey);
-    setCurrentPage((prev) => ({ ...prev, [tabKey]: 1 }));
   }, []);
 
   const handleReservationClick = useCallback(
     (reservation) => {
       // 예약 상세 페이지로 이동
-      navigate(`/customer/reservations/${reservation.id}`, {
+      navigate(`/customer/reservations/${reservation.reservationId}`, {
         state: { reservation },
       });
     },
@@ -155,12 +134,32 @@ const UserReservationList = () => {
     return statusClasses[status] || 'status-default';
   };
 
+  const mapBackendStatus = (backendStatus) => {
+    switch (backendStatus) {
+      case 'REQUESTED':
+      case 'MATCHING':
+        return 'pending';
+      case 'MATCHED':
+        return 'completed';
+      case 'COMPLETED':
+        return 'visited';
+      case 'CANCELLED':
+        return 'cancelled';
+      default:
+        return 'pending';
+    }
+  };
+
   // ReservationCard 컴포넌트 메모이제이션
   const ReservationCard = React.memo(({ reservation }) => {
-    // 데이터 안전성 체크
-    if (!reservation) {
-      return null;
-    }
+    if (!reservation) return null;
+
+    // 실제 데이터 필드에 맞게 매핑
+    const type = reservation.serviceOptionName || reservation.type || '서비스';
+    const date = reservation.requestedDate || reservation.date || '날짜 정보 없음';
+    const time = reservation.requestedTime || reservation.time || '시간 정보 없음';
+    const price = reservation.totalPrice || reservation.price || 0;
+    const status = mapBackendStatus(reservation.status);
 
     return (
       <div
@@ -183,21 +182,18 @@ const UserReservationList = () => {
 
         <div className="reservation-content">
           <div className="reservation-header">
-            <div className="reservation-type">
-              {reservation.type || '서비스'}
-            </div>
+            <div className="reservation-type">{type}</div>
             <div
-              className={`reservation-status-label ${getStatusClass(reservation.status)}`}
+              className={`reservation-status-label ${getStatusClass(status)}`}
             >
-              {getStatusLabel(reservation.status)}
+              {getStatusLabel(status)}
             </div>
           </div>
           <div className="reservation-datetime">
-            {reservation.date || '날짜 정보 없음'} /{' '}
-            {reservation.time || '시간 정보 없음'}
+            {date} / {time}
           </div>
           <div className="reservation-price">
-            {(reservation.price || 0).toLocaleString()}원
+            {price.toLocaleString()}원
           </div>
         </div>
 
@@ -236,42 +232,8 @@ const UserReservationList = () => {
     [reservations]
   );
 
-  // ⭐️ 페이징 처리된 현재 탭 예약 데이터
-  const getCurrentTabReservations = useMemo(() => {
-    const allReservations = reservations[activeTab] || [];
-    const currentPageNum = currentPage[activeTab];
-    const startIndex = (currentPageNum - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-
-    return allReservations.slice(startIndex, endIndex);
-  }, [reservations, activeTab, currentPage, itemsPerPage]);
-
-  // ⭐️ 페이징 정보 계산
-  const getPaginationInfo = useMemo(() => {
-    const allReservations = reservations[activeTab] || [];
-    const totalItems = allReservations.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const currentPageNum = currentPage[activeTab];
-
-    return {
-      totalItems,
-      totalPages,
-      currentPage: currentPageNum,
-      hasNext: currentPageNum < totalPages,
-      hasPrevious: currentPageNum > 1,
-    };
-  }, [reservations, activeTab, currentPage, itemsPerPage]);
-
-  // ⭐️ 페이지 변경 핸들러
-  const handlePageChange = useCallback(
-    (pageNum) => {
-      setCurrentPage((prev) => ({
-        ...prev,
-        [activeTab]: pageNum,
-      }));
-    },
-    [activeTab]
-  );
+  // 탭별 데이터
+  const currentReservations = reservations[activeTab] || [];
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -316,12 +278,10 @@ const UserReservationList = () => {
             ) : (
               <div className="reservation-cards">
                 {(() => {
-                  const currentReservations = getCurrentTabReservations;
-
                   if (currentReservations.length > 0) {
                     return currentReservations.map((reservation) => (
                       <ReservationCard
-                        key={reservation.id}
+                        key={reservation.reservationId}
                         reservation={reservation}
                       />
                     ));
@@ -342,48 +302,6 @@ const UserReservationList = () => {
                     );
                   }
                 })()}
-              </div>
-            )}
-
-            {/* ⭐️ 페이지네이션 */}
-            {!isLoading && getPaginationInfo.totalPages > 1 && (
-              <div className="pagination">
-                <button
-                  className="pagination-btn"
-                  onClick={() =>
-                    handlePageChange(getPaginationInfo.currentPage - 1)
-                  }
-                  disabled={!getPaginationInfo.hasPrevious}
-                >
-                  이전
-                </button>
-
-                <div className="pagination-info">
-                  <div className="page-numbers">
-                    {Array.from(
-                      { length: getPaginationInfo.totalPages },
-                      (_, index) => (
-                        <button
-                          key={index + 1}
-                          className={`page-number ${getPaginationInfo.currentPage === index + 1 ? 'active' : ''}`}
-                          onClick={() => handlePageChange(index + 1)}
-                        >
-                          {index + 1}
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  className="pagination-btn"
-                  onClick={() =>
-                    handlePageChange(getPaginationInfo.currentPage + 1)
-                  }
-                  disabled={!getPaginationInfo.hasNext}
-                >
-                  다음
-                </button>
               </div>
             )}
           </div>
