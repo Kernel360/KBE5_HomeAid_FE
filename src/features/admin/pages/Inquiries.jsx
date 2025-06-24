@@ -225,17 +225,19 @@ const Inquiries = () => {
     manager: 0,
   });
 
-  // 탭별 문의 건수 계산
+  // 탭별 문의 건수 계산 - 전체 데이터에서 계산
   const getTabCount = (type) => {
     switch (type) {
       case '전체':
-        return stats.total;
+        return inquiries.length;
       case '수요자문의':
-        return stats.customer;
+        return inquiries.filter((inquiry) => inquiry.userRole === 'CUSTOMER')
+          .length;
       case '매니저문의':
-        return stats.manager;
+        return inquiries.filter((inquiry) => inquiry.userRole === 'MANAGER')
+          .length;
       case '미답변':
-        return stats.unanswered;
+        return inquiries.filter((inquiry) => !inquiry.isAnswered).length;
       default:
         return 0;
     }
@@ -721,6 +723,16 @@ const Inquiries = () => {
             reply: inquiry.reply || null,
           };
 
+          if (import.meta.env.DEV) {
+            console.log(`문의 ID ${inquiry.id} 매핑:`, {
+              원본_userRole: inquiry.userRole,
+              원본_role: inquiry.role,
+              원본_userName: inquiry.userName,
+              최종_userRole: mappedInquiry.userRole,
+              최종_userName: mappedInquiry.userName,
+            });
+          }
+
           return mappedInquiry;
         });
 
@@ -768,6 +780,47 @@ const Inquiries = () => {
       (inquiry) => inquiry.userRole === 'MANAGER'
     ).length;
 
+    if (import.meta.env.DEV) {
+      console.log('=== 통계 계산 ===');
+      console.log('전체:', total);
+      console.log('답변완료:', answered);
+      console.log('미답변:', unanswered);
+      console.log('수요자:', customer);
+      console.log('매니저:', manager);
+
+      // 각 역할별 상세 정보
+      console.log(
+        '수요자 목록:',
+        inquiriesData
+          .filter((i) => i.userRole === 'CUSTOMER')
+          .map((i) => ({
+            id: i.id,
+            userName: i.userName,
+            userRole: i.userRole,
+          }))
+      );
+      console.log(
+        '매니저 목록:',
+        inquiriesData
+          .filter((i) => i.userRole === 'MANAGER')
+          .map((i) => ({
+            id: i.id,
+            userName: i.userName,
+            userRole: i.userRole,
+          }))
+      );
+      console.log(
+        '기타 역할:',
+        inquiriesData
+          .filter((i) => i.userRole !== 'CUSTOMER' && i.userRole !== 'MANAGER')
+          .map((i) => ({
+            id: i.id,
+            userName: i.userName,
+            userRole: i.userRole,
+          }))
+      );
+    }
+
     setStats({
       total,
       answered,
@@ -801,22 +854,40 @@ const Inquiries = () => {
     setCurrentPage(0);
   };
 
-  // 필터링된 문의 목록 - 클라이언트 사이드 필터링
+  // 필터링된 문의 목록 - 클라이언트 사이드 필터링 (테이블 표시용)
   const getFilteredInquiries = () => {
     let filtered = inquiries;
 
-    // 탭별 필터링
+    if (import.meta.env.DEV) {
+      console.log('=== 테이블 필터링 시작 ===');
+      console.log('전체 문의 개수 (통계 카드 기준):', inquiries.length);
+      console.log('활성 탭:', activeTab);
+      console.log('검색어:', searchTerm);
+    }
+
+    // 탭별 필터링 (테이블 표시용)
     if (activeTab === '수요자문의') {
       filtered = filtered.filter((inquiry) => inquiry.userRole === 'CUSTOMER');
+      if (import.meta.env.DEV) {
+        console.log('수요자문의 필터 적용 후 (테이블 표시):', filtered.length);
+      }
     } else if (activeTab === '매니저문의') {
       filtered = filtered.filter((inquiry) => inquiry.userRole === 'MANAGER');
+      if (import.meta.env.DEV) {
+        console.log('매니저문의 필터 적용 후 (테이블 표시):', filtered.length);
+      }
     } else if (activeTab === '미답변') {
       filtered = filtered.filter((inquiry) => !inquiry.isAnswered);
+      if (import.meta.env.DEV) {
+        console.log('미답변 필터 적용 후 (테이블 표시):', filtered.length);
+      }
     }
 
     // 검색어 필터링
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
+      const beforeSearchCount = filtered.length;
+
       filtered = filtered.filter((inquiry) => {
         if (searchType === 'title') {
           return inquiry.title?.toLowerCase().includes(searchLower);
@@ -833,6 +904,17 @@ const Inquiries = () => {
           );
         }
       });
+
+      if (import.meta.env.DEV) {
+        console.log(
+          `검색 필터 적용 (테이블 표시): ${beforeSearchCount} → ${filtered.length}`
+        );
+      }
+    }
+
+    if (import.meta.env.DEV) {
+      console.log('최종 테이블 표시 결과:', filtered.length);
+      console.log('=== 테이블 필터링 완료 ===');
     }
 
     return filtered;
@@ -863,7 +945,7 @@ const Inquiries = () => {
     {
       title: '미답변',
       value: `${stats.unanswered}건`,
-      subValue: `처리 대기 중인 문의`,
+      subValue: `전체 문의 중 처리 대기`,
       icon: (
         <svg
           className="w-5 h-5 text-yellow-600"
@@ -882,7 +964,7 @@ const Inquiries = () => {
     {
       title: '답변완료',
       value: `${stats.answered}건`,
-      subValue: `처리 완료된 문의`,
+      subValue: `전체 문의 중 처리 완료`,
       icon: (
         <svg
           className="w-5 h-5 text-green-600"
@@ -1409,7 +1491,7 @@ const Inquiries = () => {
                   >
                     <path
                       fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 10-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 000 16zm-7-4a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
                       clipRule="evenodd"
                     />
                   </svg>
@@ -1444,24 +1526,21 @@ const Inquiries = () => {
           {/* Table */}
           <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {/* 탭 */}
-            <div className="flex bg-white">
+            <div className="flex bg-white border-b border-gray-200">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`px-6 py-4 text-sm font-medium transition-all duration-200 ${
+                  className={`px-6 py-4 text-sm font-medium transition-all duration-200 relative ${
                     activeTab === tab.key
-                      ? 'text-blue-600 border-b-2 border-blue-500 bg-white'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 border-transparent bg-white'
+                      ? 'text-blue-600 bg-white border-b-2 border-blue-500 -mb-px'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 bg-white border-b-2 border-transparent'
                   }`}
                 >
                   {tab.label}
                 </button>
               ))}
             </div>
-
-            {/* 구분선 */}
-            <div className="border-b border-gray-200 bg-white"></div>
 
             {/* 검색 영역 */}
             <div className="p-6 bg-white">
