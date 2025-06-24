@@ -263,8 +263,8 @@ const CustomerPayment = () => {
                 params: {
                   page: 0,
                   size: 100,
-                },
-              });
+        },
+      });
               break;
 
             case 2:
@@ -337,18 +337,18 @@ const CustomerPayment = () => {
             managerName: '매니저 정보 없음',
             serviceName: '홈케어 서비스',
             amount: payment.amount || 0,
-            method: payment.paymentMethod || 'CARD',
+          method: payment.paymentMethod || 'CARD',
             status: payment.status || 'PENDING',
             createdAt: payment.paidAt
               ? new Date(payment.paidAt)
-                  .toLocaleString('ko-KR', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                  })
+            .toLocaleString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })
                   .replace(/\. /g, '.')
               : '날짜 정보 없음',
             paymentMethodText: getPaymentMethodText(
@@ -590,17 +590,17 @@ const CustomerPayment = () => {
               value={`₩${formatAmount(paymentStats.totalPayment)}`}
               subValue={`결제 건수 : ${getTabCount('PAID')}건\n평균 결제액 : ₩${paymentStats.totalPayment > 0 ? formatAmount(Math.round(paymentStats.totalPayment / Math.max(getTabCount('PAID'), 1))) : 0}`}
               icon={
-                <svg
-                  className="w-5 h-5 text-blue-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+        <svg
+          className="w-5 h-5 text-blue-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+            clipRule="evenodd"
+          />
+        </svg>
               }
               iconBg="bg-blue-100"
             />
@@ -609,17 +609,17 @@ const CustomerPayment = () => {
               value={`₩${formatAmount(paymentStats.refundAmount)}`}
               subValue={`환불 건수 : ${getTabCount('REFUNDED')}건\n환불률 : ${allPayments.length > 0 ? ((getTabCount('REFUNDED') / allPayments.length) * 100).toFixed(1) : 0}%`}
               icon={
-                <svg
-                  className="w-5 h-5 text-red-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
+        <svg
+          className="w-5 h-5 text-red-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
                     d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+            clipRule="evenodd"
+          />
+        </svg>
               }
               iconBg="bg-red-100"
             />
@@ -628,17 +628,17 @@ const CustomerPayment = () => {
               value={`${paymentStats.successRate}%`}
               subValue={`성공 : ${getTabCount('PAID')}건\n실패 : ${getTabCount('FAILED')}건`}
               icon={
-                <svg
-                  className="w-5 h-5 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
+        <svg
+          className="w-5 h-5 text-green-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
                     d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+            clipRule="evenodd"
+          />
+        </svg>
               }
               iconBg="bg-green-100"
             />
@@ -647,17 +647,17 @@ const CustomerPayment = () => {
               value={`₩${formatAmount(paymentStats.pendingPayments)}`}
               subValue={`대기 건수 : ${getTabCount('PENDING')}건\n대기율 : ${allPayments.length > 0 ? ((getTabCount('PENDING') / allPayments.length) * 100).toFixed(1) : 0}%`}
               icon={
-                <svg
-                  className="w-5 h-5 text-yellow-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+        <svg
+          className="w-5 h-5 text-yellow-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+            clipRule="evenodd"
+          />
+        </svg>
               }
               iconBg="bg-yellow-100"
             />
@@ -680,8 +680,8 @@ const CustomerPayment = () => {
                 >
                   {tab.label}
                 </button>
-              ))}
-            </div>
+            ))}
+          </div>
 
             {/* 구분선 */}
             <div className="border-b border-gray-200 bg-white"></div>
@@ -691,7 +691,7 @@ const CustomerPayment = () => {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
                   결제 내역 목록 {activeTab !== '전체' && `- ${activeTab}`}
-                </h3>
+              </h3>
                 <div className="flex items-center space-x-3">
                   {/* 검색 범위 선택 */}
                   <select
@@ -705,7 +705,7 @@ const CustomerPayment = () => {
                     <option value="managerName">매니저명</option>
                     <option value="paymentDate">결제날짜</option>
                   </select>
-
+                  
                   <div className="w-80 relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg

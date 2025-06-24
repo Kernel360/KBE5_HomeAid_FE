@@ -14,6 +14,10 @@ export const apiService = {
     getManagerList: () => api.get('/managers/list'),
     changeStatus: (id, status) => api.patch(`/managers/${id}/status`, status),
     createProfile: (data) => api.post('/managers/profile', data),
+    uploadCertifications: (formData) => api.post('/managers/profile/certifications', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    getCertifications: () => api.get('/managers/profile/certifications'),
   },
 
   // 사용자 관련 API
