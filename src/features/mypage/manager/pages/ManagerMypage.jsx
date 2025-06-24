@@ -366,7 +366,7 @@ export default function ManagerMypage() {
             onClick={() => setCurrentView('matchingInfo')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <span className="text-gray-900">📝 매칭 정보 입력</span>
+            <span className="text-gray-900">📝 근무 정보 입력</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
           <button
@@ -410,7 +410,7 @@ export default function ManagerMypage() {
     case 'earnings':
       return <EarningsView onBack={() => setCurrentView('main')} />;
     case 'matchingInfo':
-      return <MatchingInfoView onBack={() => setCurrentView('main')} />;
+      return <ServiceRegistration onBack={() => setCurrentView('main')} />;
     case 'documentUpload':
       return <ManagerDocumentUpload onBack={() => setCurrentView('main')} />;
     default:

@@ -8,14 +8,18 @@ import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import { useManagerProfileStore } from '../../../stores/managerProfileStore.js';
 
-const ServiceRegistration = () => {
+const ServiceRegistration = ({ onBack }) => {
   const navigate = useNavigate();
   const [stepView, setStepView] = useState('step1');
   const [serviceOptions, setServiceOptions] = useState([]);
   const { formData, setFormData } = useManagerProfileStore();
 
   const handleBack = () => {
-    navigate('/manager/mypage');
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/manager/mypage');
+    }
   };
 
   const handleServiceChange = (serviceId) => {
