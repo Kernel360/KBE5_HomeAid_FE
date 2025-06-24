@@ -14,6 +14,10 @@ const ServiceRegistration = () => {
   const [serviceOptions, setServiceOptions] = useState([]);
   const { formData, setFormData } = useManagerProfileStore();
 
+  const handleBack = () => {
+    navigate('/manager/mypage');
+  };
+
   const handleServiceChange = (serviceId) => {
     setFormData({
       preferenceIds: formData.preferenceIds.includes(serviceId)
@@ -49,7 +53,7 @@ const ServiceRegistration = () => {
         className="w-full bg-gray-50 min-h-screen flex flex-col"
         style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
       >
-        <Header showBackButton={true} />
+        <Header showBackButton={true} onBackClick={handleBack} />
 
         <main
           className="flex-1"
@@ -209,7 +213,7 @@ const ServiceRegistration = () => {
           className="w-full bg-gray-50 min-h-screen flex flex-col"
           style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
         >
-          <Header showBackButton={true} />
+          <Header showBackButton={true} onBackClick={handleBack} />
           <main
             className="flex-1"
             style={{ paddingTop: '80px', paddingBottom: '100px' }}
@@ -229,7 +233,7 @@ const ServiceRegistration = () => {
           className="w-full bg-gray-50 min-h-screen flex flex-col"
           style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
         >
-          <Header showBackButton={true} />
+          <Header showBackButton={true} onBackClick={handleBack} />
           <main
             className="flex-1"
             style={{ paddingTop: '80px', paddingBottom: '100px' }}
