@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../stores/authStore.js';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 const StatCard = ({
   title,
   value,
@@ -140,7 +142,7 @@ const Dashboard = () => {
         return;
       }
 
-      const response = await fetch('/api/v1/admin/dashboard-stats', {
+      const response = await fetch(`${API_URL}/api/v1/admin/dashboard-stats`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
