@@ -8,6 +8,7 @@ import { useAuthStore } from '../../../stores/authStore.js';
 import { SERVICE_DESCRIPTIONS, USER_INFO } from '../constants/serviceData.js';
 import { useCustomerServices } from '../hooks/useCustomerAPI.js';
 import useReservationStore from '../../../stores/reservationStore.js';
+import cleanIcon from '../../../assets/images/clean1.png';
 
 const UserServiceSubOption = () => {
   const navigate = useNavigate();
@@ -221,7 +222,8 @@ const UserServiceSubOption = () => {
 
           {/* 하위 서비스 옵션 섹션 */}
           <div className="sub-service-options">
-            {/* 빨래 옵션 */}
+            {/* 빨래 옵션 - 주석처리 */}
+            {/* 
             <div
               className={`service-card sub-service-option ${
                 selectedSubOption && selectedSubOption.id === 'laundry'
@@ -243,6 +245,7 @@ const UserServiceSubOption = () => {
               </div>
               <div className="option-label">빨래</div>
             </div>
+            */}
 
             {/* 청소 옵션 */}
             <div
@@ -254,20 +257,13 @@ const UserServiceSubOption = () => {
               onClick={() => handleOptionSelect('청소', 'cleaning')}
             >
               <div className="cleaning-icon">
-                <div className="cleaning-tools">
-                  <div className="broom"></div>
-                  <div className="dustpan"></div>
-                  <div className="sparkles">
-                    <span>✨</span>
-                    <span>✨</span>
-                    <span>✨</span>
-                  </div>
-                </div>
+                <img src={cleanIcon} alt="청소" className="cleaning-image" />
               </div>
               <div className="option-label">청소</div>
             </div>
 
-            {/* 육아 옵션 */}
+            {/* 육아 옵션 - 주석처리 */}
+            {/* 
             <div
               className={`service-card sub-service-option ${
                 selectedSubOption && selectedSubOption.id === 'childcare'
@@ -288,6 +284,7 @@ const UserServiceSubOption = () => {
               </div>
               <div className="option-label">육아</div>
             </div>
+            */}
           </div>
 
           {/* 기본 서비스 섹션 */}
