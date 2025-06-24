@@ -9,6 +9,7 @@ import {
   SERVICE_DESCRIPTIONS,
   SERVICE_TYPES,
 } from '../constants/serviceData.js';
+import cleanIcon from '../../../assets/images/clean1.png';
 
 const UserServiceOption = () => {
   const navigate = useNavigate();
@@ -109,11 +110,13 @@ const UserServiceOption = () => {
             >
               <div className="service-icon">
                 <div className="emoji-icon-container blue-bg">
-                  <div className="emoji-icon">🧹</div>
+                  <img src={cleanIcon} alt="청소" className="service-image" />
                 </div>
                 <div className="service-label">청소</div>
               </div>
             </div>
+            {/* 빨래 옵션 - 주석처리 */}
+            {/* 
             <div
               className="service-card service-option"
               onClick={() => handleServiceClick(SERVICE_TYPES.INTERIOR)}
@@ -125,6 +128,9 @@ const UserServiceOption = () => {
                 <div className="service-label">빨래</div>
               </div>
             </div>
+            */}
+            {/* 육아 옵션 - 주석처리 */}
+            {/* 
             <div
               className="service-card service-option"
               onClick={() => handleServiceClick(SERVICE_TYPES.COOKING)}
@@ -136,6 +142,7 @@ const UserServiceOption = () => {
                 <div className="service-label">육아</div>
               </div>
             </div>
+            */}
           </div>
 
           {/* 예약 버튼 섹션 */}
