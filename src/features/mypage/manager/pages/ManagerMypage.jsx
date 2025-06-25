@@ -50,7 +50,7 @@ export default function ManagerMypage() {
       try {
         const res = await apiService.user.getMyProfile();
         setUserProfile(res.data?.data || res.data);
-      } catch (e) {
+      } catch {
         setUserProfile(null);
       }
     }
