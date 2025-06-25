@@ -47,14 +47,14 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                 break;
             case 'MATCHING_ACCEPTED_BY_CUSTOMER':  //고객 최종수락
                 if (userRole === 'ROLE_MANAGER') {
-                    navigate(`/customer/reservations/${relatedEntityId}`);
+                    navigate('/matching/list');
                 } else if (userRole === 'ROLE_ADMIN') {
                     navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
                 }
                 break;
             case 'MATCHING_REJECTED_BY_CUSTOMER':   //고객이 매칭 거절
                 if (userRole === 'ROLE_MANAGER') {
-                    navigate(`/customer/reservations/${relatedEntityId}`);
+                    navigate('/matching/list');
                 } else if (userRole === 'ROLE_ADMIN') {
                     navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
                 }
