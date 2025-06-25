@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
 import { useAuthStore } from '../../../stores/authStore.js';
@@ -7,6 +7,7 @@ import './BoardList.css';
 
 const BoardList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('notice'); // 'notice' or 'faq'
 
   // 페이징 상태 관리
@@ -20,7 +21,59 @@ const BoardList = () => {
   const { user } = useAuthStore();
   const isAdmin = user && user.role === 'ROLE_ADMIN';
 
-  // FAQ 데이터 (하드코딩)
+  // 임시 공지사항 데이터
+  const [notices] = useState([
+    {
+      id: 1,
+      title: '[공지] 서비스 이용 안내',
+      author: '관리자',
+      date: '2024-03-20',
+      views: 328,
+      isImportant: true,
+    },
+    {
+      id: 2,
+      title: '[공지] 매니저 안전 수칙 안내',
+      author: '관리자',
+      date: '2024-03-19',
+      views: 256,
+      isImportant: true,
+    },
+    {
+      id: 3,
+      title: '[안내] 청소 서비스 품질 관리 기준',
+      author: '관리자',
+      date: '2024-03-18',
+      views: 192,
+      isImportant: false,
+    },
+    {
+      id: 4,
+      title: '[공지] 봄맞이 특별 서비스 안내',
+      author: '관리자',
+      date: '2024-03-17',
+      views: 145,
+      isImportant: true,
+    },
+    {
+      id: 5,
+      title: '[안내] 고객 만족도 조사 실시',
+      author: '관리자',
+      date: '2024-03-16',
+      views: 98,
+      isImportant: false,
+    },
+    {
+      id: 6,
+      title: '[공지] 시스템 정기 점검 안내',
+      author: '관리자',
+      date: '2024-03-15',
+      views: 87,
+      isImportant: false,
+    },
+  ]);
+
+  // FAQ 데이터
   const [faqs] = useState([
     {
       id: 1,
@@ -96,57 +149,14 @@ const BoardList = () => {
     },
   ]);
 
-  // 임시 공지사항 데이터 (6개로 확장)
-  const [notices] = useState([
-    {
-      id: 1,
-      title: '[공지] 서비스 이용 안내',
-      author: '관리자',
-      date: '2024-03-20',
-      views: 328,
-      isImportant: true,
-    },
-    {
-      id: 2,
-      title: '[공지] 매니저 안전 수칙 안내',
-      author: '관리자',
-      date: '2024-03-19',
-      views: 256,
-      isImportant: true,
-    },
-    {
-      id: 3,
-      title: '[안내] 청소 서비스 품질 관리 기준',
-      author: '관리자',
-      date: '2024-03-18',
-      views: 192,
-      isImportant: false,
-    },
-    {
-      id: 4,
-      title: '[공지] 봄맞이 특별 서비스 안내',
-      author: '관리자',
-      date: '2024-03-17',
-      views: 145,
-      isImportant: true,
-    },
-    {
-      id: 5,
-      title: '[안내] 고객 만족도 조사 실시',
-      author: '관리자',
-      date: '2024-03-16',
-      views: 98,
-      isImportant: false,
-    },
-    {
-      id: 6,
-      title: '[공지] 시스템 정기 점검 안내',
-      author: '관리자',
-      date: '2024-03-15',
-      views: 87,
-      isImportant: false,
-    },
-  ]);
+  // location.state에서 activeTab 가져오기
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // state 초기화 (뒤로가기 시 state가 유지되는 것 방지)
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // 페이징 처리 함수
   const getCurrentPageData = (data, page) => {

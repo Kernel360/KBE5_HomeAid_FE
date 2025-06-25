@@ -5,6 +5,7 @@ import { Forbidden } from '../shared/Forbidden.jsx';
 import MainPage from '../features/main/MainPage';
 
 import BoardList from '../features/board/pages/BoardList';
+import BoardDetail from '../features/board/pages/BoardDetail';
 import EventList from '../features/main/EventList';
 
 import ProtectedRoute from './ProtectedRoute';
@@ -16,7 +17,7 @@ export const AppRoutes = () => {
     { path: '/404', element: <NotFound /> },
     { path: '/403', element: <Forbidden /> },
     { path: '/board', element: <BoardList /> },
-    { path: '/board/*', element: <BoardList /> },
+    { path: '/board/:type/:id', element: <BoardDetail /> },
     { path: '/event', element: <EventList /> },
     { path: '*', element: <Navigate to="/404" /> },
   ];
