@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuthStore } from '../../../../stores/authStore';
+import { authService } from '../../../../features/auth/services/authService';
 
 const menuItems = [
   {
@@ -183,21 +185,32 @@ const menuItems = [
 
 const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { logout } = useAuthStore();
 
   const handleLogout = () => {
     setShowLogoutModal(true);
   };
 
   const confirmLogout = () => {
-    // 로그아웃 처리 (세션 제거, 토큰 제거 등)
-    localStorage.removeItem('authToken');
-    sessionStorage.clear();
+    try {
+      // 1. Zustand 스토어 초기화
+      logout();
 
-    // 홈으로 이동
-    navigate('/', { replace: true });
-    setShowLogoutModal(false);
+      // 2. 서버 로그아웃 요청
+      authService.signOut();
+
+      // 3. 모달 닫기
+      setShowLogoutModal(false);
+
+      // 4. 관리자 로그인 페이지로 이동
+      window.location.href = '/auth/admin/signin';
+    } catch (error) {
+      console.error('로그아웃 중 오류:', error);
+      // 에러 발생시에도 로컬 상태는 초기화
+      logout();
+      window.location.href = '/auth/admin/signin';
+    }
   };
 
   const cancelLogout = () => {
@@ -205,7 +218,6 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   };
 
   const handleLinkClick = () => {
-    // 모바일에서 링크 클릭 시 메뉴 닫기
     if (setIsMobileMenuOpen) {
       setIsMobileMenuOpen(false);
     }

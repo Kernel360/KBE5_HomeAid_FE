@@ -19,7 +19,10 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path.startsWith('/admin/matches/reservations/') && path.endsWith('/detail')) {
+    if (
+      path.startsWith('/admin/matches/reservations/') &&
+      path.endsWith('/detail')
+    ) {
       return '매니저 추천 리스트';
     }
     switch (path) {

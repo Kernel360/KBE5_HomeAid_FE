@@ -8,11 +8,19 @@ import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import { useManagerProfileStore } from '../../../stores/managerProfileStore.js';
 
-const ServiceRegistration = () => {
+const ServiceRegistration = ({ onBack }) => {
   const navigate = useNavigate();
   const [stepView, setStepView] = useState('step1');
   const [serviceOptions, setServiceOptions] = useState([]);
   const { formData, setFormData } = useManagerProfileStore();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/manager/mypage');
+    }
+  };
 
   const handleServiceChange = (serviceId) => {
     setFormData({
@@ -20,12 +28,18 @@ const ServiceRegistration = () => {
         ? formData.preferenceIds.filter((id) => id !== serviceId)
         : [...formData.preferenceIds, serviceId],
     });
-    console.log('[서비스선택] preferenceIds:', formData.preferenceIds.includes(serviceId)
-      ? formData.preferenceIds.filter((id) => id !== serviceId)
-      : [...formData.preferenceIds, serviceId]);
-    console.log('[서비스선택] formData:', { ...formData, preferenceIds: formData.preferenceIds.includes(serviceId)
-      ? formData.preferenceIds.filter((id) => id !== serviceId)
-      : [...formData.preferenceIds, serviceId] });
+    console.log(
+      '[서비스선택] preferenceIds:',
+      formData.preferenceIds.includes(serviceId)
+        ? formData.preferenceIds.filter((id) => id !== serviceId)
+        : [...formData.preferenceIds, serviceId]
+    );
+    console.log('[서비스선택] formData:', {
+      ...formData,
+      preferenceIds: formData.preferenceIds.includes(serviceId)
+        ? formData.preferenceIds.filter((id) => id !== serviceId)
+        : [...formData.preferenceIds, serviceId],
+    });
   };
 
   const fetchServiceOptions = async () => {
@@ -49,7 +63,7 @@ const ServiceRegistration = () => {
         className="w-full bg-gray-50 min-h-screen flex flex-col"
         style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
       >
-        <Header showBackButton={true} />
+        <Header showBackButton={true} onBackClick={handleBack} />
 
         <main
           className="flex-1"
@@ -147,29 +161,30 @@ const ServiceRegistration = () => {
                         </div>
 
                         {/* 세부 서비스(features) */}
-                        {Array.isArray(service.features) && service.features.length > 0 && (
-                          <div className="bg-white border-t border-gray-100">
-                            <div className="px-4 py-2">
-                              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                세부 서비스
-                              </span>
-                            </div>
-                            <div className="space-y-2 px-4 pb-4">
-                              {service.features.map((feature, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
-                                >
-                                  <div className="flex-1">
-                                    <span className="text-sm font-medium text-gray-700">
-                                      {feature}
-                                    </span>
+                        {Array.isArray(service.features) &&
+                          service.features.length > 0 && (
+                            <div className="bg-white border-t border-gray-100">
+                              <div className="px-4 py-2">
+                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                  세부 서비스
+                                </span>
+                              </div>
+                              <div className="space-y-2 px-4 pb-4">
+                                {service.features.map((feature, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                                  >
+                                    <div className="flex-1">
+                                      <span className="text-sm font-medium text-gray-700">
+                                        {feature}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </div>
                     ))}
                   </div>
@@ -209,7 +224,7 @@ const ServiceRegistration = () => {
           className="w-full bg-gray-50 min-h-screen flex flex-col"
           style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
         >
-          <Header showBackButton={true} />
+          <Header showBackButton={true} onBackClick={handleBack} />
           <main
             className="flex-1"
             style={{ paddingTop: '80px', paddingBottom: '100px' }}
@@ -229,14 +244,12 @@ const ServiceRegistration = () => {
           className="w-full bg-gray-50 min-h-screen flex flex-col"
           style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
         >
-          <Header showBackButton={true} />
+          <Header showBackButton={true} onBackClick={handleBack} />
           <main
             className="flex-1"
             style={{ paddingTop: '80px', paddingBottom: '100px' }}
           >
-            <ProfileCompletion
-              onBack={() => setStepView('step2')}
-            />
+            <ProfileCompletion onBack={() => setStepView('step2')} />
           </main>
           <Footer />
         </div>

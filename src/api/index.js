@@ -14,6 +14,10 @@ export const apiService = {
     getManagerList: () => api.get('/managers/list'),
     changeStatus: (id, status) => api.patch(`/managers/${id}/status`, status),
     createProfile: (data) => api.post('/managers/profile', data),
+    uploadCertifications: (formData) => api.post('/managers/profile/certifications', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    getCertifications: () => api.get('/managers/profile/certifications'),
   },
 
   // 사용자 관련 API
@@ -53,8 +57,7 @@ export const apiService = {
   },
 
   review: {
-    getAll: () => api.get('/review'),
-    getByUserId: (reviewer) => api.get(`/reviews/${reviewer}`),
+    getMyReviews: (page = 0, size = 10) => api.get(`/reviews/my?page=${page}&size=${size}`),
     create: (data) => api.post('/reviews', data),
     update: (id, data) => api.put(`/reviews/${id}`, data),
     delete: (id) => api.delete(`/reviews/${id}`),

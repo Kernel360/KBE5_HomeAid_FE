@@ -142,6 +142,9 @@ api.post('/manager/all')
     .catch(error => console.error(error));
 */
 
+export const getMyReviews = (page = 0, size = 10) =>
+  api.get(`/reviews/my?page=${page}&size=${size}`);
+
 // 공통 토큰 재발급 함수
 const refreshAccessToken = async () => {
   if (!isRefreshing) {
