@@ -1,13 +1,15 @@
 import apiService from "@/api";
 import { useAlertStore } from "@/stores/alertStore";
 import { X, Bell, Check } from 'lucide-react';
-import { memo } from 'react';
+import { memo, use } from 'react';
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
 
 const AlertCard = memo(({ onClose, isVisible = false }) => {
     const { notificationAlert, removeNotificationAlert } = useAlertStore();
     // const [alerts, setAlerts] = useState(notificationAlert);
     const navigate = useNavigate();
+    const userRole = useAuthStore((state) => state.user.role);
 
 
     // 보이지 않을 때는 null 반환
@@ -15,22 +17,53 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
         return null;
     }
 
-    function handleNavigate(alertId, relatedEntityId, relatedEntityType) {
-        console.log('알림 클릭:', alertId, relatedEntityId, relatedEntityType);
+    function handleNavigate(alertId, relatedEntityId, relatedEntityType, eventType) {
+        console.log(userRole);
+        console.log('알림 클릭:', alertId, relatedEntityId, relatedEntityType, eventType);
         removeNotificationAlert(alertId); // 알림 클릭 후 제거
         console.log(notificationAlert);
         const response = alertRead(alertId);
         console.log('알림 읽음 처리:', response);
         onClose();
         //Todo 권한과 엔티티에 따라 라우팅 되는 주소 설정
-        switch (relatedEntityType) {
-            case 'RESERVATION':
-                return navigate(`/customer/reservations/${relatedEntityId}`);
-            case 'MATCHING':
-                return navigate(`/customer/matchings/${relatedEntityId}`);
-            }
+        switch (eventType) {
+            case 'RESERVATION_CREATED':     //고객이 예약 할 시
+                navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
+                break;
+            case 'MATCHING_CREATED':
+                navigate('/matching/list');
+                break;
+            case 'MATCHING_ACCEPTED_BY_MANAGER':  //관리자가 맺어준 매칭 수락시
+                if (userRole === 'ROLE_CUSTOMER') {
+                    navigate(`/customer/reservations/${relatedEntityId}`);
+                } else if (userRole === 'ROLE_ADMIN') {
+                    //매칭의 아이디로는 이동할 페이지 당장은 없음 (서버에서 예약아이디 주는걸로 변경)
+                    //예약 아이디로 매칭해주는 페이지로 가도 매칭 되었단 정보는 없음 매칭 선택 정보가 있다
+                    navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
+                }
+                break;
+            case 'MATCHING_REJECTED_BY_MANAGER':    //매니저가 매칭 거절
+                navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
+                break;
+            case 'MATCHING_ACCEPTED_BY_CUSTOMER':  //고객 최종수락
+                if (userRole === 'ROLE_MANAGER') {
+                    navigate(`/customer/reservations/${relatedEntityId}`);
+                } else if (userRole === 'ROLE_ADMIN') {
+                    navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
+                }
+                break;
+            case 'MATCHING_REJECTED_BY_CUSTOMER':   //고객이 매칭 거절
+                if (userRole === 'ROLE_MANAGER') {
+                    navigate(`/customer/reservations/${relatedEntityId}`);
+                } else if (userRole === 'ROLE_ADMIN') {
+                    navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
+                }
+                break;
 
-                
+            default:
+            console.log('알 수 없는 이벤트 타입:', eventType);
+            break;
+        }       
     }
 
     const alertRead = async (alertId) => {
@@ -95,7 +128,7 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                             {notificationAlert.map((noti, index) => (
                                 <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
                                     <div className="flex items-start gap-3" onClick={() => 
-                                        handleNavigate(noti.alertId, noti.relatedEntityId, noti.relatedEntityType)}>
+                                        handleNavigate(noti.alertId, noti.relatedEntityId, noti.relatedEntityType, noti.eventType)}>
                                         {/* <div className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-2"></div> */}
                                         <div className="flex-1">
                                             {/* <p className="text-sm font-medium text-gray-900 mb-1">
@@ -103,7 +136,6 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                                             </p> */}
                                             <p className="text-sm text-gray-600 mb-2">
                                                 {noti.message || '새로운 알림이 있습니다.'}
-                                                {noti.alertId }
                                             </p>
                                             <p className="text-xs text-gray-400">
                                                 {noti.createdAt || '방금 전'}
