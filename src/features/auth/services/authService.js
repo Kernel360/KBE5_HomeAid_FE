@@ -1,6 +1,5 @@
 // import api from './apiClient';
 import api from '../../../api/config/api';
-import { apiClient } from '../../../api/config/api';
 import { useAuthStore } from '../../../stores/authStore';
 import axios from 'axios';
 // 필요한 DTO 타입 정의가 있다면 여기서 임포트
@@ -22,11 +21,14 @@ export const authService = {
       const response = await api.post('/auth/signin', { phone, password });
 
       // 1. 응답 헤더에서 Access Token 추출
-      const authHeader = response.headers.authorization || response.headers.Authorization;
+      const authHeader =
+        response.headers.authorization || response.headers.Authorization;
       if (!authHeader) {
-        throw new Error('Authorization 헤더에서 Access Token을 찾을 수 없습니다.');
+        throw new Error(
+          'Authorization 헤더에서 Access Token을 찾을 수 없습니다.'
+        );
       }
-      
+
       const accessToken = authHeader.replace('Bearer ', '');
 
       // 2. 응답 본문에서 사용자 정보 추출
@@ -34,12 +36,13 @@ export const authService = {
 
       // 3. 스토어와 localStorage에 Access Token 및 사용자 정보 저장
       localStorage.setItem('accessToken', accessToken);
-      
-      const { setAccessToken, setUser, setRefreshToken } = useAuthStore.getState();
+
+      const { setAccessToken, setUser, setRefreshToken } =
+        useAuthStore.getState();
       setAccessToken(accessToken);
       setUser(userData);
       // RT는 HttpOnly 쿠키로 관리되므로 스토어에서는 null 처리
-      setRefreshToken(null); 
+      setRefreshToken(null);
 
       // 4. apiClient 기본 헤더 설정
       apiClientInstance.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
@@ -142,13 +145,26 @@ export const authService = {
   },
 
   // 로그아웃
-  signOut: async () => {
-    const response = await api.post('/auth/signout');
-    // accessToken 삭제
-    localStorage.removeItem('accessToken');
-    // axios 기본 헤더에서도 삭제
-    delete api.defaults.headers.common['Authorization'];
-    return response.data;
+  signOut: () => {
+    try {
+      // 1. Zustand 스토어 초기화
+      const { logout } = useAuthStore.getState();
+      logout();
+
+      // 2. 로컬 스토리지 초기화
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('auth-storage');
+
+      // 3. API 헤더 초기화
+      if (api.defaults.headers.common['Authorization']) {
+        delete api.defaults.headers.common['Authorization'];
+      }
+
+      return true;
+    } catch (error) {
+      console.error('로그아웃 처리 중 오류:', error);
+      throw error;
+    }
   },
 
   // 회원가입 단계별 데이터 저장 (예시)

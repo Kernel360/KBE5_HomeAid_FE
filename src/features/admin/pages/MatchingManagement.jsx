@@ -46,14 +46,18 @@ const MatchingManagement = () => {
         setLoading(true);
         setError(null);
         console.log('🔍 예약 데이터 가져오기 시작');
-        
+
         const response = await apiService.reservation.getAll();
         console.log('✅ 예약 데이터 가져오기 성공!!!!!!!:', response);
-        
+
         // API 응답 구조에 따라 데이터 추출
-        const reservations = response.data?.data?.content || response.data?.data || response.data || [];
+        const reservations =
+          response.data?.data?.content ||
+          response.data?.data ||
+          response.data ||
+          [];
         console.log('📋 추출된 예약 데이터:', reservations);
-        
+
         setMatchingData(reservations);
       } catch (err) {
         console.error('❌ 예약 데이터 가져오기 실패:', err);
@@ -219,7 +223,9 @@ const MatchingManagement = () => {
               <div className="w-full overflow-x-auto">
                 {loading ? (
                   <div className="flex justify-center items-center py-8">
-                    <div className="text-gray-500">예약 데이터를 불러오는 중...</div>
+                    <div className="text-gray-500">
+                      예약 데이터를 불러오는 중...
+                    </div>
                   </div>
                 ) : error ? (
                   <div className="flex justify-center items-center py-8">
@@ -281,7 +287,9 @@ const MatchingManagement = () => {
                                 {item.matchedManagerName || '배정 대기중'}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {item.managerRating ? `평점 ${item.managerRating} ⭐` : '평점 없음'}
+                                {item.managerRating
+                                  ? `평점 ${item.managerRating} ⭐`
+                                  : '평점 없음'}
                               </div>
                             </div>
                           </td>
@@ -311,26 +319,39 @@ const MatchingManagement = () => {
                                           : 'bg-gray-100 text-gray-800'
                               }`}
                             >
-                              {item.status === 'COMPLETED' ? '서비스 완료' :
-                               item.status === 'MATCHED' ? '매칭 완료' :
-                               item.status === 'MATCHING' ? '매칭 중' :
-                               item.status === 'REQUESTED' ? '매칭 필요' :
-                               item.status === 'CANCELLED' ? '취소됨' :
-                               item.status || '상태 미확인'}
+                              {item.status === 'COMPLETED'
+                                ? '서비스 완료'
+                                : item.status === 'MATCHED'
+                                  ? '매칭 완료'
+                                  : item.status === 'MATCHING'
+                                    ? '매칭 중'
+                                    : item.status === 'REQUESTED'
+                                      ? '매칭 필요'
+                                      : item.status === 'CANCELLED'
+                                        ? '취소됨'
+                                        : item.status || '상태 미확인'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {item.startTime || item.createdAt ? 
-                              new Date(item.startTime || item.createdAt).toLocaleDateString('ko-KR') : 
-                              '날짜 없음'}
+                            {item.startTime || item.createdAt
+                              ? new Date(
+                                  item.startTime || item.createdAt
+                                ).toLocaleDateString('ko-KR')
+                              : '날짜 없음'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {item.totalPrice ? `₩${item.totalPrice.toLocaleString()}` : '₩0'}
+                            {item.totalPrice
+                              ? `₩${item.totalPrice.toLocaleString()}`
+                              : '₩0'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <button
                               className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                              onClick={() => navigate(`/admin/matches/reservations/${item.reservationId || item.id}/detail`)}
+                              onClick={() =>
+                                navigate(
+                                  `/admin/matches/reservations/${item.reservationId || item.id}/detail`
+                                )
+                              }
                             >
                               상세보기
                             </button>

@@ -49,7 +49,10 @@ export const protectedAppRoutes = [
       { path: 'customer-payments', element: <CustomerPayment /> },
       { path: 'managers', element: <ManagerList /> },
       { path: 'matches', element: <MatchingManagement /> },
-      { path: 'matches/reservations/:reservationId/detail', element: <ReservationDetailWithManagerList /> },
+      {
+        path: 'matches/reservations/:reservationId/detail',
+        element: <ReservationDetailWithManagerList />,
+      },
       { path: 'reviews', element: <ReviewManagement /> },
       { path: 'statistics', element: <Statistics /> },
       { path: 'settlements', element: <ManagerSettlement /> },
