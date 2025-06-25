@@ -10,18 +10,19 @@ import { apiService } from '@/api';
 // import React, { useState, useEffect } from 'react';
 
 const ManagerServiceCheckIn = () => {
-
-  const workLog = useReservationStore.getState().workLog;
   const reservationId = useReservationStore.getState().reservationId;
   const [reservation, setReservation] = useState({});
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
+  const [checkStatus, setCheckStatus] = useState({
+    checkIn: false,
+    checkOut: false,
+  });
 
   // 체크아웃 상태에서 이슈 작성 폼 상태
   const [issueText, setIssueText] = useState('');
   const [issueFile, setIssueFile] = useState(null);
-
 
   // 현재 위치 가져오기
   const getCurrentLocation = () => {
@@ -34,7 +35,7 @@ const ManagerServiceCheckIn = () => {
       (position) => {
         setCurrentLocation({
           lat: position.coords.latitude,
-          lng: position.coords.longitude,  
+          lng: position.coords.longitude,
         });
       },
       (error) => {
@@ -53,6 +54,13 @@ const ManagerServiceCheckIn = () => {
     const response = await apiService.reservation.getById(reservationId);
     console.log('reservation API 응답:', response.data.data);
     setReservation(response.data.data);
+    // 체크인/아웃 상태 설정
+    if (response.data.data.workLog) {
+      setCheckStatus({
+        checkIn: response.data.data.workLog.checkInTime !== null,
+        checkOut: response.data.data.workLog.checkOutTime !== null,
+      });
+    }
   };
   useEffect(() => {
     fetchReservation();
@@ -126,7 +134,10 @@ const ManagerServiceCheckIn = () => {
       };
 
       console.log('체크아웃 요청 데이터:', requestData);
-      const response = await apiService.workLog.checkOut(reservationId, requestData);
+      const response = await apiService.workLog.checkOut(
+        reservationId,
+        requestData
+      );
       console.log('체크아웃 결과 데이터', response.data);
 
       if (response.data.success) {
@@ -232,207 +243,157 @@ const ManagerServiceCheckIn = () => {
 
   return (
     <div className="manager-service-page">
-      <Header />
+      <Header showBackButton={true} />
       <div className="page-content-wrapper">
         <div className="manager-service-checkin-container">
-
           <div className="service-progress">
             <h2>서비스 진행</h2>
 
             <div className="details-card">
               <div className="detail-item">
                 <span className="label">서비스 옵션</span>
-                <span className="value">{reservation.serviceOptionName || '-'}</span>
+                <span className="value">
+                  {reservation.serviceOptionName || '-'}
+                </span>
               </div>
               <div className="detail-item">
                 <span className="label">가격</span>
-                <span className="value">{reservation.totalPrice != null ? reservation.totalPrice.toLocaleString() + '원' : '-'}</span>
+                <span className="value">
+                  {reservation.totalPrice != null
+                    ? reservation.totalPrice.toLocaleString() + '원'
+                    : '-'}
+                </span>
               </div>
               <div className="detail-item">
                 <span className="label">예상 소요시간</span>
-                <span className="value">{reservation.totalDuration ? reservation.totalDuration + ' 시간' : '-'}</span>
+                <span className="value">
+                  {reservation.totalDuration
+                    ? reservation.totalDuration + ' 시간'
+                    : '-'}
+                </span>
               </div>
               <div className="detail-item">
                 <span className="label">시작시간</span>
-                <span className="value">{formatDateTime(reservation.startTime)}</span>
+                <span className="value">
+                  {formatDateTime(reservation.startTime)}
+                </span>
               </div>
               <div className="detail-item">
                 <span className="label">주소</span>
-                <span className="value">{reservation.address} {reservation.addressDetail}</span>
+                <span className="value">
+                  {reservation.address} {reservation.addressDetail}
+                </span>
               </div>
             </div>
 
-            {/* 체크인/체크아웃 상태 표시 */}
-            <div className="checkin-status-section">
-              {/* <h3>서비스 진행 상태</h3> */}
-              {/* <div className="status-items">
-                <div className="status-item">
-                  <div className="status-icon">
-                    <span
-                      className={`icon ${matchingRequest.status === 'COMPLETED' ? 'completed' : 'pending'}`}
-                    >
-                      {matchingRequest.status === 'COMPLETED'
-                        ? '✓'
-                        : '○'}
-                    </span>
-                  </div>
-                  <div className="status-details">
-                    <span className="status-label">체크인</span>
-                    <span
-                      className={`status-value ${matchingRequest.status === 'MATCHED' ? 'completed' : 'pending'}`}
-                    >
-                      {matchingRequest.status === 'MATCHED'
-                        ? '완료'
-                        : '대기 중'}
-                    </span>
-                    {serviceProgress.checkInTime && (
-                      <span className="status-time">
-                        {new Date(serviceProgress.checkInTime).toLocaleString(
-                          'ko-KR',
-                          {
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          }
-                        )}
-                      </span>
-                    )}
-                  </div>
+            <div className="service-progress">
+              <h2>체크인/체크아웃 상태</h2>
+
+              <div className="status-simple-container">
+                <div className="status-row">
+                  <span>체크인</span>
+                  <span className="status-value">
+                    {checkStatus.checkIn ? '완료' : '미완료'}
+                  </span>
                 </div>
-
-                <div className="status-item">
-                  <div className="status-icon">
-                    <span
-                      className={`icon ${matchingRequest.status === 'COMPLETED' ? 'completed' : 'pending'}`}
-                    >
-                      {matchingRequest.status === 'COMPLETED'
-                        ? '✓'
-                        : '○'}
-                    </span>
-                  </div>
-                  <div className="status-details">
-                    <span className="status-label">체크아웃</span>
-                    <span
-                      className={`status-value ${matchingRequest.status === 'COMPLETED' ? 'completed' : 'pending'}`}
-                    >
-                      {matchingRequest.status === 'COMPLETED'
-                        ? '완료'
-                        : '대기 중'}
-                    </span>
-                    {serviceProgress.checkOutTime && (
-                      <span className="status-time">
-                        {new Date(serviceProgress.checkOutTime).toLocaleString(
-                          'ko-KR',
-                          {
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          }
-                        )}
-                      </span>
-                    )}
-                  </div>
+                <div className="status-row">
+                  <span>체크아웃</span>
+                  <span className="status-value">
+                    {checkStatus.checkOut ? '완료' : '미완료'}
+                  </span>
                 </div>
-              </div> */}
-            </div>
+              </div>
 
-            <div className="action-buttons">
-              <button
-                className={`action-button checkin-button ${workLog.status === 'CHECKIN' ? 'disabled' : ''}`}
-                onClick={handleCheckIn}
-                disabled={workLog.status === 'CHECKIN'}
-                style={{
-                  backgroundColor: workLog.status === 'CHECKIN' ? '#e0e0e0' : '#4caf50',
-                  color: workLog.status === 'CHECKIN' ? '#9e9e9e' : 'white',
-                }}
-              >
-                체크인 하기
-              </button>
-
-              <button
-                className={`action-button checkout-button ${workLog.status === 'CHECKOUT' ? 'disabled' : ''}`}
-                onClick={handleCheckOut}
-                disabled={workLog.status === 'CHECKOUT'}
-                style={{
-                  backgroundColor: workLog.status === 'CHECKOUT' ? '#e0e0e0' : '#4caf50',
-                  color: workLog.status === 'CHECKOUT' ? '#9e9e9e' : 'white',
-                }}
-              >
-                체크아웃 하기
-              </button>
-            </div>
-
-            {/* 체크아웃 상태에서만 이슈 작성 폼 노출 */}
-            {workLog.status === 'CHECKOUT' && (
-              <div className="issue-section">
-                <h3>업무 이슈 작성</h3>
-                <textarea
-                  placeholder="이슈 내용을 입력하세요"
-                  value={issueText}
-                  onChange={(e) => setIssueText(e.target.value)}
-                  className="issue-textarea"
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleIssueFileChange}
-                  className="issue-file-input"
-                />
-                {issueFile && <div>첨부파일: {issueFile.name}</div>}
-                <button onClick={handleIssueSubmit} className="issue-submit-button">
-                  이슈 등록
+              <div className="action-buttons">
+                <button
+                  className="checkin-button"
+                  onClick={handleCheckIn}
+                  disabled={checkStatus.checkIn}
+                >
+                  체크인 하기
                 </button>
+                <button
+                  className="checkout-button"
+                  onClick={handleCheckOut}
+                  disabled={!checkStatus.checkIn || checkStatus.checkOut}
+                >
+                  체크아웃 하기
+                </button>
+              </div>
+
+              {/* 체크아웃 상태에서만 이슈 작성 폼 노출 */}
+              {checkStatus.checkOut && (
+                <div className="issue-section">
+                  <h3>업무 이슈 작성</h3>
+                  <textarea
+                    placeholder="이슈 내용을 입력하세요"
+                    value={issueText}
+                    onChange={(e) => setIssueText(e.target.value)}
+                    className="issue-textarea"
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleIssueFileChange}
+                    className="issue-file-input"
+                  />
+                  {issueFile && <div>첨부파일: {issueFile.name}</div>}
+                  <button
+                    onClick={handleIssueSubmit}
+                    className="issue-submit-button"
+                  >
+                    이슈 등록
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Check-in Confirmation Modal */}
+            {showCheckInModal && (
+              <div className="modal-overlay">
+                <div className="modal-content">
+                  <h3>체크인 확인</h3>
+                  <p>서비스 체크인을 진행하시겠습니까?</p>
+                  <div className="modal-actions">
+                    <button onClick={cancelCheckIn} className="cancel-button">
+                      취소
+                    </button>
+                    <button
+                      onClick={confirmCheckIn}
+                      className="confirm-button"
+                      // disabled={loading}
+                    >
+                      {/* {true ? '처리 중...' : '확인'} */}
+                      확인
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Check-out Confirmation Modal */}
+            {showCheckOutModal && (
+              <div className="modal-overlay">
+                <div className="modal-content">
+                  <h3>체크아웃 확인</h3>
+                  <p>서비스 체크아웃을 진행하시겠습니까?</p>
+                  <div className="modal-actions">
+                    <button onClick={cancelCheckOut} className="cancel-button">
+                      취소
+                    </button>
+                    <button
+                      onClick={confirmCheckOut}
+                      className="confirm-button"
+                      // disabled={loading}
+                    >
+                      {/* {true ? '처리 중...' : '체크아웃'} */}
+                      체크아웃
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Check-in Confirmation Modal */}
-          {showCheckInModal && (
-            <div className="modal-overlay">
-              <div className="modal-content">
-                <h3>체크인 확인</h3>
-                <p>서비스 체크인을 진행하시겠습니까?</p>
-                <div className="modal-actions">
-                  <button onClick={cancelCheckIn} className="cancel-button">
-                    취소
-                  </button>
-                  <button
-                    onClick={confirmCheckIn}
-                    className="confirm-button"
-                    // disabled={loading}
-                  >
-                    {/* {true ? '처리 중...' : '확인'} */}
-                    확인
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Check-out Confirmation Modal */}
-          {showCheckOutModal && (
-            <div className="modal-overlay">
-              <div className="modal-content">
-                <h3>체크아웃 확인</h3>
-                <p>서비스 체크아웃을 진행하시겠습니까?</p>
-                <div className="modal-actions">
-                  <button onClick={cancelCheckOut} className="cancel-button">
-                    취소
-                  </button>
-                  <button
-                    onClick={confirmCheckOut}
-                    className="confirm-button"
-                    // disabled={loading}
-                  >
-                    {/* {true ? '처리 중...' : '체크아웃'} */}
-                    체크아웃
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
       <Footer current="/matching/service-checkin" />

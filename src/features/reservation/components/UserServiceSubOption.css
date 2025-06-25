@@ -179,8 +179,8 @@ div.service-card.sub-service-option {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  cursor: default;
+  transition: none;
   background-color: white !important;
   background: white !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -190,20 +190,20 @@ div.service-card.sub-service-option {
 .sub-service-option:hover,
 .service-card.sub-service-option:hover,
 div.service-card.sub-service-option:hover {
-  border-color: #4285f4;
+  border-color: #e0e0e0;
   background-color: white !important;
   background: white !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .sub-service-option.selected,
 .service-card.sub-service-option.selected,
 div.service-card.sub-service-option.selected {
-  border-color: #4285f4;
+  border-color: #e0e0e0;
   background-color: white !important;
   background: white !important;
-  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .sub-service-option.empty {
@@ -300,15 +300,15 @@ div.service-card.sub-service-option.selected {
   width: 50px;
   height: 50px;
   object-fit: contain;
-  transition: transform 0.2s ease;
+  transition: none;
 }
 
 .sub-service-option:hover .cleaning-image {
-  transform: scale(1.1);
+  transform: none;
 }
 
 .sub-service-option.selected .cleaning-image {
-  transform: scale(1.05);
+  transform: none;
 }
 
 /* 육아 아이콘 스타일 */
@@ -707,4 +707,93 @@ div.service-card.sub-service-option.selected {
 
 .memo-counter.over-limit {
   color: #f44336;
+}
+
+.service-description {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.service-details-section {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.service-details-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.service-list {
+  margin-bottom: 16px;
+}
+
+.service-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.service-item:last-child {
+  border-bottom: none;
+}
+
+.service-item .service-name {
+  font-size: 14px;
+  color: #333;
+}
+
+.service-item .service-price {
+  font-size: 14px;
+  color: #4285f4;
+  font-weight: 500;
+}
+
+.total-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 2px solid #4285f4;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.total-price .price-value {
+  color: #4285f4;
+  font-size: 18px;
+}
+
+/* 서비스 옵션 카드 - 포함된 서비스 스타일 */
+.sub-service-option.included {
+  border-color: #4caf50;
+  background-color: #f0fdf4 !important;
+  background: #f0fdf4 !important;
+  cursor: default;
+}
+
+.sub-service-option.included .option-label {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.included-badge {
+  font-size: 11px;
+  background-color: #4caf50;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-top: 4px;
+  font-weight: 500;
 }

@@ -12,6 +12,7 @@ import useReservationListStore from '../../stores/reservationListStore.js';
 import { useCustomerReservationList } from '../../features/reservation/hooks/useCustomerAPI.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import './UserReservationList.css';
+import cleanIcon from '../../assets/images/clean1.png';
 
 // 로딩 컴포넌트
 const LoadingSpinner = () => (
@@ -53,66 +54,39 @@ const UserReservationList = () => {
 
   // 데이터 새로고침 함수 - 캐시 추가
   const refreshData = useCallback(async () => {
-    if (!user || !accessToken) {
-      return false;
-    }
-
-    setIsLoading(true);
     try {
-      const backendData = await loadReservations();
-      setIsLoading(false);
-      return true;
+      setIsLoading(true);
+
+      // 백엔드에서 데이터 로드
+      const _backendData = await loadReservations();
+
+      // 로컬 스토어에서도 데이터 가져오기 (백업용)
+      const _localData = getAllReservations();
+
+      console.log('Data refresh completed');
     } catch (error) {
-      if (
-        error.message.includes('401') ||
-        error.message.includes('JWT_INVALID')
-      ) {
-        alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
-        navigate('/auth/signin');
-        return false;
-      }
-
-      const localData = getAllReservations();
+      console.error('데이터 새로고침 실패:', error);
+    } finally {
       setIsLoading(false);
-      return false;
     }
-  }, [loadReservations, getAllReservations, user, accessToken, navigate]);
+  }, [loadReservations, getAllReservations]);
 
-  // 예약 데이터 로드 - 최적화된 로직
+  // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
-    let isMounted = true;
+    refreshData();
+  }, [refreshData]);
 
-    const loadData = async () => {
-      if (!user || !accessToken) return;
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+  };
 
-      if (isMounted) {
-        await refreshData();
-      }
-    };
+  const handleReservationClick = (reservation) => {
+    navigate(`/customer/reservations/${reservation.id}`, {
+      state: { reservation },
+    });
+  };
 
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, accessToken, refreshData]);
-
-  // 탭 변경 시 페이지 초기화
-  const handleTabChange = useCallback((tabKey) => {
-    setActiveTab(tabKey);
-  }, []);
-
-  const handleReservationClick = useCallback(
-    (reservation) => {
-      // 예약 상세 페이지로 이동
-      navigate(`/customer/reservations/${reservation.reservationId}`, {
-        state: { reservation },
-      });
-    },
-    [navigate]
-  );
-
-  // ⭐️ 상태 라벨 매핑
+  // ⭐️ 상태별 라벨
   const getStatusLabel = (status) => {
     const statusLabels = {
       pending: '예약중',
@@ -156,8 +130,10 @@ const UserReservationList = () => {
 
     // 실제 데이터 필드에 맞게 매핑
     const type = reservation.serviceOptionName || reservation.type || '서비스';
-    const date = reservation.requestedDate || reservation.date || '날짜 정보 없음';
-    const time = reservation.requestedTime || reservation.time || '시간 정보 없음';
+    const date =
+      reservation.requestedDate || reservation.date || '날짜 정보 없음';
+    const time =
+      reservation.requestedTime || reservation.time || '시간 정보 없음';
     const price = reservation.totalPrice || reservation.price || 0;
     const status = mapBackendStatus(reservation.status);
 
@@ -167,17 +143,18 @@ const UserReservationList = () => {
         onClick={() => handleReservationClick(reservation)}
       >
         <div className="reservation-icon">
-          {reservation.icon === 'home' ? (
-            <div className="home-icon">🏠</div>
-          ) : reservation.icon === 'cleaning' ? (
-            <div className="cleaning-icon">🧹</div>
-          ) : reservation.icon === 'laundry' ? (
-            <div className="laundry-icon">👕</div>
-          ) : reservation.icon === 'childcare' ? (
-            <div className="childcare-icon">👶</div>
-          ) : (
-            <div className="home-icon">🏠</div>
-          )}
+          <img
+            src={cleanIcon}
+            alt="Clean Icon"
+            style={{
+              width: '40px',
+              height: '40px',
+              objectFit: 'contain',
+              backgroundColor: '#e3f2fd',
+              borderRadius: '8px',
+              padding: '8px',
+            }}
+          />
         </div>
 
         <div className="reservation-content">
@@ -192,9 +169,7 @@ const UserReservationList = () => {
           <div className="reservation-datetime">
             {date} / {time}
           </div>
-          <div className="reservation-price">
-            {price.toLocaleString()}원
-          </div>
+          <div className="reservation-price">{price.toLocaleString()}원</div>
         </div>
 
         <div className="reservation-actions">

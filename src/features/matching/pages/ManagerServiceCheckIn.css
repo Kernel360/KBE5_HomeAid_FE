@@ -198,8 +198,15 @@
 
 .checkin-button:disabled,
 .checkout-button:disabled {
-  background-color: #ccc;
+  background-color: #e5e7eb;
+  color: #9ca3af;
   cursor: not-allowed;
+}
+
+.checkin-button:not(:disabled):hover,
+.checkout-button:not(:disabled):hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .modal-overlay {
@@ -695,4 +702,104 @@ html {
   stroke: #000000 !important;
   stroke-width: 2 !important;
   display: block !important;
+}
+
+.check-status-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+}
+
+.status-box {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-box.completed {
+  border-color: #4caf50;
+  background-color: #f0fdf4;
+}
+
+.status-box.pending {
+  border-color: #e5e7eb;
+  background-color: #f8fafc;
+}
+
+.status-label {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.status-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.status-box.completed .status-value {
+  color: #15803d;
+}
+
+.status-box.pending .status-value {
+  color: #64748b;
+}
+
+/* 모바일 대응 */
+@media (max-width: 576px) {
+  .check-status-container {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .status-box {
+    padding: 10px;
+  }
+
+  .status-label {
+    font-size: 13px;
+  }
+
+  .status-value {
+    font-size: 15px;
+  }
+}
+
+.status-simple-container {
+  background-color: #fff;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.status-row:last-child {
+  border-bottom: none;
+}
+
+.status-row span {
+  font-size: 16px;
+  color: #333;
+}
+
+.status-row .status-value {
+  color: #f44336;
+}
+
+.status-row .status-value:contains('완료') {
+  color: #4caf50;
 }

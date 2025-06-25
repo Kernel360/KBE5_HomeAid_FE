@@ -9,25 +9,7 @@ import useReservationListStore from '../../../stores/reservationListStore';
 import { useAuthStore } from '../../../stores/authStore';
 import { useAddressStore } from '../../../stores/addressStore';
 import { useCustomerReservation } from '../hooks/useCustomerAPI';
-
-// ⭐️ 시간 계산 함수들 추가
-const addMinutesToTime = (timeStr, minutes) => {
-  if (!timeStr || !minutes) return '';
-
-  const [hours, mins] = timeStr.split(':').map(Number);
-  const totalMinutes = hours * 60 + mins + minutes;
-
-  const newHours = Math.floor(totalMinutes / 60) % 24;
-  const newMins = totalMinutes % 60;
-
-  return `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`;
-};
-
-const formatTimeDisplay = (timeStr) => {
-  if (!timeStr) return '';
-  const [hours, minutes] = timeStr.split(':');
-  return `${hours}:${minutes}`;
-};
+import cleanIcon from '../../../assets/images/clean1.png';
 
 const UserServiceRequest = () => {
   const navigate = useNavigate();
@@ -51,7 +33,7 @@ const UserServiceRequest = () => {
   // 폼 상태 관리
   const [formData, setFormData] = useState({
     date: '',
-    startTime: '09:00', // 시작시간으로 변경
+    startTime: '06:00', // 시작시간을 06:00으로 변경
     selectedAddress: null,
     detailAddress: '',
     isCurrentLocation: false,
@@ -64,12 +46,6 @@ const UserServiceRequest = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // ⭐️ React StrictMode에서 중복 호출 방지를 위한 ref
   const submissionRef = useRef(false);
-
-  // 종료시간 계산 (zustand store의 totalDuration 사용)
-  const endTime =
-    formData.startTime && reservationData.totalDuration > 0
-      ? addMinutesToTime(formData.startTime, reservationData.totalDuration)
-      : '';
 
   // 컴포넌트 마운트 시 기본값 설정
   useEffect(() => {
@@ -127,31 +103,27 @@ const UserServiceRequest = () => {
       return;
     }
 
+    // 예약 확인 메시지
+    const isConfirmed = window.confirm('예약하시겠습니까?');
+    if (!isConfirmed) {
+      return;
+    }
+
     setIsSubmitting(true);
     submissionRef.current = true;
 
     try {
-      const currentReservationData = useReservationStore.getState().reservationData;
+      const currentReservationData =
+        useReservationStore.getState().reservationData;
       const { selectedAddress } = formData;
-      
-      console.log('선택된 주소 데이터:', selectedAddress);
-      console.log('주소 데이터 구조:', {
-        id: selectedAddress.id,
-        alias: selectedAddress.alias,
-        address: selectedAddress.address,
-        addressDetail: selectedAddress.addressDetail,
-        fullAddress: selectedAddress.fullAddress,
-        latitude: selectedAddress.latitude,
-        longitude: selectedAddress.longitude,
-      });
-      
+
       // 백엔드 API DTO 형식에 맞게 데이터 재구성
       const backendReservationData = {
         requestedDate: formData.date,
         requestedTime: `${formData.startTime}:00`,
         optionId: 1, // 요구사항에 따라 optionId를 사용하고 1로 고정
         totalDuration: Math.round(
-          (currentReservationData.totalDuration || 180) / 60,
+          (currentReservationData.totalDuration || 180) / 60
         ),
         address: selectedAddress.address || selectedAddress.fullAddress,
         addressDetail: selectedAddress.addressDetail || '-',
@@ -160,38 +132,17 @@ const UserServiceRequest = () => {
         customerMemo: currentReservationData.customerNote || '',
       };
 
-      console.log('백엔드로 전송할 예약 데이터:', backendReservationData);
-
-      const requestDataString = JSON.stringify(
-        backendReservationData,
-        null,
-        2,
-      );
-      const isConfirmed = window.confirm(
-        `다음 데이터로 예약을 요청하시겠습니까?\n\n${requestDataString}`,
+      const backendReservation = await createReservation(
+        backendReservationData
       );
 
-      if (!isConfirmed) {
-        setIsSubmitting(false);
-        submissionRef.current = false;
-        return;
-      }
-
-      const backendReservation = await createReservation(backendReservationData);
-      
       const { addReservation } = useReservationListStore.getState();
-      const endTime = addMinutesToTime(
-        formData.startTime,
-        currentReservationData.totalDuration,
-      );
-      
+
       const localReservationData = {
-        serviceType:
-          currentReservationData.selectedSubOption?.name || '서비스',
+        serviceType: currentReservationData.selectedSubOption?.name || '서비스',
         selectedSubOption: currentReservationData.selectedSubOption,
         reservationDate: formData.date,
         reservationTime: formData.startTime,
-        endTime: endTime,
         totalPrice: currentReservationData.totalPrice || 0,
         address: backendReservationData.address,
         addressDetail: backendReservationData.addressDetail,
@@ -200,12 +151,11 @@ const UserServiceRequest = () => {
         serviceDetails: currentReservationData.serviceDetails || [],
         backendData: backendReservation,
       };
-      
+
       addReservation(localReservationData);
 
-      alert('✅ 예약이 성공적으로 생성되었습니다!');
+      alert('예약이 완료되었습니다!');
       navigate('/customer/reservations');
-
     } catch (error) {
       console.error('예약 생성 실패:', error);
       alert(`예약 생성에 실패했습니다: ${error.message}`);
@@ -358,13 +308,7 @@ const UserServiceRequest = () => {
             <h3 className="section-title">선택된 서비스</h3>
             <div className="service-info-card">
               <div className="service-icon">
-                {reservationData.selectedSubOption?.id === 'cleaning'
-                  ? '🧹'
-                  : reservationData.selectedSubOption?.id === 'laundry'
-                    ? '👕'
-                    : reservationData.selectedSubOption?.id === 'childcare'
-                      ? '👶'
-                      : '🏠'}
+                <img src={cleanIcon} alt="Service Icon" />
               </div>
               <div className="service-details">
                 <h4 className="service-name">
@@ -377,9 +321,7 @@ const UserServiceRequest = () => {
                   <span className="service-duration">
                     약 {reservationData.totalDuration || 180}분 소요
                   </span>
-                  <span className="service-price">
-                    {(reservationData.totalPrice || 0).toLocaleString()}원
-                  </span>
+                  <span className="service-price">20,000원</span>
                 </div>
               </div>
             </div>
@@ -399,29 +341,51 @@ const UserServiceRequest = () => {
 
               {/* 시작시간 입력 */}
               <div className="time-input-section">
-                <label className="time-label">시작 시간</label>
-                <input
-                  type="time"
+                <select
                   className="time-input"
                   value={formData.startTime}
                   onChange={(e) =>
                     handleInputChange('startTime', e.target.value)
                   }
-                />
+                >
+                  <option value="06:00">06:00</option>
+                  <option value="06:30">06:30</option>
+                  <option value="07:00">07:00</option>
+                  <option value="07:30">07:30</option>
+                  <option value="08:00">08:00</option>
+                  <option value="08:30">08:30</option>
+                  <option value="09:00">09:00</option>
+                  <option value="09:30">09:30</option>
+                  <option value="10:00">10:00</option>
+                  <option value="10:30">10:30</option>
+                  <option value="11:00">11:00</option>
+                  <option value="11:30">11:30</option>
+                  <option value="12:00">12:00</option>
+                  <option value="12:30">12:30</option>
+                  <option value="13:00">13:00</option>
+                  <option value="13:30">13:30</option>
+                  <option value="14:00">14:00</option>
+                  <option value="14:30">14:30</option>
+                  <option value="15:00">15:00</option>
+                  <option value="15:30">15:30</option>
+                  <option value="16:00">16:00</option>
+                  <option value="16:30">16:30</option>
+                  <option value="17:00">17:00</option>
+                  <option value="17:30">17:30</option>
+                  <option value="18:00">18:00</option>
+                  <option value="18:30">18:30</option>
+                  <option value="19:00">19:00</option>
+                  <option value="19:30">19:30</option>
+                  <option value="20:00">20:00</option>
+                  <option value="20:30">20:30</option>
+                  <option value="21:00">21:00</option>
+                  <option value="21:30">21:30</option>
+                  <option value="22:00">22:00</option>
+                  <option value="22:30">22:30</option>
+                  <option value="23:00">23:00</option>
+                  <option value="23:30">23:30</option>
+                </select>
               </div>
-
-              {/* 종료시간 표시 */}
-              {endTime && (
-                <div className="time-display-section">
-                  <label className="time-label">예상 종료 시간</label>
-                  <div className="time-display">
-                    {formatTimeDisplay(endTime)}
-                  </div>
-                  <div className="duration-display">
-                    (약 {reservationData.totalDuration}분 소요)
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -436,13 +400,19 @@ const UserServiceRequest = () => {
                   <div
                     key={address.id}
                     className={`address-item ${
-                      formData.selectedAddress?.id === address.id ? 'selected' : ''
+                      formData.selectedAddress?.id === address.id
+                        ? 'selected'
+                        : ''
                     }`}
                     onClick={() => handleAddressSelect(address)}
                   >
                     <div className="address-radio">
-                      <div className={`radio-circle ${formData.selectedAddress?.id === address.id ? 'active' : ''}`}>
-                        {formData.selectedAddress?.id === address.id && <div className="radio-dot"></div>}
+                      <div
+                        className={`radio-circle ${formData.selectedAddress?.id === address.id ? 'active' : ''}`}
+                      >
+                        {formData.selectedAddress?.id === address.id && (
+                          <div className="radio-dot"></div>
+                        )}
                       </div>
                     </div>
                     <div className="address-info">
@@ -456,9 +426,20 @@ const UserServiceRequest = () => {
                 ))}
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#f8f9fa', borderRadius: '12px' }}>
-                <p style={{ fontWeight: '600', color: '#333' }}>저장된 주소가 없습니다</p>
-                <p style={{ color: '#666', marginTop: '8px' }}>서비스를 받을 주소를 먼저 추가해주세요.</p>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '12px',
+                }}
+              >
+                <p style={{ fontWeight: '600', color: '#333' }}>
+                  저장된 주소가 없습니다
+                </p>
+                <p style={{ color: '#666', marginTop: '8px' }}>
+                  서비스를 받을 주소를 먼저 추가해주세요.
+                </p>
               </div>
             )}
 
@@ -467,7 +448,16 @@ const UserServiceRequest = () => {
               <button
                 className="edit-btn"
                 onClick={handleAddNewAddress}
-                style={{ width: '100%', padding: '12px', border: '1px dashed #4285f4', backgroundColor: 'transparent', textDecoration: 'none', color: '#4285f4', borderRadius: '8px', cursor: 'pointer' }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px dashed #4285f4',
+                  backgroundColor: 'transparent',
+                  textDecoration: 'none',
+                  color: '#4285f4',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                }}
               >
                 + 새 주소 추가
               </button>

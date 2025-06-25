@@ -15,16 +15,10 @@ import windowIcon from '../../../assets/images/window.png';
 const UserServiceSubOption = () => {
   const navigate = useNavigate();
 
-  // ⭐️ 하위 옵션 선택 상태 관리
-  const [selectedSubOption, setSelectedSubOption] = useState(null);
   const [memo, setMemo] = useState('');
 
   // zustand store 사용
-  const {
-    setServiceDetails,
-    setSelectedSubOption: setStoreSubOption,
-    setReservationInfo,
-  } = useReservationStore();
+  const { setServiceDetails, setReservationInfo } = useReservationStore();
 
   // API 훅 사용
   const { services, loading, loadServices } = useCustomerServices();
@@ -44,21 +38,13 @@ const UserServiceSubOption = () => {
       userName = userName.slice(0, -1);
     }
 
-    return `${userName}님, 어떤 서비스가 필요하신가요?`;
+    return `${userName}님, 오늘도 깨끗한 하루되세요!`;
   };
 
-  // ⭐️ 하위 옵션 선택 핸들러
-  const handleOptionSelect = (optionName, optionId) => {
-    const subOptionData = {
-      id: optionId,
-      name: optionName,
-    };
-
-    setSelectedSubOption(subOptionData);
-    setStoreSubOption(subOptionData); // store에도 저장
-
-    // ⭐️ 선택된 서브옵션에 따른 서비스 데이터를 reservationStore에 저장
-    const selectedServiceData = getServiceData(optionId);
+  // ⭐️ 자동으로 통합 청소 서비스 설정
+  useEffect(() => {
+    // 통합 청소 서비스 데이터를 reservationStore에 저장
+    const selectedServiceData = getServiceData('combined_cleaning');
     const totalPrice = selectedServiceData.services.reduce(
       (total, service) => total + service.price,
       0
@@ -67,25 +53,20 @@ const UserServiceSubOption = () => {
     // 예약 데이터에 서비스 정보 저장
     setReservationInfo({
       selectedServices: selectedServiceData.services.map((service, index) => ({
-        id: `${optionId}-${index}`,
+        id: `combined_cleaning-${index}`,
         name: service.name,
         price: service.price,
         selected: true,
       })),
       serviceDetails: selectedServiceData.services,
       totalPrice: totalPrice,
-      totalDuration: optionId === 'childcare' ? 240 : 180, // 육아: 4시간, 나머지: 3시간
+      totalDuration: 240, // 통합 청소: 4시간
       serviceTitle: selectedServiceData.title,
       serviceDuration: selectedServiceData.duration,
     });
-  };
+  }, [setReservationInfo]);
 
   const handleContinue = () => {
-    if (!selectedSubOption) {
-      alert('서비스 옵션을 선택해주세요.');
-      return;
-    }
-
     // 메모를 store에 저장
     setReservationInfo({
       memo: memo,
@@ -179,9 +160,24 @@ const UserServiceSubOption = () => {
           { name: '아이 안전 관리', price: 12000 },
         ],
       },
+      combined_cleaning: {
+        title: '통합 청소 서비스',
+        duration: '약 3-4시간 소요',
+        services: [
+          { name: '베란다 바닥 청소', price: 18000 },
+          { name: '난간 및 창틀 청소', price: 15000 },
+          { name: '베란다 유리창 청소', price: 12000 },
+          { name: '욕조 및 샤워부스 청소', price: 25000 },
+          { name: '화장실 변기 청소', price: 15000 },
+          { name: '타일 및 바닥 청소', price: 18000 },
+          { name: '창문 유리 청소', price: 20000 },
+          { name: '창틀 및 방충망 청소', price: 15000 },
+          { name: '전체 정리정돈', price: 10000 },
+        ],
+      },
     };
 
-    return serviceData[subOptionId] || serviceData.general_cleaning; // 기본값은 일반 청소
+    return serviceData[subOptionId] || serviceData.combined_cleaning; // 기본값은 통합 청소
   };
 
   // 로딩 상태 표시 (단순화)
@@ -243,7 +239,6 @@ const UserServiceSubOption = () => {
             <h2 className="service-message">
               {getPersonalizedServiceQuestion()}
             </h2>
-            <p className="sub-message">원하는 청소 옵션을 선택해주세요.</p>
           </div>
 
           {/* 하위 서비스 옵션 섹션 */}
@@ -275,14 +270,7 @@ const UserServiceSubOption = () => {
 
             {/* 베란다 청소 옵션 */}
             <div
-              className={`service-card sub-service-option ${
-                selectedSubOption && selectedSubOption.id === 'general_cleaning'
-                  ? 'selected'
-                  : ''
-              }`}
-              onClick={() =>
-                handleOptionSelect('베란다 청소', 'general_cleaning')
-              }
+              className="service-card sub-service-option"
               style={{ backgroundColor: 'white', background: 'white' }}
             >
               <div className="cleaning-icon">
@@ -297,15 +285,7 @@ const UserServiceSubOption = () => {
 
             {/* 욕실 청소 옵션 */}
             <div
-              className={`service-card sub-service-option ${
-                selectedSubOption &&
-                selectedSubOption.id === 'bathroom_cleaning'
-                  ? 'selected'
-                  : ''
-              }`}
-              onClick={() =>
-                handleOptionSelect('욕실 청소', 'bathroom_cleaning')
-              }
+              className="service-card sub-service-option"
               style={{ backgroundColor: 'white', background: 'white' }}
             >
               <div className="cleaning-icon">
@@ -320,12 +300,7 @@ const UserServiceSubOption = () => {
 
             {/* 창문 청소 옵션 */}
             <div
-              className={`service-card sub-service-option ${
-                selectedSubOption && selectedSubOption.id === 'window_cleaning'
-                  ? 'selected'
-                  : ''
-              }`}
-              onClick={() => handleOptionSelect('창문 청소', 'window_cleaning')}
+              className="service-card sub-service-option"
               style={{ backgroundColor: 'white', background: 'white' }}
             >
               <div className="cleaning-icon">
@@ -404,32 +379,9 @@ const UserServiceSubOption = () => {
 
           {/* 다음 단계 버튼 섹션 */}
           <div className="reservation-section">
-            {/* 선택된 옵션 표시 */}
-            {selectedSubOption && (
-              <div
-                className="selected-option-info"
-                style={{
-                  marginBottom: '16px',
-                  padding: '12px',
-                  backgroundColor: '#e8f4fd',
-                  borderRadius: '8px',
-                  border: '1px solid #4285f4',
-                }}
-              >
-                <p style={{ margin: '0', fontSize: '14px', color: '#1a73e8' }}>
-                  ✅ 선택된 서비스: {selectedSubOption.name}
-                </p>
-              </div>
-            )}
-
             <button
               className="primary-button reservation-button"
               onClick={handleContinue}
-              disabled={!selectedSubOption}
-              style={{
-                opacity: selectedSubOption ? 1 : 0.6,
-                cursor: selectedSubOption ? 'pointer' : 'not-allowed',
-              }}
             >
               다음 단계
             </button>

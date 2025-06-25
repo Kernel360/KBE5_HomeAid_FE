@@ -204,13 +204,16 @@ const ManagerList = () => {
       console.log('Filter status:', filterStatus, '-> API status:', apiStatus);
       console.log('Search params:', searchData);
 
-      const response = await fetch(`${API_URL}/api/v1/admin/managers?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/managers?${params}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -253,13 +256,16 @@ const ManagerList = () => {
       if (!token) return;
 
       // 전체 데이터를 가져와서 상태별 카운트 계산
-      const response = await fetch(`${API_URL}/api/v1/admin/managers?page=0&size=1000`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/managers?page=0&size=1000`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
