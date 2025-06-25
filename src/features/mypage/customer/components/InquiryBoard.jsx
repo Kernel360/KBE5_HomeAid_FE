@@ -2,11 +2,10 @@ import { ArrowLeft, Search, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import api from '../../../../api/config/api.js';
-import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
 // 문의 게시판 페이지
-const InquiryBoard = () => {
+const InquiryBoard = ({ onBack }) => {
   const navigate = useNavigate();
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,13 +82,70 @@ const InquiryBoard = () => {
         margin: '0 auto',
       }}
     >
-      <Header showBackButton={true} onBackClick={handleBack} />
-
+      {/* 커스텀 헤더 */}
+      <header
+        className="fixed top-0 z-50 flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '512px',
+          zIndex: 50,
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e9ecef',
+        }}
+      >
+        <div className="flex items-center">
+          <button
+            onClick={() => (onBack ? onBack() : navigate('/customer/mypage'))}
+            style={{
+              backgroundColor: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              width: '40px',
+              height: '40px',
+              padding: 0,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseDown={e => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+            }}
+            onMouseUp={e => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+          >
+            <ArrowLeft
+              size={20}
+              style={{ color: '#1a1a1a', strokeWidth: 3, width: 20, height: 20, display: 'block', pointerEvents: 'none' }}
+            />
+          </button>
+        </div>
+        <div className="flex-1 text-center">{/* 제목 없음, 공간만 */}</div>
+        <div style={{ width: 40 }} />
+      </header>
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
-        {/* 페이지 제목과 설명 */}
+        {/* 페이지 제목 */}
+        <div className="mb-2">
+          <h2 className="text-xl font-bold text-gray-900 text-center">문의 게시판</h2>
+        </div>
+        {/* 설명 */}
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900">문의 게시판</h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 mt-1 text-center">
             질문이나 상담내용을 남겨주세요
           </p>
         </div>

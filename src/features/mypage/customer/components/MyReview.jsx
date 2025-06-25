@@ -67,10 +67,62 @@ const MyReview = ({ onBack }) => {
       className="min-h-screen bg-white"
       style={{ paddingBottom: '80px', maxWidth: '512px', margin: '0 auto' }}
     >
-      <header className="fixed top-0 left-0 right-0 z-10 bg-white border-b border-gray-200 flex items-center px-6" style={{ height: 64, maxWidth: 512, margin: '0 auto', paddingTop: 0, paddingBottom: 0 }}>
-        <button onClick={onBack} className="mr-2">
-          <ArrowLeft className="w-6 h-6 text-gray-900" />
-        </button>
+      <header
+        className="fixed top-0 z-50 flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '512px',
+          zIndex: 50,
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e9ecef',
+        }}
+      >
+        <div className="flex items-center">
+          <button
+            onClick={onBack}
+            style={{
+              backgroundColor: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              width: '40px',
+              height: '40px',
+              padding: 0,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseDown={e => {
+              e.currentTarget.style.transform = 'scale(0.95)';
+            }}
+            onMouseUp={e => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+          >
+            <ArrowLeft
+              size={20}
+              style={{ color: '#1a1a1a', strokeWidth: 3, width: 20, height: 20, display: 'block', pointerEvents: 'none' }}
+            />
+          </button>
+        </div>
+        <div className="flex-1 text-center">
+          {/* 제목 없음, 공간만 */}
+        </div>
+        <div style={{ width: 40 }} />
       </header>
       <main className="px-6 py-6" style={{ paddingTop: 80 }}>
         <div className="mb-6">

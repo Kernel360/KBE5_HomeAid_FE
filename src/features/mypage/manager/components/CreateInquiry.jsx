@@ -97,7 +97,7 @@ const CreateInquiry = () => {
               disabled={loading || !title.trim() || !content.trim()}
               className="px-6 py-2 bg-blue-600 text-black rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? '저장 중...' : '저장하기'}
+              {loading ? '저장 중...' : '등록하기'}
             </button>
           </div>
         </div>
