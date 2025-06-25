@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
+import Modal from '../../../../components/Modal.jsx';
 
 const InquiryDetail = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const InquiryDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
+  const [modal, setModal] = useState({ open: false, type: '', message: '', onConfirm: null });
 
   useEffect(() => {
     const fetchInquiry = async () => {
@@ -64,20 +66,28 @@ const InquiryDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('정말로 이 문의글을 삭제하시겠습니까?')) {
-      setLoading(true);
-      setError(null);
-      try {
-        await api.delete(`/boards/${id}`);
-        alert('문의글이 삭제되었습니다.');
-        navigate('/manager/mypage/inquiry');
-      } catch (err) {
-        setError('문의글 삭제에 실패했습니다.');
-        console.error('Failed to delete inquiry:', err);
-      } finally {
-        setLoading(false);
+    setModal({
+      open: true,
+      type: 'confirm',
+      message: '정말로 이 문의글을 삭제하시겠습니까?',
+      onConfirm: async () => {
+        setModal({ ...modal, open: false });
+        setLoading(true);
+        setError(null);
+        try {
+          await api.delete(`/boards/${id}`);
+          setModal({ open: true, type: 'alert', message: '문의글이 삭제되었습니다.', onConfirm: () => {
+            setModal({ ...modal, open: false });
+            navigate('/manager/mypage/inquiry');
+          }});
+        } catch (err) {
+          setError('문의글 삭제에 실패했습니다.');
+          console.error('Failed to delete inquiry:', err);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
+    });
   };
 
   if (loading) {
@@ -266,6 +276,16 @@ const InquiryDetail = () => {
       </main>
 
       <Footer current="/manager/mypage" />
+      <Modal
+        open={modal.open}
+        title={modal.type === 'confirm' ? '확인' : '알림'}
+        message={modal.message}
+        onClose={() => setModal({ ...modal, open: false })}
+        onConfirm={modal.onConfirm}
+        showCancel={modal.type === 'confirm'}
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 };
