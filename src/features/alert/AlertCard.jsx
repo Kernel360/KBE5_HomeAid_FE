@@ -1,7 +1,7 @@
 import apiService from "@/api";
 import { useAlertStore } from "@/stores/alertStore";
 import { X, Bell, Check } from 'lucide-react';
-import { memo, use } from 'react';
+import { memo } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -9,7 +9,7 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
     const { notificationAlert, removeNotificationAlert } = useAlertStore();
     // const [alerts, setAlerts] = useState(notificationAlert);
     const navigate = useNavigate();
-    const userRole = useAuthStore((state) => state.user.role);
+    const userRole = useAuthStore((state) => state.user?.role);
 
 
     // 보이지 않을 때는 null 반환
@@ -61,9 +61,9 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                 break;
 
             default:
-            console.log('알 수 없는 이벤트 타입:', eventType);
-            break;
-        }       
+                console.log('알 수 없는 이벤트 타입:', eventType);
+                break;
+        }
     }
 
     const alertRead = async (alertId) => {
@@ -71,10 +71,10 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
         console.log('read update', response);
     }
 
-    return(
+    return (
         <>
             {/* 배경 오버레이 */}
-            <div 
+            <div
                 className="fixed inset-0 bg-black bg-opacity-50 z-40"
                 onClick={onClose}
                 style={{
@@ -87,9 +87,9 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                     zIndex: 40
                 }}
             />
-            
+
             {/* 알림 카드 */}
-            <div 
+            <div
                 className="fixed z-50"
                 style={{
                     position: 'fixed',
@@ -123,36 +123,50 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
 
                 {/* 알림 목록 */}
                 <div className="flex-1 overflow-y-auto">
-                    {notificationAlert && notificationAlert.length > 0 ? (
-                        <div className="divide-y divide-gray-100">
-                            {notificationAlert.map((noti, index) => (
-                                <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
-                                    <div className="flex items-start gap-3" onClick={() => 
-                                        handleNavigate(noti.alertId, noti.relatedEntityId, noti.relatedEntityType, noti.eventType)}>
-                                        {/* <div className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-2"></div> */}
-                                        <div className="flex-1">
-                                            {/* <p className="text-sm font-medium text-gray-900 mb-1">
-                                                {noti.eventType || '알림'}
-                                            </p> */}
-                                            <p className="text-sm text-gray-600 mb-2">
-                                                {noti.message || '새로운 알림이 있습니다.'}
-                                            </p>
-                                            <p className="text-xs text-gray-400">
-                                                {noti.createdAt || '방금 전'}
-                                            </p>
+                    {userRole ? (
+                        // 로그인한 사용자 - 기존 알림 컨텐츠
+                        notificationAlert && notificationAlert.length > 0 ? (
+                            <div className="divide-y divide-gray-100">
+                                {notificationAlert.map((noti, index) => (
+                                    <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-start gap-3" onClick={() =>
+                                            handleNavigate(noti.alertId, noti.relatedEntityId, noti.relatedEntityType, noti.eventType)}>
+                                            <div className="flex-1">
+                                                <p className="text-sm text-gray-600 mb-2">
+                                                    {noti.message || '새로운 알림이 있습니다.'}
+                                                </p>
+                                                <p className="text-xs text-gray-400">
+                                                    {noti.createdAt || '방금 전'}
+                                                </p>
+                                            </div>
+                                            <button className="flex-shrink-0 p-1 hover:bg-gray-200 rounded-full">
+                                                <Check size={16} className="text-gray-400" />
+                                            </button>
                                         </div>
-                                        <button className="flex-shrink-0 p-1 hover:bg-gray-200 rounded-full">
-                                            <Check size={16} className="text-gray-400" />
-                                        </button>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                                <Bell size={48} className="text-gray-300 mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">알림이 없습니다</h3>
+                                <p className="text-sm text-gray-500">새로운 알림이 오면 여기에 표시됩니다.</p>
+                            </div>
+                        )
                     ) : (
+                        // 로그인하지 않은 사용자 - 로그인 안내
                         <div className="flex flex-col items-center justify-center h-full text-center p-8">
                             <Bell size={48} className="text-gray-300 mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">알림이 없습니다</h3>
-                            <p className="text-sm text-gray-500">새로운 알림이 오면 여기에 표시됩니다.</p>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">로그인이 필요합니다</h3>
+                            <p className="text-sm text-gray-500 mb-4">
+                                알림을 확인하려면 먼저 로그인해주세요.
+                            </p>
+                            <button
+                                onClick={() => navigate('/auth/signin')} // 로그인 페이지로 이동
+                                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                로그인하기
+                            </button>
                         </div>
                     )}
                 </div>
