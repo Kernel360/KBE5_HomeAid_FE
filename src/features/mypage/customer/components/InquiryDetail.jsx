@@ -42,6 +42,11 @@ const InquiryDetail = () => {
   };
 
   const handleUpdate = async () => {
+    if (inquiry.isAnswered) {
+      alert('답변이 완료된 게시글은 수정할 수 없습니다.');
+      setIsEditing(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -199,7 +204,7 @@ const InquiryDetail = () => {
               <button
                 onClick={handleUpdate}
                 className="px-6 py-2 bg-blue-600 text-black rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
-                disabled={!editedTitle.trim() || !editedContent.trim()}
+                disabled={!editedTitle.trim() || !editedContent.trim() || inquiry.isAnswered}
               >
                 저장
               </button>
@@ -256,6 +261,7 @@ const InquiryDetail = () => {
               <button
                 onClick={() => setIsEditing(true)}
                 className="px-6 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors shadow-sm"
+                disabled={inquiry.isAnswered}
               >
                 수정하기
               </button>

@@ -227,15 +227,33 @@ const InquiryDetail = () => {
               >
                 {inquiry.content}
               </div>
+
+              {/* 답변 영역 */}
+              <div className="mt-8">
+                <h4 className="font-semibold text-gray-800 mb-2">관리자 답변</h4>
+                {inquiry.reply ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="text-gray-900 mb-2">{inquiry.reply.content}</div>
+                    <div className="text-xs text-gray-500 flex justify-between">
+                      <span>답변자: {inquiry.reply.adminName || '관리자'}</span>
+                      <span>{new Date(inquiry.reply.createdAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-400">아직 답변이 등록되지 않았습니다.</div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center justify-end space-x-4 mt-6">
+              { !inquiry.isAnswered && (
               <button
                 onClick={() => setIsEditing(true)}
                 className="px-6 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors shadow-sm"
               >
                 수정하기
               </button>
+              )}
               <button
                 onClick={handleDelete}
                 className="px-6 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors shadow-sm"
