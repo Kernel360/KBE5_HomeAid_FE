@@ -28,12 +28,18 @@ const ServiceRegistration = ({ onBack }) => {
         ? formData.preferenceIds.filter((id) => id !== serviceId)
         : [...formData.preferenceIds, serviceId],
     });
-    console.log('[서비스선택] preferenceIds:', formData.preferenceIds.includes(serviceId)
-      ? formData.preferenceIds.filter((id) => id !== serviceId)
-      : [...formData.preferenceIds, serviceId]);
-    console.log('[서비스선택] formData:', { ...formData, preferenceIds: formData.preferenceIds.includes(serviceId)
-      ? formData.preferenceIds.filter((id) => id !== serviceId)
-      : [...formData.preferenceIds, serviceId] });
+    console.log(
+      '[서비스선택] preferenceIds:',
+      formData.preferenceIds.includes(serviceId)
+        ? formData.preferenceIds.filter((id) => id !== serviceId)
+        : [...formData.preferenceIds, serviceId]
+    );
+    console.log('[서비스선택] formData:', {
+      ...formData,
+      preferenceIds: formData.preferenceIds.includes(serviceId)
+        ? formData.preferenceIds.filter((id) => id !== serviceId)
+        : [...formData.preferenceIds, serviceId],
+    });
   };
 
   const fetchServiceOptions = async () => {
@@ -155,29 +161,30 @@ const ServiceRegistration = ({ onBack }) => {
                         </div>
 
                         {/* 세부 서비스(features) */}
-                        {Array.isArray(service.features) && service.features.length > 0 && (
-                          <div className="bg-white border-t border-gray-100">
-                            <div className="px-4 py-2">
-                              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                세부 서비스
-                              </span>
-                            </div>
-                            <div className="space-y-2 px-4 pb-4">
-                              {service.features.map((feature, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
-                                >
-                                  <div className="flex-1">
-                                    <span className="text-sm font-medium text-gray-700">
-                                      {feature}
-                                    </span>
+                        {Array.isArray(service.features) &&
+                          service.features.length > 0 && (
+                            <div className="bg-white border-t border-gray-100">
+                              <div className="px-4 py-2">
+                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                  세부 서비스
+                                </span>
+                              </div>
+                              <div className="space-y-2 px-4 pb-4">
+                                {service.features.map((feature, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                                  >
+                                    <div className="flex-1">
+                                      <span className="text-sm font-medium text-gray-700">
+                                        {feature}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </div>
                     ))}
                   </div>
@@ -242,9 +249,7 @@ const ServiceRegistration = ({ onBack }) => {
             className="flex-1"
             style={{ paddingTop: '80px', paddingBottom: '100px' }}
           >
-            <ProfileCompletion
-              onBack={() => setStepView('step2')}
-            />
+            <ProfileCompletion onBack={() => setStepView('step2')} />
           </main>
           <Footer />
         </div>

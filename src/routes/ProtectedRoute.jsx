@@ -8,7 +8,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   // 로그인하지 않은 경우
   if (!user) {
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+    return <Navigate to="/auth/signin" state={{ from: location }} replace />;
   }
 
   // 권한이 필요한 경우

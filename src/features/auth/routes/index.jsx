@@ -7,11 +7,13 @@ import CustomerSignUpStep1Page from '../CustomerSignUpStep1Page';
 import CustomerSignUpStep2Page from '../CustomerSignUpStep2Page';
 import ManagerSignUpStep1Page from '../ManagerSignUpStep1Page';
 import ManagerSignUpStep2Page from '../ManagerSignUpStep2Page';
+import AdminLoginPage from '../AdminLoginPage';
 
 export const AuthRoutes = () => {
   return (
     <Routes>
       <Route path="/signin" element={<SignInPage />} />
+      <Route path="/admin/signin" element={<AdminLoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/signup/select-type" element={<SelectUserTypePage />} />
       <Route
