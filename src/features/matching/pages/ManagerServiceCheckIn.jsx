@@ -6,35 +6,22 @@ import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
 import useReservationStore from '../store/reservationStore.js';
 import { apiService } from '@/api';
-
-import useMatchingStore from '../../../stores/matchingStore.js';
 // TODO: 파일 업로드 기능 추가 시 필요한 import
 // import React, { useState, useEffect } from 'react';
 
 const ManagerServiceCheckIn = () => {
 
   const workLog = useReservationStore.getState().workLog;
-  const reservationStore = useReservationStore();
   const reservationId = useReservationStore.getState().reservationId;
   const [reservation, setReservation] = useState({});
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
-  // const matchingItem = useReservationStore((state) => state.matching);
   const [currentLocation, setCurrentLocation] = useState(null);
-
-  const { matchingRequest } = useMatchingStore();
 
   // 체크아웃 상태에서 이슈 작성 폼 상태
   const [issueText, setIssueText] = useState('');
   const [issueFile, setIssueFile] = useState(null);
 
-  console.log(reservationId);
-  console.log('workLog State ', workLog);
-  console.log('workLog State ', workLog.status);
-
-  console.log('reservationStore 타입:', typeof reservationStore);
-  console.log('reservationStore 내용:', reservationStore);
-  console.log('setWorkLog 타입:', typeof reservationStore.setWorkLog);
 
   // 현재 위치 가져오기
   const getCurrentLocation = () => {
@@ -61,11 +48,10 @@ const ManagerServiceCheckIn = () => {
     getCurrentLocation();
   }, []);
 
+  // 예약 상세 정보 불러오기 (apiService.reservation.getById만 사용)
   const fetchReservation = async () => {
-    const response = await apiService.reservation.getById(
-      reservationId
-    );
-    console.log('fetchReservation back data', response.data.data);
+    const response = await apiService.reservation.getById(reservationId);
+    console.log('reservation API 응답:', response.data.data);
     setReservation(response.data.data);
   };
   useEffect(() => {
@@ -113,14 +99,13 @@ const ManagerServiceCheckIn = () => {
       const requestData = {
         lat: currentLocation.lat,
         lng: currentLocation.lng,
-        reservationId: matchingRequest.reservationId,
+        reservationId: reservationId,
         workType: 'CHECKIN',
       };
 
       console.log('체크인 요청 데이터:', requestData);
       const response = await apiService.workLog.checkIn(requestData);
       console.log('체크인 결과 데이터', response.data.data);
-      reservationStore.setWorkLog(response.data.data);
       toggleCheckInModal();
     } catch (error) {
       console.error('체크인 실패:', error);
@@ -141,17 +126,10 @@ const ManagerServiceCheckIn = () => {
       };
 
       console.log('체크아웃 요청 데이터:', requestData);
-      const response = await apiService.workLog.checkOut(
-        matchingRequest.reservationId,
-        requestData
-      );
+      const response = await apiService.workLog.checkOut(reservationId, requestData);
       console.log('체크아웃 결과 데이터', response.data);
 
       if (response.data.success) {
-        reservationStore.setWorkLog({
-          ...workLog,
-          workType: 'CHECKOUT',
-        });
         alert('체크아웃이 완료되었습니다.');
       }
 
@@ -190,7 +168,7 @@ const ManagerServiceCheckIn = () => {
       alert('이슈가 등록되었습니다.');
       setIssueText('');
       setIssueFile(null);
-    } catch (e) {
+    } catch {
       alert('이슈 등록에 실패했습니다.');
     }
   };
@@ -240,6 +218,18 @@ const ManagerServiceCheckIn = () => {
   //   );
   // }
 
+  // 날짜 포맷 변환 함수
+  const formatDateTime = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+  };
+
   return (
     <div className="manager-service-page">
       <Header />
@@ -251,30 +241,24 @@ const ManagerServiceCheckIn = () => {
 
             <div className="details-card">
               <div className="detail-item">
+                <span className="label">서비스 옵션</span>
+                <span className="value">{reservation.serviceOptionName || '-'}</span>
               </div>
               <div className="detail-item">
-                <span className="label">고객명</span>
-                <span className="value">{reservation.customerName}</span>
-              </div>
-              <div className="detail-item">
-                <span className="label">서비스 유형</span>
-                <span className="value">{reservation.subOptionName}</span>
-              </div>
-              <div className="detail-item">
-                <span className="label">날짜 및 시간</span>
-                <span className="value">
-                  {reservation.requestedDate} {reservation.requestedTime}
-                </span>
+                <span className="label">가격</span>
+                <span className="value">{reservation.totalPrice != null ? reservation.totalPrice.toLocaleString() + '원' : '-'}</span>
               </div>
               <div className="detail-item">
                 <span className="label">예상 소요시간</span>
-                <span className="value">{reservation.totalDuration} 시간</span>
+                <span className="value">{reservation.totalDuration ? reservation.totalDuration + ' 시간' : '-'}</span>
+              </div>
+              <div className="detail-item">
+                <span className="label">시작시간</span>
+                <span className="value">{formatDateTime(reservation.startTime)}</span>
               </div>
               <div className="detail-item">
                 <span className="label">주소</span>
-                <span className="value">
-                  {reservation.address} {reservation.addressDetail}
-                </span>
+                <span className="value">{reservation.address} {reservation.addressDetail}</span>
               </div>
             </div>
 

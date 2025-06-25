@@ -85,6 +85,7 @@ export const apiService = {
     update: (id, data) => api.put(`/reservations/${id}`, data),
     delete: (id) => api.delete(`/reservations/${id}`),
     cancel: (id) => api.post(`/reservations/${id}/cancel`),
+    getAllForManager: () => api.get('/reservations/manager'),
   },
   matching: {
     acceptMatching: (matchingId, data) => api.patch(`/manager/matchings/${matchingId}/to-customer`, data),

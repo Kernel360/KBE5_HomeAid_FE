@@ -28,33 +28,46 @@ export const useMatchingData = () => {
     }
   };
 
-  // 상태별 색상 매핑
+  // 상태별 색상 매핑 함수 (CSS 클래스명과 일치)
   const getStatusColor = (status) => {
-    const colors = {
-      'REQUESTED': 'pending',
-      'ACCEPTED': 'waiting',
-      'CONFIRMED': 'completed',
-      'REJECTED': 'rejected',
-    };
-    return colors[status] || 'default';
+    switch (status) {
+      case 'CONFIRMED':
+        return 'completed';
+      case 'MATCHED':
+        return 'matched';
+      case 'REJECTED':
+        return 'rejected';
+      case 'ACCEPTED':
+        return 'waiting';
+      case 'REQUESTED':
+        return 'pending';
+      default:
+        return 'pending';
+    }
+  };
+
+  // 날짜 포맷 변환 함수
+  const formatDateTime = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
   };
 
   // 데이터 변환 함수
   const transformMatchingData = (rawData) => {
+    if (!rawData || !Array.isArray(rawData.content)) return [];
     return rawData.content.map((item) => ({
-      id: item.matchingId,
-      customerName: item.customerName || '김고객',
-      serviceType: item.serviceType,
-      workTime: `${item.reservedDate} ${item.reservedTime}`,
-      status: getTabNameFromStatus(item.status),
-      statusColor: getStatusColor(item.status),
-      originalStatus: item.status,
-      estimatedDuration: (item.estimatedDuration !== null && item.estimatedDuration !== undefined) ? item.estimatedDuration : 0,
-      customerRequest: item.customerRequest,
-      address: `${item.latitude}, ${item.longitude}`,
-      reservationId: item.reservationId,
-      managerStatus: item.managerStatus,
-      customerStatus: item.customerStatus,
+      id: item.reservationId,
+      customerName: item.customerName,
+      serviceType: item.serviceOptionName,
+      workTime: formatDateTime(item.startTime),
+      status: getTabNameFromStatus(item.matchingStatus),
+      statusColor: getStatusColor(item.matchingStatus),
     }));
   };
 
@@ -72,7 +85,7 @@ export const useMatchingData = () => {
       const data = await getMatchingList(page, size);
       console.log('📡 백엔드에서 받은 원본 매칭 데이터:', data);
       
-      const transformedData = transformMatchingData(data);
+      const transformedData = transformMatchingData(data.data);
       console.log('✅ 변환된 매칭 목록:', transformedData);
       
       setMatchingList(transformedData);

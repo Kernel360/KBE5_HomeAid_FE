@@ -136,55 +136,14 @@ export const useManagerMatching = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ⭐️ 현재 로그인한 매니저 ID 추출 함수
-  const getCurrentManagerId = () => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        console.warn('❌ 토큰이 없습니다. 로그인이 필요합니다.');
-        return null;
-      }
-
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('🔍 현재 매니저 정보 추출:');
-      console.log('  - 사용자 ID:', payload.userId);
-      console.log('  - 사용자 ID 타입:', typeof payload.userId);
-      console.log('  - 이메일:', payload.email);
-      console.log('  - 역할:', payload.role);
-
-      if (payload.role !== 'ROLE_MANAGER') {
-        console.warn('⚠️ 매니저 권한이 아닙니다:', payload.role);
-        return null;
-      }
-
-      // ⭐️ 매니저 ID를 숫자로 변환하여 일관성 보장
-      const managerId = parseInt(payload.userId);
-      console.log(
-        '🎯 추출된 매니저 ID:',
-        managerId,
-        '(타입:',
-        typeof managerId,
-        ')'
-      );
-
-      if (isNaN(managerId)) {
-        console.error('❌ 매니저 ID가 유효한 숫자가 아닙니다:', payload.userId);
-        return null;
-      }
-
-      return managerId;
-    } catch (error) {
-      console.error('❌ JWT 토큰 파싱 실패:', error);
-      return null;
-    }
-  };
-
-  const getMatchingList = async (page = 0, size = 10) => {
+  const getMatchingList = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiService.manager.getAllMatcings(page, size);
-      return response.data.data;
+      // 기존 매칭 API 대신 예약 API 사용
+      const response = await apiService.reservation.getAllForManager();
+      console.log('⭐️ getAllForManager로 받아온 예약 데이터:', response.data);
+      return response.data;
     } catch (err) {
       setError(err.message || '매칭 목록을 불러오는데 실패했습니다.');
       throw err;

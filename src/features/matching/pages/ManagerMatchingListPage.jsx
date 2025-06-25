@@ -20,6 +20,8 @@ import MatchingService from '@/features/matching/services/MatchingService.js';
 // 스타일
 import './ManagerMatchingList.css';
 
+import reservationStore from '../store/reservationStore.js';
+
 /**
  * 매니저 매칭 리스트 페이지
  * 순수한 조합 로직만 담당하며, 모든 비즈니스 로직은 훅과 서비스에서 처리
@@ -49,11 +51,8 @@ const ManagerMatchingListPage = () => {
   } = useMatchingList();
 
   const {
-    // 데이터 상태
-    matchingList,
     loading,
     error,
-    
     // 데이터 함수
     loadMatchingList,
     getFilteredList,
@@ -65,12 +64,21 @@ const ManagerMatchingListPage = () => {
     handleMatching,
   } = useMatchingActions();
 
+  // 예약 ID를 store에 세팅하는 함수
+  const setReservationId = reservationStore.getState().setReservationId;
+
+  // 서비스 시작 핸들러 래핑: 예약 ID 세팅 후 기존 핸들러 호출
+  const handleServiceStartWithReservationId = (matchingItem) => {
+    setReservationId(matchingItem.id);
+    handleServiceStart(matchingItem);
+  };
+
   // 데이터 로딩 및 새로고침 로직
   useEffect(() => {
     const loadData = async () => {
       try {
         console.log('🔄 페이지 초기 로딩...', { currentPage, pageSize });
-        const result = await loadMatchingList(currentPage, pageSize);
+        const result = await loadMatchingList();
         setTotalPages(result.totalPages);
       } catch (err) {
         console.error('데이터 로딩 실패:', err);
@@ -84,7 +92,7 @@ const ManagerMatchingListPage = () => {
   useEffect(() => {
     const cleanup = MatchingService.setupVisibilityListeners(async () => {
       try {
-        const result = await loadMatchingList(currentPage, pageSize);
+        const result = await loadMatchingList();
         setTotalPages(result.totalPages);
       } catch (err) {
         console.error('가시성 변경 시 데이터 로딩 실패:', err);
@@ -101,7 +109,7 @@ const ManagerMatchingListPage = () => {
       
       MatchingService.delayedRefresh(async () => {
         try {
-          const result = await loadMatchingList(currentPage, pageSize);
+          const result = await loadMatchingList();
           setTotalPages(result.totalPages);
         } catch (err) {
           console.error('경로 변경 시 데이터 로딩 실패:', err);
@@ -115,7 +123,7 @@ const ManagerMatchingListPage = () => {
     console.log('🏷️ 탭 변경:', tab);
     handleTabChange(tab);
     try {
-      const result = await loadMatchingList(0, pageSize); // 탭 변경 시 첫 페이지로
+      const result = await loadMatchingList();
       setTotalPages(result.totalPages);
     } catch (err) {
       console.error('탭 변경 시 데이터 로딩 실패:', err);
@@ -126,7 +134,7 @@ const ManagerMatchingListPage = () => {
     console.log('📄 페이지 변경:', newPage);
     handlePageChange(newPage);
     try {
-      const result = await loadMatchingList(newPage, pageSize);
+      const result = await loadMatchingList();
       setTotalPages(result.totalPages);
     } catch (err) {
       console.error('페이지 변경 시 데이터 로딩 실패:', err);
@@ -136,7 +144,7 @@ const ManagerMatchingListPage = () => {
   // 재시도 핸들러
   const handleRetry = async () => {
     try {
-      const result = await loadMatchingList(currentPage, pageSize);
+      const result = await loadMatchingList();
       setTotalPages(result.totalPages);
     } catch (err) {
       console.error('재시도 실패:', err);
@@ -174,7 +182,7 @@ const ManagerMatchingListPage = () => {
             error={error}
             onRetry={handleRetry}
             onDetailView={openDetailModal}
-            onServiceStart={handleServiceStart}
+            onServiceStart={handleServiceStartWithReservationId}
             onMatching={handleMatching}
           />
 
