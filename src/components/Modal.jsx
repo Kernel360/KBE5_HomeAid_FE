@@ -41,6 +41,7 @@ const Modal = ({
       aria-modal="true"
       role="dialog"
       tabIndex={-1}
+      onClick={onClose}
     >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-xs w-full mx-4 p-7 relative animate-modalPop border border-gray-100"
@@ -85,8 +86,6 @@ const Modal = ({
           )}
         </div>
       </div>
-      {/* 오버레이 클릭 시 닫기 */}
-      <div className="absolute inset-0" onClick={onClose} />
       {/* 애니메이션 스타일 */}
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
