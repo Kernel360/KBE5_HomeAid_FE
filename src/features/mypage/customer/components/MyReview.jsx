@@ -2,6 +2,7 @@ import { ArrowLeft, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../../../../api/config/api';
 import Footer from '../../../../components/Footer.jsx';
+import Modal from '../../../../components/Modal.jsx';
 
 const MyReview = ({ onBack }) => {
   const [reviews, setReviews] = useState([]);
@@ -9,6 +10,10 @@ const MyReview = ({ onBack }) => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [deletingId, setDeletingId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedReviewId, setSelectedReviewId] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   const fetchReviews = async (pageNum = 0) => {
     setLoading(true);
@@ -33,6 +38,28 @@ const MyReview = ({ onBack }) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  const handleDeleteClick = (reviewId) => {
+    setSelectedReviewId(reviewId);
+    setShowDeleteModal(true);
+    setDeleteError('');
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedReviewId) return;
+    setDeletingId(selectedReviewId);
+    setDeleteError('');
+    try {
+      await api.delete(`/reviews/${selectedReviewId}`);
+      setShowDeleteModal(false);
+      setSelectedReviewId(null);
+      fetchReviews(page); // 삭제 후 목록 새로고침
+    } catch (err) {
+      setDeleteError('리뷰 삭제에 실패했습니다. 다시 시도해 주세요.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -60,26 +87,46 @@ const MyReview = ({ onBack }) => {
             {reviews.map((review) => (
               <div
                 key={review.id}
-                className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100 hover:bg-gray-100 transition-all duration-200"
+                className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col gap-2"
+                style={{ boxShadow: '0 1px 6px 0 rgba(0,0,0,0.04)' }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-gray-900 text-base">{review.name || '대상자'}</span>
-                  <div className="flex items-center gap-0.5">
+                {/* 상단: 프로필 이니셜, 이름, 별점 */}
+                <div className="flex items-center mb-1">
+                  {/* 이니셜 원 */}
+                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center mr-3 text-base font-bold text-gray-500 select-none">
+                    {review.name ? review.name[0] : '?'}
+                  </div>
+                  {/* 이름 */}
+                  <span className="font-bold text-gray-900 text-base mr-2">{review.name || '대상자'}</span>
+                  {/* 별점 */}
+                  <div className="flex items-center ml-auto gap-0.5">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className={`w-5 h-5 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-200'}`} />
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-gray-500">{formatDate(review.createdAt)}</span>
-                  {/* 서비스 태그 예시: review.serviceType 필드가 있으면 노출 */}
+                {/* 날짜 */}
+                <div className="text-sm text-gray-500 mb-1 text-left">{formatDate(review.createdAt)}</div>
+                {/* 코멘트 */}
+                <div className="text-[15px] text-gray-800 leading-[1.5] mb-2 whitespace-pre-line text-left">{review.comment}</div>
+                {/* 서비스 태그 + 삭제 버튼 */}
+                <div className="flex items-center gap-2 mt-1">
                   {review.serviceType && (
-                    <span className="bg-gray-100 text-gray-700 rounded-[12px] px-3 py-1 text-xs h-6 flex items-center">{review.serviceType}</span>
+                    <span className="bg-gray-100 text-gray-700 rounded-[12px] px-3 py-1 text-xs h-8 flex items-center mr-2 align-middle">{review.serviceType}</span>
                   )}
+                  <div className="flex-1" />
+                  <button
+                    className="bg-[#FFF0F0] text-[#FF0004] rounded-[6px] px-4 h-8 text-[15px] font-medium border border-[#FFD6D6] hover:bg-[#FFEAEA] transition-colors disabled:opacity-50 align-middle flex items-center justify-center"
+                    style={{ minWidth: 56, height: 32, lineHeight: '32px', paddingTop: 0, paddingBottom: 0 }}
+                    onClick={() => handleDeleteClick(review.id)}
+                    disabled={deletingId === review.id}
+                  >
+                    {deletingId === review.id ? '삭제 중...' : '삭제'}
+                  </button>
                 </div>
-                <div className="text-[14px] text-gray-800 leading-[1.2] mt-2 mb-1 whitespace-pre-line">{review.comment}</div>
-                {/* 삭제 버튼 (옵션, 실제 삭제 기능 필요시만 활성화) */}
-                {/* <button className="ml-auto bg-[#F6F3F3] text-[#FF0004] rounded-[6px] px-4 py-1 text-[14px] font-medium">삭제</button> */}
+                {deleteError && selectedReviewId === review.id && (
+                  <div className="text-xs text-red-500 mt-1">{deleteError}</div>
+                )}
               </div>
             ))}
           </div>
@@ -96,6 +143,17 @@ const MyReview = ({ onBack }) => {
       <div className="fixed left-0 right-0 bottom-0 z-20" style={{ maxWidth: 512, margin: '0 auto' }}>
         <Footer current="/customer/mypage" />
       </div>
+      {/* 삭제 확인 모달 */}
+      <Modal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        confirmText="삭제"
+        cancelText="취소"
+        showCancel={true}
+      >
+        정말 이 리뷰를 삭제하시겠습니까?
+      </Modal>
     </div>
   );
 };

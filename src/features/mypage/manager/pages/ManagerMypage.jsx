@@ -417,3 +417,4 @@ export default function ManagerMypage() {
       return <MainView />;
   }
 }
+ 

@@ -87,7 +87,7 @@ export default function MyPage() {
                   className="w-12 h-12 object-cover object-center rounded-full"
                 />
               ) : (
-                <User className="w-6 h-6 text-blue-600" />
+              <User className="w-6 h-6 text-blue-600" />
               )}
             </div>
             <div>
