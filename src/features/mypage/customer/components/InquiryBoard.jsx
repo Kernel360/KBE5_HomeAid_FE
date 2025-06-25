@@ -1,11 +1,13 @@
 import { ArrowLeft, Search, Plus } from 'lucide-react';
-import Footer from '../../../../components/Footer.jsx';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import api from '../../../../api/config/api.js';
 import Header from '../../../../components/Header.jsx';
+import Footer from '../../../../components/Footer.jsx';
 
 // 문의 게시판 페이지
-const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
+const InquiryBoard = () => {
+  const navigate = useNavigate();
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,17 +20,13 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
     setLoading(true);
     setError(null);
     try {
-      // Assuming a base URL for the API
       const response = await api.get('/boards', {
         params: {
           keyword: keyword,
           page: page,
-          size: 10, // Assuming 10 items per page
+          size: 10,
           sortBy: 'createdAt',
           sortDirection: 'desc',
-          // Backend API currently does not support filtering by isAnswered.
-          // If needed, this would require backend modification or client-side filtering.
-          // For now, the filter buttons are purely for UI.
         },
       });
       setInquiries(response.data.data.content);
@@ -43,22 +41,28 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
 
   useEffect(() => {
     fetchInquiries();
-  }, [keyword, page, activeFilter]); // Refetch when keyword, page, or activeFilter changes
+  }, [keyword, page, activeFilter]);
 
   const handleSearchChange = (e) => {
     setKeyword(e.target.value);
-    setPage(0); // Reset to first page on new search
+    setPage(0);
   };
 
   const handleFilterClick = (filter) => {
     setActiveFilter(filter);
-    setPage(0); // Reset page on filter change
+    setPage(0);
+  };
+
+  const handleBack = () => {
+    navigate('/customer/mypage');
+  };
+
+  const handleCreateInquiry = () => {
+    navigate('/customer/mypage/inquiry/create');
   };
 
   const handleInquiryClick = (id) => {
-    if (onNavigateToDetail) {
-      onNavigateToDetail(id);
-    }
+    navigate(`/customer/mypage/inquiry/${id}`);
   };
 
   // Helper function to format date
@@ -79,7 +83,7 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
         margin: '0 auto',
       }}
     >
-      <Header showBackButton={true} onBackClick={onBack} />
+      <Header showBackButton={true} onBackClick={handleBack} />
 
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
         {/* 페이지 제목과 설명 */}
@@ -104,7 +108,7 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
             />
           </div>
           <button
-            onClick={onNavigateToCreate}
+            onClick={handleCreateInquiry}
             className="bg-blue-600 text-black flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md"
             style={{ height: '40px', minWidth: '90px' }}
           >
@@ -156,43 +160,46 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
           <p className="text-center text-gray-600">문의글이 없습니다.</p>
         )}
 
-        {/* Inquiry List (Figma Posts) */}
+        {/* Inquiry List */}
         <div className="space-y-3">
           {inquiries
             .filter((inquiry) => {
-              // Client-side filtering based on activeFilter for UI purposes
+              const isAnswered = inquiry.isAnswered ?? inquiry.answered;
               if (activeFilter === 'all') return true;
-              if (activeFilter === 'waiting') return !inquiry.isAnswered;
-              if (activeFilter === 'completed') return inquiry.isAnswered;
+              if (activeFilter === 'waiting') return !isAnswered;
+              if (activeFilter === 'completed') return isAnswered;
               return true;
             })
-            .map((inquiry) => (
-              <div
-                key={inquiry.id}
-                className="bg-gray-50 rounded-lg p-4 shadow-sm cursor-pointer border border-gray-100 hover:bg-gray-100 hover:border-gray-200 transition-all duration-200" // fill_B02V81, stroke_EHRQHW, borderRadius: 8px, padding: 16px, shadow-sm
-                onClick={() => handleInquiryClick(inquiry.id)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-extrabold text-gray-900 text-base">
-                    {inquiry.title}
-                  </h3>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      inquiry.isAnswered
-                        ? 'bg-green-100 text-green-700' // fill_MOA2B6, fill_E8KKCL
-                        : 'bg-amber-100 text-amber-700' // fill_5XO40Y, fill_SYTTLO
-                    }`}
-                  >
-                    {inquiry.isAnswered ? '답변 완료' : '답변 대기'}
-                  </span>
+            .map((inquiry) => {
+              const isAnswered = inquiry.isAnswered ?? inquiry.answered;
+              return (
+                <div
+                  key={inquiry.id}
+                  className="bg-gray-50 rounded-lg p-4 shadow-sm cursor-pointer border border-gray-100 hover:bg-gray-100 hover:border-gray-200 transition-all duration-200"
+                  onClick={() => handleInquiryClick(inquiry.id)}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-extrabold text-gray-900 text-base">
+                      {inquiry.title}
+                    </h3>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        isAnswered
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}
+                    >
+                      {isAnswered ? '답변 완료' : '답변 대기'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="text-xs text-gray-500">
+                      {formatDate(inquiry.createdAt)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs text-gray-500">
-                    {formatDate(inquiry.createdAt)}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
 
         {/* Pagination */}

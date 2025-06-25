@@ -25,9 +25,9 @@ import ManagerMypage from '../features/mypage/manager/pages/ManagerMypage.jsx';
 import ReservationHistoryPage from '../features/review/pages/ReservationHistoryPage';
 import ReservationDetailPage from '../features/review/pages/ReservationDetailPage';
 import ReviewWritePage from '../features/review/pages/ReviewWritePage';
-import InquiryBoard from '../features/mypage/manager/components/InquiryBoard';
-import InquiryDetail from '../features/mypage/manager/components/InquiryDetail';
-import CreateInquiry from '../features/mypage/manager/components/CreateInquiry';
+import InquiryBoard from '../features/mypage/customer/components/InquiryBoard.jsx';
+import InquiryDetail from '../features/mypage/customer/components/InquiryDetail.jsx';
+import CreateInquiry from '../features/mypage/customer/components/CreateInquiry.jsx';
 import CustomerMyAddress from '../features/mypage/customer/components/MyAddress';
 import CustomerAddressRegister from '../features/mypage/customer/components/AddressRegister';
 import ManagerMatchingListPage from '../features/matching/pages/ManagerMatchingListPage';
@@ -67,6 +67,7 @@ export const protectedAppRoutes = [
     allowedRoles: ['ROLE_CUSTOMER'],
     children: [
       { path: 'mypage', element: <Mypage /> },
+      { path: 'mypage/inquiry', element: <InquiryBoard /> },
       { path: 'mypage/address', element: <CustomerMyAddress /> },
       { path: 'mypage/address/register', element: <CustomerAddressRegister /> },
       // 예약 관련 경로들 - 고객 권한 필요
@@ -84,6 +85,8 @@ export const protectedAppRoutes = [
         element: <ReservationDetailPage />,
       },
       { path: 'review/write', element: <ReviewWritePage /> },
+      { path: 'mypage/inquiry/:id', element: <InquiryDetail /> },
+      { path: 'mypage/inquiry/create', element: <CreateInquiry /> },
     ],
   },
 

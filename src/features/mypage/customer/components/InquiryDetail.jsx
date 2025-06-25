@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { api } from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
-const InquiryDetail = ({
-  boardId,
-  onBack,
-  onInquiryDeleted,
-  onInquiryUpdated,
-}) => {
+const InquiryDetail = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
   const [inquiry, setInquiry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,7 +20,7 @@ const InquiryDetail = ({
       setLoading(true);
       setError(null);
       try {
-        const response = await api.get(`/boards/${boardId}`);
+        const response = await api.get(`/boards/${id}`);
         setInquiry(response.data.data);
         setEditedTitle(response.data.data.title);
         setEditedContent(response.data.data.content);
@@ -34,17 +32,21 @@ const InquiryDetail = ({
       }
     };
 
-    if (boardId) {
+    if (id) {
       fetchInquiry();
     }
-  }, [boardId]);
+  }, [id]);
+
+  const handleBack = () => {
+    navigate('/customer/mypage/inquiry');
+  };
 
   const handleUpdate = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await api.put(
-        `/boards/${boardId}`,
+        `/boards/${id}`,
         {
           title: editedTitle,
           content: editedContent,
@@ -52,9 +54,7 @@ const InquiryDetail = ({
       );
       setInquiry(response.data.data);
       setIsEditing(false);
-      if (onInquiryUpdated) {
-        onInquiryUpdated();
-      }
+      navigate('/customer/mypage/inquiry');
     } catch (err) {
       setError('문의글 수정에 실패했습니다.');
       console.error('Failed to update inquiry:', err);
@@ -68,11 +68,9 @@ const InquiryDetail = ({
       setLoading(true);
       setError(null);
       try {
-        await api.delete(`/boards/${boardId}`);
+        await api.delete(`/boards/${id}`);
         alert('문의글이 삭제되었습니다.');
-        if (onInquiryDeleted) {
-          onInquiryDeleted();
-        }
+        navigate('/customer/mypage/inquiry');
       } catch (err) {
         setError('문의글 삭제에 실패했습니다.');
         console.error('Failed to delete inquiry:', err);
@@ -92,7 +90,7 @@ const InquiryDetail = ({
           margin: '0 auto',
         }}
       >
-        <Header showBackButton={true} onBackClick={onBack} />
+        <Header showBackButton={true} onBackClick={handleBack} />
         <Footer current="/customer/mypage" />
       </div>
     );
@@ -108,7 +106,7 @@ const InquiryDetail = ({
           margin: '0 auto',
         }}
       >
-        <Header showBackButton={true} onBackClick={onBack} />
+        <Header showBackButton={true} onBackClick={handleBack} />
         <p className="text-center text-red-500 mt-8">{error}</p>
         <Footer current="/customer/mypage" />
       </div>
@@ -125,7 +123,7 @@ const InquiryDetail = ({
           margin: '0 auto',
         }}
       >
-        <Header showBackButton={true} onBackClick={onBack} />
+        <Header showBackButton={true} onBackClick={handleBack} />
         <p className="text-center text-gray-600 mt-8">
           문의글을 찾을 수 없습니다.
         </p>
@@ -143,7 +141,7 @@ const InquiryDetail = ({
         margin: '0 auto',
       }}
     >
-      <Header showBackButton={true} onBackClick={onBack} />
+      <Header showBackButton={true} onBackClick={handleBack} />
 
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
         {/* 페이지 제목 */}
@@ -154,37 +152,43 @@ const InquiryDetail = ({
         </div>
 
         {isEditing ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <label
-                htmlFor="editTitle"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                htmlFor="title"
+                className="block text-base font-semibold text-gray-800 mb-2"
               >
                 제목
               </label>
               <input
                 type="text"
-                id="editTitle"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                id="title"
+                className="w-full border border-gray-300 rounded-lg py-3 px-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
+                required
+                style={{ height: '50px' }}
               />
             </div>
+
             <div>
               <label
-                htmlFor="editContent"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                htmlFor="content"
+                className="block text-base font-semibold text-gray-800 mb-2"
               >
                 내용
               </label>
               <textarea
-                id="editContent"
-                rows="8"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                id="content"
+                rows="12"
+                className="w-full border border-gray-300 rounded-lg py-3 px-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}
-              />
+                required
+                style={{ minHeight: '300px' }}
+              ></textarea>
             </div>
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setIsEditing(false)}
@@ -229,6 +233,22 @@ const InquiryDetail = ({
                 style={{ lineHeight: '1.8' }}
               >
                 {inquiry.content}
+              </div>
+
+              {/* 답변 영역 */}
+              <div className="mt-8">
+                <h4 className="font-semibold text-gray-800 mb-2">관리자 답변</h4>
+                {inquiry.reply ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="text-gray-900 mb-2">{inquiry.reply.content}</div>
+                    <div className="text-xs text-gray-500 flex justify-between">
+                      <span>답변자: {inquiry.reply.adminName || '관리자'}</span>
+                      <span>{new Date(inquiry.reply.createdAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-400">아직 답변이 등록되지 않았습니다.</div>
+                )}
               </div>
             </div>
 
