@@ -12,9 +12,10 @@ import useMatchingStore from '../../../stores/matchingStore.js';
 // import React, { useState, useEffect } from 'react';
 
 const ManagerServiceCheckIn = () => {
-  const reservationId = useReservationStore.getState().reservationId;
+
   const workLog = useReservationStore.getState().workLog;
   const reservationStore = useReservationStore();
+  const reservationId = useReservationStore.getState().reservationId;
   const [reservation, setReservation] = useState({});
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
@@ -22,6 +23,10 @@ const ManagerServiceCheckIn = () => {
   const [currentLocation, setCurrentLocation] = useState(null);
 
   const { matchingRequest } = useMatchingStore();
+
+  // 체크아웃 상태에서 이슈 작성 폼 상태
+  const [issueText, setIssueText] = useState('');
+  const [issueFile, setIssueFile] = useState(null);
 
   console.log(reservationId);
   console.log('workLog State ', workLog);
@@ -42,7 +47,7 @@ const ManagerServiceCheckIn = () => {
       (position) => {
         setCurrentLocation({
           lat: position.coords.latitude,
-          lng: position.coords.longitude,
+          lng: position.coords.longitude,  
         });
       },
       (error) => {
@@ -58,7 +63,7 @@ const ManagerServiceCheckIn = () => {
 
   const fetchReservation = async () => {
     const response = await apiService.reservation.getById(
-      matchingRequest.reservationId
+      reservationId
     );
     console.log('fetchReservation back data', response.data.data);
     setReservation(response.data.data);
@@ -165,6 +170,31 @@ const ManagerServiceCheckIn = () => {
     setShowCheckOutModal(false); // ✅ false로 닫기
   };
 
+  const handleIssueFileChange = (e) => {
+    setIssueFile(e.target.files[0]);
+  };
+
+  const handleIssueSubmit = async () => {
+    if (!issueText && !issueFile) {
+      alert('이슈 내용 또는 파일을 입력해주세요.');
+      return;
+    }
+    // FormData로 파일 및 텍스트 전송
+    const formData = new FormData();
+    formData.append('issueText', issueText);
+    if (issueFile) formData.append('file', issueFile);
+    formData.append('reservationId', reservationId);
+
+    try {
+      await apiService.workLog.submitIssue(formData); // 실제 API에 맞게 수정
+      alert('이슈가 등록되었습니다.');
+      setIssueText('');
+      setIssueFile(null);
+    } catch (e) {
+      alert('이슈 등록에 실패했습니다.');
+    }
+  };
+
   // TODO: 파일 업로드 기능 구현 예정
 
   // 버튼 활성화 상태 계산
@@ -215,36 +245,12 @@ const ManagerServiceCheckIn = () => {
       <Header />
       <div className="page-content-wrapper">
         <div className="manager-service-checkin-container">
-          {/* TODO: 매칭내역 확인 기능 - 현재 주석처리
-          <div className="matching-details">
-            <button
-              className="matching-history-button"
-              onClick={handleMatchingHistoryClick}
-            >
-              매칭 내역 확인
-            </button>
-          </div>
-          */}
-
-          {/* Map 영역 */}
-          {/* <div className="service-map">
-            <div className="map-placeholder">
-              <i className="fas fa-map-marker-alt"></i>
-              <p>지도가 표시될 영역</p>
-              <small>{reservation.address}</small>
-            </div>
-          </div> */}
 
           <div className="service-progress">
             <h2>서비스 진행</h2>
-            {/* <span className="status-badge">
-              {getCurrentStatus()}
-            </span> */}
 
             <div className="details-card">
               <div className="detail-item">
-                {/* <span className="label">매칭 ID</span>
-                <span className="value">#{reservation.matchingId}</span> */}
               </div>
               <div className="detail-item">
                 <span className="label">고객명</span>
@@ -350,70 +356,52 @@ const ManagerServiceCheckIn = () => {
 
             <div className="action-buttons">
               <button
-                className={`action-button checkin-button ${workLog.workType === 'CHECKIN' ? 'disabled' : ''}`}
+                className={`action-button checkin-button ${workLog.status === 'CHECKIN' ? 'disabled' : ''}`}
                 onClick={handleCheckIn}
-                disabled={workLog.workType === 'CHECKIN'}
+                disabled={workLog.status === 'CHECKIN'}
                 style={{
-                  backgroundColor:
-                    workLog.workType === 'CHECKIN' ? '#e0e0e0' : '#4caf50',
-                  color: workLog.workType === 'CHECKIN' ? '#9e9e9e' : 'white',
+                  backgroundColor: workLog.status === 'CHECKIN' ? '#e0e0e0' : '#4caf50',
+                  color: workLog.status === 'CHECKIN' ? '#9e9e9e' : 'white',
                 }}
               >
-                체크인
+                체크인 하기
               </button>
 
               <button
-                className={`action-button checkout-button ${workLog.workType === 'CHECKOUT' ? 'disabled' : ''}`}
+                className={`action-button checkout-button ${workLog.status === 'CHECKOUT' ? 'disabled' : ''}`}
                 onClick={handleCheckOut}
-                disabled={workLog.workType === 'CHECKOUT'}
+                disabled={workLog.status === 'CHECKOUT'}
                 style={{
-                  backgroundColor:
-                    workLog.workType === 'CHECKOUT' ? '#e0e0e0' : '#4caf50',
-                  color: workLog.workType === 'CHECKOUT' ? '#9e9e9e' : 'white',
+                  backgroundColor: workLog.status === 'CHECKOUT' ? '#e0e0e0' : '#4caf50',
+                  color: workLog.status === 'CHECKOUT' ? '#9e9e9e' : 'white',
                 }}
               >
-                체크아웃
+                체크아웃 하기
               </button>
             </div>
 
-            {/* TODO: 파일 업로드 섹션 구현 예정 */}
-            {/* 파일 업로드 섹션 (현재 주석 처리)
-            {showFileUpload && (
-              <div className="file-upload-section">
-                <h3>서비스 완료 사진 업로드</h3>
-                <p className="upload-note">체크아웃을 완료하려면 서비스 완료 사진을 업로드해주세요.</p>
+            {/* 체크아웃 상태에서만 이슈 작성 폼 노출 */}
+            {workLog.status === 'CHECKOUT' && (
+              <div className="issue-section">
+                <h3>업무 이슈 작성</h3>
+                <textarea
+                  placeholder="이슈 내용을 입력하세요"
+                  value={issueText}
+                  onChange={(e) => setIssueText(e.target.value)}
+                  className="issue-textarea"
+                />
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleFileSelect}
-                  className="file-input"
+                  onChange={handleIssueFileChange}
+                  className="issue-file-input"
                 />
-                {selectedFile && (
-                  <p className="selected-file">
-                    선택된 파일: {selectedFile.name}
-                  </p>
-                )}
-                <div className="file-upload-buttons">
-                  <button
-                    onClick={() => {
-                      setShowFileUpload(false);
-                      setSelectedFile(null);
-                    }}
-                    className="cancel-upload-button"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={handleFileUploadAndCheckout}
-                    disabled={!selectedFile || loading}
-                    className="upload-button"
-                  >
-                    {loading ? '업로드 중...' : '파일 업로드 & 체크아웃'}
-                  </button>
-                </div>
+                {issueFile && <div>첨부파일: {issueFile.name}</div>}
+                <button onClick={handleIssueSubmit} className="issue-submit-button">
+                  이슈 등록
+                </button>
               </div>
             )}
-            */}
           </div>
 
           {/* Check-in Confirmation Modal */}
