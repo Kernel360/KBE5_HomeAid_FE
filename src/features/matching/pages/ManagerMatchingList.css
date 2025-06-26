@@ -229,8 +229,8 @@
 
 /* 새로운 상태 추가 */
 .status-badge.pending {
-  background-color: #f3e5f5;
-  color: #7b1fa2;
+  /* background-color: #f3e5f5; */
+  color: #767cc4;
 }
 
 .item-content {

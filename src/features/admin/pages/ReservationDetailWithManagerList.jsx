@@ -16,7 +16,7 @@ const ReservationDetailWithManagerList = () => {
         setError(null);
         // 예약 상세 정보 가져오기
         const res = await apiService.reservation.getById(reservationId);
-        setReservation(res.data?.data || res.dat
+        setReservation(res.data?.data || res.data);
         // 추천 매니저 API 연동
         const recRes =
           await apiService.matching.getRecommendedManagers(reservationId);

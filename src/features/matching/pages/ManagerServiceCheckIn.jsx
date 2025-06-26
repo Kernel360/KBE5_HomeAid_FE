@@ -185,25 +185,19 @@ const ManagerServiceCheckIn = () => {
         throw new Error('위치 정보를 가져오는데 실패했습니다.');
       }
 
-      const requestData = {
-        lat: currentLocation.lat,
-        lng: currentLocation.lng,
-      };
-
-      // 파일이 있다면 FormData 사용, 없다면 일반 객체 사용
-      let finalData;
-      if (checkoutFile) {
-        finalData = new FormData();
-        finalData.append('lat', currentLocation.lat);
-        finalData.append('lng', currentLocation.lng);
-        finalData.append('memo', checkoutMemo);
-        finalData.append('file', checkoutFile);
-      } else {
-        finalData = {
-          ...requestData,
-          memo: checkoutMemo,
-        };
+      // 파일 업로드 필수 검증
+      if (!checkoutFile) {
+        alert('파일을 업로드해주세요.');
+        setLoading(false);
+        return;
       }
+
+      // FormData 사용 (파일 업로드 필수이므로 항상 FormData 사용)
+      const finalData = new FormData();
+      finalData.append('lat', currentLocation.lat);
+      finalData.append('lng', currentLocation.lng);
+      finalData.append('memo', checkoutMemo);
+      finalData.append('file', checkoutFile);
 
       console.log('체크아웃 요청 데이터:', finalData);
       const response = await apiService.workLog.checkOut(
@@ -311,28 +305,22 @@ const ManagerServiceCheckIn = () => {
             <div className="service-progress">
               <h2>체크인/체크아웃 상태</h2>
 
-              <div className="status-simple-container">
-                <div className="status-row">
-                  <span>체크인</span>
-                  <span
-                    className="status-value"
-                    style={{
-                      color: checkStatus.checkIn ? '#4caf50' : '#f44336',
-                    }}
+              <div className="status-cards-container">
+                <div className="status-card-item">
+                  <div className="status-label">체크인</div>
+                  <div
+                    className={`status-badge ${checkStatus.checkIn ? 'completed' : 'pending'}`}
                   >
                     {checkStatus.checkIn ? '완료' : '미완료'}
-                  </span>
+                  </div>
                 </div>
-                <div className="status-row">
-                  <span>체크아웃</span>
-                  <span
-                    className="status-value"
-                    style={{
-                      color: checkStatus.checkOut ? '#4caf50' : '#f44336',
-                    }}
+                <div className="status-card-item">
+                  <div className="status-label">체크아웃</div>
+                  <div
+                    className={`status-badge ${checkStatus.checkOut ? 'completed' : 'pending'}`}
                   >
                     {checkStatus.checkOut ? '완료' : '미완료'}
-                  </span>
+                  </div>
                 </div>
               </div>
 
@@ -344,7 +332,9 @@ const ManagerServiceCheckIn = () => {
                 >
                   {loading && !checkStatus.checkIn
                     ? '처리 중...'
-                    : '체크인 하기'}
+                    : checkStatus.checkIn
+                      ? '체크인 완료'
+                      : '체크인 하기'}
                 </button>
                 <button
                   className="checkout-button"
@@ -355,7 +345,9 @@ const ManagerServiceCheckIn = () => {
                 >
                   {loading && checkStatus.checkIn && !checkStatus.checkOut
                     ? '처리 중...'
-                    : '체크아웃 하기'}
+                    : checkStatus.checkOut
+                      ? '체크아웃 완료'
+                      : '체크아웃 하기'}
                 </button>
               </div>
             </div>
@@ -428,7 +420,7 @@ const ManagerServiceCheckIn = () => {
                         fontWeight: '500',
                       }}
                     >
-                      파일 첨부
+                      파일 첨부 <span style={{ color: '#f44336' }}>*</span>
                     </label>
                     <input
                       type="file"
@@ -443,15 +435,25 @@ const ManagerServiceCheckIn = () => {
                         fontSize: '14px',
                       }}
                     />
-                    {checkoutFile && (
+                    {checkoutFile ? (
                       <div
                         style={{
                           marginTop: '8px',
                           fontSize: '14px',
-                          color: '#666',
+                          color: '#4caf50',
                         }}
                       >
-                        첨부된 파일: {checkoutFile.name}
+                        ✓ 첨부된 파일: {checkoutFile.name}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          marginTop: '8px',
+                          fontSize: '14px',
+                          color: '#f44336',
+                        }}
+                      >
+                        파일을 업로드해주세요 (필수)
                       </div>
                     )}
                   </div>
@@ -467,7 +469,7 @@ const ManagerServiceCheckIn = () => {
                     <button
                       onClick={confirmCheckOut}
                       className="confirm-button"
-                      disabled={loading}
+                      disabled={loading || !checkoutFile}
                     >
                       {loading ? '처리 중...' : '등록하기'}
                     </button>

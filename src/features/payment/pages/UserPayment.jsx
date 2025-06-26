@@ -7,10 +7,7 @@ import useReservationStore from '../../../stores/reservationStore.js';
 import { usePaymentData } from '../../reservation/hooks/useLocalStorage.js';
 // TODO: 실제 백엔드 API 연동이 완성되면 아래 주석을 해제
 // import { customerAPI, assignManagerToReservation } from '../../reservation/api/customerAPI';
-import {
-  customerAPI,
-  assignManagerToReservation,
-} from '../../reservation/api/customerAPI.js';
+import { customerAPI } from '../../reservation/api/customerAPI.js';
 
 const UserPayment = () => {
   const navigate = useNavigate();
@@ -210,35 +207,50 @@ const UserPayment = () => {
     }
 
     try {
-      // ⭐️ 인증 상태 확인 (403 에러 디버깅)
+      // ⭐️ 인증 상태 확인 (403 에러 해결)
       const accessToken = localStorage.getItem('accessToken');
+      const userInfo = localStorage.getItem('userInfo');
 
-      // 토큰이 없으면 로그인 페이지로 리다이렉트
-      if (!accessToken) {
-        // ⭐️ 개발 환경에서는 임시 토큰 자동 생성 (DB 저장 테스트용)
+      console.log('🔍 인증 확인:', {
+        accessToken: !!accessToken,
+        userInfo: !!userInfo,
+      });
+
+      // 토큰이나 사용자 정보가 없으면 로그인이 필요하다고 안내
+      if (!accessToken || !userInfo) {
+        alert(
+          '로그인이 필요합니다.\n\n해결방법:\n1. 로그인 페이지에서 로그인\n2. 또는 개발환경에서 임시 로그인 사용'
+        );
+
+        // ⭐️ 개발 환경에서만 임시 토큰 생성 (백엔드 테스트용)
         const isDevEnvironment = import.meta.env.DEV;
-
         if (isDevEnvironment) {
-          // 테스트용 사용자 정보 생성
-          const testUser = {
-            id: 1,
-            name: '테스트 사용자',
-            email: 'test@example.com',
-            role: 'CUSTOMER',
-          };
-
-          const testToken = 'dev-test-token-' + Date.now();
-
-          // localStorage에 저장
-          localStorage.setItem('accessToken', testToken);
-          localStorage.setItem('userInfo', JSON.stringify(testUser));
-
-          alert(
-            '💡 개발 환경에서 임시 로그인으로 결제를 진행합니다.\n실제 운영에서는 로그인이 필요합니다.'
+          const useTestToken = confirm(
+            '개발환경입니다.\n임시 토큰으로 테스트하시겠습니까?\n\n주의: 실제 백엔드 인증이 필요하면 취소를 클릭하세요.'
           );
+
+          if (useTestToken) {
+            // 테스트용 사용자 정보 생성
+            const testUser = {
+              id: 1,
+              name: '테스트 사용자',
+              email: 'test@example.com',
+              role: 'CUSTOMER',
+            };
+
+            const testToken = 'dev-test-token-' + Date.now();
+
+            // localStorage에 저장
+            localStorage.setItem('accessToken', testToken);
+            localStorage.setItem('userInfo', JSON.stringify(testUser));
+
+            console.log('🔧 임시 토큰 생성:', testToken);
+          } else {
+            navigate('/signin');
+            return;
+          }
         } else {
-          alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
-          navigate('/login');
+          navigate('/signin');
           return;
         }
       }
@@ -263,16 +275,13 @@ const UserPayment = () => {
         actualReservationId = 1;
       }
 
-      // ⭐️ STEP 0: 매니저 할당 (결제 전 필수 단계)
-      try {
-        // 매니저 ID 10으로 할당
-        await assignManagerToReservation(actualReservationId, 10);
-
-        // 잠시 대기 (백엔드 처리 시간 확보)
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      } catch {
-        // 매니저 할당 실패해도 결제는 계속 진행
-      }
+      // ⭐️ STEP 0: 매니저 할당 건너뛰기 (권한 문제로 인한 403 에러 방지)
+      console.log(
+        '⚠️ 매니저 할당은 관리자 권한이 필요하므로 건너뛰고 결제만 진행합니다.'
+      );
+      console.log(
+        '💡 매니저 할당은 백엔드에서 자동으로 처리되거나 관리자가 수동으로 처리합니다.'
+      );
 
       // TODO: 백엔드 예약 상태 관리 시스템이 완성되면 아래 주석을 해제하여 실제 상태 확인 로직을 사용
       // 현재는 프론트엔드 개발 및 테스트를 위해 상태 확인을 건너뛰고 바로 결제 진행
@@ -355,49 +364,66 @@ const UserPayment = () => {
       const paymentRequestData = {
         reservationId: parseInt(actualReservationId), // Long 타입으로 확실하게 변환
         amount: parseInt(paymentData.totalAmount), // Integer 타입으로 확실하게 변환
-        paymentMethod: 'TRANSFER', // 계좌이체는 TRANSFER enum 사용
-        // ⭐️ 매니저 ID 추가 (백엔드에서 필요한 경우)
-        managerId: 10, // 할당된 매니저 ID
-        // status는 백엔드에서 자동 설정되도록 제거 (Optional이므로)
+        paymentMethod:
+          selectedPaymentMethod === 'card'
+            ? 'CARD'
+            : selectedPaymentMethod === 'kakao'
+              ? 'KAKAO'
+              : 'TRANSFER', // PaymentMethod enum 맞춤
       };
 
       let paymentResult;
 
+      // ⭐️ 결제 API 호출 (403 에러 처리 개선)
+      console.log('💳 결제 API 호출 시작:', paymentRequestData);
+
       try {
         // ⭐️ 실제 Spring Boot 결제 API 호출 (DB에 저장)
         paymentResult = await customerAPI.processPayment(paymentRequestData);
+        console.log('✅ 결제 API 성공:', paymentResult);
       } catch (apiError) {
-        // 403 에러인 경우 인증 문제 알림
+        console.error('❌ 결제 API 실패:', apiError);
+
+        // 403 에러 상세 처리
         if (apiError.message.includes('403')) {
-          // ⭐️ 임시 해결책: 매니저 할당만이라도 저장하기 위해 시도
-          try {
-            await assignManagerToReservation(actualReservationId, 10);
-          } catch {
-            // 매니저 할당도 실패
+          // 인증 문제일 가능성이 높음
+          const tokenExists = !!localStorage.getItem('accessToken');
+
+          if (!tokenExists) {
+            alert('❌ 로그인이 필요합니다.\n\n로그인 후 다시 시도해주세요.');
+            navigate('/signin');
+            return;
+          } else {
+            alert(
+              '❌ 결제 권한이 없습니다.\n\n가능한 원인:\n' +
+                '1. 토큰이 만료되었습니다\n' +
+                '2. 고객 권한으로 결제할 수 없는 상태입니다\n' +
+                '3. 백엔드 서버 설정 문제\n\n' +
+                '해결방법:\n' +
+                '1. 다시 로그인해주세요\n' +
+                '2. 백엔드 개발자에게 권한 설정 확인 요청'
+            );
+            return; // 실제 에러이므로 진행 중단
           }
         }
 
-        // 백엔드 API 실패시 시뮬레이션으로 fallback (UI 테스트용)
+        // 다른 에러의 경우 시뮬레이션으로 fallback
+        console.log('🔄 시뮬레이션 모드로 전환');
         paymentResult = {
-          id: Math.floor(Math.random() * 1000) + 1, // 랜덤 결제 ID
+          id: Math.floor(Math.random() * 1000) + 1,
           reservationId: actualReservationId,
           amount: paymentData.totalAmount,
           paymentMethod: 'TRANSFER',
           status: 'COMPLETED',
           paidAt: new Date().toISOString(),
-          managerId: 10,
+          isSimulation: true, // 시뮬레이션 표시
         };
 
-        // 사용자에게 상황 설명
-        if (apiError.message.includes('403')) {
-          alert(
-            '⚠️ 백엔드 서버 인증 문제로 시뮬레이션 모드로 진행됩니다.\n\n해결방법:\n1. 백엔드 서버가 8080 포트에서 실행중인지 확인\n2. 로그인 후 다시 시도\n3. 백엔드 개발자에게 인증 설정 확인 요청'
-          );
-        } else {
-          alert(
-            '⚠️ 백엔드 연결 실패로 시뮬레이션 모드로 진행됩니다.\nDB에 저장되지 않을 수 있습니다.'
-          );
-        }
+        alert(
+          '⚠️ 백엔드 연결 실패로 시뮬레이션 모드로 진행됩니다.\n\n' +
+            '실제 환경에서는 결제가 처리되지 않을 수 있습니다.\n' +
+            '백엔드 서버 상태를 확인해주세요.'
+        );
       }
 
       // 결제 성공 처리
@@ -424,18 +450,21 @@ const UserPayment = () => {
     } catch (error) {
       // 에러 메시지 상세화
       let errorMessage = '결제에 실패했습니다.';
+      const errorResponse = error.response?.data;
 
-      if (error.message.includes('400')) {
+      if (errorResponse?.code === 'PAYMENT_ALREADY_PAID') {
+        errorMessage = '이미 결제가 완료된 예약입니다.';
+      } else if (errorResponse?.code === 'PAYMENT_INVALID_STATUS_FOR_PAYMENT') {
         errorMessage =
-          '결제 정보가 올바르지 않습니다.\n다음을 확인해주세요:\n- 예약 정보가 올바른지\n- 결제 금액이 올바른지\n- 매니저가 할당되었는지';
-      } else if (error.message.includes('401')) {
-        errorMessage = '인증에 실패했습니다.\n다시 로그인한 후 시도해주세요.';
-      } else if (error.message.includes('403')) {
-        errorMessage =
-          '결제 권한이 없습니다.\n고객 계정으로 로그인했는지 확인해주세요.';
-      } else if (error.message.includes('404')) {
+          '현재 예약 상태에서는 결제할 수 없습니다.\n매니저 매칭이 완료된 예약만 결제할 수 있습니다.';
+      } else if (errorResponse?.code === 'PAYMENT_RESERVATION_NOT_FOUND') {
         errorMessage =
           '예약 정보를 찾을 수 없습니다.\n예약이 정상적으로 생성되었는지 확인해주세요.';
+      } else if (errorResponse?.code === 'PAYMENT_ACCESS_DENIED') {
+        errorMessage =
+          '결제 권한이 없습니다.\n고객 계정으로 로그인했는지 확인해주세요.';
+      } else if (error.message.includes('401')) {
+        errorMessage = '인증에 실패했습니다.\n다시 로그인한 후 시도해주세요.';
       } else if (error.message.includes('500')) {
         errorMessage = '서버 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.';
       } else if (error.message.includes('network')) {

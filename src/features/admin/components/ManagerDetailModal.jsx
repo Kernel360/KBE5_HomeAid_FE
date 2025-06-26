@@ -168,7 +168,10 @@ const ManagerDetailModal = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div
+        className="fixed inset-0 bg-black flex items-center justify-center z-50"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+      >
         <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
           {/* Modal Header */}
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -356,7 +359,10 @@ const ManagerDetailModal = ({
 
       {/* Status Change Modal */}
       {showStatusChangeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+        <div
+          className="fixed inset-0 bg-black flex items-center justify-center z-60"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+        >
           <div className="bg-white rounded-lg w-full max-w-md">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -449,7 +455,10 @@ const ManagerDetailModal = ({
 
       {/* Document Rejection Modal */}
       {showDocumentRejectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-70">
+        <div
+          className="fixed inset-0 bg-black flex items-center justify-center z-70"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+        >
           <div className="bg-white rounded-lg w-full max-w-md">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">서류 반려</h3>
