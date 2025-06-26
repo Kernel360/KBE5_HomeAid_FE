@@ -69,18 +69,18 @@ const MyReview = ({ onBack }) => {
     >
       <header
         className="fixed top-0 z-50 flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200"
-        style={{
+      style={{
           position: 'fixed',
           top: 0,
           left: '50%',
           transform: 'translateX(-50%)',
           width: '100%',
-          maxWidth: '512px',
+        maxWidth: '512px',
           zIndex: 50,
           backgroundColor: 'white',
           borderBottom: '1px solid #e9ecef',
-        }}
-      >
+      }}
+    >
         <div className="flex items-center">
           <button
             onClick={onBack}
@@ -117,7 +117,7 @@ const MyReview = ({ onBack }) => {
               size={20}
               style={{ color: '#1a1a1a', strokeWidth: 3, width: 20, height: 20, display: 'block', pointerEvents: 'none' }}
             />
-          </button>
+        </button>
         </div>
         <div className="flex-1 text-center">
           {/* 제목 없음, 공간만 */}
@@ -179,9 +179,9 @@ const MyReview = ({ onBack }) => {
                 {deleteError && selectedReviewId === review.id && (
                   <div className="text-xs text-red-500 mt-1">{deleteError}</div>
                 )}
-              </div>
-            ))}
-          </div>
+            </div>
+          ))}
+        </div>
         )}
         {/* Pagination */}
         {totalPages > 1 && (
@@ -193,7 +193,7 @@ const MyReview = ({ onBack }) => {
         )}
       </main>
       <div className="fixed left-0 right-0 bottom-0 z-20" style={{ maxWidth: 512, margin: '0 auto' }}>
-        <Footer current="/customer/mypage" />
+      <Footer current="/customer/mypage" />
       </div>
       {/* 삭제 확인 모달 */}
       <Modal

@@ -5,7 +5,7 @@ import api from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
-const CreateInquiry = () => {
+const CreateInquiry = ({ onBack, onInquiryCreated }) => {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -25,7 +25,9 @@ const CreateInquiry = () => {
         title,
         content,
       });
-      navigate('/manager/mypage/inquiry');
+      if (onInquiryCreated) {
+        onInquiryCreated();
+      }
     } catch (err) {
       setError('문의글 작성에 실패했습니다.');
       console.error('Failed to create inquiry:', err);
