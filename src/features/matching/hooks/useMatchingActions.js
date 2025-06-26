@@ -49,7 +49,7 @@ export const useMatchingActions = () => {
       status: matchingItem.originalStatus,
     });
 
-    navigate('/matching/matching-request', {
+    navigate('/manager/matching/matching-request', {
       state: {
         matchingId: matchingItem.id,
       },
