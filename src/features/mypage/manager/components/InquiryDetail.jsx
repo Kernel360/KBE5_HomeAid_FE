@@ -142,6 +142,9 @@ const InquiryDetail = () => {
     );
   }
 
+  // 답변 완료 보정
+  const isAnswered = inquiry.isAnswered || !!inquiry.reply;
+
   return (
     <div
       className="min-h-screen bg-gray-50"
@@ -223,12 +226,12 @@ const InquiryDetail = () => {
                 </span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    inquiry.isAnswered
+                    isAnswered
                       ? 'bg-green-100 text-green-700'
                       : 'bg-amber-100 text-amber-700'
                   }`}
                 >
-                  {inquiry.isAnswered ? '답변 완료' : '답변 대기'}
+                  {isAnswered ? '답변 완료' : '답변 대기'}
                 </span>
               </div>
               <div
@@ -256,13 +259,13 @@ const InquiryDetail = () => {
             </div>
 
             <div className="flex items-center justify-end space-x-4 mt-6">
-              { !inquiry.isAnswered && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-6 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors shadow-sm"
-              >
-                수정하기
-              </button>
+              {!isAnswered && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-6 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors shadow-sm"
+                >
+                  수정하기
+                </button>
               )}
               <button
                 onClick={handleDelete}
