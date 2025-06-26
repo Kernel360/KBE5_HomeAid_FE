@@ -31,6 +31,7 @@ export const apiService = {
     updateMyProfile: (data) => api.put('/users/my', data),
     uploadProfileImage: (formData) => api.post('/users/my/image', formData),
     deleteProfileImage: () => api.delete('/users/my/image'),
+    requestWithdrawal: (data) => api.post('/my/withdrawal', data),
   },
 
   // 인증 관련 API
