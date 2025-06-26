@@ -19,10 +19,11 @@ const ManagerServiceCheckIn = () => {
     checkIn: false,
     checkOut: false,
   });
+  const [loading, setLoading] = useState(false);
 
-  // 체크아웃 상태에서 이슈 작성 폼 상태
-  const [issueText, setIssueText] = useState('');
-  const [issueFile, setIssueFile] = useState(null);
+  // 체크아웃 모달에서 사용할 상태
+  const [checkoutMemo, setCheckoutMemo] = useState('');
+  const [checkoutFile, setCheckoutFile] = useState(null);
 
   // 현재 위치 가져오기
   const getCurrentLocation = () => {
@@ -45,26 +46,55 @@ const ManagerServiceCheckIn = () => {
     );
   };
 
-  useEffect(() => {
-    getCurrentLocation();
-  }, []);
-
   // 예약 상세 정보 불러오기 (apiService.reservation.getById만 사용)
   const fetchReservation = async () => {
-    const response = await apiService.reservation.getById(reservationId);
-    console.log('reservation API 응답:', response.data.data);
-    setReservation(response.data.data);
-    // 체크인/아웃 상태 설정
-    if (response.data.data.workLog) {
-      setCheckStatus({
-        checkIn: response.data.data.workLog.checkInTime !== null,
-        checkOut: response.data.data.workLog.checkOutTime !== null,
-      });
+    try {
+      setLoading(true);
+      const response = await apiService.reservation.getById(reservationId);
+      console.log('reservation API 응답:', response.data.data);
+      setReservation(response.data.data);
+
+      // 체크인/아웃 상태 설정
+      if (response.data.data.workLog) {
+        const newCheckStatus = {
+          checkIn: response.data.data.workLog.checkInTime !== null,
+          checkOut: response.data.data.workLog.checkOutTime !== null,
+        };
+        console.log('체크 상태 업데이트:', newCheckStatus);
+        setCheckStatus(newCheckStatus);
+      } else {
+        console.log('workLog가 없음 - 초기 상태 유지');
+        setCheckStatus({
+          checkIn: false,
+          checkOut: false,
+        });
+      }
+    } catch (error) {
+      console.error('예약 정보 로딩 실패:', error);
+      alert('예약 정보를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
+
   useEffect(() => {
-    fetchReservation();
-  }, []);
+    getCurrentLocation();
+    if (reservationId) {
+      fetchReservation();
+    }
+  }, [reservationId]);
+
+  // 디버깅을 위한 상태 변화 로그
+  useEffect(() => {
+    console.log('🔍 현재 체크 상태:', checkStatus);
+    console.log('  - 체크인:', checkStatus.checkIn ? '완료' : '미완료');
+    console.log('  - 체크아웃:', checkStatus.checkOut ? '완료' : '미완료');
+    console.log('  - 체크인 버튼 활성화:', !checkStatus.checkIn && !loading);
+    console.log(
+      '  - 체크아웃 버튼 활성화:',
+      checkStatus.checkIn && !checkStatus.checkOut && !loading
+    );
+  }, [checkStatus, loading]);
 
   const toggleCheckInModal = () => {
     setShowCheckInModal(!showCheckInModal);
@@ -79,7 +109,7 @@ const ManagerServiceCheckIn = () => {
       alert('위치 정보를 가져오는 중입니다. 잠시만 기다려주세요.');
       return;
     }
-    console.log('현재 위치 정보:', {
+    console.log('체크인 버튼 클릭 - 현재 위치 정보:', {
       위도: currentLocation.lat,
       경도: currentLocation.lng,
     });
@@ -91,7 +121,7 @@ const ManagerServiceCheckIn = () => {
       alert('위치 정보를 가져오는 중입니다. 잠시만 기다려주세요.');
       return;
     }
-    console.log('체크아웃 위치 정보:', {
+    console.log('체크아웃 버튼 클릭 - 위치 정보:', {
       위도: currentLocation.lat,
       경도: currentLocation.lng,
     });
@@ -100,30 +130,57 @@ const ManagerServiceCheckIn = () => {
 
   const confirmCheckIn = async () => {
     try {
+      setLoading(true);
       if (!currentLocation) {
         throw new Error('위치 정보를 가져오는데 실패했습니다.');
+      }
+
+      // reservationId 확인
+      console.log('🔍 reservationId 확인:', reservationId);
+      console.log('🔍 reservationId 타입:', typeof reservationId);
+
+      if (!reservationId) {
+        throw new Error('예약 ID가 없습니다. 예약을 선택해주세요.');
       }
 
       const requestData = {
         lat: currentLocation.lat,
         lng: currentLocation.lng,
         reservationId: reservationId,
-        workType: 'CHECKIN',
       };
 
       console.log('체크인 요청 데이터:', requestData);
+      console.log('체크인 요청 URL:', '/managers/work-logs');
+
       const response = await apiService.workLog.checkIn(requestData);
       console.log('체크인 결과 데이터', response.data.data);
+
+      // 체크인 성공 시 상태 업데이트
+      setCheckStatus((prev) => {
+        const newStatus = { ...prev, checkIn: true };
+        console.log('체크인 상태 업데이트:', newStatus);
+        return newStatus;
+      });
+
+      alert('체크인이 완료되었습니다.');
       toggleCheckInModal();
+
+      // 예약 정보 다시 불러오기
+      await fetchReservation();
     } catch (error) {
       console.error('체크인 실패:', error);
+      console.error('에러 상세:', error.response?.data);
+      console.error('에러 상태:', error.response?.status);
       alert(error.response?.data?.message || '체크인에 실패했습니다.');
       cancelCheckIn();
+    } finally {
+      setLoading(false);
     }
   };
 
   const confirmCheckOut = async () => {
     try {
+      setLoading(true);
       if (!currentLocation) {
         throw new Error('위치 정보를 가져오는데 실패했습니다.');
       }
@@ -133,21 +190,49 @@ const ManagerServiceCheckIn = () => {
         lng: currentLocation.lng,
       };
 
-      console.log('체크아웃 요청 데이터:', requestData);
+      // 파일이 있다면 FormData 사용, 없다면 일반 객체 사용
+      let finalData;
+      if (checkoutFile) {
+        finalData = new FormData();
+        finalData.append('lat', currentLocation.lat);
+        finalData.append('lng', currentLocation.lng);
+        finalData.append('memo', checkoutMemo);
+        finalData.append('file', checkoutFile);
+      } else {
+        finalData = {
+          ...requestData,
+          memo: checkoutMemo,
+        };
+      }
+
+      console.log('체크아웃 요청 데이터:', finalData);
       const response = await apiService.workLog.checkOut(
         reservationId,
-        requestData
+        finalData
       );
       console.log('체크아웃 결과 데이터', response.data);
 
-      if (response.data.success) {
-        alert('체크아웃이 완료되었습니다.');
-      }
+      // 체크아웃 성공 시 상태 업데이트
+      setCheckStatus((prev) => {
+        const newStatus = { ...prev, checkOut: true };
+        console.log('체크아웃 상태 업데이트:', newStatus);
+        return newStatus;
+      });
 
+      alert('체크아웃이 완료되었습니다.');
+
+      // 모달 상태 초기화
+      setCheckoutMemo('');
+      setCheckoutFile(null);
       toggleCheckOutModal();
+
+      // 예약 정보 다시 불러오기
+      await fetchReservation();
     } catch (error) {
       console.error('체크아웃 실패:', error);
       alert(error.response?.data?.message || '체크아웃에 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,78 +241,15 @@ const ManagerServiceCheckIn = () => {
   };
 
   const cancelCheckOut = () => {
+    // 모달 닫을 때 입력 상태 초기화
+    setCheckoutMemo('');
+    setCheckoutFile(null);
     setShowCheckOutModal(false); // ✅ false로 닫기
   };
 
-  const handleIssueFileChange = (e) => {
-    setIssueFile(e.target.files[0]);
+  const handleCheckoutFileChange = (e) => {
+    setCheckoutFile(e.target.files[0]);
   };
-
-  const handleIssueSubmit = async () => {
-    if (!issueText && !issueFile) {
-      alert('이슈 내용 또는 파일을 입력해주세요.');
-      return;
-    }
-    // FormData로 파일 및 텍스트 전송
-    const formData = new FormData();
-    formData.append('issueText', issueText);
-    if (issueFile) formData.append('file', issueFile);
-    formData.append('reservationId', reservationId);
-
-    try {
-      await apiService.workLog.submitIssue(formData); // 실제 API에 맞게 수정
-      alert('이슈가 등록되었습니다.');
-      setIssueText('');
-      setIssueFile(null);
-    } catch {
-      alert('이슈 등록에 실패했습니다.');
-    }
-  };
-
-  // TODO: 파일 업로드 기능 구현 예정
-
-  // 버튼 활성화 상태 계산
-  // const { isCheckInButtonEnabled, isCheckOutButtonEnabled } = getButtonStates();
-
-  // 로딩 상태
-  // if (!matchingRequest.customerName) {
-  //   return (
-  //     <div className="manager-service-page">
-  //       <Header />
-  //       <div className="page-content-wrapper">
-  //         <div className="manager-service-checkin-container">
-  //           <div className="loading-container">
-  //             <p>{NOTIFICATION_MESSAGES.GENERAL.LOADING}</p>
-  //           </div>
-  //         </div>
-  //       </div>
-  //       <Footer current="/matching/service-checkin" />
-  //     </div>
-  //   );
-  // }
-
-  // 에러 상태
-  // if (error && !matchingRequest.customerName) {
-  //   return (
-  //     <div className="manager-service-page">
-  //       <Header />
-  //       <div className="page-content-wrapper">
-  //         <div className="manager-service-checkin-container">
-  //           <div className="error-container">
-  //             <p>{error}</p>
-  //             <button
-  //               onClick={() => window.location.reload()}
-  //               className="retry-button"
-  //             >
-  //               새로고침
-  //             </button>
-  //           </div>
-  //         </div>
-  //       </div>
-  //       <Footer current="/matching/service-checkin" />
-  //     </div>
-  //   );
-  // }
 
   // 날짜 포맷 변환 함수
   const formatDateTime = (isoString) => {
@@ -292,13 +314,23 @@ const ManagerServiceCheckIn = () => {
               <div className="status-simple-container">
                 <div className="status-row">
                   <span>체크인</span>
-                  <span className="status-value">
+                  <span
+                    className="status-value"
+                    style={{
+                      color: checkStatus.checkIn ? '#4caf50' : '#f44336',
+                    }}
+                  >
                     {checkStatus.checkIn ? '완료' : '미완료'}
                   </span>
                 </div>
                 <div className="status-row">
                   <span>체크아웃</span>
-                  <span className="status-value">
+                  <span
+                    className="status-value"
+                    style={{
+                      color: checkStatus.checkOut ? '#4caf50' : '#f44336',
+                    }}
+                  >
                     {checkStatus.checkOut ? '완료' : '미완료'}
                   </span>
                 </div>
@@ -308,44 +340,24 @@ const ManagerServiceCheckIn = () => {
                 <button
                   className="checkin-button"
                   onClick={handleCheckIn}
-                  disabled={checkStatus.checkIn}
+                  disabled={checkStatus.checkIn || loading}
                 >
-                  체크인 하기
+                  {loading && !checkStatus.checkIn
+                    ? '처리 중...'
+                    : '체크인 하기'}
                 </button>
                 <button
                   className="checkout-button"
                   onClick={handleCheckOut}
-                  disabled={!checkStatus.checkIn || checkStatus.checkOut}
+                  disabled={
+                    !checkStatus.checkIn || checkStatus.checkOut || loading
+                  }
                 >
-                  체크아웃 하기
+                  {loading && checkStatus.checkIn && !checkStatus.checkOut
+                    ? '처리 중...'
+                    : '체크아웃 하기'}
                 </button>
               </div>
-
-              {/* 체크아웃 상태에서만 이슈 작성 폼 노출 */}
-              {checkStatus.checkOut && (
-                <div className="issue-section">
-                  <h3>업무 이슈 작성</h3>
-                  <textarea
-                    placeholder="이슈 내용을 입력하세요"
-                    value={issueText}
-                    onChange={(e) => setIssueText(e.target.value)}
-                    className="issue-textarea"
-                  />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleIssueFileChange}
-                    className="issue-file-input"
-                  />
-                  {issueFile && <div>첨부파일: {issueFile.name}</div>}
-                  <button
-                    onClick={handleIssueSubmit}
-                    className="issue-submit-button"
-                  >
-                    이슈 등록
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Check-in Confirmation Modal */}
@@ -355,39 +367,109 @@ const ManagerServiceCheckIn = () => {
                   <h3>체크인 확인</h3>
                   <p>서비스 체크인을 진행하시겠습니까?</p>
                   <div className="modal-actions">
-                    <button onClick={cancelCheckIn} className="cancel-button">
+                    <button
+                      onClick={cancelCheckIn}
+                      className="cancel-button"
+                      disabled={loading}
+                    >
                       취소
                     </button>
                     <button
                       onClick={confirmCheckIn}
                       className="confirm-button"
-                      // disabled={loading}
+                      disabled={loading}
                     >
-                      {/* {true ? '처리 중...' : '확인'} */}
-                      확인
+                      {loading ? '처리 중...' : '확인'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Check-out Confirmation Modal */}
+            {/* Check-out Modal with File Upload and Memo */}
             {showCheckOutModal && (
               <div className="modal-overlay">
-                <div className="modal-content">
-                  <h3>체크아웃 확인</h3>
-                  <p>서비스 체크아웃을 진행하시겠습니까?</p>
+                <div className="modal-content" style={{ maxWidth: '500px' }}>
+                  <h3>체크아웃</h3>
+                  <p>서비스 완료 정보를 입력해주세요.</p>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: '8px',
+                        fontWeight: '500',
+                      }}
+                    >
+                      메모
+                    </label>
+                    <textarea
+                      placeholder="서비스 완료 메모를 입력하세요"
+                      value={checkoutMemo}
+                      onChange={(e) => setCheckoutMemo(e.target.value)}
+                      disabled={loading}
+                      style={{
+                        width: '100%',
+                        minHeight: '80px',
+                        padding: '8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        resize: 'vertical',
+                        fontSize: '14px',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: '8px',
+                        fontWeight: '500',
+                      }}
+                    >
+                      파일 첨부
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCheckoutFileChange}
+                      disabled={loading}
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                      }}
+                    />
+                    {checkoutFile && (
+                      <div
+                        style={{
+                          marginTop: '8px',
+                          fontSize: '14px',
+                          color: '#666',
+                        }}
+                      >
+                        첨부된 파일: {checkoutFile.name}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="modal-actions">
-                    <button onClick={cancelCheckOut} className="cancel-button">
+                    <button
+                      onClick={cancelCheckOut}
+                      className="cancel-button"
+                      disabled={loading}
+                    >
                       취소
                     </button>
                     <button
                       onClick={confirmCheckOut}
                       className="confirm-button"
-                      // disabled={loading}
+                      disabled={loading}
                     >
-                      {/* {true ? '처리 중...' : '체크아웃'} */}
-                      체크아웃
+                      {loading ? '처리 중...' : '등록하기'}
                     </button>
                   </div>
                 </div>

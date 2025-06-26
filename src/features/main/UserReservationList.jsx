@@ -81,7 +81,19 @@ const UserReservationList = () => {
   };
 
   const handleReservationClick = (reservation) => {
-    navigate(`/customer/reservations/${reservation.id}`, {
+    // reservationId 또는 id 필드 중 존재하는 것을 사용
+    const reservationId = reservation.reservationId || reservation.id;
+
+    console.log('클릭된 예약 데이터:', reservation);
+    console.log('사용할 reservationId:', reservationId);
+
+    if (!reservationId) {
+      console.error('예약 ID를 찾을 수 없습니다:', reservation);
+      alert('예약 정보를 불러올 수 없습니다.');
+      return;
+    }
+
+    navigate(`/customer/reservations/${reservationId}`, {
       state: { reservation },
     });
   };
