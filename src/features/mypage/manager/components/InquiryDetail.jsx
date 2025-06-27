@@ -15,7 +15,12 @@ const InquiryDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
-  const [modal, setModal] = useState({ open: false, type: '', message: '', onConfirm: null });
+  const [modal, setModal] = useState({
+    open: false,
+    type: '',
+    message: '',
+    onConfirm: null,
+  });
 
   useEffect(() => {
     const fetchInquiry = async () => {
@@ -47,13 +52,10 @@ const InquiryDetail = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.put(
-        `/boards/${id}`,
-        {
-          title: editedTitle,
-          content: editedContent,
-        }
-      );
+      const response = await api.put(`/boards/${id}`, {
+        title: editedTitle,
+        content: editedContent,
+      });
       setInquiry(response.data.data);
       setIsEditing(false);
       navigate('/manager/mypage/inquiry');
@@ -76,17 +78,22 @@ const InquiryDetail = () => {
         setError(null);
         try {
           await api.delete(`/boards/${id}`);
-          setModal({ open: true, type: 'alert', message: '문의글이 삭제되었습니다.', onConfirm: () => {
-            setModal({ ...modal, open: false });
-            navigate('/manager/mypage/inquiry');
-          }});
+          setModal({
+            open: true,
+            type: 'alert',
+            message: '문의글이 삭제되었습니다.',
+            onConfirm: () => {
+              setModal({ ...modal, open: false });
+              navigate('/manager/mypage/inquiry');
+            },
+          });
         } catch (err) {
           setError('문의글 삭제에 실패했습니다.');
           console.error('Failed to delete inquiry:', err);
         } finally {
           setLoading(false);
         }
-      }
+      },
     });
   };
 
@@ -212,11 +219,9 @@ const InquiryDetail = () => {
             </div>
           </div>
         ) : (
-          <div>
-            <div
-              className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
-              style={{ minHeight: '400px' }}
-            >
+          <div className="space-y-6">
+            {/* 문의글 카드 */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h3 className="font-bold text-gray-900 text-2xl mb-4 leading-relaxed">
                 {inquiry.title}
               </h3>
@@ -240,25 +245,51 @@ const InquiryDetail = () => {
               >
                 {inquiry.content}
               </div>
-
-              {/* 답변 영역 */}
-              <div className="mt-8">
-                <h4 className="font-semibold text-gray-800 mb-2">관리자 답변</h4>
-                {inquiry.reply ? (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <div className="text-gray-900 mb-2">{inquiry.reply.content}</div>
-                    <div className="text-xs text-gray-500 flex justify-between">
-                      <span>답변자: {inquiry.reply.adminName || '관리자'}</span>
-                      <span>{new Date(inquiry.reply.createdAt).toLocaleString()}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-gray-400">아직 답변이 등록되지 않았습니다.</div>
-                )}
-              </div>
             </div>
 
-            <div className="flex items-center justify-end space-x-4 mt-6">
+            {/* 관리자 답변 카드 */}
+            {inquiry.reply ? (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="flex items-center mb-4">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-blue-600 font-semibold text-sm">
+                      관
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 text-lg">
+                      관리자 답변
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      {new Date(inquiry.reply.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div
+                  className="text-gray-700 text-base leading-relaxed whitespace-pre-wrap bg-blue-50 rounded-lg p-4 border-l-4 border-blue-200"
+                  style={{ lineHeight: '1.7' }}
+                >
+                  {inquiry.reply.content}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 border-dashed">
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-gray-400 font-semibold">홈</span>
+                  </div>
+                  <h4 className="font-medium text-gray-600 mb-2">
+                    관리자 답변
+                  </h4>
+                  <p className="text-gray-400 text-sm">
+                    홈에이드 관리자의 답변을 기다리고 있습니다.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 액션 버튼들 */}
+            <div className="flex items-center justify-end space-x-4">
               {!isAnswered && (
                 <button
                   onClick={() => setIsEditing(true)}
