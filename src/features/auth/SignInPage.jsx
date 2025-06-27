@@ -66,7 +66,6 @@ const SignInPage = () => {
       setUser(data);
       setAccessToken(token);
 
-      sseEmitter.connection();
 
       // 역할에 따른 페이지 이동
       if (data.role === 'ROLE_CUSTOMER') {

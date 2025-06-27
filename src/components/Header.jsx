@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useState, useCallback, memo } from 'react';
 import AlertCard from '@/features/alert/AlertCard';
-import sseEmitter from '../features/alert/sseEmitter';
 
 function Header({
   showBackButton = true,
@@ -31,10 +30,7 @@ function Header({
     navigate('/auth/signup');
   };
 
-  const handleLogoutClick = () => {
-    // 🔌 SSE 연결 종료
-    sseEmitter.disconnect();
-    
+  const handleLogoutClick = () => {    
     logout();
     navigate('/');
     window.location.reload(); // 상태 초기화를 위해 페이지 새로고침

@@ -135,6 +135,11 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                                                 <p className="text-sm text-gray-600 mb-2">
                                                     {noti.message || '새로운 알림이 있습니다.'}
                                                 </p>
+                                                { noti.content &&
+                                                <p className="text-sm text-gray-600 mb-2">
+                                                    거절사유: {noti.content }
+                                                </p>
+                                                }
                                                 <p className="text-xs text-gray-400">
                                                     {noti.createdAt || '방금 전'}
                                                 </p>

@@ -2,7 +2,7 @@ import { useAlertStore } from "@/stores/alertStore";
 import { useAuthStore } from "@/stores/authStore";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { refreshAccessToken } from "@/api/config/api"; // 토큰 재발급 함수
-import apiClient from "@/api/config/api"; // API 클라이언트 인스턴스
+import apiService from "@/api";
 
 const sseEmitter = {
     eventSource: null, // 연결 인스턴스 저장
@@ -23,8 +23,10 @@ const sseEmitter = {
         }
 
         console.log('=== SSE 연결 시도 START ===');
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-        const eventSource = new EventSourcePolyfill('http://localhost:8080/api/v1/alerts/connection', {
+
+        const eventSource = new EventSourcePolyfill(`${API_BASE_URL}/api/v1/alerts/connection`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'text/event-stream',
@@ -68,9 +70,6 @@ const sseEmitter = {
                         sseEmitter.connection();
                     }, 1000);
 
-                    // 원래 요청 재시도
-                    return apiClient(originalRequest);
-
                 } catch (refreshError) {
                     console.error('❌ SSE 토큰 재발급 실패:', refreshError);
                     // 로그아웃 처리는 refreshAccessToken 함수에서 이미 처리됨
@@ -111,6 +110,16 @@ const sseEmitter = {
             console.log('서버 하트비트 수신:', e.data);
         });
 
+        eventSource.addEventListener('disconnect', (e) => {
+            console.log('🔌 서버에서 종료 신호 수신:', e.data);
+            
+            // 오류 핸들러 제거 후 안전하게 종료
+            eventSource.onerror = null;
+            eventSource.close();
+            
+            console.log('✅ 서버 요청에 따른 연결 종료 완료');
+        });
+
         console.log('=== SSE 연결 시도 END ===');
 
         // 연결 인스턴스 저장
@@ -122,6 +131,17 @@ const sseEmitter = {
     disconnect: () => {
         if (sseEmitter.eventSource) {
             console.log('🔌 SSE 연결 수동 종료');
+            
+            // ✅ 핵심: onerror 핸들러 제거로 Access Denied 방지
+            sseEmitter.eventSource.onerror = null;
+            sseEmitter.eventSource.onopen = null;
+            
+            // 이벤트 리스너들도 제거
+            sseEmitter.eventSource.removeEventListener('unread-notification', null);
+            sseEmitter.eventSource.removeEventListener('new-notification', null);
+            sseEmitter.eventSource.removeEventListener('ping', null);
+            
+            // 연결 종료
             sseEmitter.eventSource.close();
             sseEmitter.eventSource = null;
 
