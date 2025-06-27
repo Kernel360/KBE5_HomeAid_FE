@@ -13,9 +13,9 @@ export default function Header({
   const handleBackClick = () => {
     if (onBackClick) {
       onBackClick();
-      return;
+    } else {
+      navigate(-1);
     }
-    navigate(-1);
   };
 
   const handleLoginClick = () => {

@@ -32,17 +32,47 @@ const ManagerServiceCheckIn = () => {
       return;
     }
 
+    console.log('위치 정보 요청 시작...');
+
+    const options = {
+      enableHighAccuracy: true, // 높은 정확도
+      timeout: 5000, // 5초 타임아웃
+      maximumAge: 0, // 캐시된 위치정보를 사용하지 않음
+    };
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log('위치 정보 가져오기 성공:', position.coords);
         setCurrentLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
       },
       (error) => {
-        console.error('위치 정보 에러:', error);
-        alert('위치 정보를 가져오는데 실패했습니다.');
-      }
+        console.error('위치 정보 상세 에러:', {
+          code: error.code,
+          message: error.message,
+        });
+
+        let errorMessage = '위치 정보를 가져오는데 실패했습니다.';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage =
+              '위치 정보 접근이 거부되었습니다. 브라우저 설정에서 위치 정보 접근 권한을 허용해주세요.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage =
+              '위치 정보를 사용할 수 없습니다. GPS 신호가 약하거나 위치 서비스가 꺼져있을 수 있습니다.';
+            break;
+          case error.TIMEOUT:
+            errorMessage =
+              '위치 정보 요청 시간이 초과되었습니다. 다시 시도해주세요.';
+            break;
+        }
+
+        alert(errorMessage);
+      },
+      options // 옵션 추가
     );
   };
 
@@ -135,12 +165,15 @@ const ManagerServiceCheckIn = () => {
         throw new Error('위치 정보를 가져오는데 실패했습니다.');
       }
 
-      // reservationId 확인
-      console.log('🔍 reservationId 확인:', reservationId);
-      console.log('🔍 reservationId 타입:', typeof reservationId);
-
       if (!reservationId) {
         throw new Error('예약 ID가 없습니다. 예약을 선택해주세요.');
+      }
+
+      // 이미 체크인된 상태인지 확인
+      if (checkStatus.checkIn) {
+        alert('이미 체크인이 완료되었습니다.');
+        toggleCheckInModal();
+        return;
       }
 
       const requestData = {
@@ -149,30 +182,38 @@ const ManagerServiceCheckIn = () => {
         reservationId: reservationId,
       };
 
-      console.log('체크인 요청 데이터:', requestData);
-      console.log('체크인 요청 URL:', '/managers/work-logs');
-
       const response = await apiService.workLog.checkIn(requestData);
-      console.log('체크인 결과 데이터', response.data.data);
 
-      // 체크인 성공 시 상태 업데이트
-      setCheckStatus((prev) => {
-        const newStatus = { ...prev, checkIn: true };
-        console.log('체크인 상태 업데이트:', newStatus);
-        return newStatus;
-      });
+      if (response.data?.data) {
+        // 체크인 성공 시 상태 업데이트
+        setCheckStatus({
+          checkIn: true,
+          checkOut: false,
+        });
 
-      alert('체크인이 완료되었습니다.');
-      toggleCheckInModal();
+        alert('체크인이 완료되었습니다.');
+        toggleCheckInModal();
 
-      // 예약 정보 다시 불러오기
-      await fetchReservation();
+        // 예약 정보 갱신
+        await fetchReservation();
+      }
     } catch (error) {
       console.error('체크인 실패:', error);
       console.error('에러 상세:', error.response?.data);
       console.error('에러 상태:', error.response?.status);
-      alert(error.response?.data?.message || '체크인에 실패했습니다.');
-      cancelCheckIn();
+
+      // 이미 체크인된 경우 상태 업데이트
+      if (error.response?.data?.code === 'ALREADY_COMPLETED_WORKLOG') {
+        setCheckStatus({
+          checkIn: true,
+          checkOut: false,
+        });
+        alert('이미 체크인이 완료된 상태입니다.');
+      } else {
+        alert(error.response?.data?.message || '체크인에 실패했습니다.');
+      }
+
+      toggleCheckInModal();
     } finally {
       setLoading(false);
     }

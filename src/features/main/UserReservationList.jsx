@@ -12,7 +12,6 @@ import useReservationListStore from '../../stores/reservationListStore.js';
 import { useCustomerReservationList } from '../../features/reservation/hooks/useCustomerAPI.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import './UserReservationList.css';
-import cleanIcon from '../../assets/images/clean1.png';
 
 // 로딩 컴포넌트
 const LoadingSpinner = () => (
@@ -54,51 +53,66 @@ const UserReservationList = () => {
 
   // 데이터 새로고침 함수 - 캐시 추가
   const refreshData = useCallback(async () => {
+    if (!user || !accessToken) {
+      return false;
+    }
+
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-
-      // 백엔드에서 데이터 로드
-      const _backendData = await loadReservations();
-
-      // 로컬 스토어에서도 데이터 가져오기 (백업용)
-      const _localData = getAllReservations();
-
-      console.log('Data refresh completed');
-    } catch (error) {
-      console.error('데이터 새로고침 실패:', error);
-    } finally {
+      await loadReservations();
       setIsLoading(false);
-    }
-  }, [loadReservations, getAllReservations]);
+      return true;
+    } catch (error) {
+      if (
+        error.message.includes('401') ||
+        error.message.includes('JWT_INVALID')
+      ) {
+        alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+        navigate('/auth/signin');
+        return false;
+      }
 
-  // 컴포넌트 마운트 시 데이터 로드
+      getAllReservations(); // 로컬 데이터 로드
+      setIsLoading(false);
+      return false;
+    }
+  }, [loadReservations, getAllReservations, user, accessToken, navigate]);
+
+  // 예약 데이터 로드 - 최적화된 로직
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    let isMounted = true;
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-  };
+    const loadData = async () => {
+      if (!user || !accessToken) return;
 
-  const handleReservationClick = (reservation) => {
-    // reservationId 또는 id 필드 중 존재하는 것을 사용
-    const reservationId = reservation.reservationId || reservation.id;
+      if (isMounted) {
+        await refreshData();
+      }
+    };
 
-    console.log('클릭된 예약 데이터:', reservation);
-    console.log('사용할 reservationId:', reservationId);
+    loadData();
 
-    if (!reservationId) {
-      console.error('예약 ID를 찾을 수 없습니다:', reservation);
-      alert('예약 정보를 불러올 수 없습니다.');
-      return;
-    }
+    return () => {
+      isMounted = false;
+    };
+  }, [user, accessToken, refreshData]);
 
-    navigate(`/customer/reservations/${reservationId}`, {
-      state: { reservation },
-    });
-  };
+  // 탭 변경 시 페이지 초기화
+  const handleTabChange = useCallback((tabKey) => {
+    setActiveTab(tabKey);
+  }, []);
 
-  // ⭐️ 상태별 라벨
+  const handleReservationClick = useCallback(
+    (reservation) => {
+      // 예약 상세 페이지로 이동
+      navigate(`/customer/reservations/${reservation.reservationId}`, {
+        state: { reservation },
+      });
+    },
+    [navigate]
+  );
+
+  // ⭐️ 상태 라벨 매핑
   const getStatusLabel = (status) => {
     const statusLabels = {
       pending: '예약중',
@@ -155,18 +169,17 @@ const UserReservationList = () => {
         onClick={() => handleReservationClick(reservation)}
       >
         <div className="reservation-icon">
-          <img
-            src={cleanIcon}
-            alt="Clean Icon"
-            style={{
-              width: '40px',
-              height: '40px',
-              objectFit: 'contain',
-              backgroundColor: '#e3f2fd',
-              borderRadius: '8px',
-              padding: '8px',
-            }}
-          />
+          {reservation.icon === 'home' ? (
+            <div className="home-icon">🏠</div>
+          ) : reservation.icon === 'cleaning' ? (
+            <div className="cleaning-icon">🧹</div>
+          ) : reservation.icon === 'laundry' ? (
+            <div className="laundry-icon">👕</div>
+          ) : reservation.icon === 'childcare' ? (
+            <div className="childcare-icon">👶</div>
+          ) : (
+            <div className="home-icon">🏠</div>
+          )}
         </div>
 
         <div className="reservation-content">
