@@ -25,6 +25,15 @@ const UserPaymentComplete = () => {
   // ⭐️ 결제 완료 후 데이터 정리를 위한 hook 추가
   const { clearPaymentData } = usePaymentData();
 
+  // 디버깅: 전달받은 데이터 확인
+  useEffect(() => {
+    console.log('🎉 결제 완료 페이지 데이터 확인:');
+    console.log('- paymentResult:', paymentResult);
+    console.log('- serviceInfo:', serviceInfo);
+    console.log('- totalAmount:', totalAmount);
+    console.log('- location.state:', location.state);
+  }, [paymentResult, serviceInfo, totalAmount, location.state]);
+
   useEffect(() => {
     // ⭐️ 중복 예약 생성 방지: 예약은 이미 UserServiceRequest에서 생성되었음
     // 결제 완료 페이지에서는 매니저 할당만 처리하거나 단순히 완료 상태만 표시
@@ -53,12 +62,24 @@ const UserPaymentComplete = () => {
     if (clearPaymentData) {
       clearPaymentData();
     }
+
+    // 결제 완료 정보 localStorage에서 제거 (일정 시간 후)
+    setTimeout(() => {
+      localStorage.removeItem('recentPaymentCompletion');
+    }, 5000); // 5초 후 제거
+
     navigate('/');
   };
 
   const handleViewReservation = () => {
-    // 예약 상세 페이지로 이동 (추후 구현)
-    navigate('/customer/reservations');
+    // 결제 완료 후 예약 목록으로 이동 시 데이터 새로고침을 위한 state 전달
+    navigate('/customer/reservations', {
+      state: {
+        refreshData: true,
+        paymentCompleted: true,
+        reservationId: paymentResult?.reservationId,
+      },
+    });
   };
 
   return (
@@ -68,9 +89,15 @@ const UserPaymentComplete = () => {
         <div className="payment-complete-container">
           {/* 제목 섹션 */}
           <div className="title-section">
-            <h1 className="page-title">결제가 완료되었습니다!</h1>
+            <h1 className="page-title">
+              {paymentResult
+                ? '결제가 완료되었습니다!'
+                : '결제 처리 중입니다...'}
+            </h1>
             <p className="page-subtitle">
-              예약이 성공적으로 접수되었습니다.
+              {paymentResult
+                ? '예약이 성공적으로 접수되었습니다.'
+                : '결제 정보를 확인하고 있습니다.'}
               <br />
             </p>
           </div>
@@ -94,7 +121,7 @@ const UserPaymentComplete = () => {
             <h3 className="summary-title">결제 및 예약 정보</h3>
 
             {/* ⭐️ 백엔드에서 받은 결제 정보 표시 */}
-            {paymentResult && (
+            {paymentResult ? (
               <>
                 <div className="info-item">
                   <span className="info-label">결제 ID: </span>
@@ -109,11 +136,17 @@ const UserPaymentComplete = () => {
                 <div className="info-item">
                   <span className="info-label">결제 상태: </span>
                   <span className="info-value">
-                    {paymentResult.status === 'COMPLETED'
+                    {paymentResult.status === 'PAID'
                       ? '결제 완료'
                       : paymentResult.status === 'PENDING'
                         ? '결제 대기'
-                        : paymentResult.status}
+                        : paymentResult.status === 'FAILED'
+                          ? '결제 실패'
+                          : paymentResult.status === 'REFUNDED'
+                            ? '환불 완료'
+                            : paymentResult.status === 'CANCELED'
+                              ? '결제 취소'
+                              : paymentResult.status}
                   </span>
                 </div>
                 <div className="info-item">
@@ -123,9 +156,11 @@ const UserPaymentComplete = () => {
                       ? '계좌이체'
                       : paymentResult.paymentMethod === 'CARD'
                         ? '신용카드'
-                        : paymentResult.paymentMethod === 'CASH'
-                          ? '현금'
-                          : paymentResult.paymentMethod}
+                        : paymentResult.paymentMethod === 'KAKAO'
+                          ? '카카오페이'
+                          : paymentResult.paymentMethod === 'VIRTUAL_ACCOUNT'
+                            ? '가상계좌'
+                            : paymentResult.paymentMethod}
                   </span>
                 </div>
                 {paymentResult.paidAt && (
@@ -137,6 +172,11 @@ const UserPaymentComplete = () => {
                   </div>
                 )}
               </>
+            ) : (
+              <div className="info-item">
+                <span className="info-label">결제 정보: </span>
+                <span className="info-value">로딩 중...</span>
+              </div>
             )}
 
             {/* 선택된 서비스 옵션 표시 */}

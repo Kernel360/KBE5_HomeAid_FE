@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import Header from '../../components/Header.jsx';
 import Footer from '../../components/Footer.jsx';
@@ -41,10 +41,10 @@ const UserReservationDetail = () => {
         setError(null);
 
         console.log('🔍 예약 상세 조회 시작 - reservationId:', reservationId);
-        
+
         const backendReservation = await getReservationById(reservationId);
         const data = backendReservation.data;
-        
+
         console.log('✅ API 호출 완료 - 백엔드 응답:', backendReservation);
 
         if (data) {
@@ -68,9 +68,14 @@ const UserReservationDetail = () => {
 
             // ⭐️ address와 addressDetail을 모두 받아와서 조합
             address: (() => {
-              const mainAddress = data.address || location.state?.reservation?.address || '';
-              const detailAddress = data.addressDetail || location.state?.reservation?.addressDetail || '';
-              if (mainAddress && detailAddress) return `${mainAddress} ${detailAddress}`;
+              const mainAddress =
+                data.address || location.state?.reservation?.address || '';
+              const detailAddress =
+                data.addressDetail ||
+                location.state?.reservation?.addressDetail ||
+                '';
+              if (mainAddress && detailAddress)
+                return `${mainAddress} ${detailAddress}`;
               if (mainAddress) return mainAddress;
               if (detailAddress) return detailAddress;
               return '주소 정보 없음';
@@ -198,26 +203,66 @@ const UserReservationDetail = () => {
   };
 
   const canMakePayment = (status) => {
+    // 1. localStorage에서 최근 결제 완료 정보 확인
+    const recentPaymentCompletion = localStorage.getItem(
+      'recentPaymentCompletion'
+    );
+    if (recentPaymentCompletion) {
+      try {
+        const paymentInfo = JSON.parse(recentPaymentCompletion);
+        const currentReservationId = reservation.id || reservationId;
+
+        if (paymentInfo.reservationId === parseInt(currentReservationId)) {
+          console.log(
+            '🔒 localStorage에서 결제 완료 확인 - 결제 버튼 비활성화:',
+            paymentInfo
+          );
+          return false;
+        }
+      } catch (error) {
+        console.error('localStorage 결제 정보 파싱 오류:', error);
+      }
+    }
+
+    // 2. 백엔드 데이터에서 결제 정보 확인
     if (reservation.backendData) {
       const hasPayment =
         reservation.backendData.paymentId ||
         reservation.backendData.paidAt ||
+        reservation.backendData.paymentStatus === 'PAID' ||
         reservation.backendData.paymentStatus === 'COMPLETED';
 
       if (hasPayment) {
+        console.log('🔒 백엔드에서 결제 완료 확인 - 결제 버튼 비활성화:', {
+          paymentId: reservation.backendData.paymentId,
+          paidAt: reservation.backendData.paidAt,
+          paymentStatus: reservation.backendData.paymentStatus,
+        });
         return false;
       }
     }
 
+    // 2. 서비스 완료 상태 확인
     if (status === 'COMPLETED' || status === 'visited') {
       return false;
     }
 
+    // 3. 취소된 예약 확인
     if (status === 'CANCELLED' || status === 'cancelled') {
       return false;
     }
 
-    return status === 'MATCHED' || status === 'completed';
+    // 4. 매칭 완료 상태에서만 결제 가능
+    const canPay = status === 'MATCHED' || status === 'completed';
+
+    console.log('💳 결제 가능 여부 확인:', {
+      status,
+      canPay,
+      hasBackendData: !!reservation.backendData,
+      reservationId: reservation.id || reservationId,
+    });
+
+    return canPay;
   };
 
   const handlePayment = () => {
@@ -228,6 +273,40 @@ const UserReservationDetail = () => {
       },
     });
   };
+
+  // 결제 완료 후 예약 정보 새로고침을 위한 함수
+  const refreshReservationData = useCallback(async () => {
+    if (!reservationId) return;
+
+    console.log('🔄 예약 정보 새로고침 중...');
+    setLoading(true);
+
+    try {
+      const updatedReservation = await getReservationById(reservationId);
+      setReservation(updatedReservation);
+      console.log('✅ 예약 정보 새로고침 완료:', updatedReservation);
+    } catch (error) {
+      console.error('❌ 예약 정보 새로고침 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [reservationId]);
+
+  // 페이지 포커스 시 데이터 새로고침 (결제 완료 후 돌아왔을 때)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && reservationId) {
+        console.log('📱 페이지 포커스 - 예약 정보 새로고침');
+        refreshReservationData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshReservationData, reservationId]);
 
   const getServicePrice = (
     totalPrice,
@@ -428,30 +507,28 @@ const UserReservationDetail = () => {
     (detail.address && detail.addressDetail
       ? `${detail.address} ${detail.addressDetail}`
       : detail.address
-      ? detail.address
-      : detail.addressDetail
-      ? detail.addressDetail
-      : reservation.address) || '주소 정보 없음';
+        ? detail.address
+        : detail.addressDetail
+          ? detail.addressDetail
+          : reservation.address) || '주소 정보 없음';
 
   const customerNote =
     detail.customerMemo ?? reservation.customerNote ?? '요청사항 없음';
 
   const managerName =
-    detail.matchedManagerName ?? reservation.backendData?.matchedManagerName ?? '배정된 매니저 없음';
+    detail.matchedManagerName ??
+    reservation.backendData?.matchedManagerName ??
+    '배정된 매니저 없음';
 
-  const price =
-    detail.totalPrice ?? reservation.price ?? 0;
+  const price = detail.totalPrice ?? reservation.price ?? 0;
 
-  const type =
-    detail.serviceOptionName ?? reservation.type ?? '서비스';
+  const type = detail.serviceOptionName ?? reservation.type ?? '서비스';
 
-  const date =
-    detail.requestedDate ?? reservation.date ?? '날짜 정보 없음';
+  const date = detail.requestedDate ?? reservation.date ?? '날짜 정보 없음';
 
-  const time =
-    detail.requestedTime
-      ? formatTimeRange(detail.requestedTime, (detail.totalDuration ?? 3) * 60)
-      : reservation.time ?? '시간 정보 없음';
+  const time = detail.requestedTime
+    ? formatTimeRange(detail.requestedTime, (detail.totalDuration ?? 3) * 60)
+    : (reservation.time ?? '시간 정보 없음');
 
   const status = detail.status || reservation.status || 'REQUESTED';
 
@@ -480,9 +557,7 @@ const UserReservationDetail = () => {
             <div
               className="status-badge"
               style={{
-                backgroundColor: getStatusColor(
-                  status
-                ),
+                backgroundColor: getStatusColor(status),
               }}
             >
               {getStatusText(status)}
@@ -499,9 +574,7 @@ const UserReservationDetail = () => {
             <div className="info-card">
               <div className="info-row">
                 <span className="info-label">서비스 유형</span>
-                <span className="info-value">
-                  {type}
-                </span>
+                <span className="info-value">{type}</span>
               </div>
               <div className="info-row">
                 <span className="info-label">예약 금액</span>
@@ -520,15 +593,11 @@ const UserReservationDetail = () => {
             <div className="info-card">
               <div className="info-row">
                 <span className="info-label">예약 날짜</span>
-                <span className="info-value">
-                  {date}
-                </span>
+                <span className="info-value">{date}</span>
               </div>
               <div className="info-row">
                 <span className="info-label">예약 시간</span>
-                <span className="info-value">
-                  {time}
-                </span>
+                <span className="info-value">{time}</span>
               </div>
             </div>
           </div>
@@ -541,9 +610,7 @@ const UserReservationDetail = () => {
             <div className="info-card">
               <div className="info-row">
                 <span className="info-label">서비스 주소</span>
-                <span className="info-value">
-                  {address}
-                </span>
+                <span className="info-value">{address}</span>
               </div>
             </div>
           </div>
@@ -601,8 +668,7 @@ const UserReservationDetail = () => {
           )}
 
           {!canMakePayment(status) &&
-            (status === 'MATCHED' ||
-              status === 'completed') && (
+            (status === 'MATCHED' || status === 'completed') && (
               <div className="payment-completed-section">
                 <div className="payment-completed-info">
                   <p className="payment-completed-notice">
@@ -633,7 +699,8 @@ const UserReservationDetail = () => {
           status === 'MATCHING' ? (
             <div className="waiting-section">
               <div className="waiting-info">
-                {reservation?.backendData?.data?.matchingStatus === 'ACCEPTED' ? (
+                {reservation?.backendData?.data?.matchingStatus ===
+                'ACCEPTED' ? (
                   <>
                     <p className="waiting-notice">
                       🎉 매니저가 매칭되었습니다!
@@ -705,8 +772,7 @@ const UserReservationDetail = () => {
             </div>
           )}
 
-          {(status === 'COMPLETED' ||
-            status === 'visited') && (
+          {(status === 'COMPLETED' || status === 'visited') && (
             <div className="service-completed-section">
               <div className="service-completed-info">
                 <p className="service-completed-notice">
@@ -751,8 +817,7 @@ const UserReservationDetail = () => {
             </div>
           )}
 
-          {(status === 'CANCELLED' ||
-            status === 'cancelled') && (
+          {(status === 'CANCELLED' || status === 'cancelled') && (
             <div className="cancelled-section">
               <div className="cancelled-info">
                 <p className="cancelled-notice">❌ 예약이 취소되었습니다.</p>

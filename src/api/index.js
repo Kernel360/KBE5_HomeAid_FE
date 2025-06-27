@@ -1,10 +1,11 @@
-import api from "./config/api";
+import api from './config/api';
 
 // 사용 예시 함수들
 export const apiService = {
   // 매니저 관련 API
   manager: {
-    getAllMatcings: (page = 0, size = 10) => api.get(`/manager/matchings?page=${page}&size=${size}`),
+    getAllMatcings: (page = 0, size = 10) =>
+      api.get(`/manager/matchings?page=${page}&size=${size}`),
     getMatching: (matchingId) => api.get(`/manager/matchings/${matchingId}`),
     getAll: () => api.get('/manager/all'),
     getById: (id) => api.get(`/manager/${id}`),
@@ -14,9 +15,10 @@ export const apiService = {
     getManagerList: () => api.get('/managers/list'),
     changeStatus: (id, status) => api.patch(`/managers/${id}/status`, status),
     createProfile: (data) => api.post('/managers/profile', data),
-    uploadCertifications: (formData) => api.post('/managers/profile/certifications', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }),
+    uploadCertifications: (formData) =>
+      api.post('/managers/profile/certifications', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }),
     getCertifications: () => api.get('/managers/profile/certifications'),
   },
 
@@ -29,6 +31,7 @@ export const apiService = {
     updateMyProfile: (data) => api.put('/users/my', data),
     uploadProfileImage: (formData) => api.post('/users/my/image', formData),
     deleteProfileImage: () => api.delete('/users/my/image'),
+    requestWithdrawal: (data) => api.post('/my/withdrawal', data),
   },
 
   // 인증 관련 API
@@ -37,7 +40,7 @@ export const apiService = {
     logout: () => api.post('/auth/logout'),
     refresh: () => api.post('/users/auth/refresh'),
     register: (userData) => api.post('/auth/register', userData),
-    signIn: (data, config) => api.post('/auth/signin', data, config)
+    signIn: (data, config) => api.post('/auth/signin', data, config),
   },
 
   // 주소 관련 API
@@ -57,7 +60,8 @@ export const apiService = {
   },
 
   review: {
-    getMyReviews: (page = 0, size = 10) => api.get(`/reviews/my?page=${page}&size=${size}`),
+    getMyReviews: (page = 0, size = 10) =>
+      api.get(`/reviews/my?page=${page}&size=${size}`),
     create: (data) => api.post('/reviews', data),
     update: (id, data) => api.put(`/reviews/${id}`, data),
     delete: (id) => api.delete(`/reviews/${id}`),
@@ -88,13 +92,27 @@ export const apiService = {
     getAllForManager: () => api.get('/reservations/manager'),
   },
   matching: {
-    acceptMatching: (matchingId, data) => api.patch(`/manager/matchings/${matchingId}/to-customer`, data),
-    getRecommendedManagers: (reservationId) => api.post(`admin/matchings/${reservationId}/recommendations`),
-    createMatching: (reservationId, managerId) => api.post('/admin/matchings', { reservationId, managerId }),
+    acceptMatching: (matchingId, data) =>
+      api.patch(`/manager/matchings/${matchingId}/to-customer`, data),
+    getRecommendedManagers: (reservationId) =>
+      api.post(`admin/matchings/${reservationId}/recommendations`),
+    createMatching: (reservationId, managerId) =>
+      api.post('/admin/matchings', { reservationId, managerId }),
   },
   workLog: {
     checkIn: (data) => api.post('/managers/work-logs', data),
-    checkOut: (reservationId, data) => api.patch(`/managers/work-logs/${reservationId}`, data)
+    checkOut: (reservationId, data) =>
+      api.patch(`/managers/work-logs/${reservationId}`, data),
+  },
+  settlement: {
+    getManagerSettlements: (managerId, params = {}) => {
+      const queryParams = new URLSearchParams(params);
+      return api.get(`/managers/settlements/${managerId}?${queryParams}`);
+    },
+    getMySettlements: (params = {}) => {
+      const queryParams = new URLSearchParams(params);
+      return api.get(`/managers/settlements?${queryParams}`);
+    },
   },
 };
 export default apiService;

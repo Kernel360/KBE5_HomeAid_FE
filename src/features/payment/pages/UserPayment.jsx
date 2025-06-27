@@ -5,12 +5,8 @@ import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
 import useReservationStore from '../../../stores/reservationStore.js';
 import { usePaymentData } from '../../reservation/hooks/useLocalStorage.js';
-// TODO: 실제 백엔드 API 연동이 완성되면 아래 주석을 해제
-// import { customerAPI, assignManagerToReservation } from '../../reservation/api/customerAPI';
-import {
-  customerAPI,
-  assignManagerToReservation,
-} from '../../reservation/api/customerAPI.js';
+import { api } from '../../../api/config/api.js';
+import { useAuthStore } from '../../../stores/authStore.js';
 
 const UserPayment = () => {
   const navigate = useNavigate();
@@ -204,249 +200,124 @@ const UserPayment = () => {
   };
 
   const handlePayment = async () => {
-    // 필수 약관 동의 확인 (버튼이 비활성화되어 있으므로 이 체크는 불필요하지만 안전장치로 유지)
-    if (!allRequired) {
-      return;
-    }
-
     try {
-      // ⭐️ 인증 상태 확인 (403 에러 디버깅)
-      const accessToken = localStorage.getItem('accessToken');
+      // 인증 상태 확인
+      const localStorageToken = localStorage.getItem('accessToken');
+      const authStoreToken = useAuthStore.getState().accessToken;
+      const currentUser = useAuthStore.getState().user;
+
+      console.log('🔐 인증 상태 확인:');
+      console.log(
+        '- localStorage token:',
+        localStorageToken ? '존재함' : '없음'
+      );
+      console.log('- authStore token:', authStoreToken ? '존재함' : '없음');
+      console.log('- 현재 사용자:', currentUser);
 
       // 토큰이 없으면 로그인 페이지로 리다이렉트
-      if (!accessToken) {
-        // ⭐️ 개발 환경에서는 임시 토큰 자동 생성 (DB 저장 테스트용)
-        const isDevEnvironment = import.meta.env.DEV;
-
-        if (isDevEnvironment) {
-          // 테스트용 사용자 정보 생성
-          const testUser = {
-            id: 1,
-            name: '테스트 사용자',
-            email: 'test@example.com',
-            role: 'CUSTOMER',
-          };
-
-          const testToken = 'dev-test-token-' + Date.now();
-
-          // localStorage에 저장
-          localStorage.setItem('accessToken', testToken);
-          localStorage.setItem('userInfo', JSON.stringify(testUser));
-
-          alert(
-            '💡 개발 환경에서 임시 로그인으로 결제를 진행합니다.\n실제 운영에서는 로그인이 필요합니다.'
-          );
-        } else {
-          alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
-          navigate('/login');
-          return;
-        }
+      if (!localStorageToken && !authStoreToken) {
+        alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+        navigate('/auth/signin');
+        return;
       }
 
-      // ⭐️ reservationId 확인 및 실제 값 설정
-      let actualReservationId = null;
+      // 결제 요청 데이터 준비
+      const reservationId = parseInt(
+        location.state?.reservation?.reservationId ||
+          reservationData.reservationId ||
+          location.state?.reservation?.id ||
+          paymentData.serviceInfo.reservationId
+      );
 
-      // 1. paymentData에서 확인
-      if (paymentData.serviceInfo.reservationId) {
-        actualReservationId = paymentData.serviceInfo.reservationId;
-      }
-      // 2. reservationData에서 확인
-      else if (reservationData.reservationId) {
-        actualReservationId = reservationData.reservationId;
-      }
-      // 3. savedPaymentData에서 확인
-      else if (savedPaymentData?.reservationId) {
-        actualReservationId = savedPaymentData.reservationId;
-      }
-      // 4. 테스트용 기본값 (실제 환경에서는 예약 생성 후 사용)
-      else {
-        actualReservationId = 1;
-      }
-
-      // ⭐️ STEP 0: 매니저 할당 (결제 전 필수 단계)
-      try {
-        // 매니저 ID 10으로 할당
-        await assignManagerToReservation(actualReservationId, 10);
-
-        // 잠시 대기 (백엔드 처리 시간 확보)
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      } catch {
-        // 매니저 할당 실패해도 결제는 계속 진행
-      }
-
-      // TODO: 백엔드 예약 상태 관리 시스템이 완성되면 아래 주석을 해제하여 실제 상태 확인 로직을 사용
-      // 현재는 프론트엔드 개발 및 테스트를 위해 상태 확인을 건너뛰고 바로 결제 진행
-
-      /* ⭐️ STEP 1: 예약 상태 확인 (TODO: 백엔드 상태 관리 완성 후 활성화)
-      console.log('🔍 예약 상태 확인 중...');
-
-      try {
-        const reservationDetail =
-          await customerAPI.getReservation(actualReservationId);
-        console.log('📋 현재 예약 정보:', reservationDetail);
-
-        // 예약 상태 확인
-        const currentStatus = reservationDetail.status;
-        console.log('📊 현재 예약 상태:', currentStatus);
-
-        // ⭐️ MATCHED 상태가 아니면 결제 불가
-        if (currentStatus !== 'MATCHED') {
-          let statusMessage = '';
-          switch (currentStatus) {
-            case 'REQUESTED':
-              statusMessage =
-                '예약이 요청 상태입니다.\n매니저 매칭이 완료된 후 결제가 가능합니다.';
-              break;
-            case 'MATCHING':
-              statusMessage =
-                '매니저 매칭 중입니다.\n매칭이 완료된 후 결제가 가능합니다.';
-              break;
-            case 'COMPLETED':
-              statusMessage = '이미 서비스가 완료된 예약입니다.';
-              break;
-            case 'CANCELLED':
-              statusMessage = '취소된 예약입니다.\n결제할 수 없습니다.';
-              break;
-            default:
-              statusMessage = `예약 상태가 "${currentStatus}"입니다.\n결제할 수 없는 상태입니다.`;
-          }
-
-          // ⚠️ 상태가 MATCHED가 아닌 경우, 강제로 매니저 할당 후 재시도
-          console.log('⚠️ 예약 상태가 MATCHED가 아님. 강제 매니저 할당 시도...');
-          
-          try {
-            // 예약 상태를 직접 MATCHED로 변경 시도
-            await customerAPI.getReservation(actualReservationId); // 상태 재확인용
-            console.log('🔄 매니저 할당 후 상태 재확인 완료');
-            
-            // 상태 변경이 반영될 시간을 위해 잠시 대기
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // 재확인
-            const updatedReservation = await customerAPI.getReservation(actualReservationId);
-            if (updatedReservation.status === 'MATCHED') {
-              console.log('✅ 예약 상태가 MATCHED로 변경됨. 결제 계속 진행');
-            } else {
-              // 여전히 MATCHED가 아니면 경고 표시하고 강제 진행
-              console.log('⚠️ 여전히 MATCHED 상태가 아니지만 결제 강제 진행');
-              alert(`⚠️ 주의: 예약 상태가 "${updatedReservation.status}"이지만 결제를 진행합니다.\n\n매니저가 할당되지 않은 상태일 수 있습니다.`);
-            }
-            
-          } catch (forceAssignError) {
-            console.log('❌ 강제 매니저 할당 실패:', forceAssignError.message);
-            alert(`❌ 결제할 수 없습니다.\n\n${statusMessage}\n\n매니저 할당에 실패했습니다.`);
-            return; // 결제 중단
-          }
-        } else {
-          // ⭐️ MATCHED 상태일 때만 결제 진행
-          console.log('✅ 예약 상태가 MATCHED입니다. 결제를 진행합니다.');
-        }
-      } catch (statusCheckError) {
-        console.error('❌ 예약 상태 확인 실패:', statusCheckError);
-        
-        // 상태 확인 실패해도 매니저 할당은 했으므로 결제 시도
-        console.log('⚠️ 상태 확인 실패했지만 매니저 할당 후이므로 결제 시도');
-        alert('⚠️ 예약 정보 확인에 실패했지만 결제를 시도합니다.\n\n매니저가 할당되어 결제 가능할 것으로 예상됩니다.');
-      }
-      */
-
-      // ⭐️ STEP 2: 결제 진행 (매니저 할당 후) - 실제 백엔드 API 호출
-      // ⭐️ 백엔드 PaymentRequestDto에 맞는 결제 요청 데이터 준비
-      const paymentRequestData = {
-        reservationId: parseInt(actualReservationId), // Long 타입으로 확실하게 변환
-        amount: parseInt(paymentData.totalAmount), // Integer 타입으로 확실하게 변환
-        paymentMethod: 'TRANSFER', // 계좌이체는 TRANSFER enum 사용
-        // ⭐️ 매니저 ID 추가 (백엔드에서 필요한 경우)
-        managerId: 10, // 할당된 매니저 ID
-        // status는 백엔드에서 자동 설정되도록 제거 (Optional이므로)
+      // 결제 수단 매핑 (프론트엔드 값 → 백엔드 enum 값)
+      const paymentMethodMapping = {
+        card: 'CARD',
+        bank: 'TRANSFER',
+        kakao: 'KAKAO',
       };
 
-      let paymentResult;
+      const paymentRequestData = {
+        reservationId: reservationId,
+        amount: parseInt(paymentData.totalAmount),
+        paymentMethod:
+          paymentMethodMapping[selectedPaymentMethod] ||
+          selectedPaymentMethod.toUpperCase(),
+      };
 
-      try {
-        // ⭐️ 실제 Spring Boot 결제 API 호출 (DB에 저장)
-        paymentResult = await customerAPI.processPayment(paymentRequestData);
-      } catch (apiError) {
-        // 403 에러인 경우 인증 문제 알림
-        if (apiError.message.includes('403')) {
-          // ⭐️ 임시 해결책: 매니저 할당만이라도 저장하기 위해 시도
-          try {
-            await assignManagerToReservation(actualReservationId, 10);
-          } catch {
-            // 매니저 할당도 실패
-          }
-        }
-
-        // 백엔드 API 실패시 시뮬레이션으로 fallback (UI 테스트용)
-        paymentResult = {
-          id: Math.floor(Math.random() * 1000) + 1, // 랜덤 결제 ID
-          reservationId: actualReservationId,
-          amount: paymentData.totalAmount,
-          paymentMethod: 'TRANSFER',
-          status: 'COMPLETED',
-          paidAt: new Date().toISOString(),
-          managerId: 10,
-        };
-
-        // 사용자에게 상황 설명
-        if (apiError.message.includes('403')) {
-          alert(
-            '⚠️ 백엔드 서버 인증 문제로 시뮬레이션 모드로 진행됩니다.\n\n해결방법:\n1. 백엔드 서버가 8080 포트에서 실행중인지 확인\n2. 로그인 후 다시 시도\n3. 백엔드 개발자에게 인증 설정 확인 요청'
-          );
-        } else {
-          alert(
-            '⚠️ 백엔드 연결 실패로 시뮬레이션 모드로 진행됩니다.\nDB에 저장되지 않을 수 있습니다.'
-          );
-        }
-      }
-
-      // 결제 성공 처리
-      alert(
-        `✅ 결제가 완료되었습니다!\n\n` +
-          `${paymentResult.id ? `결제 ID: ${paymentResult.id}\n` : ''}` +
-          `${paymentResult.reservationId ? `예약번호: ${paymentResult.reservationId}\n` : ''}` +
-          `매니저 ID: 10 (할당 완료)\n` +
-          `서비스: ${paymentData.serviceInfo.serviceType}\n` +
-          `결제금액: ${paymentData.totalAmount.toLocaleString()}원\n` +
-          `결제수단: 계좌이체\n` +
-          `${paymentResult.paidAt ? `결제시간: ${new Date(paymentResult.paidAt).toLocaleString()}` : ''}`
-      );
-
-      // 결제 완료 페이지로 이동
-      navigate('/customer/payment-complete', {
-        state: {
-          paymentResult: paymentResult,
-          serviceInfo: paymentData.serviceInfo,
-          totalAmount: paymentData.totalAmount,
-          managerId: 10, // 매니저 정보 추가
-        },
+      console.log('📤 결제 요청:', paymentRequestData);
+      console.log('🔍 예약 상태 확인:', {
+        reservationId,
+        reservationFromDetail: location.state?.reservation,
+        reservationData: reservationData,
+        paymentData: paymentData.serviceInfo,
       });
-    } catch (error) {
-      // 에러 메시지 상세화
-      let errorMessage = '결제에 실패했습니다.';
 
-      if (error.message.includes('400')) {
-        errorMessage =
-          '결제 정보가 올바르지 않습니다.\n다음을 확인해주세요:\n- 예약 정보가 올바른지\n- 결제 금액이 올바른지\n- 매니저가 할당되었는지';
-      } else if (error.message.includes('401')) {
-        errorMessage = '인증에 실패했습니다.\n다시 로그인한 후 시도해주세요.';
-      } else if (error.message.includes('403')) {
-        errorMessage =
-          '결제 권한이 없습니다.\n고객 계정으로 로그인했는지 확인해주세요.';
-      } else if (error.message.includes('404')) {
-        errorMessage =
-          '예약 정보를 찾을 수 없습니다.\n예약이 정상적으로 생성되었는지 확인해주세요.';
-      } else if (error.message.includes('500')) {
-        errorMessage = '서버 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.';
-      } else if (error.message.includes('network')) {
-        errorMessage =
-          '네트워크 연결에 문제가 있습니다.\n인터넷 연결을 확인하고 다시 시도해주세요.';
+      // 결제 API 호출 (백엔드 엔드포인트에 맞춤)
+      const response = await api.post('/my/payments/', paymentRequestData);
+
+      if (response.data?.data) {
+        const paymentResult = response.data.data;
+        console.log('✅ 결제 성공:', paymentResult);
+
+        // 결제 완료 정보를 localStorage에 저장 (다른 페이지에서 참조용)
+        const paymentCompletionInfo = {
+          reservationId: paymentResult.reservationId,
+          paymentId: paymentResult.id,
+          completedAt: new Date().toISOString(),
+          amount: paymentResult.amount,
+          paymentMethod: paymentResult.paymentMethod,
+        };
+        localStorage.setItem(
+          'recentPaymentCompletion',
+          JSON.stringify(paymentCompletionInfo)
+        );
+
+        // 결제 완료 페이지로 이동 (라우팅 경로에 맞춤)
+        navigate('/customer/payment-complete', {
+          state: {
+            paymentResult: {
+              id: paymentResult.id,
+              reservationId: paymentResult.reservationId,
+              amount: paymentResult.amount,
+              paymentMethod: paymentResult.paymentMethod,
+              status: paymentResult.status,
+              paidAt: paymentResult.paidAt,
+              customerName: paymentResult.customerName,
+            },
+            serviceInfo: paymentData.serviceInfo,
+            totalAmount: paymentData.totalAmount,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('❌ 결제 실패:', error);
+      console.error('❌ 에러 상세:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: error.config,
+      });
+
+      let errorMessage = '결제 처리 중 오류가 발생했습니다.';
+
+      if (error.response?.status === 403) {
+        errorMessage = '결제 권한이 없습니다. 로그인 상태를 확인해주세요.';
+        // 403 에러의 경우 로그인 페이지로 리다이렉트
+        setTimeout(() => {
+          navigate('/auth/signin');
+        }, 2000);
+      } else if (error.response?.status === 401) {
+        errorMessage = '인증이 만료되었습니다. 다시 로그인해주세요.';
+        // 401 에러의 경우 로그인 페이지로 리다이렉트
+        setTimeout(() => {
+          navigate('/auth/signin');
+        }, 2000);
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
       }
 
-      alert(
-        `❌ ${errorMessage}\n\n오류가 지속되면 고객센터로 문의해주세요.\n\n` +
-          `🔍 개발자 정보:\n에러 메시지: ${error.message}`
-      );
+      alert(errorMessage);
     }
   };
 

@@ -51,6 +51,34 @@ const SignInPage = () => {
     setLoading(true);
     setError('');
 
+    // 클라이언트 측 유효성 검사
+    if (!phone.trim()) {
+      setError('휴대폰 번호를 입력해주세요.');
+      setLoading(false);
+      return;
+    }
+
+    if (!password.trim()) {
+      setError('비밀번호를 입력해주세요.');
+      setLoading(false);
+      return;
+    }
+
+    // 휴대폰 번호 형식 검사
+    const phoneRegex = /^010-\d{4}-\d{4}$/;
+    if (!phoneRegex.test(phone)) {
+      setError('올바른 휴대폰 번호 형식을 입력해주세요. (예: 010-1234-5678)');
+      setLoading(false);
+      return;
+    }
+
+    // 비밀번호 길이 검사
+    if (password.length < 6) {
+      setError('비밀번호는 6자 이상 입력해주세요.');
+      setLoading(false);
+      return;
+    }
+
     try {
       // 🔥 먼저 모든 상태 완전 초기화
       logout(); // 또는 setUser(null), setAccessToken(null)
@@ -77,11 +105,50 @@ const SignInPage = () => {
       }
     } catch (err) {
       console.error('로그인 에러:', err);
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          '로그인 중 오류가 발생했습니다.'
-      );
+
+      // 사용자 친화적인 에러 메시지 처리
+      let errorMessage = '로그인 중 오류가 발생했습니다.';
+
+      if (err.response) {
+        const status = err.response.status;
+        const serverMessage = err.response.data?.message;
+
+        switch (status) {
+          case 400:
+            errorMessage = '입력하신 정보를 다시 확인해주세요.';
+            break;
+          case 401:
+          case 403:
+            errorMessage = '아이디 또는 비밀번호가 올바르지 않습니다.';
+            break;
+          case 404:
+            errorMessage = '존재하지 않는 계정입니다.';
+            break;
+          case 429:
+            errorMessage =
+              '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.';
+            break;
+          case 500:
+            errorMessage =
+              '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+            break;
+          default:
+            // 서버에서 제공하는 메시지가 있고, 사용자에게 적절한 경우 사용
+            if (
+              serverMessage &&
+              !serverMessage.includes('403') &&
+              !serverMessage.includes('401')
+            ) {
+              errorMessage = serverMessage;
+            }
+        }
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = '네트워크 연결을 확인해주세요.';
+      } else if (err.message) {
+        errorMessage = '로그인 중 오류가 발생했습니다.';
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -245,12 +312,25 @@ const SignInPage = () => {
               {error && (
                 <div
                   style={{
-                    color: '#e74c3c',
-                    fontSize: '14px',
+                    borderRadius: '8px',
+                    padding: '12px',
                     marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
                   }}
                 >
-                  {error}
+                  <span style={{ color: '#dc2626', fontSize: '16px' }}>⚠️</span>
+                  <span
+                    style={{
+                      color: '#dc2626',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      lineHeight: '1.4',
+                    }}
+                  >
+                    {error}
+                  </span>
                 </div>
               )}
 

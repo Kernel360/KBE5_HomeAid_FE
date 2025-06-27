@@ -1,14 +1,28 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Plus, MapPin, MoreHorizontal, Trash2, Edit } from 'lucide-react';
+import {
+  ArrowLeft,
+  Plus,
+  MapPin,
+  MoreHorizontal,
+  Trash2,
+  Edit,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 import { useAddressStore } from '../../../../stores/addressStore';
 
 // 주소 관리 페이지
-const MyAddress = () => {
+const MyAddress = ({ onBack, onAddAddress }) => {
   const navigate = useNavigate();
-  const { addresses, isLoading, error, fetchAddresses, deleteAddress, clearError } = useAddressStore();
+  const {
+    addresses,
+    isLoading,
+    error,
+    fetchAddresses,
+    deleteAddress,
+    clearError,
+  } = useAddressStore();
   const [showMenu, setShowMenu] = useState(null);
 
   useEffect(() => {
@@ -17,11 +31,19 @@ const MyAddress = () => {
   }, [fetchAddresses]);
 
   const handleBack = () => {
-    navigate('/customer/mypage');
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/customer/mypage');
+    }
   };
 
   const handleAddAddress = () => {
-    navigate('/customer/mypage/address/register');
+    if (onAddAddress) {
+      onAddAddress();
+    } else {
+      navigate('/customer/mypage/address/register');
+    }
   };
 
   const handleEditAddress = (addressId) => {
@@ -66,7 +88,9 @@ const MyAddress = () => {
 
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">주소 관리</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            주소 관리
+          </h2>
           <button
             onClick={handleAddAddress}
             className="flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
@@ -80,7 +104,9 @@ const MyAddress = () => {
         {isLoading && (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">주소 목록을 불러오는 중...</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">
+              주소 목록을 불러오는 중...
+            </p>
           </div>
         )}
 
@@ -88,20 +114,25 @@ const MyAddress = () => {
         {!isLoading && (
           <div className="space-y-4">
             {addresses.map((addr) => (
-              <div key={addr.id} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+              <div
+                key={addr.id}
+                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm"
+              >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center">
                     <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" />
-                    <span className="font-medium text-gray-900 dark:text-white">{addr.alias}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {addr.alias}
+                    </span>
                   </div>
                   <div className="relative">
-                    <button 
+                    <button
                       className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                       onClick={() => toggleMenu(addr.id)}
                     >
                       <MoreHorizontal className="w-5 h-5" />
                     </button>
-                    
+
                     {/* 드롭다운 메뉴 */}
                     {showMenu === addr.id && (
                       <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-10">
@@ -123,7 +154,9 @@ const MyAddress = () => {
                     )}
                   </div>
                 </div>
-                <p className="text-gray-600 dark:text-gray-300 text-sm ml-7">{addr.fullAddress}</p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm ml-7">
+                  {addr.fullAddress}
+                </p>
               </div>
             ))}
           </div>
@@ -132,7 +165,9 @@ const MyAddress = () => {
         {/* 주소가 없을 때 표시할 메시지 */}
         {!isLoading && addresses.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400 mb-4">등록된 주소가 없습니다</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
+              등록된 주소가 없습니다
+            </p>
             <button
               onClick={handleAddAddress}
               className="bg-blue-600 text-white px-6 py-3 rounded-xl font-medium inline-flex items-center hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"

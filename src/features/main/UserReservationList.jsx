@@ -5,7 +5,7 @@ import React, {
   useMemo,
   Suspense,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../components/Header.jsx';
 import Footer from '../../components/Footer.jsx';
 import useReservationListStore from '../../stores/reservationListStore.js';
@@ -23,6 +23,7 @@ const LoadingSpinner = () => (
 
 const UserReservationList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ⭐️ 인증 상태 확인
   const { user, accessToken } = useAuthStore();
@@ -59,7 +60,7 @@ const UserReservationList = () => {
 
     setIsLoading(true);
     try {
-      const backendData = await loadReservations();
+      await loadReservations();
       setIsLoading(false);
       return true;
     } catch (error) {
@@ -72,11 +73,22 @@ const UserReservationList = () => {
         return false;
       }
 
-      const localData = getAllReservations();
+      getAllReservations(); // 로컬 데이터 로드
       setIsLoading(false);
       return false;
     }
   }, [loadReservations, getAllReservations, user, accessToken, navigate]);
+
+  // 결제 완료 후 데이터 새로고침 처리
+  useEffect(() => {
+    if (location.state?.paymentCompleted && location.state?.refreshData) {
+      console.log('🎉 결제 완료 후 예약 목록 새로고침');
+      refreshData();
+
+      // state 초기화하여 다음 방문 시 중복 새로고침 방지
+      navigate('/customer/reservations', { replace: true });
+    }
+  }, [location.state, refreshData, navigate]);
 
   // 예약 데이터 로드 - 최적화된 로직
   useEffect(() => {
@@ -156,8 +168,10 @@ const UserReservationList = () => {
 
     // 실제 데이터 필드에 맞게 매핑
     const type = reservation.serviceOptionName || reservation.type || '서비스';
-    const date = reservation.requestedDate || reservation.date || '날짜 정보 없음';
-    const time = reservation.requestedTime || reservation.time || '시간 정보 없음';
+    const date =
+      reservation.requestedDate || reservation.date || '날짜 정보 없음';
+    const time =
+      reservation.requestedTime || reservation.time || '시간 정보 없음';
     const price = reservation.totalPrice || reservation.price || 0;
     const status = mapBackendStatus(reservation.status);
 
@@ -192,9 +206,7 @@ const UserReservationList = () => {
           <div className="reservation-datetime">
             {date} / {time}
           </div>
-          <div className="reservation-price">
-            {price.toLocaleString()}원
-          </div>
+          <div className="reservation-price">{price.toLocaleString()}원</div>
         </div>
 
         <div className="reservation-actions">

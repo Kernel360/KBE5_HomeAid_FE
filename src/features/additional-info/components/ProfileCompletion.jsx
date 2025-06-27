@@ -147,7 +147,7 @@ const ProfileCompletion = ({ onBack }) => {
                   {getSelectedServiceNames().map((serviceName, index) => (
                     <span
                       key={index}
-                      className="text-sm bg-white px-2 py-1 rounded text-gray-600 border"
+                      className="text-sm px-2 py-1 text-gray-700"
                     >
                       {serviceName}
                     </span>
@@ -169,7 +169,7 @@ const ProfileCompletion = ({ onBack }) => {
                   {uniqueRegions.map((region, index) => (
                     <span
                       key={index}
-                      className="text-sm bg-white px-2 py-1 rounded text-gray-600 border"
+                      className="text-sm px-2 py-1 text-gray-700"
                     >
                       {region}
                     </span>
@@ -191,7 +191,7 @@ const ProfileCompletion = ({ onBack }) => {
                   {formData.availabilities?.map((availability, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between text-sm bg-white px-2 py-1 rounded border"
+                      className="flex items-center justify-between text-sm px-2 py-1"
                     >
                       <span className="text-gray-700">
                         {reverseDayMapping[availability.weekday]}요일
