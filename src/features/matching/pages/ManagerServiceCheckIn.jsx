@@ -21,9 +21,40 @@ const ManagerServiceCheckIn = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // 체크아웃 모달에서 사용할 상태
-  const [checkoutMemo, setCheckoutMemo] = useState('');
-  const [checkoutFile, setCheckoutFile] = useState(null);
+  // TODO: 체크아웃 메모와 파일 업로드 기능 구현 예정
+  // const [checkoutMemo, setCheckoutMemo] = useState('');
+  // const [checkoutFile, setCheckoutFile] = useState(null);
+
+  // 로컬 스토리지에서 체크 상태 불러오기
+  const getStoredCheckStatus = () => {
+    const stored = localStorage.getItem(`checkStatus_${reservationId}`);
+    if (stored) {
+      try {
+        const parsedStatus = JSON.parse(stored);
+        console.log('🔍 로컬 스토리지에서 불러온 상태:', parsedStatus);
+        return parsedStatus;
+      } catch (error) {
+        console.error('로컬 스토리지 파싱 오류:', error);
+      }
+    }
+    return { checkIn: false, checkOut: false };
+  };
+
+  // 로컬 스토리지에 체크 상태 저장하기
+  const saveCheckStatus = (status) => {
+    localStorage.setItem(
+      `checkStatus_${reservationId}`,
+      JSON.stringify(status)
+    );
+    console.log('🔍 로컬 스토리지에 상태 저장:', status);
+  };
+
+  // 체크 상태 업데이트 (로컬 스토리지와 함께)
+  const updateCheckStatus = (newStatus) => {
+    console.log('🔍 체크 상태 업데이트:', newStatus);
+    setCheckStatus(newStatus);
+    saveCheckStatus(newStatus);
+  };
 
   // 현재 위치 가져오기
   const getCurrentLocation = () => {
@@ -81,24 +112,68 @@ const ManagerServiceCheckIn = () => {
     try {
       setLoading(true);
       const response = await apiService.reservation.getById(reservationId);
-      console.log('reservation API 응답:', response.data.data);
+      console.log(
+        '🔍 reservation API 전체 응답:',
+        JSON.stringify(response.data, null, 2)
+      );
+      console.log('🔍 reservation.data.data:', response.data.data);
+      console.log(
+        '🔍 workLog 전체 구조:',
+        JSON.stringify(response.data.data.workLog, null, 2)
+      );
       setReservation(response.data.data);
 
+      // 로컬 스토리지에서 상태 확인
+      const storedStatus = getStoredCheckStatus();
+
       // 체크인/아웃 상태 설정
-      if (response.data.data.workLog) {
-        const newCheckStatus = {
-          checkIn: response.data.data.workLog.checkInTime !== null,
-          checkOut: response.data.data.workLog.checkOutTime !== null,
+      const reservationData = response.data.data;
+      let serverStatus = { checkIn: false, checkOut: false };
+
+      if (reservationData.workLog) {
+        const workLog = reservationData.workLog;
+        console.log('🔍 workLog 존재함:', workLog);
+        console.log('🔍 checkInTime:', workLog.checkInTime);
+        console.log('🔍 checkOutTime:', workLog.checkOutTime);
+
+        serverStatus = {
+          checkIn:
+            workLog.checkInTime !== null && workLog.checkInTime !== undefined,
+          checkOut:
+            workLog.checkOutTime !== null && workLog.checkOutTime !== undefined,
         };
-        console.log('체크 상태 업데이트:', newCheckStatus);
-        setCheckStatus(newCheckStatus);
+        console.log('🔍 서버에서 계산된 체크 상태:', serverStatus);
+      } else if (
+        reservationData.workLogs &&
+        Array.isArray(reservationData.workLogs) &&
+        reservationData.workLogs.length > 0
+      ) {
+        // workLogs 배열로 온 경우 처리
+        const workLog = reservationData.workLogs[0];
+        console.log('🔍 workLogs 배열에서 첫 번째 workLog:', workLog);
+
+        serverStatus = {
+          checkIn:
+            workLog.checkInTime !== null && workLog.checkInTime !== undefined,
+          checkOut:
+            workLog.checkOutTime !== null && workLog.checkOutTime !== undefined,
+        };
+        console.log('🔍 서버에서 계산된 체크 상태 (배열):', serverStatus);
       } else {
-        console.log('workLog가 없음 - 초기 상태 유지');
-        setCheckStatus({
-          checkIn: false,
-          checkOut: false,
-        });
+        console.log('🔍 workLog가 없음 - 서버 상태는 초기값');
       }
+
+      // 로컬 스토리지 상태와 서버 상태 중 더 진행된 상태를 사용
+      const finalStatus = {
+        checkIn: storedStatus.checkIn || serverStatus.checkIn,
+        checkOut: storedStatus.checkOut || serverStatus.checkOut,
+      };
+
+      console.log('🔍 최종 적용될 상태:', finalStatus);
+      console.log('🔍 로컬 스토리지 상태:', storedStatus);
+      console.log('🔍 서버 상태:', serverStatus);
+
+      updateCheckStatus(finalStatus);
     } catch (error) {
       console.error('예약 정보 로딩 실패:', error);
       alert('예약 정보를 불러오는데 실패했습니다.');
@@ -110,6 +185,11 @@ const ManagerServiceCheckIn = () => {
   useEffect(() => {
     getCurrentLocation();
     if (reservationId) {
+      // 초기 로드 시 로컬 스토리지에서 상태 복원
+      const storedStatus = getStoredCheckStatus();
+      if (storedStatus.checkIn || storedStatus.checkOut) {
+        setCheckStatus(storedStatus);
+      }
       fetchReservation();
     }
   }, [reservationId]);
@@ -186,16 +266,13 @@ const ManagerServiceCheckIn = () => {
 
       if (response.data?.data) {
         // 체크인 성공 시 상태 업데이트
-        setCheckStatus({
+        updateCheckStatus({
           checkIn: true,
           checkOut: false,
         });
 
         alert('체크인이 완료되었습니다.');
         toggleCheckInModal();
-
-        // 예약 정보 갱신
-        await fetchReservation();
       }
     } catch (error) {
       console.error('체크인 실패:', error);
@@ -204,7 +281,7 @@ const ManagerServiceCheckIn = () => {
 
       // 이미 체크인된 경우 상태 업데이트
       if (error.response?.data?.code === 'ALREADY_COMPLETED_WORKLOG') {
-        setCheckStatus({
+        updateCheckStatus({
           checkIn: true,
           checkOut: false,
         });
@@ -226,43 +303,27 @@ const ManagerServiceCheckIn = () => {
         throw new Error('위치 정보를 가져오는데 실패했습니다.');
       }
 
-      // 파일 업로드 필수 검증
-      if (!checkoutFile) {
-        alert('파일을 업로드해주세요.');
-        setLoading(false);
-        return;
-      }
+      // 위치 정보만 전송
+      const response = await apiService.workLog.checkOut(reservationId, {
+        lat: currentLocation.lat,
+        lng: currentLocation.lng,
+      });
 
-      // FormData 사용 (파일 업로드 필수이므로 항상 FormData 사용)
-      const finalData = new FormData();
-      finalData.append('lat', currentLocation.lat);
-      finalData.append('lng', currentLocation.lng);
-      finalData.append('memo', checkoutMemo);
-      finalData.append('file', checkoutFile);
-
-      console.log('체크아웃 요청 데이터:', finalData);
-      const response = await apiService.workLog.checkOut(
-        reservationId,
-        finalData
-      );
       console.log('체크아웃 결과 데이터', response.data);
 
-      // 체크아웃 성공 시 상태 업데이트
-      setCheckStatus((prev) => {
-        const newStatus = { ...prev, checkOut: true };
-        console.log('체크아웃 상태 업데이트:', newStatus);
-        return newStatus;
+      // 체크아웃 성공 시 즉시 상태 업데이트
+      updateCheckStatus({
+        checkIn: true, // 체크인은 이미 완료된 상태 유지
+        checkOut: true, // 체크아웃 완료
       });
 
       alert('체크아웃이 완료되었습니다.');
-
-      // 모달 상태 초기화
-      setCheckoutMemo('');
-      setCheckoutFile(null);
       toggleCheckOutModal();
 
-      // 예약 정보 다시 불러오기
-      await fetchReservation();
+      // 서버와 동기화를 위해 예약 정보 다시 불러오기
+      setTimeout(() => {
+        fetchReservation();
+      }, 500);
     } catch (error) {
       console.error('체크아웃 실패:', error);
       alert(error.response?.data?.message || '체크아웃에 실패했습니다.');
@@ -272,19 +333,21 @@ const ManagerServiceCheckIn = () => {
   };
 
   const cancelCheckIn = () => {
-    setShowCheckInModal(false); // ✅ false로 닫기
+    setShowCheckInModal(false);
   };
 
   const cancelCheckOut = () => {
+    // TODO: 메모와 파일 업로드 기능 구현 예정
     // 모달 닫을 때 입력 상태 초기화
-    setCheckoutMemo('');
-    setCheckoutFile(null);
-    setShowCheckOutModal(false); // ✅ false로 닫기
+    // setCheckoutMemo('');
+    // setCheckoutFile(null);
+    setShowCheckOutModal(false);
   };
 
-  const handleCheckoutFileChange = (e) => {
-    setCheckoutFile(e.target.files[0]);
-  };
+  // TODO: 메모와 파일 업로드 기능 구현 예정
+  // const handleCheckoutFileChange = (e) => {
+  //   setCheckoutFile(e.target.files[0]);
+  // };
 
   // 날짜 포맷 변환 함수
   const formatDateTime = (isoString) => {
@@ -424,9 +487,10 @@ const ManagerServiceCheckIn = () => {
               <div className="modal-overlay">
                 <div className="modal-content" style={{ maxWidth: '500px' }}>
                   <h3>체크아웃</h3>
-                  <p>서비스 완료 정보를 입력해주세요.</p>
+                  <p>체크아웃을 진행하시겠습니까?</p>
 
-                  <div style={{ marginBottom: '16px' }}>
+                  {/* TODO: 메모 작성 기능 구현 예정 */}
+                  {/* <div style={{ marginBottom: '16px' }}>
                     <label
                       style={{
                         display: 'block',
@@ -434,7 +498,7 @@ const ManagerServiceCheckIn = () => {
                         fontWeight: '500',
                       }}
                     >
-                      메모
+                      메모 (선택사항)
                     </label>
                     <textarea
                       placeholder="서비스 완료 메모를 입력하세요"
@@ -451,9 +515,10 @@ const ManagerServiceCheckIn = () => {
                         fontSize: '14px',
                       }}
                     />
-                  </div>
+                  </div> */}
 
-                  <div style={{ marginBottom: '24px' }}>
+                  {/* TODO: 파일 첨부 기능 구현 예정 */}
+                  {/* <div style={{ marginBottom: '24px' }}>
                     <label
                       style={{
                         display: 'block',
@@ -461,7 +526,7 @@ const ManagerServiceCheckIn = () => {
                         fontWeight: '500',
                       }}
                     >
-                      파일 첨부 <span style={{ color: '#f44336' }}>*</span>
+                      파일 첨부 (선택사항)
                     </label>
                     <input
                       type="file"
@@ -476,7 +541,7 @@ const ManagerServiceCheckIn = () => {
                         fontSize: '14px',
                       }}
                     />
-                    {checkoutFile ? (
+                    {checkoutFile && (
                       <div
                         style={{
                           marginTop: '8px',
@@ -486,18 +551,8 @@ const ManagerServiceCheckIn = () => {
                       >
                         ✓ 첨부된 파일: {checkoutFile.name}
                       </div>
-                    ) : (
-                      <div
-                        style={{
-                          marginTop: '8px',
-                          fontSize: '14px',
-                          color: '#f44336',
-                        }}
-                      >
-                        파일을 업로드해주세요 (필수)
-                      </div>
                     )}
-                  </div>
+                  </div> */}
 
                   <div className="modal-actions">
                     <button
@@ -510,9 +565,9 @@ const ManagerServiceCheckIn = () => {
                     <button
                       onClick={confirmCheckOut}
                       className="confirm-button"
-                      disabled={loading || !checkoutFile}
+                      disabled={loading}
                     >
-                      {loading ? '처리 중...' : '등록하기'}
+                      {loading ? '처리 중...' : '확인'}
                     </button>
                   </div>
                 </div>
