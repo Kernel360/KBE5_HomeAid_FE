@@ -6,6 +6,7 @@ import Footer from '../../../components/Footer.jsx';
 import useReservationStore from '../../../stores/reservationStore.js';
 import { usePaymentData } from '../../reservation/hooks/useLocalStorage.js';
 import { api } from '../../../api/config/api.js';
+import { useAuthStore } from '../../../stores/authStore.js';
 
 const UserPayment = () => {
   const navigate = useNavigate();
@@ -200,40 +201,119 @@ const UserPayment = () => {
 
   const handlePayment = async () => {
     try {
+      // 인증 상태 확인
+      const localStorageToken = localStorage.getItem('accessToken');
+      const authStoreToken = useAuthStore.getState().accessToken;
+      const currentUser = useAuthStore.getState().user;
+
+      console.log('🔐 인증 상태 확인:');
+      console.log(
+        '- localStorage token:',
+        localStorageToken ? '존재함' : '없음'
+      );
+      console.log('- authStore token:', authStoreToken ? '존재함' : '없음');
+      console.log('- 현재 사용자:', currentUser);
+
+      // 토큰이 없으면 로그인 페이지로 리다이렉트
+      if (!localStorageToken && !authStoreToken) {
+        alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+        navigate('/auth/signin');
+        return;
+      }
+
       // 결제 요청 데이터 준비
+      const reservationId = parseInt(
+        location.state?.reservation?.reservationId ||
+          reservationData.reservationId ||
+          location.state?.reservation?.id ||
+          paymentData.serviceInfo.reservationId
+      );
+
+      // 결제 수단 매핑 (프론트엔드 값 → 백엔드 enum 값)
+      const paymentMethodMapping = {
+        card: 'CARD',
+        bank: 'TRANSFER',
+        kakao: 'KAKAO',
+      };
+
       const paymentRequestData = {
-        reservationId: parseInt(
-          location.state?.reservation?.reservationId ||
-            reservationData.reservationId
-        ),
+        reservationId: reservationId,
         amount: parseInt(paymentData.totalAmount),
-        paymentMethod: selectedPaymentMethod.toUpperCase(),
+        paymentMethod:
+          paymentMethodMapping[selectedPaymentMethod] ||
+          selectedPaymentMethod.toUpperCase(),
       };
 
       console.log('📤 결제 요청:', paymentRequestData);
+      console.log('🔍 예약 상태 확인:', {
+        reservationId,
+        reservationFromDetail: location.state?.reservation,
+        reservationData: reservationData,
+        paymentData: paymentData.serviceInfo,
+      });
 
-      // 결제 API 호출
-      const response = await api.post('/my/payments', paymentRequestData);
+      // 결제 API 호출 (백엔드 엔드포인트에 맞춤)
+      const response = await api.post('/my/payments/', paymentRequestData);
 
       if (response.data?.data) {
         const paymentResult = response.data.data;
         console.log('✅ 결제 성공:', paymentResult);
 
-        // 결제 완료 페이지로 이동
-        navigate('/customer/payment/complete', {
+        // 결제 완료 정보를 localStorage에 저장 (다른 페이지에서 참조용)
+        const paymentCompletionInfo = {
+          reservationId: paymentResult.reservationId,
+          paymentId: paymentResult.id,
+          completedAt: new Date().toISOString(),
+          amount: paymentResult.amount,
+          paymentMethod: paymentResult.paymentMethod,
+        };
+        localStorage.setItem(
+          'recentPaymentCompletion',
+          JSON.stringify(paymentCompletionInfo)
+        );
+
+        // 결제 완료 페이지로 이동 (라우팅 경로에 맞춤)
+        navigate('/customer/payment-complete', {
           state: {
-            paymentId: paymentResult.id,
-            amount: paymentResult.amount,
-            paymentMethod: paymentResult.paymentMethod,
-            paidAt: paymentResult.paidAt,
+            paymentResult: {
+              id: paymentResult.id,
+              reservationId: paymentResult.reservationId,
+              amount: paymentResult.amount,
+              paymentMethod: paymentResult.paymentMethod,
+              status: paymentResult.status,
+              paidAt: paymentResult.paidAt,
+              customerName: paymentResult.customerName,
+            },
+            serviceInfo: paymentData.serviceInfo,
+            totalAmount: paymentData.totalAmount,
           },
         });
       }
     } catch (error) {
       console.error('❌ 결제 실패:', error);
+      console.error('❌ 에러 상세:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: error.config,
+      });
 
       let errorMessage = '결제 처리 중 오류가 발생했습니다.';
-      if (error.response?.data?.message) {
+
+      if (error.response?.status === 403) {
+        errorMessage = '결제 권한이 없습니다. 로그인 상태를 확인해주세요.';
+        // 403 에러의 경우 로그인 페이지로 리다이렉트
+        setTimeout(() => {
+          navigate('/auth/signin');
+        }, 2000);
+      } else if (error.response?.status === 401) {
+        errorMessage = '인증이 만료되었습니다. 다시 로그인해주세요.';
+        // 401 에러의 경우 로그인 페이지로 리다이렉트
+        setTimeout(() => {
+          navigate('/auth/signin');
+        }, 2000);
+      } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
 

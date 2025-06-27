@@ -5,7 +5,7 @@ import React, {
   useMemo,
   Suspense,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../components/Header.jsx';
 import Footer from '../../components/Footer.jsx';
 import useReservationListStore from '../../stores/reservationListStore.js';
@@ -23,6 +23,7 @@ const LoadingSpinner = () => (
 
 const UserReservationList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ⭐️ 인증 상태 확인
   const { user, accessToken } = useAuthStore();
@@ -77,6 +78,17 @@ const UserReservationList = () => {
       return false;
     }
   }, [loadReservations, getAllReservations, user, accessToken, navigate]);
+
+  // 결제 완료 후 데이터 새로고침 처리
+  useEffect(() => {
+    if (location.state?.paymentCompleted && location.state?.refreshData) {
+      console.log('🎉 결제 완료 후 예약 목록 새로고침');
+      refreshData();
+
+      // state 초기화하여 다음 방문 시 중복 새로고침 방지
+      navigate('/customer/reservations', { replace: true });
+    }
+  }, [location.state, refreshData, navigate]);
 
   // 예약 데이터 로드 - 최적화된 로직
   useEffect(() => {
