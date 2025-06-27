@@ -320,7 +320,7 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
       {/* Mobile Sidebar */}
       <aside
-        className={`lg:hidden fixed top-0 left-0 w-64 h-screen bg-white border-r border-gray-200 flex flex-col shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed top-0 left-0 w-64 h-screen bg-white border-r border-gray-200 flex flex-col shadow-lg z-[60] transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -440,7 +440,10 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
       {/* Logout Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-5 flex items-center justify-center z-[100]">
+        <div
+          className="fixed inset-0 flex items-center justify-center z-[100]"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+        >
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
               <svg
