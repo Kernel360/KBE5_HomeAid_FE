@@ -201,14 +201,16 @@
 }
 
 .status-badge {
+  display: inline-block;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
+  width: fit-content;
 }
 
 .status-badge.completed {
-  background-color: #e8f5e8;
+  background-color: transparent;
   color: #2e7d32;
 }
 
@@ -527,8 +529,15 @@
 }
 
 .detail-value.status-completed {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background-color: #e8f5e8;
   color: #2e7d32;
   font-weight: 600;
+  width: fit-content;
+  flex: none;
+  text-align: center;
 }
 
 .detail-value.status-matched {
