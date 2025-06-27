@@ -1,28 +1,30 @@
 import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
-const CreateInquiry = ({ onBack, onInquiryCreated }) => {
+const CreateInquiry = () => {
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const handleBack = () => {
+    navigate('/customer/mypage/inquiry');
+  };
+
   const handleSave = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await api.post('/boards', {
+      await api.post('/boards', {
         title,
         content,
       });
-      console.log('문의글 작성 성공:', response.data);
-      if (onInquiryCreated) {
-        onInquiryCreated();
-      }
+      navigate('/customer/mypage/inquiry');
     } catch (err) {
       setError('문의글 작성에 실패했습니다.');
       console.error('Failed to create inquiry:', err);
@@ -40,13 +42,9 @@ const CreateInquiry = ({ onBack, onInquiryCreated }) => {
         margin: '0 auto',
       }}
     >
-      <Header showBackButton={true} onBackClick={onBack} />
+      <Header showBackButton={true} onBackClick={handleBack} />
 
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900">문의글 작성</h2>
-        </div>
-
         <div className="space-y-6">
           <div>
             <label
@@ -95,17 +93,10 @@ const CreateInquiry = ({ onBack, onInquiryCreated }) => {
           <div className="flex justify-end mt-6">
             <button
               onClick={handleSave}
-              style={{
-                backgroundColor:
-                  loading || !title.trim() || !content.trim()
-                    ? '#9ca3af'
-                    : '#10b981',
-                color: 'white',
-              }}
-              className="px-6 py-2 rounded-lg text-sm font-medium hover:opacity-80 transition-colors disabled:cursor-not-allowed"
               disabled={loading || !title.trim() || !content.trim()}
+              className="px-6 py-2 bg-blue-600 text-black rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? '저장 중...' : '저장하기'}
+              {loading ? '등록 중...' : '등록하기'}
             </button>
           </div>
         </div>

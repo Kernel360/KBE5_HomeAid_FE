@@ -61,7 +61,7 @@ export default function MyPage() {
                   className="w-12 h-12 object-cover object-center rounded-full"
                 />
               ) : (
-                <User className="w-6 h-6 text-blue-600" />
+              <User className="w-6 h-6 text-blue-600" />
               )}
             </div>
             <div>
@@ -96,7 +96,7 @@ export default function MyPage() {
           </button>
 
           <button
-            onClick={() => navigate('/customer/review/history')}
+            onClick={() => setCurrentView('review')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
             <span className="text-gray-900">⭐ 작성한 리뷰 보기</span>
