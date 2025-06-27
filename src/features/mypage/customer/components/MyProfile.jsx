@@ -4,6 +4,7 @@ import { useAuthStore } from '../../../../stores/authStore';
 import { apiService } from '@/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
+import WithdrawalModal from './WithdrawalModal.jsx';
 
 const isImage = (url) => !!url;
 
@@ -40,6 +41,7 @@ const MyProfile = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
 
   // 백엔드에서 받은 전화번호에 하이픈 추가하는 함수
   const addHyphensToPhone = (phone) => {
@@ -63,7 +65,7 @@ const MyProfile = ({ onBack }) => {
           phone: addHyphensToPhone(data.phone) || '',
           profileImageUrl: data.profileImageUrl || '',
         });
-      } catch (e) {
+      } catch (_e) {
         setFormData({
           name: user?.name || user?.username || '',
           email: user?.email || '',
@@ -128,7 +130,10 @@ const MyProfile = ({ onBack }) => {
       // 업로드 후 프로필 정보 새로고침
       const res = await apiService.user.getMyProfile();
       const data = res.data?.data || res.data;
-      setFormData((prev) => ({ ...prev, profileImageUrl: data.profileImageUrl || '' }));
+      setFormData((prev) => ({
+        ...prev,
+        profileImageUrl: data.profileImageUrl || '',
+      }));
     } catch (err) {
       setError('프로필 이미지 업로드에 실패했습니다.');
     } finally {
@@ -146,7 +151,10 @@ const MyProfile = ({ onBack }) => {
       // 삭제 후 프로필 정보 새로고침
       const res = await apiService.user.getMyProfile();
       const data = res.data?.data || res.data;
-      setFormData((prev) => ({ ...prev, profileImageUrl: data.profileImageUrl || '' }));
+      setFormData((prev) => ({
+        ...prev,
+        profileImageUrl: data.profileImageUrl || '',
+      }));
     } catch (err) {
       setError('프로필 이미지 삭제에 실패했습니다.');
     } finally {
@@ -200,9 +208,35 @@ const MyProfile = ({ onBack }) => {
     }
   };
 
-  // 회원탈퇴 버튼 클릭 핸들러
+  // 회원탈퇴 모달 열기
   const handleWithdrawal = () => {
-    alert('관리자에게 문의 바랍니다.');
+    setShowWithdrawalModal(true);
+  };
+
+  // 회원탈퇴 확인 처리
+  const handleWithdrawalConfirm = async (reason) => {
+    try {
+      await apiService.user.requestWithdrawal({ reason });
+
+      // 탈퇴 신청 완료 후 로그아웃 처리
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+
+      alert('회원탈퇴 신청이 완료되었습니다. 관리자 검토 후 처리됩니다.');
+
+      // 로그인 페이지로 이동
+      window.location.href = '/auth/signin';
+    } catch (error) {
+      console.error('회원탈퇴 신청 실패:', error);
+
+      if (error.response?.status === 400) {
+        alert('이미 탈퇴 신청이 접수되었습니다.');
+      } else {
+        alert('회원탈퇴 신청에 실패했습니다. 다시 시도해주세요.');
+      }
+
+      setShowWithdrawalModal(false);
+    }
   };
 
   return (
@@ -236,7 +270,10 @@ const MyProfile = ({ onBack }) => {
             )}
           </div>
           <div className="flex flex-row gap-4 justify-center items-center mt-2">
-            <label htmlFor="profile-image-upload" className="text-blue-600 text-sm cursor-pointer">
+            <label
+              htmlFor="profile-image-upload"
+              className="text-blue-600 text-sm cursor-pointer"
+            >
               사진 업데이트
             </label>
             <input
@@ -361,6 +398,13 @@ const MyProfile = ({ onBack }) => {
       </main>
 
       <Footer current="/customer/mypage" />
+
+      {/* 회원탈퇴 모달 */}
+      <WithdrawalModal
+        isOpen={showWithdrawalModal}
+        onClose={() => setShowWithdrawalModal(false)}
+        onConfirm={handleWithdrawalConfirm}
+      />
     </div>
   );
 };

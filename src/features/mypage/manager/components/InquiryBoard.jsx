@@ -29,7 +29,11 @@ const InquiryBoard = ({ onBack, onNavigateToCreate, onNavigateToDetail }) => {
           sortDirection: 'desc',
         },
       });
-      setInquiries(response.data.data.content);
+      const content = response.data.data.content.map(item => ({
+        ...item,
+        isAnswered: item.isAnswered ?? item.answered ?? false,
+      }));
+      setInquiries(content);
       setTotalPages(response.data.data.totalPages);
     } catch (err) {
       setError('문의글을 불러오는 데 실패했습니다.');

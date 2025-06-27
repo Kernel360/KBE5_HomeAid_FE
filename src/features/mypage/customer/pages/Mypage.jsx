@@ -12,13 +12,9 @@ import InquiryBoard from '../components/InquiryBoard.jsx';
 import AddressRegister from '../components/AddressRegister.jsx';
 import CreateInquiry from '../components/CreateInquiry.jsx';
 import InquiryDetail from '../components/InquiryDetail.jsx';
-import CouponsView from '../components/CouponsView.jsx';
-import couponData from '../data/couponData.js';
-import pointsHistory from '../data/pointHistory.js';
-import PointsHistoryView from '../components/PointsHistoryView.jsx'
 
 export default function MyPage() {
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry', 'createInquiry', 'inquiryDetail', 'points', 'coupons'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry', 'createInquiry', 'inquiryDetail'
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -29,34 +25,12 @@ export default function MyPage() {
       try {
         const res = await apiService.user.getMyProfile();
         setUserProfile(res.data?.data || res.data);
-      } catch (e) {
+      } catch {
         setUserProfile(null);
       }
     }
     fetchProfile();
   }, []);
-
-  const handleNavigateToCreate = () => {
-    setCurrentView('createInquiry');
-  };
-
-  const handleNavigateToDetail = (id) => {
-    setSelectedInquiryId(id);
-    setCurrentView('inquiryDetail');
-  };
-
-  const handleInquiryCreated = () => {
-    setCurrentView('inquiry'); // Back to inquiry list after creation
-  };
-
-  const handleInquiryUpdated = () => {
-    setCurrentView('inquiry'); // Back to inquiry list after update
-  };
-
-  const handleInquiryDeleted = () => {
-    setCurrentView('inquiry'); // Back to inquiry list after deletion
-  };
-
 
   const MainView = () => (
     <div
@@ -87,61 +61,18 @@ export default function MyPage() {
                   className="w-12 h-12 object-cover object-center rounded-full"
                 />
               ) : (
-                <User className="w-6 h-6 text-blue-600" />
+              <User className="w-6 h-6 text-blue-600" />
               )}
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">
-              👋 {userProfile?.name || user?.name || user?.username || '사용자'}님, 환영합니다!
-              <div className="text-gray-500 text-sm leading-tight mt-0">
-                필요한 서비스를 한눈에 확인하세요.
-              </div>
+                👋{' '}
+                {userProfile?.name || user?.name || user?.username || '사용자'}
+                님, 환영합니다!
+                <div className="text-gray-500 text-sm leading-tight mt-0">
+                  필요한 서비스를 한눈에 확인하세요.
+                </div>
               </h3>
-            </div>
-          </div>
-        </div>
-
-        {/* 포인트 & 쿠폰 섹션 */}
-        <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
-          <div className="grid grid-cols-2 gap-4">
-            {/* 포인트 */}
-            <div className="text-center">
-              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-xl">💰</span>
-              </div>
-              <p className="text-sm text-gray-500 mb-1">보유 포인트</p>
-              {/* TODO: 하드코딩된 포인트 값 - API에서 실제 포인트 조회 필요 */}
-              {/* API: GET /api/customer/points/balance */}
-              <p className="text-lg font-bold text-orange-600">1,250P</p>
-            </div>
-
-            {/* 쿠폰 */}
-            <div className="text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-xl">🎫</span>
-              </div>
-              <p className="text-sm text-gray-500 mb-1">보유 쿠폰</p>
-              {/* TODO: 하드코딩된 쿠폰 개수 - API에서 실제 사용가능 쿠폰 개수 조회 필요 */}
-              {/* API: GET /api/customer/coupons/count */}
-              <p className="text-lg font-bold text-green-600">3장</p>
-            </div>
-          </div>
-
-          {/* 포인트/쿠폰 관리 버튼 */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setCurrentView('points')}
-                className="py-2 px-4 bg-orange-50 text-orange-600 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors"
-              >
-                포인트 내역
-              </button>
-              <button
-                onClick={() => setCurrentView('coupons')}
-                className="py-2 px-4 bg-green-50 text-green-600 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors"
-              >
-                쿠폰함
-              </button>
             </div>
           </div>
         </div>
@@ -165,7 +96,7 @@ export default function MyPage() {
           </button>
 
           <button
-            onClick={() => navigate('/customer/review/history')}
+            onClick={() => setCurrentView('review')}
             className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
             <span className="text-gray-900">⭐ 작성한 리뷰 보기</span>
@@ -191,12 +122,16 @@ export default function MyPage() {
     </div>
   );
 
-
-
   // 조건부 렌더링
   switch (currentView) {
     case 'profile':
-      return <MyProfile onBack={() => setCurrentView('main')} userProfile={userProfile} setUserProfile={setUserProfile} />;
+      return (
+        <MyProfile
+          onBack={() => setCurrentView('main')}
+          userProfile={userProfile}
+          setUserProfile={setUserProfile}
+        />
+      );
     case 'address':
       return (
         <MyAddress
@@ -214,7 +149,10 @@ export default function MyPage() {
         <InquiryBoard
           onBack={() => setCurrentView('main')}
           onNavigateToCreate={() => setCurrentView('createInquiry')}
-          onNavigateToDetail={(id) => { setSelectedInquiryId(id); setCurrentView('inquiryDetail'); }}
+          onNavigateToDetail={(id) => {
+            setSelectedInquiryId(id);
+            setCurrentView('inquiryDetail');
+          }}
         />
       );
     case 'createInquiry':
@@ -233,10 +171,6 @@ export default function MyPage() {
           onInquiryUpdated={() => setCurrentView('inquiry')}
         />
       );
-    case 'points':
-      return <PointsHistoryView onBack={() => setCurrentView('main')} point={pointsHistory} />;
-    case 'coupons':
-      return <CouponsView onBack={() => setCurrentView('main')} coupons={couponData} />;
     default:
       return <MainView />;
   }

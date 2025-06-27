@@ -202,28 +202,7 @@ const AdminLoginPage = () => {
           </form>
 
           {/* Footer */}
-          <div className="mt-8 text-center space-x-4">
-            <button
-              onClick={() => navigate('/system-guide')}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
-              시스템 문의
-            </button>
-            <span className="text-gray-300">|</span>
-            <button
-              onClick={() => navigate('/guide')}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
-              기술 지원
-            </button>
-            <span className="text-gray-300">|</span>
-            <button
-              onClick={() => navigate('/help')}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
-              도움말
-            </button>
-          </div>
+
           <p className="mt-4 text-sm text-gray-400 text-center">
             © 2025 HomeAid Admin Panel. All rights reserved.
           </p>

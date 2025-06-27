@@ -31,7 +31,8 @@ const AdminLayout = () => {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="lg:hidden fixed inset-0 z-[55]"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

@@ -5,7 +5,7 @@ import api from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
-const CreateInquiry = () => {
+const CreateInquiry = ({ onInquiryCreated }) => {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -25,7 +25,9 @@ const CreateInquiry = () => {
         title,
         content,
       });
-      navigate('/manager/mypage/inquiry');
+      if (onInquiryCreated) {
+        onInquiryCreated();
+      }
     } catch (err) {
       setError('문의글 작성에 실패했습니다.');
       console.error('Failed to create inquiry:', err);
@@ -81,7 +83,7 @@ const CreateInquiry = () => {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required
-              style={{ minHeight: '300px' }}
+              style={{ height: '300px' }}
             ></textarea>
           </div>
 
@@ -97,7 +99,7 @@ const CreateInquiry = () => {
               disabled={loading || !title.trim() || !content.trim()}
               className="px-6 py-2 bg-blue-600 text-black rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? '저장 중...' : '저장하기'}
+              {loading ? '저장 중...' : '등록하기'}
             </button>
           </div>
         </div>

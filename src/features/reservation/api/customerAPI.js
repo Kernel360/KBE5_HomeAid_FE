@@ -1,4 +1,4 @@
-import { api } from '../../../api/config/api.js'
+import { api } from '../../../api/config/api.js';
 /* eslint-env node */
 // Base API URL - 환경변수 사용
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -250,7 +250,9 @@ export const deleteCustomerAddress = async (addressId) => {
 
 // 고객의 예약 목록 조회 (페이징)
 export const getCustomerReservations = async (page = 0, size = 10) => {
-  const response = await api.get(`/reservations/customer?page=${page}&size=${size}`);
+  const response = await api.get(
+    `/reservations/customer?page=${page}&size=${size}`
+  );
   return response.data;
 };
 
@@ -258,19 +260,27 @@ export const getCustomerReservations = async (page = 0, size = 10) => {
 export const assignManagerToReservation = async (reservationId, managerId) => {
   // 방법 1: 매니저 할당 전용 엔드포인트
   try {
-    const response = await api.post(`/reservations/${reservationId}/assign-manager`, { managerId });
+    const response = await api.post(
+      `/reservations/${reservationId}/assign-manager`,
+      { managerId }
+    );
     return response.data;
   } catch {
     // 방법 2: 예약 상태 업데이트와 함께 매니저 할당
     try {
-      const response = await api.patch(`/reservations/${reservationId}/status`, {
-        status: 'CONFIRMED',
-        managerId: managerId,
-      });
+      const response = await api.patch(
+        `/reservations/${reservationId}/status`,
+        {
+          status: 'CONFIRMED',
+          managerId: managerId,
+        }
+      );
       return response.data;
     } catch {
       // 방법 3: 간단한 매니저 할당
-      const response = await api.post(`/managers/${managerId}/assign`, { reservationId });
+      const response = await api.post(`/managers/${managerId}/assign`, {
+        reservationId,
+      });
       return response.data;
     }
   }
@@ -335,7 +345,6 @@ export const createCustomerReservation = async (reservationData) => {
     if (!springBootData.requestedTime) {
       throw new Error('예약 시간이 필요합니다.');
     }
- 
 
     // 위치 정보 검증 (위도/경도 또는 주소 중 하나는 있어야 함)
     const hasCoordinates = springBootData.latitude && springBootData.longitude;
@@ -501,8 +510,7 @@ export const customerAPI = {
     api.post(`/reservations/${reservationId}/matching`),
 
   // 결제 처리
-  processPayment: (paymentData) =>
-    api.post('/payments', paymentData),
+  processPayment: (paymentData) => api.post('/payments', paymentData),
 
   // 결제 상태 확인
   getPaymentStatus: (paymentId) => api.get(`/payments/${paymentId}`),

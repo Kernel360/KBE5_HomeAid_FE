@@ -421,7 +421,10 @@ const ReviewManagement = () => {
       '작성된 리뷰 내용이 없습니다.';
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div
+        className="fixed inset-0 flex items-center justify-center z-50 p-4"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+      >
         <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div className="p-6">
             {/* 모달 헤더 */}

@@ -6,6 +6,18 @@ import Header from '../../../components/Header.jsx';
 import { apiService } from '@/api';
 import reservationStore from '../store/reservationStore.js';
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  // YYYY-MM-DD → YYYY.MM.DD
+  return dateStr.replace(/-/g, '.');
+};
+
+const formatTime = (timeStr) => {
+  if (!timeStr) return '-';
+  // HH:mm → HH:mm
+  return timeStr;
+};
+
 const ManagerMatchingRequest = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -111,18 +123,14 @@ const ManagerMatchingRequest = () => {
   };
 
   // 상태 표시 텍스트 변환
-  const getStatusText = (status) => {
+  const getStatusKorean = (status) => {
     switch (status) {
-      case 'REQUESTED':
-        return '매니저 응답 대기';
-      case 'ACCEPTED':
-        return '고객 응답 대기';
-      case 'CONFIRMED':
-        return '매칭 완료';
-      case 'REJECTED':
-        return '매칭 거절';
-      default:
-        return '알 수 없음';
+      case 'REQUESTED': return '매니저 응답 대기';
+      case 'ACCEPTED': return '고객 응답 대기';
+      case 'CONFIRMED': return '매칭 완료';
+      case 'REJECTED': return '매칭 거절';
+      case 'WAITING': return '고객 대기';
+      default: return status || '-';
     }
   };
 
@@ -138,19 +146,8 @@ const ManagerMatchingRequest = () => {
             <div className="status-item">
               <span className="status-label">현재 상태</span>
               <span className={`status-badge ${matching.status?.toLowerCase()}`}>
-                {getStatusText(matching.status)}
+                {getStatusKorean(matching.status)}
               </span>
-            </div>
-          </div>
-
-          {/* 고객 정보 */}
-          <div className="section">
-            <h2 className="section-title">고객 정보</h2>
-            <div className="info-card">
-              <div className="info-item">
-                <span className="label">고객명</span>
-                <span className="value">{matching.customerName}</span>
-              </div>
             </div>
           </div>
 
@@ -158,32 +155,67 @@ const ManagerMatchingRequest = () => {
           <div className="section">
             <h2 className="section-title">서비스 정보</h2>
             <div className="info-card">
-              <div className="info-item">
-                <span className="label">서비스 유형</span>
-                <span className="value">{matching.serviceType}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">날짜</span>
-                <span className="value">{matching.reservedDate}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">시간</span>
-                <span className="value">{matching.reservedTime}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">예상 소요시간</span>
-                <span className="value">
-                  {matching.estimatedDuration}시간
-                </span>
-              </div>
-              <div className="info-item">
-                <span className="label">위치</span>
-                <span className="value">{matching.address} {matching.addressDetail}</span>
-              </div>
-              <div className="info-item">
-                <span className="label">요청사항</span>
-                <span className="value">{matching.customerRequest}</span>
-              </div>
+              {/* null이 아닌 값만 렌더링 */}
+              {matching.serviceType && (
+                <div className="info-item">
+                  <span className="label">서비스 유형</span>
+                  <span className="value">{matching.serviceType}</span>
+                </div>
+              )}
+              {matching.reservedDate && (
+                <div className="info-item">
+                  <span className="label">예약 날짜</span>
+                  <span className="value">{formatDate(matching.reservedDate)}</span>
+                </div>
+              )}
+              {matching.reservedTime && (
+                <div className="info-item">
+                  <span className="label">예약 시간</span>
+                  <span className="value">{formatTime(matching.reservedTime)}</span>
+                </div>
+              )}
+              {matching.estimatedDuration && (
+                <div className="info-item">
+                  <span className="label">예상 소요시간</span>
+                  <span className="value">{`${matching.estimatedDuration}시간`}</span>
+                </div>
+              )}
+              {matching.latitude !== null && matching.longitude !== null && (
+                <div className="info-item">
+                  <span className="label">위치</span>
+                  <span className="value">{`${matching.latitude}, ${matching.longitude}`}</span>
+                </div>
+              )}
+              {matching.fullAddress && (
+                <div className="info-item">
+                  <span className="label">주소</span>
+                  <span className="value">{matching.fullAddress}</span>
+                </div>
+              )}
+              {matching.customerRequest && (
+                <div className="info-item">
+                  <span className="label">고객 요청사항</span>
+                  <span className="value">{matching.customerRequest}</span>
+                </div>
+              )}
+              {matching.managerStatus && (
+                <div className="info-item">
+                  <span className="label">매니저 상태</span>
+                  <span className="value">{getStatusKorean(matching.managerStatus)}</span>
+                </div>
+              )}
+              {matching.customerStatus && (
+                <div className="info-item">
+                  <span className="label">고객 상태</span>
+                  <span className="value">{getStatusKorean(matching.customerStatus)}</span>
+                </div>
+              )}
+              {matching.reservationId && (
+                <div className="info-item">
+                  <span className="label">예약 ID</span>
+                  <span className="value">{matching.reservationId}</span>
+                </div>
+              )}
             </div>
           </div>
 

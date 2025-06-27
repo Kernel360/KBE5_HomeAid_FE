@@ -7,7 +7,7 @@ import { useAddressStore } from '../../../../stores/addressStore';
 
 const KAKAO_MAP_KEY = import.meta.env.KAKAO_MAP_KEY;
 
-const AddressRegister = () => {
+const AddressRegister = ({ onBack }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { addAddress, isLoading, error, clearError } = useAddressStore();
@@ -19,7 +19,7 @@ const AddressRegister = () => {
     address: '',
     addressDetail: '',
     latitude: 37.5665, // 기본값
-    longitude: 126.9780, // 기본값
+    longitude: 126.978, // 기본값
   });
   const [showMap, setShowMap] = useState(false);
   const mapRef = useRef(null);
@@ -37,7 +37,8 @@ const AddressRegister = () => {
     }
     if (!window.daum?.Postcode) {
       const script2 = document.createElement('script');
-      script2.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+      script2.src =
+        '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
       script2.async = true;
       document.body.appendChild(script2);
     }
@@ -89,13 +90,19 @@ const AddressRegister = () => {
   }, [showMap, formData.latitude, formData.longitude]);
 
   const handleBack = () => {
-    navigate(returnPath);
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(returnPath);
+    }
   };
 
   // 카카오 주소 검색 모달 오픈
   const handleAddressSearch = () => {
     if (!window.daum?.Postcode) {
-      alert('카카오 주소 검색 스크립트가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
+      alert(
+        '카카오 주소 검색 스크립트가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.'
+      );
       return;
     }
     new window.daum.Postcode({
@@ -132,7 +139,11 @@ const AddressRegister = () => {
     try {
       await addAddress(formData);
       alert('주소가 성공적으로 등록되었습니다.');
-      navigate(returnPath);
+      if (onBack) {
+        onBack();
+      } else {
+        navigate(returnPath);
+      }
     } catch (error) {
       console.error('주소 등록 실패:', error);
     }
@@ -156,14 +167,21 @@ const AddressRegister = () => {
 
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">주소 상세등록</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            주소 상세등록
+          </h2>
 
           {/* 지도 표시 */}
           {showMap && (
             <div className="mb-6">
               <div
                 ref={mapContainerRef}
-                style={{ width: '100%', height: '300px', borderRadius: '1rem', overflow: 'hidden' }}
+                style={{
+                  width: '100%',
+                  height: '300px',
+                  borderRadius: '1rem',
+                  overflow: 'hidden',
+                }}
                 className="shadow border border-gray-200 dark:border-gray-700"
               ></div>
             </div>
@@ -171,7 +189,9 @@ const AddressRegister = () => {
 
           {/* 주소 검색 및 입력 */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <h3 className="font-medium text-gray-900 dark:text-white mb-4">새 주소 등록</h3>
+            <h3 className="font-medium text-gray-900 dark:text-white mb-4">
+              새 주소 등록
+            </h3>
 
             <div className="space-y-4">
               <div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ManagerDetailModal from '../components/ManagerDetailModal';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -39,14 +40,13 @@ const ManagerList = () => {
   const [activeTab, setActiveTab] = useState('전체');
   const [pagination, setPagination] = useState({
     page: 0,
-    size: 20, // 성능 최적화를 위해 증가
+    size: 20,
     totalElements: 0,
     totalPages: 0,
   });
   const [statusCounts, setStatusCounts] = useState({
     total: 0,
     pending: 0,
-    review: 0,
     active: 0,
     rejected: 0,
   });
@@ -58,6 +58,11 @@ const ManagerList = () => {
   // 체크박스 선택 상태
   const [selectedManagers, setSelectedManagers] = useState([]);
   const [isAllSelected, setIsAllSelected] = useState(false);
+
+  // 매니저 상세 모달 관련 상태
+  const [selectedManager, setSelectedManager] = useState(null);
+  const [managerDocuments, setManagerDocuments] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // 디바운스된 검색 - 성능 최적화
   useEffect(() => {
@@ -112,7 +117,6 @@ const ManagerList = () => {
     const statusMap = {
       전체: null,
       승인대기: 'PENDING',
-      검토중: 'REVIEW',
       승인완료: 'ACTIVE',
       반려: 'REJECTED',
     };
@@ -123,7 +127,6 @@ const ManagerList = () => {
   const getStatusText = (status) => {
     const statusMap = {
       PENDING: '승인대기',
-      REVIEW: '검토중',
       ACTIVE: '승인완료',
       REJECTED: '반려',
     };
@@ -134,7 +137,6 @@ const ManagerList = () => {
   const getStatusColor = (status) => {
     const colorMap = {
       PENDING: 'bg-yellow-100 text-yellow-800',
-      REVIEW: 'bg-blue-100 text-blue-800',
       ACTIVE: 'bg-green-100 text-green-800',
       REJECTED: 'bg-red-100 text-red-800',
     };
@@ -204,13 +206,16 @@ const ManagerList = () => {
       console.log('Filter status:', filterStatus, '-> API status:', apiStatus);
       console.log('Search params:', searchData);
 
-      const response = await fetch(`${API_URL}/api/v1/admin/managers?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/managers?${params}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -252,14 +257,16 @@ const ManagerList = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      // 전체 데이터를 가져와서 상태별 카운트 계산
-      const response = await fetch(`${API_URL}/api/v1/admin/managers?page=0&size=1000`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/managers?page=0&size=1000`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -268,7 +275,6 @@ const ManagerList = () => {
           const counts = {
             total: allManagers.length,
             pending: allManagers.filter((m) => m.status === 'PENDING').length,
-            review: allManagers.filter((m) => m.status === 'REVIEW').length,
             active: allManagers.filter((m) => m.status === 'ACTIVE').length,
             rejected: allManagers.filter((m) => m.status === 'REJECTED').length,
           };
@@ -328,45 +334,6 @@ const ManagerList = () => {
         }
       : null;
     fetchManagers(newPage, activeTab, searchData);
-  };
-
-  // 매니저 상태 변경
-  const updateManagerStatus = async (managerId, newStatus) => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
-      }
-
-      const response = await fetch(
-        `${API_URL}/api/v1/admin/managers/${managerId}/status`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // 성공 시 데이터 새로고침 - 현재 검색 상태 유지
-      const searchData = searchTerm.trim()
-        ? {
-            query: searchTerm.trim(),
-            scope: searchType,
-          }
-        : null;
-      fetchManagers(pagination.page, activeTab, searchData);
-      fetchStatusCounts(); // 상태 카운트도 업데이트
-    } catch (err) {
-      console.error('Status update error:', err);
-      setError('상태 변경에 실패했습니다.');
-    }
   };
 
   // 검색 실행 함수
@@ -454,10 +421,94 @@ const ManagerList = () => {
     }
   }, [managers, selectedManagers.length]);
 
+  // 매니저 상세 정보 조회
+  const fetchManagerDetails = async (managerId) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('로그인이 필요합니다.');
+        return;
+      }
+
+      // 매니저 기본 정보 조회
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/managers/${managerId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('매니저 정보를 불러오는데 실패했습니다.');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setSelectedManager(data.data);
+        setShowDetailModal(true);
+
+        // 매니저 서류 정보 조회
+        try {
+          const docsResponse = await fetch(
+            `${API_URL}/api/v1/admin/managers/${managerId}/documents`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (docsResponse.ok) {
+            const docsData = await docsResponse.json();
+            if (docsData.success && docsData.data) {
+              setManagerDocuments(docsData.data);
+            }
+          } else {
+            console.warn('서류 정보를 불러오는데 실패했습니다.');
+            setManagerDocuments(null);
+          }
+        } catch (docsError) {
+          console.error('서류 정보 조회 실패:', docsError);
+          setManagerDocuments(null);
+        }
+      }
+    } catch (error) {
+      console.error('매니저 상세 정보 조회 실패:', error);
+      setError(error.message || '매니저 정보를 불러오는데 실패했습니다.');
+    }
+  };
+
+  // 상태 업데이트 후 데이터 새로고침
+  const handleStatusUpdate = () => {
+    // 현재 탭의 매니저 목록 새로고침
+    const searchData = searchTerm.trim()
+      ? {
+          query: searchTerm.trim(),
+          scope: searchType,
+        }
+      : null;
+
+    fetchManagers(pagination.page, activeTab, searchData);
+    fetchStatusCounts();
+  };
+
+  // 모달 닫기
+  const handleCloseModal = () => {
+    setShowDetailModal(false);
+    setSelectedManager(null);
+    setManagerDocuments(null);
+  };
+
   const tabs = [
     { key: '전체', label: `전체 (${statusCounts.total})` },
     { key: '승인대기', label: `승인대기 (${statusCounts.pending})` },
-    { key: '검토중', label: `검토중 (${statusCounts.review})` },
     { key: '승인완료', label: `승인완료 (${statusCounts.active})` },
     { key: '반려', label: `반려 (${statusCounts.rejected})` },
   ];
@@ -481,25 +532,6 @@ const ManagerList = () => {
         </svg>
       ),
       iconBg: 'bg-yellow-100',
-    },
-    {
-      title: '검토 중',
-      value: statusCounts.review.toString(),
-      subValue: '서류 검토',
-      icon: (
-        <svg
-          className="w-5 h-5 text-blue-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-      iconBg: 'bg-blue-100',
     },
     {
       title: '승인 완료',
@@ -745,7 +777,6 @@ const ManagerList = () => {
                         </tr>
                       ))
                     ) : managers.length === 0 ? (
-                      // 데이터 없음
                       <tr>
                         <td colSpan="7" className="px-4 py-12 text-center">
                           <div className="flex flex-col items-center">
@@ -773,7 +804,6 @@ const ManagerList = () => {
                         </td>
                       </tr>
                     ) : (
-                      // 실제 데이터
                       filteredManagers.map((manager, index) => (
                         <tr
                           key={manager.id || index}
@@ -815,9 +845,7 @@ const ManagerList = () => {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                             <button
-                              onClick={() =>
-                                updateManagerStatus(manager.id, 'ACTIVE')
-                              }
+                              onClick={() => fetchManagerDetails(manager.id)}
                               className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                             >
                               상세보기
@@ -872,6 +900,16 @@ const ManagerList = () => {
           </div>
         </div>
       </div>
+
+      {/* Manager Detail Modal */}
+      {showDetailModal && (
+        <ManagerDetailModal
+          manager={selectedManager}
+          documents={managerDocuments}
+          onStatusUpdate={handleStatusUpdate}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 };

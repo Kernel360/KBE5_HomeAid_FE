@@ -147,6 +147,7 @@ const CustomerList = () => {
       setError(null);
 
       const token = localStorage.getItem('accessToken');
+      console.log('Current token:', token);
       if (!token) {
         throw new Error('인증 토큰이 없습니다.');
       }
