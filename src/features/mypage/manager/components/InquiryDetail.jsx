@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
+import Modal from '../../../../components/Modal.jsx';
 
 const InquiryDetail = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const InquiryDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
+  const [modal, setModal] = useState({ open: false, type: '', message: '', onConfirm: null });
 
   useEffect(() => {
     const fetchInquiry = async () => {
@@ -64,20 +66,28 @@ const InquiryDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('정말로 이 문의글을 삭제하시겠습니까?')) {
-      setLoading(true);
-      setError(null);
-      try {
-        await api.delete(`/boards/${id}`);
-        alert('문의글이 삭제되었습니다.');
-        navigate('/manager/mypage/inquiry');
-      } catch (err) {
-        setError('문의글 삭제에 실패했습니다.');
-        console.error('Failed to delete inquiry:', err);
-      } finally {
-        setLoading(false);
+    setModal({
+      open: true,
+      type: 'confirm',
+      message: '정말로 이 문의글을 삭제하시겠습니까?',
+      onConfirm: async () => {
+        setModal({ ...modal, open: false });
+        setLoading(true);
+        setError(null);
+        try {
+          await api.delete(`/boards/${id}`);
+          setModal({ open: true, type: 'alert', message: '문의글이 삭제되었습니다.', onConfirm: () => {
+            setModal({ ...modal, open: false });
+            navigate('/manager/mypage/inquiry');
+          }});
+        } catch (err) {
+          setError('문의글 삭제에 실패했습니다.');
+          console.error('Failed to delete inquiry:', err);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
+    });
   };
 
   if (loading) {
@@ -131,6 +141,9 @@ const InquiryDetail = () => {
       </div>
     );
   }
+
+  // 답변 완료 보정
+  const isAnswered = inquiry.isAnswered || !!inquiry.reply;
 
   return (
     <div
@@ -213,12 +226,12 @@ const InquiryDetail = () => {
                 </span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    inquiry.isAnswered
+                    isAnswered
                       ? 'bg-green-100 text-green-700'
                       : 'bg-amber-100 text-amber-700'
                   }`}
                 >
-                  {inquiry.isAnswered ? '답변 완료' : '답변 대기'}
+                  {isAnswered ? '답변 완료' : '답변 대기'}
                 </span>
               </div>
               <div
@@ -227,15 +240,33 @@ const InquiryDetail = () => {
               >
                 {inquiry.content}
               </div>
+
+              {/* 답변 영역 */}
+              <div className="mt-8">
+                <h4 className="font-semibold text-gray-800 mb-2">관리자 답변</h4>
+                {inquiry.reply ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="text-gray-900 mb-2">{inquiry.reply.content}</div>
+                    <div className="text-xs text-gray-500 flex justify-between">
+                      <span>답변자: {inquiry.reply.adminName || '관리자'}</span>
+                      <span>{new Date(inquiry.reply.createdAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-400">아직 답변이 등록되지 않았습니다.</div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center justify-end space-x-4 mt-6">
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-6 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors shadow-sm"
-              >
-                수정하기
-              </button>
+              {!isAnswered && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-6 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-200 transition-colors shadow-sm"
+                >
+                  수정하기
+                </button>
+              )}
               <button
                 onClick={handleDelete}
                 className="px-6 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors shadow-sm"
@@ -248,6 +279,16 @@ const InquiryDetail = () => {
       </main>
 
       <Footer current="/manager/mypage" />
+      <Modal
+        open={modal.open}
+        title={modal.type === 'confirm' ? '확인' : '알림'}
+        message={modal.message}
+        onClose={() => setModal({ ...modal, open: false })}
+        onConfirm={modal.onConfirm}
+        showCancel={modal.type === 'confirm'}
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 };
