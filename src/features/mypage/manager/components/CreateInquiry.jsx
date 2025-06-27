@@ -5,7 +5,7 @@ import api from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
-const CreateInquiry = ({ onBack, onInquiryCreated }) => {
+const CreateInquiry = ({ onInquiryCreated }) => {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -83,7 +83,7 @@ const CreateInquiry = ({ onBack, onInquiryCreated }) => {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required
-              style={{ minHeight: '300px' }}
+              style={{ height: '300px' }}
             ></textarea>
           </div>
 

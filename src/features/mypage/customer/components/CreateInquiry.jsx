@@ -80,7 +80,7 @@ const CreateInquiry = () => {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required
-              style={{ minHeight: '300px' }}
+              style={{ height: '300px' }}
             ></textarea>
           </div>
 

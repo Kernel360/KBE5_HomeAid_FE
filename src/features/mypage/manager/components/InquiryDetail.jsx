@@ -241,7 +241,7 @@ const InquiryDetail = () => {
               </div>
               <div
                 className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap"
-                style={{ lineHeight: '1.8' }}
+                style={{ lineHeight: '1.8', height: '250px', overflow: 'auto' }}
               >
                 {inquiry.content}
               </div>
@@ -300,7 +300,7 @@ const InquiryDetail = () => {
               )}
               <button
                 onClick={handleDelete}
-                className="px-6 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors shadow-sm"
+                className="px-6 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors shadow-sm"
               >
                 삭제하기
               </button>

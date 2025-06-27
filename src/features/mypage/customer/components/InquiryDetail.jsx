@@ -170,11 +170,11 @@ const InquiryDetail = () => {
 
       <main className="px-6 py-6" style={{ paddingTop: '80px' }}>
         {/* 페이지 제목 */}
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h2 className="text-xl font-bold text-gray-900">
             {isEditing ? '문의글 수정' : '문의글 상세'}
           </h2>
-        </div>
+        </div> */}
 
         {isEditing ? (
           <div className="space-y-6">
@@ -257,7 +257,7 @@ const InquiryDetail = () => {
               </div>
               <div
                 className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap"
-                style={{ lineHeight: '1.8' }}
+                style={{ lineHeight: '1.8', height: '250px', overflow: 'auto' }}
               >
                 {inquiry.content}
               </div>
@@ -316,7 +316,7 @@ const InquiryDetail = () => {
               )}
               <button
                 onClick={handleDelete}
-                className="px-6 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-semibold hover:bg-red-200 transition-colors shadow-sm"
+                className="px-6 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors shadow-sm"
               >
                 삭제하기
               </button>
