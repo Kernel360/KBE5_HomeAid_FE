@@ -235,37 +235,48 @@ const Inquiries = () => {
   const fetchInquiryWithReply = async (inquiryId) => {
     try {
       const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
+      }
 
-      // 문의글 상세 정보 조회 (백엔드 UserBoardResponseDto 구조)
-      const inquiryResponse = await api.get(`/boards/${inquiryId}`, {
+      const response = await api.get(`/admin/inquiries/board/${inquiryId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const inquiry = inquiryResponse.data.data;
+      if (response.data?.success) {
+        const inquiryData = response.data.data;
+        // 개발 환경에서 원본 데이터 로깅
+        if (import.meta.env.DEV) {
+          console.log('Raw inquiry detail:', inquiryData);
+        }
 
-      // 백엔드에서 이미 답변 정보를 포함해서 반환하는 경우
-      if (inquiry.reply) {
-        return {
-          ...inquiry,
-          isAnswered: true,
-          reply: {
-            id: inquiry.reply.replyId,
-            content: inquiry.reply.content,
-            adminName: '관리자',
-            createdAt: inquiry.reply.createdAt,
-          },
+        const hasReply =
+          inquiryData.replyContent != null || inquiryData.replyId != null;
+        const processedInquiry = {
+          ...inquiryData,
+          isAnswered: hasReply,
+          reply: hasReply
+            ? {
+                id: inquiryData.replyId,
+                content: inquiryData.replyContent,
+                createdAt: inquiryData.replyCreatedAt,
+                adminName: '관리자',
+              }
+            : null,
         };
-      }
 
-      return {
-        ...inquiry,
-        isAnswered: false,
-        reply: null,
-      };
+        // 개발 환경에서 처리된 데이터 로깅
+        if (import.meta.env.DEV) {
+          console.log('Processed inquiry detail:', processedInquiry);
+        }
+
+        return processedInquiry;
+      }
+      throw new Error('문의글 상세 정보를 불러올 수 없습니다.');
     } catch (err) {
-      console.error('문의글 상세 조회 실패:', err);
+      console.error('문의글 상세 조회 오류:', err);
       throw err;
     }
   };
@@ -342,15 +353,33 @@ const Inquiries = () => {
         const totalPages = response.data.data.totalPages || 0;
         const totalElements = response.data.data.totalElements || 0;
 
+        // 개발 환경에서 원본 데이터 로깅
+        if (import.meta.env.DEV) {
+          console.log('Raw inquiries data:', inquiriesData);
+        }
+
         // 서버에서 받아온 데이터에 답변 상태 추가
         const updatedInquiries = inquiriesData.map((inquiry) => {
-          // 답변이 있는 경우 isAnswered를 true로 설정
-          const isAnswered = Boolean(inquiry.reply);
+          const hasReply =
+            inquiry.replyContent != null || inquiry.replyId != null;
           return {
             ...inquiry,
-            isAnswered,
+            isAnswered: hasReply,
+            reply: hasReply
+              ? {
+                  id: inquiry.replyId,
+                  content: inquiry.replyContent,
+                  createdAt: inquiry.replyCreatedAt,
+                  adminName: '관리자',
+                }
+              : null,
           };
         });
+
+        // 개발 환경에서 처리된 데이터 로깅
+        if (import.meta.env.DEV) {
+          console.log('Processed inquiries:', updatedInquiries);
+        }
 
         setInquiries(updatedInquiries);
         setTotalPages(totalPages);
@@ -567,26 +596,26 @@ const Inquiries = () => {
 
         // 새로운 답변 객체 생성
         const newReply = {
-          id: newReplyData.id,
-          content: newReplyData.content,
-          createdAt: newReplyData.createdAt || new Date().toISOString(),
-          adminId: newReplyData.adminId || newReplyData.userId,
-          adminName: '관리자', // 이름을 '관리자'로 고정
-          userRole: newReplyData.userRole || 'ADMIN',
+          id: newReplyData.replyId,
+          content: newReplyData.replyContent,
+          createdAt: newReplyData.replyCreatedAt || new Date().toISOString(),
+          adminName: '관리자',
         };
 
         // 문의글 목록 상태 업데이트
         setInquiries((prevInquiries) => {
-          const updatedInquiries = prevInquiries.map((inquiry) =>
+          return prevInquiries.map((inquiry) =>
             inquiry.id === boardId
               ? {
                   ...inquiry,
                   isAnswered: true,
                   reply: newReply,
+                  replyId: newReply.id,
+                  replyContent: newReply.content,
+                  replyCreatedAt: newReply.createdAt,
                 }
               : inquiry
           );
-          return updatedInquiries;
         });
 
         // 통계 업데이트
@@ -599,7 +628,7 @@ const Inquiries = () => {
         alert('답변이 성공적으로 작성되었습니다.');
         setReplyModal({ isOpen: false, inquiry: null, existingReply: null });
 
-        // 데이터 새로고침을 위해 fetchInquiries 호출
+        // 전체 데이터 새로고침
         await fetchInquiries();
       }
     } catch (err) {
@@ -646,18 +675,18 @@ const Inquiries = () => {
 
         // 수정된 답변 객체 생성
         const updatedReply = {
-          id: updatedReplyData.id,
-          content: updatedReplyData.content,
-          createdAt: updatedReplyData.createdAt,
+          id: updatedReplyData.replyId,
+          content: updatedReplyData.replyContent,
+          createdAt: updatedReplyData.replyCreatedAt,
           updatedAt: updatedReplyData.updatedAt || new Date().toISOString(),
           adminId: updatedReplyData.adminId || updatedReplyData.userId,
-          adminName: '관리자', // 이름을 '관리자'로 고정
+          adminName: '관리자',
           userRole: updatedReplyData.userRole || 'ADMIN',
         };
 
         // 문의글 목록 상태 업데이트
         setInquiries((prevInquiries) => {
-          const updatedInquiries = prevInquiries.map((inquiry) =>
+          return prevInquiries.map((inquiry) =>
             inquiry.id === boardId
               ? {
                   ...inquiry,
@@ -666,13 +695,12 @@ const Inquiries = () => {
                 }
               : inquiry
           );
-          return updatedInquiries;
         });
 
         alert('답변이 성공적으로 수정되었습니다.');
         setReplyModal({ isOpen: false, inquiry: null, existingReply: null });
 
-        // 데이터 새로고침을 위해 fetchInquiries 호출
+        // 전체 데이터 새로고침
         await fetchInquiries();
       }
     } catch (err) {
@@ -716,16 +744,15 @@ const Inquiries = () => {
       if (response.data?.success) {
         // 문의글 목록 상태 업데이트
         setInquiries((prevInquiries) => {
-          const updatedInquiries = prevInquiries.map((inq) =>
-            inq.id === boardId
+          return prevInquiries.map((item) =>
+            item.id === boardId
               ? {
-                  ...inq,
+                  ...item,
                   isAnswered: false,
                   reply: null,
                 }
-              : inq
+              : item
           );
-          return updatedInquiries;
         });
 
         // 통계 업데이트
@@ -737,7 +764,7 @@ const Inquiries = () => {
 
         alert('답변이 성공적으로 삭제되었습니다.');
 
-        // 데이터 새로고침을 위해 fetchInquiries 호출
+        // 전체 데이터 새로고침
         await fetchInquiries();
       }
     } catch (err) {
@@ -1067,7 +1094,22 @@ const Inquiries = () => {
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center space-x-2">
-                                {inquiry.isAnswered ? (
+                                {/* 개발 환경에서 디버깅 */}
+                                {import.meta.env.DEV && (
+                                  <div className="hidden">
+                                    {console.log(
+                                      'Rendering inquiry:',
+                                      inquiry.id,
+                                      {
+                                        isAnswered: inquiry.isAnswered,
+                                        hasReply: Boolean(inquiry.reply),
+                                        reply: inquiry.reply,
+                                      }
+                                    )}
+                                  </div>
+                                )}
+
+                                {inquiry.reply ? (
                                   <>
                                     <button
                                       onClick={async () => {
