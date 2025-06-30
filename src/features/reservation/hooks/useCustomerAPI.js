@@ -371,7 +371,6 @@ export const useCustomerReservationList = () => {
     async (page = 0, size = 10) => {
       try {
         const response = await apiCall(getCustomerReservations, page, size);
-      
 
         // ⭐️ 여기서 정확하게 파싱
         const reservationList =
@@ -455,16 +454,14 @@ export const useCustomerReservationList = () => {
             // 현재 받고 있는 필드: reservationId, status, totalPrice, totalDuration, subOptionName
             const transformed = {
               id: r.reservationId || r.id,
+              reservationId: r.reservationId || r.id, // 예약 ID 필드 추가
               type: r.subOptionName || getServiceName(r.subOptionId),
               // ⭐️ 실제 DB 데이터 사용 (고정값 제거)
               date: r.requestedDate || formatDateFromDB(r.createdAt),
-              time:
-                r.requestedTime && r.totalDuration
-                  ? formatTimeRange(r.requestedTime, r.totalDuration)
-                  : formatTimeRange(
-                      r.requestedTime || '09:00',
-                      r.totalDuration || 180
-                    ),
+              time: r.requestedTime || '시간 정보 없음', // 단순한 시간만 표시
+              // 원본 날짜/시간 데이터도 보존
+              requestedDate: r.requestedDate || formatDateFromDB(r.createdAt),
+              requestedTime: r.requestedTime || '시간 정보 없음',
               price:
                 r.totalPrice || getServicePrice(r.subOptionId, r.subOptionName),
               icon: getServiceIcon(r.subOptionId, r.subOptionName),
@@ -531,26 +528,6 @@ export const useCustomerReservationList = () => {
       3: 'childcare',
     };
     return iconMapping[subOptionId] || 'home';
-  };
-
-  const formatTimeRange = (startTime, durationMinutes = 180) => {
-    if (!startTime) return '시간 정보 없음';
-
-    try {
-      const [hours, minutes] = startTime.split(':').map(Number);
-      const startTotalMinutes = hours * 60 + minutes;
-      const endTotalMinutes = startTotalMinutes + durationMinutes;
-
-      const endHours = Math.floor(endTotalMinutes / 60) % 24;
-      const endMins = endTotalMinutes % 60;
-
-      const formatTime = (h, m) =>
-        `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-
-      return `${formatTime(hours, minutes)}~${formatTime(endHours, endMins)}`;
-    } catch {
-      return '시간 정보 오류';
-    }
   };
 
   const mapBackendStatus = (backendStatus) => {

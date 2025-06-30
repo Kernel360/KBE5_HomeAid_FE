@@ -48,6 +48,19 @@ const InquiryDetail = () => {
     navigate('/customer/mypage/inquiry');
   };
 
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    const options = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    };
+    return new Date(dateString).toLocaleString('ko-KR', options);
+  };
+
   const handleUpdate = async () => {
     if (inquiry.isAnswered) {
       alert('답변이 완료된 게시글은 수정할 수 없습니다.');
@@ -272,35 +285,50 @@ const InquiryDetail = () => {
                       관
                     </span>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 text-lg">
-                      관리자 답변
-                    </h4>
-                    <p className="text-xs text-gray-500">
-                      {new Date(inquiry.reply.createdAt).toLocaleString()}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-blue-800">
+                          관리자
+                        </span>
+                      </div>
+                      <span className="text-xs text-blue-600">
+                        {inquiry.reply.createdAt
+                          ? formatDate(inquiry.reply.createdAt)
+                          : ''}
+                      </span>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border border-blue-200">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                        {inquiry.reply.content}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div
-                  className="text-gray-700 text-base leading-relaxed whitespace-pre-wrap bg-blue-50 rounded-lg p-4 border-l-4 border-blue-200"
-                  style={{ lineHeight: '1.7' }}
-                >
-                  {inquiry.reply.content}
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 border-dashed">
-                <div className="text-center py-8">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-gray-400 font-semibold">관</span>
-                  </div>
-                  <h4 className="font-medium text-gray-600 mb-2">
-                    관리자 답변
-                  </h4>
-                  <p className="text-gray-400 text-sm">
-                    관리자의 답변을 기다리고 있습니다.
-                  </p>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 text-center">
+                <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg
+                    className="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
                 </div>
+                <h3 className="text-sm font-medium text-gray-900 mb-1">
+                  답변 대기 중
+                </h3>
+                <p className="text-xs text-gray-500">
+                  관리자가 검토 후 답변을 드릴 예정입니다.
+                </p>
               </div>
             )}
 

@@ -340,19 +340,6 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="px-4 sm:px-6 lg:px-8 py-6">
         <div className="max-w-none space-y-6">
-          {/* Page Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 w-full">
-            <div>
-              <button
-                onClick={fetchDashboardStats}
-                disabled={loading}
-                className="px-4 py-2 text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors whitespace-nowrap disabled:opacity-50"
-              >
-                {loading ? '새로고침 중...' : '새로고침'}
-              </button>
-            </div>
-          </div>
-
           {/* Stats Grid */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
             {adminStats.map((stat, index) => (

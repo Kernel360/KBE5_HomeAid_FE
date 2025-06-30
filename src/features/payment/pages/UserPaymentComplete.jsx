@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
+import Modal from '../../../components/Modal.jsx';
 import useReservationStore from '../../../stores/reservationStore.js';
 import { usePaymentData } from '../../reservation/hooks/useLocalStorage.js';
 // ⭐️ 중복 예약 생성 방지를 위해 createCustomerReservation import 제거
@@ -11,6 +12,9 @@ import './UserPaymentComplete.css';
 const UserPaymentComplete = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 뒤로가기 확인 모달 상태
+  const [showBackConfirmModal, setShowBackConfirmModal] = useState(false);
 
   // ⭐️ 결제 페이지에서 전달받은 결제 정보
   const { paymentResult, serviceInfo, totalAmount } = location.state || {};
@@ -82,9 +86,34 @@ const UserPaymentComplete = () => {
     });
   };
 
+  // 뒤로가기 버튼 클릭 핸들러
+  const handleBackButton = () => {
+    // 모달 표시
+    setShowBackConfirmModal(true);
+  };
+
+  // 뒤로가기 확인 모달 핸들러
+  const handleBackConfirm = () => {
+    setShowBackConfirmModal(false);
+
+    // 예약 페이지로 이동 (예약 목록)
+    navigate('/customer/reservations', {
+      state: {
+        refreshData: true,
+        paymentCompleted: true,
+        reservationId: paymentResult?.reservationId,
+      },
+    });
+  };
+
+  // 뒤로가기 취소 모달 핸들러
+  const handleBackCancel = () => {
+    setShowBackConfirmModal(false);
+  };
+
   return (
     <div className="payment-complete-page">
-      <Header showBackButton={true} />
+      <Header showBackButton={true} onBackClick={handleBackButton} />
       <div className="page-content-wrapper">
         <div className="payment-complete-container">
           {/* 제목 섹션 */}
@@ -267,6 +296,19 @@ const UserPaymentComplete = () => {
         </div>
       </div>
       <Footer current="/customer/payment-complete" />
+
+      {/* 뒤로가기 확인 모달 */}
+      <Modal
+        open={showBackConfirmModal}
+        title="💳 결제 완료"
+        message="이미 결제가 완료되었습니다.
+예약 페이지로 이동하시겠습니까?"
+        onClose={handleBackCancel}
+        onConfirm={handleBackConfirm}
+        confirmText="예약 페이지로"
+        cancelText="취소"
+        showCancel={true}
+      />
     </div>
   );
 };
