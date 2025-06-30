@@ -62,6 +62,10 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                     navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
                 }
                 break;
+            case 'WORK_CHECKIN':
+            case 'WORK_CHECKOUT':
+                navigate(`/customer/reservations/${relatedEntityId}`);
+                break;
 
             default:
                 console.log('알 수 없는 이벤트 타입:', eventType);
