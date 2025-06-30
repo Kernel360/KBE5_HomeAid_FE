@@ -1,5 +1,172 @@
 import React, { useState, useEffect } from 'react';
 
+// 고객 상세 모달 컴포넌트
+const CustomerDetailModal = ({ isOpen, onClose, customer, customerDetail }) => {
+  if (!isOpen || !customer) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black flex items-center justify-center p-4 z-50"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+    >
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg border border-gray-200">
+        <div className="p-6">
+          {/* 모달 헤더 */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              고객 상세 정보
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* 프로필 정보 */}
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              프로필 정보
+            </h3>
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-semibold">
+                    {customerDetail?.profile?.name?.charAt(0) ||
+                      customer.name?.charAt(0) ||
+                      '?'}
+                  </span>
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {customerDetail?.profile?.name || customer.name || '-'}
+                  </div>
+                  <div className="text-sm text-gray-500">ID: {customer.id}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    이메일
+                  </label>
+                  <div className="text-gray-900">
+                    {customerDetail?.profile?.email || customer.email || '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    전화번호
+                  </label>
+                  <div className="text-gray-900">
+                    {customerDetail?.profile?.phone || customer.phone || '-'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 주소 정보 */}
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              등록된 주소
+            </h3>
+            {customerDetail?.addresses &&
+            customerDetail.addresses.length > 0 ? (
+              <div className="space-y-3">
+                {customerDetail.addresses.map((address, index) => (
+                  <div
+                    key={address.id || index}
+                    className="bg-gray-50 rounded-lg p-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm font-medium text-blue-600">
+                            {address.alias || `주소 ${index + 1}`}
+                          </span>
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            ID: {address.id}
+                          </span>
+                        </div>
+                        <div className="text-gray-900 mb-1">
+                          {address.fullAddress ||
+                            `${address.address || ''} ${address.addressDetail || ''}`.trim()}
+                        </div>
+                        {(address.latitude || address.longitude) && (
+                          <div className="text-sm text-gray-500">
+                            위도: {address.latitude || '-'}, 경도:{' '}
+                            {address.longitude || '-'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                등록된 주소가 없습니다.
+              </div>
+            )}
+          </div>
+
+          {/* 기타 정보 */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              기타 정보
+            </h3>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    매칭 수
+                  </label>
+                  <div className="text-gray-900">
+                    {customer.matchCount || 0}건
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    가입일
+                  </label>
+                  <div className="text-gray-900">
+                    {customer.createdAt
+                      ? new Date(customer.createdAt).toLocaleDateString('ko-KR')
+                      : '-'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 모달 푸터 */}
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const StatCard = ({ title, value, subValue, icon, iconBg }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
     <div className="flex items-start justify-between mb-3 min-h-0">
@@ -54,6 +221,14 @@ const CustomerList = () => {
   // 체크박스 선택 상태
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [isAllSelected, setIsAllSelected] = useState(false);
+
+  // 고객 상세 모달 상태
+  const [detailModal, setDetailModal] = useState({
+    isOpen: false,
+    customer: null,
+    customerDetail: null,
+    loading: false,
+  });
 
   // 디바운스된 검색 - 성능 최적화
   useEffect(() => {
@@ -357,6 +532,69 @@ const CustomerList = () => {
       setSelectedCustomers([]);
     }
   }, [customers, selectedCustomers.length]);
+
+  // 고객 상세 정보 조회
+  const fetchCustomerDetail = async (customerId) => {
+    try {
+      setDetailModal((prev) => ({ ...prev, loading: true }));
+
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
+
+      const response = await fetch(`/api/v1/admin/customers/${customerId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setDetailModal((prev) => ({
+          ...prev,
+          customerDetail: data.data,
+          loading: false,
+        }));
+      } else {
+        throw new Error('고객 상세 정보를 불러올 수 없습니다.');
+      }
+    } catch (err) {
+      console.error('고객 상세 정보 조회 오류:', err);
+      setDetailModal((prev) => ({ ...prev, loading: false }));
+      alert('고객 상세 정보를 불러오는 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 상세보기 버튼 클릭 핸들러
+  const handleDetailClick = async (customer) => {
+    setDetailModal({
+      isOpen: true,
+      customer,
+      customerDetail: null,
+      loading: false,
+    });
+
+    // 상세 정보 조회
+    await fetchCustomerDetail(customer.id);
+  };
+
+  // 모달 닫기
+  const handleCloseModal = () => {
+    setDetailModal({
+      isOpen: false,
+      customer: null,
+      customerDetail: null,
+      loading: false,
+    });
+  };
 
   const stats = [
     {
@@ -687,7 +925,10 @@ const CustomerList = () => {
                             {customer.matchCount || '0'}건
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                            <button className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                            <button
+                              onClick={() => handleDetailClick(customer)}
+                              className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                            >
                               상세보기
                             </button>
                           </td>
@@ -761,6 +1002,14 @@ const CustomerList = () => {
           </div>
         </div>
       </div>
+
+      {/* 고객 상세 모달 */}
+      <CustomerDetailModal
+        isOpen={detailModal.isOpen}
+        onClose={handleCloseModal}
+        customer={detailModal.customer}
+        customerDetail={detailModal.customerDetail}
+      />
     </div>
   );
 };
