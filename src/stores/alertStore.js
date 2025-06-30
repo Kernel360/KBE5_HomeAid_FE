@@ -14,11 +14,11 @@ export const useAlertStore = create((set) => ({
         });
     },
 
-    // 기존 알림 목록에 새로운 알림들 추가 (실시간 알림 수신 시)
+    // 기존 알림 목록에 새로운 알림들 추가 (실시간 알림 수신 시) - 최신순 정렬을 위해 맨 앞에 추가
     addNotificationAlert: (newNoti) => set((prev) => ({
         notificationAlert: Array.isArray(newNoti)
-            ? [...prev.notificationAlert, ...newNoti]
-            : [...prev.notificationAlert, newNoti]
+            ? [...newNoti, ...prev.notificationAlert]
+            : [newNoti, ...prev.notificationAlert]
     })),
 
     // 특정 알림 제거
