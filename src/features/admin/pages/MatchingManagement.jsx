@@ -39,6 +39,14 @@ const MatchingManagement = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // 페이징 상태 - 매니저 목록과 동일한 방식
+  const [pagination, setPagination] = useState({
+    page: 0, // 0부터 시작 (Spring Boot 방식)
+    size: 10,
+    totalElements: 0,
+    totalPages: 0,
+  });
+
   // 탭별 데이터 필터링
   const getFilteredData = () => {
     if (activeTab === '전체') return matchingData;
@@ -52,6 +60,28 @@ const MatchingManagement = () => {
     };
 
     return matchingData.filter((item) => item.status === statusMap[activeTab]);
+  };
+
+  // 페이징 처리된 데이터 반환
+  const getPaginatedData = () => {
+    const filteredData = getFilteredData();
+    const startIndex = pagination.page * pagination.size;
+    const endIndex = startIndex + pagination.size;
+    return filteredData.slice(startIndex, endIndex);
+  };
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage) => {
+    setPagination((prev) => ({
+      ...prev,
+      page: newPage,
+    }));
+  };
+
+  // 탭 변경 시 페이지 초기화
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    // 페이지 초기화는 useEffect에서 자동으로 처리됨
   };
 
   // 탭별 개수 계산
@@ -70,36 +100,158 @@ const MatchingManagement = () => {
       .length;
   };
 
-  // API에서 예약 데이터 가져오기
+  // API에서 예약 데이터 가져오기 - 성능 최적화
   useEffect(() => {
     const fetchReservations = async () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 예약 데이터 가져오기 시작');
 
-        const response = await apiService.reservation.getAll();
-        console.log('✅ 예약 데이터 가져오기 성공!!!!!!!:', response);
+        // API 기본 URL 구성
+        const API_BASE_URL =
+          import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
 
-        // API 응답 구조에 따라 데이터 추출
-        const reservations =
-          response.data?.data?.content ||
-          response.data?.data ||
-          response.data ||
-          [];
-        console.log('📋 추출된 예약 데이터:', reservations);
+        // 첫 번째 페이지만 먼저 빠르게 로딩
+        const firstPageUrl = `${API_BASE_URL}/api/${API_VERSION}/reservations?page=0&size=50`;
 
-        setMatchingData(reservations);
-      } catch (err) {
-        console.error('❌ 예약 데이터 가져오기 실패:', err);
+        const firstResponse = await fetch(firstPageUrl, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!firstResponse.ok) {
+          throw new Error(`HTTP error! status: ${firstResponse.status}`);
+        }
+
+        const firstData = await firstResponse.json();
+        const firstPageData = firstData.data || firstData;
+        const firstContent = firstPageData.content || [];
+        const totalPages = firstPageData.totalPages || 1;
+        const totalElements =
+          firstPageData.totalElements || firstContent.length;
+
+        // 첫 페이지 데이터 처리
+        const processContent = (content, pageOffset = 0) => {
+          return content.map((item, index) => ({
+            ...item,
+            // 데이터 정규화
+            reservationId: item.reservationId || item.id,
+            customerName:
+              item.customerName ||
+              `고객${item.customerId || pageOffset + index + 1}`,
+            matchedManagerName: item.matchedManagerName || null,
+            serviceOptionName: item.serviceOptionName || '서비스',
+            totalPrice: item.totalPrice || 20000,
+            address: item.address || '',
+            addressDetail: item.addressDetail || '',
+            customerMemo: item.customerMemo || '',
+            requestedDate: item.requestedDate || item.startTime?.split('T')[0],
+            requestedTime:
+              item.requestedTime ||
+              item.startTime?.split('T')[1]?.substring(0, 5),
+          }));
+        };
+
+        const firstProcessedContent = processContent(firstContent, 0);
+
+        // 첫 페이지 데이터로 빠르게 UI 업데이트
+        setMatchingData(firstProcessedContent);
+        setPagination((prev) => ({
+          ...prev,
+          totalElements: totalElements,
+          totalPages: Math.ceil(totalElements / prev.size),
+        }));
+        setLoading(false); // 첫 페이지 로딩 완료
+
+        // 나머지 페이지들을 백그라운드에서 병렬 로딩
+        if (totalPages > 1) {
+          const maxConcurrentRequests = 3; // 동시 요청 수 제한
+
+          // 나머지 페이지들을 병렬로 요청
+          for (let page = 1; page < totalPages; page += maxConcurrentRequests) {
+            const pagePromises = [];
+
+            for (
+              let i = 0;
+              i < maxConcurrentRequests && page + i < totalPages;
+              i++
+            ) {
+              const currentPage = page + i;
+              const pageUrl = `${API_BASE_URL}/api/${API_VERSION}/reservations?page=${currentPage}&size=50`;
+
+              pagePromises.push(
+                fetch(pageUrl, {
+                  headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+                    'Content-Type': 'application/json',
+                  },
+                })
+                  .then((response) => (response.ok ? response.json() : null))
+                  .then((data) => {
+                    if (data) {
+                      const pageData = data.data || data;
+                      const content = pageData.content || [];
+                      return {
+                        page: currentPage,
+                        content: processContent(content, currentPage * 50),
+                      };
+                    }
+                    return null;
+                  })
+                  .catch(() => null)
+              );
+            }
+
+            // 현재 배치의 페이지들이 완료되면 데이터 추가
+            const results = await Promise.all(pagePromises);
+            const validResults = results.filter((result) => result !== null);
+
+            if (validResults.length > 0) {
+              setMatchingData((prev) => {
+                const newData = [...prev];
+                validResults.forEach((result) => {
+                  newData.push(...result.content);
+                });
+                return newData;
+              });
+            }
+          }
+        }
+      } catch {
         setError('예약 데이터를 불러오는데 실패했습니다.');
-      } finally {
+
+        // 에러 발생 시 기존 API로 fallback
+        try {
+          const response = await apiService.reservation.getAll();
+          const reservations =
+            response.data?.data?.content ||
+            response.data?.data ||
+            response.data ||
+            [];
+          setMatchingData(reservations);
+        } catch {
+          setMatchingData([]);
+        }
         setLoading(false);
       }
     };
 
     fetchReservations();
   }, []);
+
+  // 탭 변경 시 페이징 정보 업데이트
+  useEffect(() => {
+    const filteredData = getFilteredData();
+    setPagination((prev) => ({
+      ...prev,
+      page: 0, // 탭 변경 시 첫 페이지로 이동
+      totalElements: filteredData.length,
+      totalPages: Math.ceil(filteredData.length / prev.size),
+    }));
+  }, [activeTab, matchingData]);
 
   const tabs = [
     '전체',
@@ -343,7 +495,7 @@ const MatchingManagement = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => handleTabChange(tab)}
                   className={`px-6 py-4 text-sm font-medium transition-all duration-200 ${
                     activeTab === tab
                       ? 'text-blue-600 border-b-2 border-blue-500 bg-white'
@@ -373,7 +525,7 @@ const MatchingManagement = () => {
                   <div className="flex justify-center items-center py-8">
                     <div className="text-red-500">{error}</div>
                   </div>
-                ) : getFilteredData().length === 0 ? (
+                ) : getPaginatedData().length === 0 ? (
                   <div className="flex justify-center items-center py-8">
                     <div className="text-gray-500">
                       {activeTab === '전체'
@@ -422,124 +574,182 @@ const MatchingManagement = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {getFilteredData().map((item, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-mono text-gray-900">
-                            #{item.reservationId || item.id || index + 1}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.customerName || '고객명 없음'}
+                      {getPaginatedData().map((item, index) => {
+                        // 백엔드 ReservationResponseDto 필드 매핑
+                        const reservationId =
+                          item.reservationId || item.id || index + 1;
+                        const customerName = item.customerName || '고객명 없음';
+                        const fullAddress =
+                          item.address && item.addressDetail
+                            ? `${item.address} ${item.addressDetail}`
+                            : item.address || '주소 정보 없음';
+                        const managerName =
+                          item.matchedManagerName || '배정 대기중';
+                        const serviceName =
+                          item.serviceOptionName || '서비스명 없음';
+                        const customerMemo =
+                          item.customerMemo || '요청사항 없음';
+                        const price = item.totalPrice || 20000;
+                        const requestDate =
+                          item.requestedDate ||
+                          item.startTime?.split('T')[0] ||
+                          item.createdAt;
+                        const requestTime =
+                          item.requestedTime ||
+                          item.startTime?.split('T')[1]?.substring(0, 5) ||
+                          '';
+
+                        return (
+                          <tr key={reservationId} className="hover:bg-gray-50">
+                            <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-mono text-gray-900">
+                              #{reservationId}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-center">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {customerName}
+                                </div>
+                                <div
+                                  className="text-sm text-gray-500 max-w-xs truncate"
+                                  title={fullAddress}
+                                >
+                                  {fullAddress}
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500">
-                                {item.address || '주소 정보 없음'}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-center">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {managerName}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {item.managerRating
+                                    ? `평점 ${item.managerRating} ⭐`
+                                    : managerName === '배정 대기중'
+                                      ? '매니저 대기중'
+                                      : '평점 없음'}
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.matchedManagerName || '배정 대기중'}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-center">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {serviceName}
+                                </div>
+                                <div
+                                  className="text-sm text-gray-500 max-w-xs truncate"
+                                  title={customerMemo}
+                                >
+                                  {customerMemo}
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500">
-                                {item.managerRating
-                                  ? `평점 ${item.managerRating} ⭐`
-                                  : '평점 없음'}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.serviceOptionName || '서비스명 없음'}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {item.customerMemo || '요청사항 없음'}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <span
-                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                item.status === 'COMPLETED'
-                                  ? 'bg-green-100 text-green-800'
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-center">
+                              <span
+                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  item.status === 'COMPLETED'
+                                    ? 'bg-green-100 text-green-800'
+                                    : item.status === 'MATCHED'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : item.status === 'REQUESTED'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : item.status === 'MATCHING'
+                                          ? 'bg-purple-100 text-purple-800'
+                                          : item.status === 'CANCELLED'
+                                            ? 'bg-red-100 text-red-800'
+                                            : 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
+                                {item.status === 'COMPLETED'
+                                  ? '서비스 완료'
                                   : item.status === 'MATCHED'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : item.status === 'REQUESTED'
-                                      ? 'bg-blue-100 text-blue-800'
-                                      : item.status == 'MATCHING'
-                                        ? 'bg-white-100 text-black-800'
+                                    ? '매칭 완료'
+                                    : item.status === 'MATCHING'
+                                      ? '매칭 중'
+                                      : item.status === 'REQUESTED'
+                                        ? '매칭 필요'
                                         : item.status === 'CANCELLED'
-                                          ? 'bg-red-100 text-red-800'
-                                          : 'bg-gray-100 text-gray-800'
-                              }`}
-                            >
-                              {item.status === 'COMPLETED'
-                                ? '서비스 완료'
-                                : item.status === 'MATCHED'
-                                  ? '매칭 완료'
-                                  : item.status === 'MATCHING'
-                                    ? '매칭 중'
-                                    : item.status === 'REQUESTED'
-                                      ? '매칭 필요'
-                                      : item.status === 'CANCELLED'
-                                        ? '취소됨'
-                                        : item.status || '상태 미확인'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            {item.startTime || item.createdAt
-                              ? new Date(
-                                  item.startTime || item.createdAt
-                                ).toLocaleDateString('ko-KR')
-                              : '날짜 없음'}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">
-                            ₩20,000
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                            <button
-                              className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                              onClick={() =>
-                                navigate(
-                                  `/admin/matches/reservations/${item.reservationId || item.id}/detail`
-                                )
-                              }
-                            >
-                              상세보기
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                                          ? '취소됨'
+                                          : item.status || '상태 미확인'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                              <div>
+                                <div className="font-medium">
+                                  {requestDate
+                                    ? new Date(requestDate).toLocaleDateString(
+                                        'ko-KR'
+                                      )
+                                    : '날짜 없음'}
+                                </div>
+                                {requestTime && (
+                                  <div className="text-xs text-gray-500">
+                                    {requestTime}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+                              ₩{price.toLocaleString()}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                              <button
+                                className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                onClick={() =>
+                                  navigate(
+                                    `/admin/matches/reservations/${reservationId}/detail`
+                                  )
+                                }
+                              >
+                                상세보기
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
               </div>
 
-              {/* Pagination */}
-              <div className="w-full flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-gray-200 gap-4">
-                <div className="text-sm text-gray-700">
-                  총 142개 중 1-10개 표시
+              {/* Pagination - 매니저 목록과 동일한 스타일 */}
+              {pagination.totalPages > 1 && (
+                <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
+                  <div className="text-sm text-gray-700">
+                    총 {pagination.totalElements}건 중{' '}
+                    {pagination.page * pagination.size + 1}-
+                    {Math.min(
+                      (pagination.page + 1) * pagination.size,
+                      pagination.totalElements
+                    )}
+                    건 표시
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 0 || loading}
+                    >
+                      ‹
+                    </button>
+                    <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
+                      {pagination.page + 1}
+                    </span>
+                    <span className="px-3 py-1 text-sm text-gray-500">
+                      / {pagination.totalPages}
+                    </span>
+                    <button
+                      className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={
+                        pagination.page >= pagination.totalPages - 1 || loading
+                      }
+                    >
+                      ›
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">
-                    ‹
-                  </button>
-                  <button className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
-                    1
-                  </button>
-                  <button className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">
-                    2
-                  </button>
-                  <button className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">
-                    3
-                  </button>
-                  <button className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">
-                    ›
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
