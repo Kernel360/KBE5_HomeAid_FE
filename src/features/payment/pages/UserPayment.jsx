@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import './UserPayment.css';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
+import Modal from '../../../components/Modal.jsx';
 import useReservationStore from '../../../stores/reservationStore.js';
 import { usePaymentData } from '../../reservation/hooks/useLocalStorage.js';
 import { api } from '../../../api/config/api.js';
@@ -42,6 +43,137 @@ const UserPayment = () => {
     }
   }, [savedPaymentData, reservationData, navigate, reservationFromDetail]);
 
+  // 결제 완료 상태 확인
+  const [isPaymentCompleted, setIsPaymentCompleted] = useState(false);
+  const [paymentCompletionInfo, setPaymentCompletionInfo] = useState(null);
+
+  // 예약 완료 모달 상태
+  const [showReservationCompleteModal, setShowReservationCompleteModal] =
+    useState(false);
+
+  // 결제 완료 상태 확인 함수
+  const checkPaymentStatus = () => {
+    const reservationId =
+      reservationFromDetail?.id ||
+      reservationFromDetail?.reservationId ||
+      savedPaymentData?.reservationId;
+
+    if (!reservationId) return false;
+
+    console.log('🔍 결제 상태 확인 시작 - 예약 ID:', reservationId);
+
+    // 1. 백엔드 데이터에서 결제 정보 확인 (최우선 - 실제 DB 상태)
+    if (reservationFromDetail?.backendData) {
+      const backendData =
+        reservationFromDetail.backendData.data ||
+        reservationFromDetail.backendData;
+      const hasBackendPayment =
+        backendData.paymentId ||
+        backendData.paidAt ||
+        backendData.paymentStatus === 'PAID' ||
+        backendData.paymentStatus === 'COMPLETED' ||
+        backendData.paymentStatus === 'SUCCESS' ||
+        backendData.isPaid === true ||
+        backendData.paid === true ||
+        backendData.status === 'PAID';
+
+      if (hasBackendPayment) {
+        console.log('💳 백엔드에서 결제 완료 확인됨:', backendData);
+        const paymentInfo = {
+          reservationId: reservationId,
+          paymentId: backendData.paymentId,
+          completedAt: backendData.paidAt || new Date().toISOString(),
+          amount: backendData.totalPrice || savedPaymentData?.amount || 20000,
+          paymentMethod: backendData.paymentMethod || 'UNKNOWN',
+        };
+
+        setPaymentCompletionInfo(paymentInfo);
+        return true;
+      } else {
+        // 백엔드에 결제 정보가 없으면 localStorage 정보 정리 (동기화)
+        console.log('🔄 백엔드에 결제 정보 없음 - localStorage 정리');
+
+        // localStorage 결제 완료 정보 제거
+        const recentPaymentCompletion = localStorage.getItem(
+          'recentPaymentCompletion'
+        );
+        if (recentPaymentCompletion) {
+          try {
+            const paymentInfo = JSON.parse(recentPaymentCompletion);
+            if (paymentInfo.reservationId === parseInt(reservationId)) {
+              console.log('🧹 localStorage 최근 결제 정보 제거:', paymentInfo);
+              localStorage.removeItem('recentPaymentCompletion');
+            }
+          } catch (error) {
+            console.error('localStorage 결제 정보 파싱 오류:', error);
+          }
+        }
+
+        // 예약별 결제 완료 정보 제거
+        const reservationPaymentKey = `payment_completed_${reservationId}`;
+        const reservationPaymentInfo = localStorage.getItem(
+          reservationPaymentKey
+        );
+        if (reservationPaymentInfo) {
+          console.log('🧹 예약별 결제 정보 제거:', reservationPaymentKey);
+          localStorage.removeItem(reservationPaymentKey);
+        }
+      }
+    }
+
+    // 2. 결제 진행 중 상태 확인 (10분간 중복 결제 방지)
+    const paymentInProgressKey = `payment_in_progress_${reservationId}`;
+    const paymentInProgress = localStorage.getItem(paymentInProgressKey);
+    if (paymentInProgress) {
+      try {
+        const progressInfo = JSON.parse(paymentInProgress);
+        const progressTime = new Date(progressInfo.startTime);
+        const now = new Date();
+        const diffMinutes = (now - progressTime) / (1000 * 60);
+
+        if (diffMinutes < 10) {
+          // 10분 이내면 결제 진행 중으로 간주
+          console.log('⏳ 결제 진행 중 상태 확인됨:', progressInfo);
+          return true; // 결제 진행 중이므로 버튼 비활성화
+        } else {
+          // 10분 경과시 진행 상태 제거
+          localStorage.removeItem(paymentInProgressKey);
+        }
+      } catch (error) {
+        console.error('결제 진행 상태 파싱 오류:', error);
+        localStorage.removeItem(paymentInProgressKey);
+      }
+    }
+
+    console.log('💳 결제 완료 상태 없음');
+    return false;
+  };
+
+  // 결제 상태 확인
+  useEffect(() => {
+    const isCompleted = checkPaymentStatus();
+    setIsPaymentCompleted(isCompleted);
+  }, [reservationFromDetail, savedPaymentData]);
+
+  // 페이지 포커스 시 결제 상태 재확인 (뒤로가기 등에서 돌아올 때)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('🔄 페이지 포커스 - 결제 상태 재확인');
+      const isCompleted = checkPaymentStatus();
+      setIsPaymentCompleted(isCompleted);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
+  // URL 변경 감지 시 결제 상태 재확인
+  useEffect(() => {
+    console.log('🔄 URL 변경 감지 - 결제 상태 재확인');
+    const isCompleted = checkPaymentStatus();
+    setIsPaymentCompleted(isCompleted);
+  }, [location.pathname, location.search]);
+
   // ⭐️ 디버깅용: 전달받은 데이터 확인
   useEffect(() => {
     console.log('🔍 UserPayment 페이지 데이터 확인:');
@@ -51,6 +183,8 @@ const UserPayment = () => {
       selectedServices,
     });
     console.log('💾 localStorage 저장된 데이터:', savedPaymentData);
+    console.log('💳 결제 완료 상태:', isPaymentCompleted);
+    console.log('💳 결제 완료 정보:', paymentCompletionInfo);
     // paymentData는 콘솔에서 직접 확인하도록 주석 처리 (무한 루프 방지)
     // console.log('📊 최종 결제 데이터:', paymentData);
   }, [
@@ -58,6 +192,8 @@ const UserPayment = () => {
     reservationData,
     selectedServices,
     savedPaymentData,
+    isPaymentCompleted,
+    paymentCompletionInfo,
   ]);
 
   // Card formatting functions
@@ -200,7 +336,37 @@ const UserPayment = () => {
   };
 
   const handlePayment = async () => {
+    // 예약 ID 확인 (함수 상단에서 선언)
+    const currentReservationId = parseInt(
+      location.state?.reservation?.reservationId ||
+        reservationData.reservationId ||
+        location.state?.reservation?.id ||
+        paymentData.serviceInfo.reservationId
+    );
+
+    const paymentInProgressKey = `payment_in_progress_${currentReservationId}`;
+
     try {
+      // 결제 완료 상태 재확인
+      const currentPaymentStatus = checkPaymentStatus();
+      if (currentPaymentStatus || isPaymentCompleted) {
+        alert('이미 결제가 완료되었거나 진행 중인 예약입니다.');
+        return;
+      }
+
+      if (!currentReservationId) {
+        alert('예약 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      // 결제 진행 상태 설정 (중복 결제 방지)
+      const progressInfo = {
+        reservationId: currentReservationId,
+        startTime: new Date().toISOString(),
+        status: 'IN_PROGRESS',
+      };
+      localStorage.setItem(paymentInProgressKey, JSON.stringify(progressInfo));
+
       // 인증 상태 확인
       const localStorageToken = localStorage.getItem('accessToken');
       const authStoreToken = useAuthStore.getState().accessToken;
@@ -216,18 +382,12 @@ const UserPayment = () => {
 
       // 토큰이 없으면 로그인 페이지로 리다이렉트
       if (!localStorageToken && !authStoreToken) {
+        // 결제 진행 상태 제거
+        localStorage.removeItem(paymentInProgressKey);
         alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
         navigate('/auth/signin');
         return;
       }
-
-      // 결제 요청 데이터 준비
-      const reservationId = parseInt(
-        location.state?.reservation?.reservationId ||
-          reservationData.reservationId ||
-          location.state?.reservation?.id ||
-          paymentData.serviceInfo.reservationId
-      );
 
       // 결제 수단 매핑 (프론트엔드 값 → 백엔드 enum 값)
       const paymentMethodMapping = {
@@ -237,7 +397,7 @@ const UserPayment = () => {
       };
 
       const paymentRequestData = {
-        reservationId: reservationId,
+        reservationId: currentReservationId,
         amount: parseInt(paymentData.totalAmount),
         paymentMethod:
           paymentMethodMapping[selectedPaymentMethod] ||
@@ -246,7 +406,7 @@ const UserPayment = () => {
 
       console.log('📤 결제 요청:', paymentRequestData);
       console.log('🔍 예약 상태 확인:', {
-        reservationId,
+        reservationId: currentReservationId,
         reservationFromDetail: location.state?.reservation,
         reservationData: reservationData,
         paymentData: paymentData.serviceInfo,
@@ -259,35 +419,52 @@ const UserPayment = () => {
         const paymentResult = response.data.data;
         console.log('✅ 결제 성공:', paymentResult);
 
+        // 결제 진행 상태 제거
+        localStorage.removeItem(paymentInProgressKey);
+
         // 결제 완료 정보를 localStorage에 저장 (다른 페이지에서 참조용)
         const paymentCompletionInfo = {
-          reservationId: paymentResult.reservationId,
+          reservationId: paymentResult.reservationId || currentReservationId,
           paymentId: paymentResult.id,
           completedAt: new Date().toISOString(),
           amount: paymentResult.amount,
           paymentMethod: paymentResult.paymentMethod,
         };
+
+        // 1. 최근 결제 정보 저장 (기존 방식)
         localStorage.setItem(
           'recentPaymentCompletion',
           JSON.stringify(paymentCompletionInfo)
         );
 
-        // 결제 완료 페이지로 이동 (라우팅 경로에 맞춤)
-        navigate('/customer/payment-complete', {
-          state: {
-            paymentResult: {
-              id: paymentResult.id,
-              reservationId: paymentResult.reservationId,
-              amount: paymentResult.amount,
-              paymentMethod: paymentResult.paymentMethod,
-              status: paymentResult.status,
-              paidAt: paymentResult.paidAt,
-              customerName: paymentResult.customerName,
-            },
-            serviceInfo: paymentData.serviceInfo,
-            totalAmount: paymentData.totalAmount,
+        // 2. 예약별 결제 완료 정보 저장 (중복 결제 방지용)
+        const reservationPaymentKey = `payment_completed_${currentReservationId}`;
+        localStorage.setItem(
+          reservationPaymentKey,
+          JSON.stringify(paymentCompletionInfo)
+        );
+
+        // 결제 완료 상태 업데이트
+        setIsPaymentCompleted(true);
+        setPaymentCompletionInfo(paymentCompletionInfo);
+
+        // 결제 완료 페이지로 이동할 데이터 준비 (전역 변수로 저장)
+        window.paymentCompleteData = {
+          paymentResult: {
+            id: paymentResult.id,
+            reservationId: paymentResult.reservationId,
+            amount: paymentResult.amount,
+            paymentMethod: paymentResult.paymentMethod,
+            status: paymentResult.status,
+            paidAt: paymentResult.paidAt,
+            customerName: paymentResult.customerName,
           },
-        });
+          serviceInfo: paymentData.serviceInfo,
+          totalAmount: paymentData.totalAmount,
+        };
+
+        // 🎉 예약 완료 모달 표시
+        setShowReservationCompleteModal(true);
       }
     } catch (error) {
       console.error('❌ 결제 실패:', error);
@@ -298,6 +475,9 @@ const UserPayment = () => {
         headers: error.response?.headers,
         config: error.config,
       });
+
+      // 결제 실패 시 진행 상태 제거
+      localStorage.removeItem(paymentInProgressKey);
 
       let errorMessage = '결제 처리 중 오류가 발생했습니다.';
 
@@ -323,6 +503,20 @@ const UserPayment = () => {
 
   const handleCancel = () => {
     navigate(-1); // 이전 페이지로 돌아가기
+  };
+
+  // 예약 완료 모달 확인 핸들러
+  const handleReservationCompleteConfirm = () => {
+    setShowReservationCompleteModal(false);
+
+    // 결제 완료 페이지로 이동
+    if (window.paymentCompleteData) {
+      navigate('/customer/payment-complete', {
+        state: window.paymentCompleteData,
+      });
+      // 전역 변수 정리
+      delete window.paymentCompleteData;
+    }
   };
 
   return (
@@ -744,19 +938,35 @@ const UserPayment = () => {
             })()}
             */}
 
-            {/* ⭐️ 임시 결제 버튼 (항상 활성화 - TODO: 백엔드 상태 관리 완성 후 제거) */}
-            <button
-              className="payment-button"
-              onClick={handlePayment}
-              disabled={!allRequired}
-              style={{
-                backgroundColor: allRequired ? '#007bff' : '#cccccc',
-                cursor: allRequired ? 'pointer' : 'not-allowed',
-                opacity: allRequired ? 1 : 0.6,
-              }}
-            >
-              {paymentData.totalAmount.toLocaleString()}원 결제하기
-            </button>
+            {/* 결제 버튼 - 결제 완료 상태에 따라 조건부 렌더링 */}
+            {isPaymentCompleted ? (
+              <>
+                <button className="payment-button disabled completed" disabled>
+                  ✅ 결제 완료됨
+                </button>
+                <div
+                  className="payment-notice success"
+                  style={{ marginTop: '10px' }}
+                >
+                  <p style={{ fontWeight: 'bold' }}>
+                    💳 이미 결제가 완료된 예약입니다.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <button
+                className="payment-button"
+                onClick={handlePayment}
+                disabled={!allRequired}
+                style={{
+                  backgroundColor: allRequired ? '#007bff' : '#cccccc',
+                  cursor: allRequired ? 'pointer' : 'not-allowed',
+                  opacity: allRequired ? 1 : 0.6,
+                }}
+              >
+                {paymentData.totalAmount.toLocaleString()}원 결제하기
+              </button>
+            )}
 
             <button className="cancel-button" onClick={handleCancel}>
               취소하기
@@ -976,6 +1186,17 @@ const UserPayment = () => {
         </div>
       </div>
       <Footer current="/customer/payment" />
+
+      {/* 예약 완료 모달 */}
+      <Modal
+        open={showReservationCompleteModal}
+        title="🎉 예약 완료!"
+        message="결제가 성공적으로 처리되었습니다.
+예약이 완료되었습니다!"
+        onClose={handleReservationCompleteConfirm}
+        onConfirm={handleReservationCompleteConfirm}
+        confirmText="확인"
+      />
     </div>
   );
 };
