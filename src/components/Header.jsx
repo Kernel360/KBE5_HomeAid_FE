@@ -1,14 +1,18 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useState, useCallback, memo } from 'react';
+import AlertCard from '@/features/alert/AlertCard';
 
-export default function Header({
+function Header({
   showBackButton = true,
   onBackClick,
   isMainPage = false,
 }) {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+  const [ open, setOpen ] = useState(false);
 
   const handleBackClick = () => {
     if (onBackClick) {
@@ -26,11 +30,19 @@ export default function Header({
     navigate('/auth/signup');
   };
 
-  const handleLogoutClick = () => {
+  const handleLogoutClick = () => {    
     logout();
     navigate('/');
     window.location.reload(); // 상태 초기화를 위해 페이지 새로고침
   };
+
+  const openAlert = useCallback(() => {
+    setOpen(true);
+  }, []);
+
+  const closeAlert = useCallback(() => {
+    setOpen(false);
+  }, []);
 
   return (
     <header
@@ -101,6 +113,11 @@ export default function Header({
       {/* 오른쪽: 메인 페이지일 때 로그인/회원가입 텍스트 */}
       {isMainPage && (
         <div className="flex items-center gap-3">
+          <Bell onClick={openAlert}></Bell>
+          <AlertCard 
+            onClose={closeAlert}
+            isVisible={open}
+          ></AlertCard>
           {user ? (
             // 로그인된 사용자용 버튼들
             <div className="flex items-center gap-3">
@@ -136,6 +153,8 @@ export default function Header({
     </header>
   );
 }
+
+export default memo(Header);
 
 // import { ArrowLeft } from 'lucide-react';
 // import { useNavigate } from 'react-router-dom';

@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import AlertCard from '@/features/alert/AlertCard';
+import { Bell } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const location = useLocation();
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [ open, setOpen ] = useState(false);
 
   // 매 분마다 업데이트 시간 갱신
   useEffect(() => {
@@ -45,6 +48,12 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         return '대시보드';
     }
   };
+    const openAlert = useCallback(() => {
+        setOpen(true);
+      }, []);
+    const closeAlert = useCallback(() => {
+      setOpen(false);
+    }, []);
 
   return (
     <header className="fixed top-0 left-0 lg:left-64 right-0 h-20 bg-white border-b border-gray-200 z-50 shadow-sm">
@@ -91,6 +100,8 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
             {getPageTitle()}
           </h1>
         </div>
+        <Bell onClick={openAlert}></Bell>
+        <AlertCard onClose={closeAlert} isVisible={open}></AlertCard>
 
         {/* Right side - Real-time Update Indicator */}
         <div className="flex items-center px-2 lg:px-3 xl:px-4">

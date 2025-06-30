@@ -114,5 +114,8 @@ export const apiService = {
       return api.get(`/managers/settlements?${queryParams}`);
     },
   },
+  alert: {
+  updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
+  }
 };
 export default apiService;
