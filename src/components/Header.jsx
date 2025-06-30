@@ -1,6 +1,7 @@
 import { ArrowLeft, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useAlertStore } from '../stores/alertStore';
 import { useState, useCallback, memo } from 'react';
 import AlertCard from '@/features/alert/AlertCard';
 
@@ -12,7 +13,11 @@ function Header({
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const notificationAlert = useAlertStore((state) => state.notificationAlert);
   const [ open, setOpen ] = useState(false);
+
+  // 읽지 않은 알림이 있는지 확인
+  const hasUnreadNotifications = notificationAlert && notificationAlert.length > 0;
 
   const handleBackClick = () => {
     if (onBackClick) {
@@ -113,11 +118,28 @@ function Header({
       {/* 오른쪽: 메인 페이지일 때 로그인/회원가입 텍스트 */}
       {isMainPage && (
         <div className="flex items-center gap-3">
-          <Bell onClick={openAlert}></Bell>
+          {/* 알림 아이콘 - 로그인한 사용자에게만 표시 */}
+          {user && (
+            <button
+              onClick={openAlert}
+              className="bg-transparent border-none p-0 cursor-pointer"
+              style={{ outline: 'none' }}
+            >
+              <div className="relative">
+                <Bell size={20} className="text-gray-600 hover:text-gray-800 transition-colors" />
+                {/* 알림 뱃지 - 새 알림이 있을 때만 표시 */}
+                {hasUnreadNotifications && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                )}
+              </div>
+            </button>
+          )}
+          
           <AlertCard 
             onClose={closeAlert}
             isVisible={open}
-          ></AlertCard>
+          />
+          
           {user ? (
             // 로그인된 사용자용 버튼들
             <div className="flex items-center gap-3">

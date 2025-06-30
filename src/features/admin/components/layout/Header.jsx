@@ -1,4 +1,5 @@
 import AlertCard from '@/features/alert/AlertCard';
+import { useAlertStore } from '@/stores/alertStore';
 import { Bell } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -7,6 +8,10 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const location = useLocation();
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [ open, setOpen ] = useState(false);
+  const notificationAlert = useAlertStore((state) => state.notificationAlert);
+
+  // 읽지 않은 알림이 있는지 확인
+  const hasUnreadNotifications = notificationAlert && notificationAlert.length > 0;
 
   // 매 분마다 업데이트 시간 갱신
   useEffect(() => {
@@ -48,12 +53,14 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         return '대시보드';
     }
   };
-    const openAlert = useCallback(() => {
-        setOpen(true);
-      }, []);
-    const closeAlert = useCallback(() => {
-      setOpen(false);
-    }, []);
+    
+  const openAlert = useCallback(() => {
+    setOpen(true);
+  }, []);
+    
+  const closeAlert = useCallback(() => {
+    setOpen(false);
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 lg:left-64 right-0 h-20 bg-white border-b border-gray-200 z-50 shadow-sm">
@@ -100,8 +107,25 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
             {getPageTitle()}
           </h1>
         </div>
-        <Bell onClick={openAlert}></Bell>
-        <AlertCard onClose={closeAlert} isVisible={open}></AlertCard>
+        
+        {/* 중앙 - 알림 아이콘 */}
+        <div className="flex items-center">
+          <button
+            onClick={openAlert}
+            className="bg-transparent border-none p-0 cursor-pointer"
+            style={{ outline: 'none' }}
+          >
+            <div className="relative">
+              <Bell size={20} className="text-gray-600 hover:text-gray-800 transition-colors" />
+              {/* 알림 뱃지 - 새 알림이 있을 때만 표시 */}
+              {hasUnreadNotifications && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+              )}
+            </div>
+          </button>
+        </div>
+        
+        <AlertCard onClose={closeAlert} isVisible={open} />
 
         {/* Right side - Real-time Update Indicator */}
         <div className="flex items-center px-2 lg:px-3 xl:px-4">
