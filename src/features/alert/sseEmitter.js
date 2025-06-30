@@ -2,10 +2,11 @@ import { useAlertStore } from "@/stores/alertStore";
 import { useAuthStore } from "@/stores/authStore";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { refreshAccessToken } from "@/api/config/api"; // 토큰 재발급 함수
-import apiService from "@/api";
 
 const sseEmitter = {
     eventSource: null, // 연결 인스턴스 저장
+    reconnectAttempts: 0, // 연결 시도 횟수
+    maxReconnects : 5, // 최대 재연결 시도 횟수
 
     connection: () => {
         const token = useAuthStore.getState().accessToken;
@@ -13,8 +14,11 @@ const sseEmitter = {
 
         // 이미 연결되어 있다면 기존 연결 종료
         if (sseEmitter.eventSource) {
-            console.log('🔄 기존 SSE 연결 종료 후 재연결');
-            sseEmitter.eventSource.close();
+            // console.log('🔄 기존 SSE 연결 종료 후 재연결');
+            // console.log(this);
+            // sseEmitter.eventSource.close();
+            console.log('🔄 기존 SSE 연결이 이미 존재합니다');
+            return;
         }
 
         if (!token || !user) {
@@ -38,13 +42,21 @@ const sseEmitter = {
         // 연결 성공
         eventSource.onopen = (event) => {
             console.log('✅ SSE 연결 성공!', event);
+            sseEmitter.reconnectAttempts = 0; // 재연결 시도 횟수 초기화
         };
 
         // 에러 처리 - 자동 재연결 로직 추가
         eventSource.onerror = async (error) => {
             const originalRequest = error.config;
-            console.error('❌ SSE 연결 에러:', error);
-            console.log(error)
+            sseEmitter.reconnectAttempts++;
+
+            if (sseEmitter.reconnectAttempts > sseEmitter.maxReconnects) {
+                console.log('재연결 시도 한계 초과, 연결 포기');
+                eventSource.close();
+                return;
+            }
+    
+            console.log(`재연결 시도 ${sseEmitter.reconnectAttempts}/${sseEmitter.maxReconnects}`);
 
             // 스토어 비우기
             useAlertStore.getState().clearNotificationAlert();
