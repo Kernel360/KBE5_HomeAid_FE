@@ -205,9 +205,13 @@ const Inquiries = () => {
   const [searchType, setSearchType] = useState('all');
 
   // 페이징 상태 추가
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [pageSize] = useState(10); // 한 페이지에 10개씩
+  // 페이징 상태 - 매칭 관리와 동일한 방식
+  const [pagination, setPagination] = useState({
+    page: 0, // 0부터 시작 (Spring Boot 방식)
+    size: 10,
+    totalElements: 0,
+    totalPages: 0,
+  });
 
   // 모달 상태
   const [replyModal, setReplyModal] = useState({
@@ -299,7 +303,7 @@ const Inquiries = () => {
   ];
 
   // 문의글 목록 조회
-  const fetchInquiries = async (page = currentPage) => {
+  const fetchInquiries = async (page = pagination.page) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('accessToken');
@@ -316,7 +320,7 @@ const Inquiries = () => {
         },
         params: {
           page: pageIndex,
-          size: pageSize,
+          size: pagination.size,
           type:
             activeTab === '수요자문의'
               ? 'CUSTOMER'
@@ -387,7 +391,13 @@ const Inquiries = () => {
         }
 
         setInquiries(processedInquiries);
-        setTotalPages(Math.ceil(totalElements / pageSize));
+        setPagination((prev) => ({
+          ...prev,
+          page:
+            response.data.data.currentPage || response.data.data.number || page,
+          totalElements: totalElements,
+          totalPages: Math.ceil(totalElements / prev.size),
+        }));
 
         // 답변 통계 업데이트
         const answeredCount = processedInquiries.filter(
@@ -424,25 +434,26 @@ const Inquiries = () => {
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchInquiries();
-  }, [activeTab, searchTerm, currentPage]); // currentPage 추가하여 페이지 변경 시에도 다시 로드
+  }, [activeTab, searchTerm, pagination.page]); // pagination.page 추가하여 페이지 변경 시에도 다시 로드
 
-  // 페이지 변경 핸들러
+  // 페이지 변경 핸들러 - 매칭 관리와 동일한 방식
   const handlePageChange = (newPage) => {
-    if (newPage >= 0 && newPage < totalPages) {
-      setCurrentPage(newPage);
-    }
+    setPagination((prev) => ({
+      ...prev,
+      page: newPage,
+    }));
   };
 
   // 검색어 변경 시 첫 페이지로 리셋
   const handleSearchChange = (value) => {
     setSearchTerm(value);
-    setCurrentPage(0);
+    setPagination((prev) => ({ ...prev, page: 0 }));
   };
 
   // 탭 변경 시 첫 페이지로 리셋
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setCurrentPage(0);
+    setPagination((prev) => ({ ...prev, page: 0 }));
   };
 
   // 필터링된 문의 목록 - 클라이언트 사이드 필터링
@@ -1116,56 +1127,40 @@ const Inquiries = () => {
                 </table>
               </div>
 
-              {/* 페이징 네비게이션 */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 px-4">
+              {/* 페이징 네비게이션 - 매칭 관리와 동일한 스타일 */}
+              {pagination.totalPages > 1 && (
+                <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
                   <div className="text-sm text-gray-700">
-                    총 {stats.total}개 중 {currentPage * pageSize + 1}-
-                    {Math.min((currentPage + 1) * pageSize, stats.total)}개 표시
+                    총 {pagination.totalElements}건 중{' '}
+                    {pagination.page * pagination.size + 1}-
+                    {Math.min(
+                      (pagination.page + 1) * pagination.size,
+                      pagination.totalElements
+                    )}
+                    건 표시
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 0}
-                      className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 0 || loading}
                     >
-                      이전
+                      ‹
                     </button>
-
-                    {/* 페이지 번호들 */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i;
-                      } else if (currentPage < 2) {
-                        pageNum = i;
-                      } else if (currentPage > totalPages - 3) {
-                        pageNum = totalPages - 5 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`px-3 py-2 text-sm font-medium rounded-md ${
-                            currentPage === pageNum
-                              ? 'text-white bg-blue-600 border border-blue-600'
-                              : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum + 1}
-                        </button>
-                      );
-                    })}
-
+                    <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
+                      {pagination.page + 1}
+                    </span>
+                    <span className="px-3 py-1 text-sm text-gray-500">
+                      / {pagination.totalPages}
+                    </span>
                     <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage >= totalPages - 1}
-                      className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={
+                        pagination.page >= pagination.totalPages - 1 || loading
+                      }
                     >
-                      다음
+                      ›
                     </button>
                   </div>
                 </div>

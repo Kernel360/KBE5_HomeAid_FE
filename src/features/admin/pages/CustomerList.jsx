@@ -199,11 +199,13 @@ const StatCard = ({ title, value, subValue, icon, iconBg }) => (
 
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchType, setSearchType] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 0,
-    size: 10, // 한 페이지에 10개씩 표시
+    size: 50,
     totalElements: 0,
     totalPages: 0,
   });
@@ -214,36 +216,19 @@ const CustomerList = () => {
     newToday: 0,
   });
 
-  // 검색 관련 상태 - 리뷰 관리와 동일한 패턴
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchType, setSearchType] = useState('all');
-
-  // 체크박스 선택 상태
-  const [selectedCustomers, setSelectedCustomers] = useState([]);
-  const [isAllSelected, setIsAllSelected] = useState(false);
-
   // 고객 상세 모달 상태
   const [detailModal, setDetailModal] = useState({
     isOpen: false,
     customer: null,
     customerDetail: null,
-    loading: false,
   });
 
-  // 페이지 변경 핸들러 - 서버 사이드 페이지네이션
   const handlePageChange = (newPage) => {
     if (newPage >= 0 && newPage < pagination.totalPages) {
-      setPagination((prev) => ({ ...prev, page: newPage }));
-
-      // 현재 검색 조건 유지하면서 새 페이지 로드
-      const searchData = searchTerm.trim()
-        ? {
-            query: searchTerm.trim(),
-            scope: searchType,
-          }
-        : null;
-
-      fetchCustomers(newPage, searchData);
+      setPagination((prev) => ({
+        ...prev,
+        page: newPage,
+      }));
     }
   };
 
@@ -375,10 +360,9 @@ const CustomerList = () => {
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
-    console.log('Component mounted, loading initial data');
-    fetchCustomers();
+    fetchCustomers(pagination.page);
     fetchCustomerStats();
-  }, []);
+  }, [pagination.page]);
 
   // 검색 실행
   const handleSearch = () => {
@@ -428,49 +412,6 @@ const CustomerList = () => {
     // 탈퇴한 회원은 비활성, 그 외는 활성
     return isWithdrawn ? '비활성' : '활성';
   };
-
-  // 전체 선택/해제 핸들러
-  const handleSelectAll = () => {
-    if (isAllSelected) {
-      // 전체 해제
-      setSelectedCustomers([]);
-      setIsAllSelected(false);
-    } else {
-      // 전체 선택
-      const allCustomerIds = customers.map((customer) => customer.id);
-      setSelectedCustomers(allCustomerIds);
-      setIsAllSelected(true);
-    }
-  };
-
-  // 개별 고객 선택/해제 핸들러
-  const handleSelectCustomer = (customerId) => {
-    setSelectedCustomers((prev) => {
-      if (prev.includes(customerId)) {
-        // 선택 해제
-        const newSelected = prev.filter((id) => id !== customerId);
-        setIsAllSelected(false);
-        return newSelected;
-      } else {
-        // 선택 추가
-        const newSelected = [...prev, customerId];
-        setIsAllSelected(newSelected.length === customers.length);
-        return newSelected;
-      }
-    });
-  };
-
-  // 고객 데이터가 변경될 때 전체 선택 상태 업데이트
-  useEffect(() => {
-    if (customers.length > 0) {
-      setIsAllSelected(
-        selectedCustomers.length === customers.length && customers.length > 0
-      );
-    } else {
-      setIsAllSelected(false);
-      setSelectedCustomers([]);
-    }
-  }, [customers, selectedCustomers.length]);
 
   // 고객 상세 정보 조회
   const fetchCustomerDetail = async (customerId) => {
@@ -531,7 +472,6 @@ const CustomerList = () => {
       isOpen: false,
       customer: null,
       customerDetail: null,
-      loading: false,
     });
   };
 
@@ -730,7 +670,6 @@ const CustomerList = () => {
               <div className="w-full overflow-x-auto">
                 <table className="w-full min-w-[900px]">
                   <colgroup>
-                    <col style={{ width: '80px' }} />
                     <col style={{ width: '120px' }} />
                     <col style={{ width: '220px' }} />
                     <col style={{ width: '160px' }} />
@@ -740,14 +679,6 @@ const CustomerList = () => {
                   </colgroup>
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          checked={isAllSelected}
-                          onChange={handleSelectAll}
-                          className="rounded border-gray-300"
-                        />
-                      </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         이름
                       </th>
@@ -774,9 +705,6 @@ const CustomerList = () => {
                       [...Array(5)].map((_, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
@@ -799,7 +727,7 @@ const CustomerList = () => {
                     ) : customers.length === 0 ? (
                       // 데이터 없음
                       <tr>
-                        <td colSpan="7" className="px-4 py-12 text-center">
+                        <td colSpan="6" className="px-4 py-12 text-center">
                           <div className="flex flex-col items-center">
                             <svg
                               className="w-12 h-12 text-gray-400 mb-4"
@@ -830,14 +758,6 @@ const CustomerList = () => {
                           key={customer.id || index}
                           className="hover:bg-gray-50"
                         >
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedCustomers.includes(customer.id)}
-                              onChange={() => handleSelectCustomer(customer.id)}
-                              className="rounded border-gray-300"
-                            />
-                          </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="text-sm font-medium text-gray-900">
                               {customer.name || '-'}
