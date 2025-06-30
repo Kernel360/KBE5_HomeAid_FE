@@ -633,8 +633,11 @@ const ManagerSettlement = () => {
                 </h3>
                 <div className="flex items-center space-x-3">
                   {/* 주간 정산 생성 버튼 */}
+                  {/* TODO: 주간 정산 생성 기능 구현 필요 */}
                   <button
-                    onClick={() => setIsWeeklySettlementModalOpen(true)}
+                    onClick={() => {
+                      alert('주간 정산 생성 기능은 준비 중입니다.');
+                    }}
                     className="px-4 py-2 text-black bg-green-600 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
                   >
                     <svg

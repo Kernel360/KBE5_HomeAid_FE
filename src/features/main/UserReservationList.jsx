@@ -172,7 +172,7 @@ const UserReservationList = () => {
       reservation.requestedDate || reservation.date || '날짜 정보 없음';
     const time =
       reservation.requestedTime || reservation.time || '시간 정보 없음';
-    const price = reservation.totalPrice || reservation.price || 0;
+    const price = 20000; // 통일된 금액
     const status = mapBackendStatus(reservation.status);
 
     return (

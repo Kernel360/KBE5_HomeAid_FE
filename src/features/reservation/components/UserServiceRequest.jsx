@@ -144,12 +144,22 @@ const UserServiceRequest = () => {
         reservationDate: formData.date,
         reservationTime: formData.startTime,
         totalPrice: currentReservationData.totalPrice || 0,
+        totalDuration: currentReservationData.totalDuration || 3, // 기본 3시간
         address: backendReservationData.address,
         addressDetail: backendReservationData.addressDetail,
         customerNote: currentReservationData.customerNote || '',
         selectedServices: currentReservationData.selectedServices || [],
         serviceDetails: currentReservationData.serviceDetails || [],
+        // 서비스 요청에서 작성한 추가 정보들
+        requestedDate: formData.date,
+        requestedTime: formData.startTime,
+        customerMemo: currentReservationData.customerNote || '',
+        // 백엔드 응답 데이터
         backendData: backendReservation,
+        // 예약 ID 정보
+        reservationId:
+          backendReservation?.data?.reservationId ||
+          backendReservation?.reservationId,
       };
 
       addReservation(localReservationData);

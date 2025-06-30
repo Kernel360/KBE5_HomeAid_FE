@@ -26,3 +26,5 @@ dist-ssr
 README_API_INTEGRATION.md
 README_BACKEND_IMPROVEMENTS.md
 .cursor
+public/clear-payment-data.html
+src/utils/paymentUtils.js

@@ -108,14 +108,17 @@ const useReservationListStore = create(
             : [];
 
           const newReservation = {
-            id: Date.now(), // 임시 ID (실제로는 백엔드에서 받아야 함)
+            id: reservationData.reservationId || Date.now(), // 백엔드 ID 우선 사용
+            reservationId: reservationData.reservationId || Date.now(),
             type:
               reservationData.serviceType ||
               reservationData.selectedSubOption?.name ||
               '서비스',
-            date: reservationData.reservationDate,
-            time: `${reservationData.reservationTime}~${reservationData.endTime || '완료시까지'}`,
+            date:
+              reservationData.reservationDate || reservationData.requestedDate,
+            time: `${reservationData.reservationTime || reservationData.requestedTime}~${reservationData.endTime || '완료시까지'}`,
             price: reservationData.totalPrice || 0,
+            totalDuration: reservationData.totalDuration || 3,
             icon:
               reservationData.selectedSubOption?.id === 'cleaning'
                 ? 'cleaning'
@@ -128,8 +131,17 @@ const useReservationListStore = create(
             address: reservationData.address,
             addressDetail: reservationData.addressDetail,
             customerNote: reservationData.customerNote,
+            customerMemo:
+              reservationData.customerMemo || reservationData.customerNote,
             selectedServices: reservationData.selectedServices || [],
             serviceDetails: reservationData.serviceDetails || [],
+            // 서비스 요청에서 작성한 추가 정보들
+            requestedDate:
+              reservationData.requestedDate || reservationData.reservationDate,
+            requestedTime:
+              reservationData.requestedTime || reservationData.reservationTime,
+            // 백엔드 응답 데이터 보존
+            backendData: reservationData.backendData,
             createdAt: new Date().toISOString(),
           };
 

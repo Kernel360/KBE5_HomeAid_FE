@@ -1,5 +1,172 @@
 import React, { useState, useEffect } from 'react';
 
+// 고객 상세 모달 컴포넌트
+const CustomerDetailModal = ({ isOpen, onClose, customer, customerDetail }) => {
+  if (!isOpen || !customer) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black flex items-center justify-center p-4 z-50"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+    >
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg border border-gray-200">
+        <div className="p-6">
+          {/* 모달 헤더 */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              고객 상세 정보
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* 프로필 정보 */}
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              프로필 정보
+            </h3>
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-semibold">
+                    {customerDetail?.profile?.name?.charAt(0) ||
+                      customer.name?.charAt(0) ||
+                      '?'}
+                  </span>
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {customerDetail?.profile?.name || customer.name || '-'}
+                  </div>
+                  <div className="text-sm text-gray-500">ID: {customer.id}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    이메일
+                  </label>
+                  <div className="text-gray-900">
+                    {customerDetail?.profile?.email || customer.email || '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    전화번호
+                  </label>
+                  <div className="text-gray-900">
+                    {customerDetail?.profile?.phone || customer.phone || '-'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 주소 정보 */}
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              등록된 주소
+            </h3>
+            {customerDetail?.addresses &&
+            customerDetail.addresses.length > 0 ? (
+              <div className="space-y-3">
+                {customerDetail.addresses.map((address, index) => (
+                  <div
+                    key={address.id || index}
+                    className="bg-gray-50 rounded-lg p-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm font-medium text-blue-600">
+                            {address.alias || `주소 ${index + 1}`}
+                          </span>
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            ID: {address.id}
+                          </span>
+                        </div>
+                        <div className="text-gray-900 mb-1">
+                          {address.fullAddress ||
+                            `${address.address || ''} ${address.addressDetail || ''}`.trim()}
+                        </div>
+                        {(address.latitude || address.longitude) && (
+                          <div className="text-sm text-gray-500">
+                            위도: {address.latitude || '-'}, 경도:{' '}
+                            {address.longitude || '-'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                등록된 주소가 없습니다.
+              </div>
+            )}
+          </div>
+
+          {/* 기타 정보 */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              기타 정보
+            </h3>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    매칭 수
+                  </label>
+                  <div className="text-gray-900">
+                    {customer.matchCount || 0}건
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    가입일
+                  </label>
+                  <div className="text-gray-900">
+                    {customer.createdAt
+                      ? new Date(customer.createdAt).toLocaleDateString('ko-KR')
+                      : '-'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 모달 푸터 */}
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const StatCard = ({ title, value, subValue, icon, iconBg }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
     <div className="flex items-start justify-between mb-3 min-h-0">
@@ -55,88 +222,28 @@ const CustomerList = () => {
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [isAllSelected, setIsAllSelected] = useState(false);
 
-  // 디바운스된 검색 - 성능 최적화
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      // 검색어가 변경된 후 300ms 후에 실행
-      if (searchTerm.trim()) {
-        handleSearch();
-      }
-    }, 300);
+  // 고객 상세 모달 상태
+  const [detailModal, setDetailModal] = useState({
+    isOpen: false,
+    customer: null,
+    customerDetail: null,
+    loading: false,
+  });
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
-
-  // 검색과 필터를 적용한 고객 필터링 - 성능 최적화
-  const getFilteredCustomers = () => {
-    if (!customers.length) return [];
-
-    let filtered = customers;
-
-    // 검색어 필터링 - 최적화된 버전
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter((customer) => {
-        switch (searchType) {
-          case 'name':
-            return customer.name?.toLowerCase().includes(term);
-          case 'email':
-            return customer.email?.toLowerCase().includes(term);
-          case 'phone':
-            return customer.phone?.toLowerCase().includes(term);
-          case 'all':
-          default:
-            return (
-              customer.name?.toLowerCase().includes(term) ||
-              customer.email?.toLowerCase().includes(term) ||
-              customer.phone?.toLowerCase().includes(term)
-            );
-        }
-      });
-    }
-
-    return filtered;
-  };
-
-  const filteredCustomers = getFilteredCustomers();
-
-  // 페이지네이션 적용된 고객 목록
-  const getPaginatedCustomers = () => {
-    const startIndex = pagination.page * pagination.size;
-    const endIndex = startIndex + pagination.size;
-    return filteredCustomers.slice(startIndex, endIndex);
-  };
-
-  const paginatedCustomers = getPaginatedCustomers();
-
-  // 페이지네이션 정보 업데이트
-  const updatePaginationInfo = () => {
-    const totalElements = filteredCustomers.length;
-    const totalPages = Math.ceil(totalElements / pagination.size);
-
-    setPagination((prev) => ({
-      ...prev,
-      totalElements,
-      totalPages,
-    }));
-  };
-
-  // 검색어나 필터가 변경될 때 페이지네이션 정보 업데이트
-  useEffect(() => {
-    updatePaginationInfo();
-    // 현재 페이지가 총 페이지 수를 초과하면 첫 페이지로 이동
-    if (
-      pagination.page > 0 &&
-      pagination.page >= Math.ceil(filteredCustomers.length / pagination.size)
-    ) {
-      setPagination((prev) => ({ ...prev, page: 0 }));
-    }
-  }, [filteredCustomers.length, pagination.size]);
-
-  // 페이지 변경 핸들러 - 클라이언트 사이드 페이지네이션
+  // 페이지 변경 핸들러 - 서버 사이드 페이지네이션
   const handlePageChange = (newPage) => {
     if (newPage >= 0 && newPage < pagination.totalPages) {
       setPagination((prev) => ({ ...prev, page: newPage }));
+
+      // 현재 검색 조건 유지하면서 새 페이지 로드
+      const searchData = searchTerm.trim()
+        ? {
+            query: searchTerm.trim(),
+            scope: searchType,
+          }
+        : null;
+
+      fetchCustomers(newPage, searchData);
     }
   };
 
@@ -158,30 +265,17 @@ const CustomerList = () => {
         size: pagination.size.toString(),
       });
 
-      // 검색 조건 추가 - 선택된 범위에 따라 검색
+      // 검색 조건이 있을 때만 검색 파라미터 추가
       if (searchData && searchData.query && searchData.query.trim()) {
         const query = searchData.query.trim();
-
-        // 선택된 범위에 따라 검색 파라미터 추가
-        switch (searchData.scope) {
-          case 'name':
-            params.append('name', query);
-            break;
-          case 'email':
-            params.append('email', query);
-            break;
-          case 'phone':
-            params.append('phone', query);
-            break;
-          case 'all':
-          default:
-            // 전체 검색인 경우 모든 필드에 검색
-            params.append('name', query);
-            params.append('email', query);
-            params.append('phone', query);
-            break;
-        }
+        // 모든 검색을 keyword 파라미터로 통일
+        params.append('keyword', query);
       }
+
+      console.log(
+        'Fetching customers with params:',
+        Object.fromEntries(params)
+      );
 
       const response = await fetch(`/api/v1/admin/customers?${params}`, {
         method: 'GET',
@@ -196,11 +290,12 @@ const CustomerList = () => {
       }
 
       const data = await response.json();
+      console.log('Customer API response:', data);
 
       if (data.success && data.data) {
         setCustomers(data.data.content || []);
         setPagination({
-          page: data.data.currentPage || 0,
+          page: data.data.currentPage || data.data.number || 0,
           size: data.data.size || 10,
           totalElements: data.data.totalElements || 0,
           totalPages: data.data.totalPages || 0,
@@ -228,17 +323,22 @@ const CustomerList = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      // 전체 데이터를 가져와서 통계 계산
-      const response = await fetch('/api/v1/admin/customers?page=0&size=1000', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // 전체 데이터를 가져와서 통계 계산 - 더 큰 size 사용
+      const response = await fetch(
+        '/api/v1/admin/customers?page=0&size=10000',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Customer stats API response:', data);
+
         if (data.success && data.data) {
           const allCustomers = data.data.content || [];
           const today = new Date().toDateString();
@@ -275,22 +375,36 @@ const CustomerList = () => {
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
+    console.log('Component mounted, loading initial data');
     fetchCustomers();
     fetchCustomerStats();
   }, []);
 
   // 검색 실행
   const handleSearch = () => {
+    console.log('Search triggered:', { searchTerm, searchType });
     // 검색 시 첫 페이지로 이동
     setPagination((prev) => ({ ...prev, page: 0 }));
+
+    // 검색 데이터 구성
+    const searchData = searchTerm.trim()
+      ? {
+          query: searchTerm.trim(),
+          scope: searchType,
+        }
+      : null;
+
+    // API 호출
+    fetchCustomers(0, searchData);
   };
 
   // 검색 초기화
   const handleReset = () => {
     setSearchTerm('');
     setSearchType('all');
-    // 초기화 시 첫 페이지로 이동
+    // 초기화 시 첫 페이지로 이동하고 전체 데이터 로드
     setPagination((prev) => ({ ...prev, page: 0 }));
+    fetchCustomers(0, null);
   };
 
   // 엔터 키 검색 핸들러
@@ -357,6 +471,69 @@ const CustomerList = () => {
       setSelectedCustomers([]);
     }
   }, [customers, selectedCustomers.length]);
+
+  // 고객 상세 정보 조회
+  const fetchCustomerDetail = async (customerId) => {
+    try {
+      setDetailModal((prev) => ({ ...prev, loading: true }));
+
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
+
+      const response = await fetch(`/api/v1/admin/customers/${customerId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setDetailModal((prev) => ({
+          ...prev,
+          customerDetail: data.data,
+          loading: false,
+        }));
+      } else {
+        throw new Error('고객 상세 정보를 불러올 수 없습니다.');
+      }
+    } catch (err) {
+      console.error('고객 상세 정보 조회 오류:', err);
+      setDetailModal((prev) => ({ ...prev, loading: false }));
+      alert('고객 상세 정보를 불러오는 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 상세보기 버튼 클릭 핸들러
+  const handleDetailClick = async (customer) => {
+    setDetailModal({
+      isOpen: true,
+      customer,
+      customerDetail: null,
+      loading: false,
+    });
+
+    // 상세 정보 조회
+    await fetchCustomerDetail(customer.id);
+  };
+
+  // 모달 닫기
+  const handleCloseModal = () => {
+    setDetailModal({
+      isOpen: false,
+      customer: null,
+      customerDetail: null,
+      loading: false,
+    });
+  };
 
   const stats = [
     {
@@ -648,7 +825,7 @@ const CustomerList = () => {
                       </tr>
                     ) : (
                       // 실제 데이터
-                      paginatedCustomers.map((customer, index) => (
+                      customers.map((customer, index) => (
                         <tr
                           key={customer.id || index}
                           className="hover:bg-gray-50"
@@ -687,7 +864,10 @@ const CustomerList = () => {
                             {customer.matchCount || '0'}건
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                            <button className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                            <button
+                              onClick={() => handleDetailClick(customer)}
+                              className="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                            >
                               상세보기
                             </button>
                           </td>
@@ -700,7 +880,7 @@ const CustomerList = () => {
 
               {/* Pagination - 매니저 목록과 동일한 스타일 적용 */}
               {!loading &&
-                filteredCustomers.length > 0 &&
+                customers.length > 0 &&
                 pagination.totalPages > 1 && (
                   <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
                     <div className="text-sm text-gray-700">
@@ -708,7 +888,7 @@ const CustomerList = () => {
                         <>
                           검색 결과:{' '}
                           <span className="font-medium">
-                            {filteredCustomers.length}
+                            {customers.length}
                           </span>
                           개{searchTerm && ` (검색어: "${searchTerm}")`}
                         </>
@@ -761,6 +941,14 @@ const CustomerList = () => {
           </div>
         </div>
       </div>
+
+      {/* 고객 상세 모달 */}
+      <CustomerDetailModal
+        isOpen={detailModal.isOpen}
+        onClose={handleCloseModal}
+        customer={detailModal.customer}
+        customerDetail={detailModal.customerDetail}
+      />
     </div>
   );
 };
