@@ -62,9 +62,14 @@ const UserReservationDetail = () => {
             type: data.serviceOptionName || getServiceName(1, '청소', data),
             icon: getServiceIcon(1),
             status: data.status || 'REQUESTED',
-            date: data.requestedDate,
-            time: data.requestedTime,
-            price: data.totalPrice || getServicePrice(null, 1, '청소', data),
+            // 예약 목록에서 전달된 데이터를 우선 사용
+            date: location.state?.reservation?.date || data.requestedDate,
+            time: location.state?.reservation?.time || data.requestedTime,
+            requestedDate:
+              location.state?.reservation?.requestedDate || data.requestedDate,
+            requestedTime:
+              location.state?.reservation?.requestedTime || data.requestedTime,
+            price: data.totalPrice || getServicePrice(),
 
             // ⭐️ address와 addressDetail을 모두 받아와서 조합
             address: (() => {
@@ -142,24 +147,6 @@ const UserReservationDetail = () => {
       3: 'childcare',
     };
     return iconMapping[subOptionId] || 'home';
-  };
-
-  const formatTimeRange = (startTime, durationMinutes = 180) => {
-    if (!startTime) return '시간 정보 없음';
-
-    const timeStr = startTime.includes(':')
-      ? startTime.substring(0, 5)
-      : startTime;
-
-    if (!durationMinutes) return timeStr;
-
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const totalMinutes = hours * 60 + minutes + durationMinutes;
-    const endHours = Math.floor(totalMinutes / 60) % 24;
-    const endMins = totalMinutes % 60;
-
-    const endTime = `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
-    return `${timeStr} ~ ${endTime}`;
   };
 
   const getServiceEmoji = (icon) => {
@@ -308,36 +295,9 @@ const UserReservationDetail = () => {
     };
   }, [refreshReservationData, reservationId]);
 
-  const getServicePrice = (
-    totalPrice,
-    subOptionId,
-    subOptionName,
-    backendData
-  ) => {
-    if (totalPrice && totalPrice > 0) return totalPrice;
-
-    if (backendData?.totalPrice && backendData.totalPrice > 0)
-      return backendData.totalPrice;
-    if (backendData?.price && backendData.price > 0) return backendData.price;
-
-    if (subOptionName) {
-      if (subOptionName.includes('빨래') || subOptionName.includes('세탁'))
-        return 40000;
-      if (subOptionName.includes('청소')) return 58000;
-      if (subOptionName.includes('육아')) return 62000;
-    }
-
-    const priceMapping = {
-      1: 40000,
-      2: 58000,
-      3: 62000,
-    };
-
-    if (subOptionId && priceMapping[subOptionId]) {
-      return priceMapping[subOptionId];
-    }
-
-    return 50000;
+  const getServicePrice = () => {
+    // 통일된 금액 반환
+    return 20000;
   };
 
   const handleMatchingResponse = async (action) => {
@@ -491,7 +451,7 @@ const UserReservationDetail = () => {
       status: 'REQUESTED',
       date: '날짜 정보 없음',
       time: '시간 정보 없음',
-      price: getServicePrice(null, 2, '청소', {}),
+      price: getServicePrice(),
       address: '주소 정보 없음',
       addressDetail: '',
       customerNote: '',
@@ -520,15 +480,21 @@ const UserReservationDetail = () => {
     reservation.backendData?.matchedManagerName ??
     '배정된 매니저 없음';
 
-  const price = detail.totalPrice ?? reservation.price ?? 0;
+  const price = 20000; // 통일된 금액
 
   const type = detail.serviceOptionName ?? reservation.type ?? '서비스';
 
-  const date = detail.requestedDate ?? reservation.date ?? '날짜 정보 없음';
-
-  const time = detail.requestedTime
-    ? formatTimeRange(detail.requestedTime, (detail.totalDuration ?? 3) * 60)
-    : (reservation.time ?? '시간 정보 없음');
+  // 예약 목록과 동일한 방식으로 날짜와 시간 처리
+  const date =
+    reservation.requestedDate ||
+    reservation.date ||
+    detail.requestedDate ||
+    '날짜 정보 없음';
+  const time =
+    reservation.requestedTime ||
+    reservation.time ||
+    detail.requestedTime ||
+    '시간 정보 없음';
 
   const status = detail.status || reservation.status || 'REQUESTED';
 
@@ -576,6 +542,12 @@ const UserReservationDetail = () => {
                 <span className="info-label">서비스 유형</span>
                 <span className="info-value">{type}</span>
               </div>
+              {detail.totalDuration && (
+                <div className="info-row">
+                  <span className="info-label">예상 소요시간</span>
+                  <span className="info-value">{detail.totalDuration}시간</span>
+                </div>
+              )}
               <div className="info-row">
                 <span className="info-label">예약 금액</span>
                 <span className="info-value price">
@@ -584,6 +556,46 @@ const UserReservationDetail = () => {
               </div>
             </div>
           </div>
+
+          {/* 서비스 상세 옵션 정보 표시 */}
+          {reservation?.selectedServices &&
+            reservation.selectedServices.length > 0 && (
+              <div className="info-section">
+                <h3 className="section-title">
+                  <span className="section-icon">⚙️</span>
+                  선택한 서비스 옵션
+                </h3>
+                <div className="info-card">
+                  {reservation.selectedServices.map((service, index) => (
+                    <div key={index} className="info-row">
+                      <span className="info-label">{service.name}</span>
+                      <span className="info-value">
+                        {service.price?.toLocaleString()}원
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          {/* 서비스 세부사항 표시 */}
+          {reservation?.serviceDetails &&
+            reservation.serviceDetails.length > 0 && (
+              <div className="info-section">
+                <h3 className="section-title">
+                  <span className="section-icon">📋</span>
+                  서비스 세부사항
+                </h3>
+                <div className="info-card">
+                  {reservation.serviceDetails.map((detail, index) => (
+                    <div key={index} className="info-row">
+                      <span className="info-label">{detail.category}</span>
+                      <span className="info-value">{detail.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
           <div className="info-section">
             <h3 className="section-title">
