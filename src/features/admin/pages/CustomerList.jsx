@@ -205,7 +205,7 @@ const CustomerList = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 0,
-    size: 50,
+    size: 10,
     totalElements: 0,
     totalPages: 0,
   });
