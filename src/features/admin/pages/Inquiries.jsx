@@ -726,8 +726,6 @@ const Inquiries = () => {
     }
   };
 
-
-
   // 관리자가 아닌 경우 접근 차단
   if (user?.role !== 'ROLE_ADMIN') {
     return (
@@ -1105,7 +1103,6 @@ const Inquiries = () => {
                                       >
                                         수정
                                       </button>
-
                                     </>
                                   )}
                                 </div>
