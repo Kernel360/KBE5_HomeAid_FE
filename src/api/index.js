@@ -103,6 +103,22 @@ export const apiService = {
     checkIn: (data) => api.post('/managers/work-logs', data),
     checkOut: (reservationId, data) =>
       api.patch(`/managers/work-logs/${reservationId}`, data),
+    createIssue: (reservationId, formData) =>
+      api.post(`/manager/reservations/${reservationId}/issues`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+    getIssue: (reservationId) =>
+      api.get(`/reservations/${reservationId}/issues`),
+    updateIssue: (issueId, formData) =>
+      api.put(`/manager/issues/${issueId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+    deleteIssue: (issueId) =>
+      api.delete(`/manager/issues/${issueId}`),
   },
   settlement: {
     getManagerSettlements: (managerId, params = {}) => {
