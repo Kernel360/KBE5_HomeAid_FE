@@ -45,6 +45,9 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
             case 'MATCHING_REJECTED_BY_MANAGER':    //매니저가 매칭 거절
                 navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
                 break;
+            case 'MATCHING_ACCEPTED_BY_MANAGER_FOR_CUSTOMER':
+                navigate(`/customer/reservations/${relatedEntityId}`);
+                break;
             case 'MATCHING_ACCEPTED_BY_CUSTOMER':  //고객 최종수락
                 if (userRole === 'ROLE_MANAGER') {
                     navigate('/matching/list');
@@ -132,7 +135,7 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                                         <div className="flex items-start gap-3" onClick={() =>
                                             handleNavigate(noti.alertId, noti.relatedEntityId, noti.relatedEntityType, noti.eventType)}>
                                             <div className="flex-1">
-                                                <p className="text-sm text-gray-600 mb-2">
+                                                <p className="text-sm text-gray-600 mb-2" style={{ whiteSpace: 'pre-line' }}>
                                                     {noti.message || '새로운 알림이 있습니다.'}
                                                 </p>
                                                 { noti.content &&
