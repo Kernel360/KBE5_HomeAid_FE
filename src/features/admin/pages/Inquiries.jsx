@@ -726,75 +726,7 @@ const Inquiries = () => {
     }
   };
 
-  // 답변 삭제
-  const handleDeleteReply = async (inquiry) => {
-    if (!inquiry.id || !window.confirm('답변을 삭제하시겠습니까?')) return;
 
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
-      }
-
-      // 먼저 문의글과 답변 정보를 조회하여 replyId를 가져옴
-      const boardWithReply = await api.get(
-        `/admin/inquiries/board/${inquiry.id}/with-reply`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!boardWithReply.data?.success || !boardWithReply.data.data.reply) {
-        alert('삭제할 답변을 찾을 수 없습니다.');
-        return;
-      }
-
-      const replyId = boardWithReply.data.data.reply.id;
-
-      // 개발 환경에서 삭제 전 상태 로깅
-      if (import.meta.env.DEV) {
-        console.log('답변 삭제 전 상태:', {
-          boardId: inquiry.id,
-          replyId: replyId,
-          currentStatus: inquiry.isAnswered,
-        });
-      }
-
-      const response = await api.delete(
-        `/admin/inquiries/board/${inquiry.id}/reply/${replyId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.data?.success) {
-        // 개발 환경에서 삭제 후 응답 로깅
-        if (import.meta.env.DEV) {
-          console.log('답변 삭제 성공:', response.data);
-        }
-
-        alert('답변이 성공적으로 삭제되었습니다.');
-
-        // 삭제 후 목록 새로고침 (상태 업데이트 대신)
-        fetchInquiries();
-      }
-    } catch (err) {
-      console.error('답변 삭제 오류:', err);
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        alert('인증이 만료되었습니다. 다시 로그인해주세요.');
-      } else {
-        alert(
-          err.response?.data?.message ||
-            err.message ||
-            '답변 삭제 중 오류가 발생했습니다.'
-        );
-      }
-    }
-  };
 
   // 관리자가 아닌 경우 접근 차단
   if (user?.role !== 'ROLE_ADMIN') {
@@ -1173,14 +1105,7 @@ const Inquiries = () => {
                                       >
                                         수정
                                       </button>
-                                      <button
-                                        onClick={() =>
-                                          handleDeleteReply(inquiry)
-                                        }
-                                        className="px-3 py-1 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                                      >
-                                        삭제
-                                      </button>
+
                                     </>
                                   )}
                                 </div>
