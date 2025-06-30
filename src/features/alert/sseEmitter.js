@@ -47,7 +47,6 @@ const sseEmitter = {
 
         // 에러 처리 - 자동 재연결 로직 추가
         eventSource.onerror = async (error) => {
-            const originalRequest = error.config;
             sseEmitter.reconnectAttempts++;
 
             if (sseEmitter.reconnectAttempts > sseEmitter.maxReconnects) {
@@ -61,22 +60,29 @@ const sseEmitter = {
             // 스토어 비우기
             useAlertStore.getState().clearNotificationAlert();
 
-            if (error.status === 401) {
+            // SSE에서 401 에러 감지 - error 객체의 status 또는 readyState로 판단
+            const is401Error = error.status === 401 || 
+                             (error.target && error.target.status === 401) ||
+                             (error.target && error.target.readyState === EventSource.CLOSED && 
+                              sseEmitter.reconnectAttempts === 1); // 첫 번째 재연결 시도시 토큰 만료로 간주
+
+            if (is401Error) {
                 console.log('🔄 sse instance 토큰 만료');
 
                 try {
                     // 토큰 재발급 시도
                     const newToken = await refreshAccessToken();
+                    console.log('🔄 토큰 재발급 성공:', newToken);
+                    sseEmitter.token = newToken; // 새로운 토큰 저장
 
                     console.log('✅ SSE 토큰 재발급 성공, 재연결 시도');
-                    // 새로운 토큰으로 원래 요청의 헤더를 교체
-                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
-
+                    
                     // 기존 연결 종료
                     if (sseEmitter.eventSource) {
                         sseEmitter.eventSource.close();
+                        sseEmitter.eventSource = null;
                     }
+                    
                     // 새로운 토큰으로 재연결
                     setTimeout(() => {
                         sseEmitter.connection();
