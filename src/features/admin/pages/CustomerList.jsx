@@ -230,88 +230,20 @@ const CustomerList = () => {
     loading: false,
   });
 
-  // 디바운스된 검색 - 성능 최적화
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      // 검색어가 변경된 후 300ms 후에 실행
-      if (searchTerm.trim()) {
-        handleSearch();
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
-
-  // 검색과 필터를 적용한 고객 필터링 - 성능 최적화
-  const getFilteredCustomers = () => {
-    if (!customers.length) return [];
-
-    let filtered = customers;
-
-    // 검색어 필터링 - 최적화된 버전
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter((customer) => {
-        switch (searchType) {
-          case 'name':
-            return customer.name?.toLowerCase().includes(term);
-          case 'email':
-            return customer.email?.toLowerCase().includes(term);
-          case 'phone':
-            return customer.phone?.toLowerCase().includes(term);
-          case 'all':
-          default:
-            return (
-              customer.name?.toLowerCase().includes(term) ||
-              customer.email?.toLowerCase().includes(term) ||
-              customer.phone?.toLowerCase().includes(term)
-            );
-        }
-      });
-    }
-
-    return filtered;
-  };
-
-  const filteredCustomers = getFilteredCustomers();
-
-  // 페이지네이션 적용된 고객 목록
-  const getPaginatedCustomers = () => {
-    const startIndex = pagination.page * pagination.size;
-    const endIndex = startIndex + pagination.size;
-    return filteredCustomers.slice(startIndex, endIndex);
-  };
-
-  const paginatedCustomers = getPaginatedCustomers();
-
-  // 페이지네이션 정보 업데이트
-  const updatePaginationInfo = () => {
-    const totalElements = filteredCustomers.length;
-    const totalPages = Math.ceil(totalElements / pagination.size);
-
-    setPagination((prev) => ({
-      ...prev,
-      totalElements,
-      totalPages,
-    }));
-  };
-
-  // 검색어나 필터가 변경될 때 페이지네이션 정보 업데이트
-  useEffect(() => {
-    updatePaginationInfo();
-    // 현재 페이지가 총 페이지 수를 초과하면 첫 페이지로 이동
-    if (
-      pagination.page > 0 &&
-      pagination.page >= Math.ceil(filteredCustomers.length / pagination.size)
-    ) {
-      setPagination((prev) => ({ ...prev, page: 0 }));
-    }
-  }, [filteredCustomers.length, pagination.size]);
-
-  // 페이지 변경 핸들러 - 클라이언트 사이드 페이지네이션
+  // 페이지 변경 핸들러 - 서버 사이드 페이지네이션
   const handlePageChange = (newPage) => {
     if (newPage >= 0 && newPage < pagination.totalPages) {
       setPagination((prev) => ({ ...prev, page: newPage }));
+
+      // 현재 검색 조건 유지하면서 새 페이지 로드
+      const searchData = searchTerm.trim()
+        ? {
+            query: searchTerm.trim(),
+            scope: searchType,
+          }
+        : null;
+
+      fetchCustomers(newPage, searchData);
     }
   };
 
@@ -333,30 +265,17 @@ const CustomerList = () => {
         size: pagination.size.toString(),
       });
 
-      // 검색 조건 추가 - 선택된 범위에 따라 검색
+      // 검색 조건이 있을 때만 검색 파라미터 추가
       if (searchData && searchData.query && searchData.query.trim()) {
         const query = searchData.query.trim();
-
-        // 선택된 범위에 따라 검색 파라미터 추가
-        switch (searchData.scope) {
-          case 'name':
-            params.append('name', query);
-            break;
-          case 'email':
-            params.append('email', query);
-            break;
-          case 'phone':
-            params.append('phone', query);
-            break;
-          case 'all':
-          default:
-            // 전체 검색인 경우 모든 필드에 검색
-            params.append('name', query);
-            params.append('email', query);
-            params.append('phone', query);
-            break;
-        }
+        // 모든 검색을 keyword 파라미터로 통일
+        params.append('keyword', query);
       }
+
+      console.log(
+        'Fetching customers with params:',
+        Object.fromEntries(params)
+      );
 
       const response = await fetch(`/api/v1/admin/customers?${params}`, {
         method: 'GET',
@@ -371,11 +290,12 @@ const CustomerList = () => {
       }
 
       const data = await response.json();
+      console.log('Customer API response:', data);
 
       if (data.success && data.data) {
         setCustomers(data.data.content || []);
         setPagination({
-          page: data.data.currentPage || 0,
+          page: data.data.currentPage || data.data.number || 0,
           size: data.data.size || 10,
           totalElements: data.data.totalElements || 0,
           totalPages: data.data.totalPages || 0,
@@ -403,17 +323,22 @@ const CustomerList = () => {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
 
-      // 전체 데이터를 가져와서 통계 계산
-      const response = await fetch('/api/v1/admin/customers?page=0&size=1000', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // 전체 데이터를 가져와서 통계 계산 - 더 큰 size 사용
+      const response = await fetch(
+        '/api/v1/admin/customers?page=0&size=10000',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Customer stats API response:', data);
+
         if (data.success && data.data) {
           const allCustomers = data.data.content || [];
           const today = new Date().toDateString();
@@ -450,22 +375,36 @@ const CustomerList = () => {
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
+    console.log('Component mounted, loading initial data');
     fetchCustomers();
     fetchCustomerStats();
   }, []);
 
   // 검색 실행
   const handleSearch = () => {
+    console.log('Search triggered:', { searchTerm, searchType });
     // 검색 시 첫 페이지로 이동
     setPagination((prev) => ({ ...prev, page: 0 }));
+
+    // 검색 데이터 구성
+    const searchData = searchTerm.trim()
+      ? {
+          query: searchTerm.trim(),
+          scope: searchType,
+        }
+      : null;
+
+    // API 호출
+    fetchCustomers(0, searchData);
   };
 
   // 검색 초기화
   const handleReset = () => {
     setSearchTerm('');
     setSearchType('all');
-    // 초기화 시 첫 페이지로 이동
+    // 초기화 시 첫 페이지로 이동하고 전체 데이터 로드
     setPagination((prev) => ({ ...prev, page: 0 }));
+    fetchCustomers(0, null);
   };
 
   // 엔터 키 검색 핸들러
@@ -886,7 +825,7 @@ const CustomerList = () => {
                       </tr>
                     ) : (
                       // 실제 데이터
-                      paginatedCustomers.map((customer, index) => (
+                      customers.map((customer, index) => (
                         <tr
                           key={customer.id || index}
                           className="hover:bg-gray-50"
@@ -941,7 +880,7 @@ const CustomerList = () => {
 
               {/* Pagination - 매니저 목록과 동일한 스타일 적용 */}
               {!loading &&
-                filteredCustomers.length > 0 &&
+                customers.length > 0 &&
                 pagination.totalPages > 1 && (
                   <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
                     <div className="text-sm text-gray-700">
@@ -949,7 +888,7 @@ const CustomerList = () => {
                         <>
                           검색 결과:{' '}
                           <span className="font-medium">
-                            {filteredCustomers.length}
+                            {customers.length}
                           </span>
                           개{searchTerm && ` (검색어: "${searchTerm}")`}
                         </>
