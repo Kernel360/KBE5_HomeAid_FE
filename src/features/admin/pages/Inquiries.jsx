@@ -356,20 +356,49 @@ const Inquiries = () => {
         // 개발 환경에서 원본 데이터 로깅
         if (import.meta.env.DEV) {
           console.log('Raw inquiries data:', inquiriesData);
+          // 각 문의글의 답변 관련 필드 상세 확인
+          inquiriesData.forEach((inquiry, index) => {
+            console.log(`Inquiry ${index} (ID: ${inquiry.id}):`, {
+              replyContent: inquiry.replyContent,
+              replyId: inquiry.replyId,
+              replyCreatedAt: inquiry.replyCreatedAt,
+              reply: inquiry.reply,
+              isAnswered: inquiry.isAnswered,
+              hasReplyContent: Boolean(inquiry.replyContent),
+              hasReplyId: Boolean(inquiry.replyId),
+            });
+          });
         }
 
         // 서버에서 받아온 데이터에 답변 상태 추가
         const updatedInquiries = inquiriesData.map((inquiry) => {
+          // 답변 존재 여부를 서버의 isAnswered 필드를 우선으로 확인
           const hasReply =
-            inquiry.replyContent != null || inquiry.replyId != null;
+            inquiry.isAnswered === true ||
+            Boolean(
+              inquiry.replyContent ||
+                inquiry.replyId ||
+                inquiry.reply ||
+                (inquiry.replyContent !== null &&
+                  inquiry.replyContent !== undefined &&
+                  inquiry.replyContent !== '')
+            );
+
+          console.log(`Processing inquiry ${inquiry.id}:`, {
+            hasReply,
+            replyContent: inquiry.replyContent,
+            replyId: inquiry.replyId,
+            originalIsAnswered: inquiry.isAnswered,
+          });
+
           return {
             ...inquiry,
             isAnswered: hasReply,
             reply: hasReply
               ? {
-                  id: inquiry.replyId,
-                  content: inquiry.replyContent,
-                  createdAt: inquiry.replyCreatedAt,
+                  id: inquiry.replyId || inquiry.reply?.id,
+                  content: inquiry.replyContent || inquiry.reply?.content,
+                  createdAt: inquiry.replyCreatedAt || inquiry.reply?.createdAt,
                   adminName: '관리자',
                 }
               : null,
@@ -627,9 +656,6 @@ const Inquiries = () => {
 
         alert('답변이 성공적으로 작성되었습니다.');
         setReplyModal({ isOpen: false, inquiry: null, existingReply: null });
-
-        // 전체 데이터 새로고침
-        await fetchInquiries();
       }
     } catch (err) {
       console.error('답변 작성 오류:', err);
@@ -699,9 +725,6 @@ const Inquiries = () => {
 
         alert('답변이 성공적으로 수정되었습니다.');
         setReplyModal({ isOpen: false, inquiry: null, existingReply: null });
-
-        // 전체 데이터 새로고침
-        await fetchInquiries();
       }
     } catch (err) {
       console.error('답변 수정 오류:', err);
@@ -763,9 +786,6 @@ const Inquiries = () => {
         }));
 
         alert('답변이 성공적으로 삭제되었습니다.');
-
-        // 전체 데이터 새로고침
-        await fetchInquiries();
       }
     } catch (err) {
       console.error('답변 삭제 오류:', err);
