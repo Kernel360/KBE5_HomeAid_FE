@@ -63,8 +63,9 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                 }
                 break;
             case 'WORK_CHECKIN':
+                break;
             case 'WORK_CHECKOUT':
-                navigate(`/customer/reservations/${relatedEntityId}`);
+                navigate(`/customer/review/write?reservationId=${relatedEntityId}`);
                 break;
 
             default:
