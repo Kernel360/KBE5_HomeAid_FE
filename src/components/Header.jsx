@@ -2,7 +2,7 @@ import { ArrowLeft, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useState, useCallback, memo } from 'react';
-import sseEmitter from '../features/alert/sseEmitter.js'
+// import sseEmitter from '../features/alert/sseEmitter.js'
 import AlertCard from '@/features/alert/AlertCard';
 
 function Header({
@@ -32,7 +32,7 @@ function Header({
   };
 
   const handleLogoutClick = async () => {    
-    await sseEmitter.disconnect();
+    // await sseEmitter.disconnect();
     logout();
     navigate('/');
     window.location.reload(); // 상태 초기화를 위해 페이지 새로고침
