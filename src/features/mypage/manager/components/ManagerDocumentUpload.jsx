@@ -8,68 +8,125 @@ export default function ManagerDocumentUpload({ onBack }) {
   const [criminalFile, setCriminalFile] = useState(null);
   const [healthFile, setHealthFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null); // 매니저 상태
-  const [documentList, setDocumentList] = useState([]); // 서버에서 조회한 파일 정보
-
-  // 문서 타입 매핑
-  const docTypeMap = {
-    ID_CARD: '신분증',
-    CRIMINAL_RECORD: '범죄경력조회서',
-    HEALTH_CERTIFICATE: '건강검진서',
-  };
+  const [status, setStatus] = useState(null);
+  const [documentList, setDocumentList] = useState([]);
+  const [deletedFiles, setDeletedFiles] = useState({
+    ID_CARD: false,
+    CRIMINAL_RECORD: false,
+    HEALTH_CERTIFICATE: false
+  });
 
   // 서버에서 첨부파일/상태 조회
   useEffect(() => {
     async function fetchCertifications() {
       try {
         const res = await apiService.manager.getCertifications();
-        const data = res.data?.data || res.data;
-        setStatus(data.status);
-        setDocumentList(data.documentList || []);
-        // 이미 등록된 파일이 있으면 파일명만 미리 세팅(수정/삭제 가능 상태만)
-        if (data.documentList) {
-          data.documentList.forEach(doc => {
-            if (doc.documentType === 'ID_CARD') setIdFile({ name: doc.documentUrl.split('/').pop(), url: doc.documentUrl });
-            if (doc.documentType === 'CRIMINAL_RECORD') setCriminalFile({ name: doc.documentUrl.split('/').pop(), url: doc.documentUrl });
-            if (doc.documentType === 'HEALTH_CERTIFICATE') setHealthFile({ name: doc.documentUrl.split('/').pop(), url: doc.documentUrl });
+        console.log(res);
+        const data = res.data?.data;
+        console.log(data);
+        if (data) {
+          setStatus(data.status);
+          setDocumentList(data.documentList || []);
+          
+          // 기존 파일 정보 설정
+          data.documentList?.forEach(doc => {
+            const fileInfo = {
+              id: doc.id,
+              name: doc.originalName,
+              url: doc.documentUrl,
+              size: doc.fileSize,
+              extension: doc.fileExtension,
+              createdAt: doc.createdAt
+            };
+            
+            switch (doc.documentType) {
+              case 'ID_CARD':
+                setIdFile(fileInfo);
+                break;
+              case 'CRIMINAL_RECORD':
+                setCriminalFile(fileInfo);
+                break;
+              case 'HEALTH_CERTIFICATE':
+                setHealthFile(fileInfo);
+                break;
+            }
           });
         }
       } catch (e) {
+        console.error('서류 조회 실패:', e);
         setStatus(null);
         setDocumentList([]);
       }
     }
     fetchCertifications();
-    // eslint-disable-next-line
   }, []);
 
   const isActive = status === 'ACTIVE';
+  const isPending = status === 'PENDING';
+  const isRejected = status === 'REJECTED';
 
-  const handleFileChange = (setter) => (e) => {
+  const handleFileChange = (setter, type) => (e) => {
     const file = e.target.files[0];
-    if (file) setter(file);
+    if (file) {
+      setter({
+        file,
+        name: file.name,
+        size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+        isNew: true // 새로 업로드된 파일 표시
+      });
+      // 파일이 새로 선택되면 삭제 상태 초기화
+      setDeletedFiles(prev => ({...prev, [type]: false}));
+    }
+  };
+
+  const handleFileDelete = (type, setter) => {
+    setDeletedFiles(prev => ({...prev, [type]: true}));
+    setter(null);
   };
 
   const handleBoxClick = (inputId) => {
     if (!isActive) document.getElementById(inputId)?.click();
   };
 
-  const handleRemoveFile = (setter) => () => {
-    if (!isActive) setter(null);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!idFile || !criminalFile || !healthFile) return;
+    if (!idFile?.file && !criminalFile?.file && !healthFile?.file && 
+        !documentList.length) return;
+    
     setLoading(true);
     const formData = new FormData();
-    formData.append('idFile', idFile);
-    formData.append('criminalRecordFile', criminalFile);
-    formData.append('healthCertificateFile', healthFile);
+    
+    // 새로운 파일이 있거나 기존 파일이 삭제된 경우에만 FormData에 추가
+    if (idFile?.isNew) {
+      formData.append('idFile', idFile.file);
+    }
+    if (criminalFile?.isNew) {
+      formData.append('criminalRecordFile', criminalFile.file);
+    }
+    if (healthFile?.isNew) {
+      formData.append('healthCertificateFile', healthFile.file);
+    }
+
+    // FormData 내용 디버깅
+    console.log('전송할 FormData 내용:');
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
     try {
-      await apiService.manager.uploadCertifications(formData);
-      alert('서류가 성공적으로 제출되었습니다.');
-      onBack && onBack();
+      let res;
+      if (documentList.length > 0) {
+        // PUT 요청 - 기존 파일 수정
+        res = await apiService.manager.updateCertifications(formData);
+      } else {
+        // POST 요청 - 새로운 파일 업로드
+        res = await apiService.manager.uploadCertifications(formData);
+      }
+
+      if (res.data?.success) {
+        alert(documentList.length > 0 ? '서류가 성공적으로 수정되었습니다.' : '서류가 성공적으로 제출되었습니다.');
+        onBack && onBack();
+      }
     } catch (err) {
       console.error("서류 제출 실패:", err);
       alert('제출에 실패했습니다.');
@@ -78,11 +135,11 @@ export default function ManagerDocumentUpload({ onBack }) {
     }
   };
 
-  // 서버에서 조회한 파일 정보로 렌더링 (ACTIVE 상태)
   const renderFileBox = (type, file, setFile, inputId) => {
     const doc = documentList.find(d => d.documentType === type);
+    const isDeleted = deletedFiles[type];
+    
     if (isActive && doc) {
-      // 파일이 있을 때: + 아이콘 없이 파일명만 중앙에(삭제 버튼 없음)
       return (
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center bg-gray-50">
           <a
@@ -91,16 +148,20 @@ export default function ManagerDocumentUpload({ onBack }) {
             rel="noopener noreferrer"
             className="text-blue-600 font-medium underline text-sm truncate max-w-full"
             style={{ wordBreak: 'break-all' }}
-            title={doc.documentUrl.split('/').pop()}
+            title={doc.originalName}
           >
-            {doc.documentUrl.split('/').pop()}
+            {doc.originalName}
           </a>
-          <span className="text-xs text-gray-400 mt-1">(다운로드만 가능)</span>
+          <div className="text-xs text-gray-400 mt-1">
+            <span>({doc.fileSize})</span>
+            <span className="mx-1">•</span>
+            <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
+          </div>
         </div>
       );
     }
-    // 파일이 없을 때만 + 아이콘/업로드 박스
-    if (!file) {
+
+    if ((!file || !file.name) && !isDeleted) {
       return (
         <div
           className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:border-blue-400 transition"
@@ -110,18 +171,68 @@ export default function ManagerDocumentUpload({ onBack }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           <span>파일을 선택하세요 (PDF, DOC, DOCX, 최대 10MB)</span>
-          <input id={inputId} type="file" accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={handleFileChange(setFile)} />
+          <input
+            id={inputId}
+            type="file"
+            accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            className="hidden"
+            onChange={handleFileChange(setFile, type)}
+          />
         </div>
       );
     }
-    // 업로드/수정 가능 상태에서 파일이 있을 때(아직 제출 전 등)
+
+    if (file && !isDeleted) {
+      return (
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-gray-700 bg-white">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-blue-600 font-medium underline text-sm truncate flex-1" title={file.name}>
+              {file.name}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleFileDelete(type, setFile)}
+              className="ml-2 text-gray-500 hover:text-red-500 transition-colors"
+              title="파일 삭제"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+          {file.size && (
+            <span className="text-xs text-gray-400 mt-1">({file.size})</span>
+          )}
+        </div>
+      );
+    }
+
+    // 파일이 삭제된 상태
     return (
       <div
-        className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-gray-700 bg-white"
+        className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:border-blue-400 transition"
+        onClick={() => handleBoxClick(inputId)}
       >
-        <span className="mt-2 text-blue-600 font-medium underline text-sm truncate max-w-full" title={file.name}>{file.name}</span>
+        <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+        <span>새 파일을 선택하세요</span>
+        <input
+          id={inputId}
+          type="file"
+          accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          className="hidden"
+          onChange={handleFileChange(setFile, type)}
+        />
       </div>
     );
+  };
+
+  const getButtonText = () => {
+    if (isActive) return '승인되었습니다';
+    if (loading) return '제출 중...';
+    if (documentList.length > 0) return '서류 수정';
+    return '서류 제출';
   };
 
   return (
@@ -132,7 +243,6 @@ export default function ManagerDocumentUpload({ onBack }) {
           <div className="mb-6">
             <h3 className="text-xl font-bold text-gray-900">매니저 활동 승인 서류 제출</h3>
             <p className="text-sm text-gray-500 mt-1">매니저 활동을 위해 필요한 서류를 제출해주세요.<br/>(신분증, 범죄경력조회서, 건강검진서)</p>
-            {/* 매니저 승인 상태 표시 */}
             {status && (
               <div className="mt-2">
                 <span
@@ -156,27 +266,28 @@ export default function ManagerDocumentUpload({ onBack }) {
           </div>
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* 신분증 첨부 */}
               <div>
                 <label className="block font-medium mb-1">신분증 첨부</label>
                 {renderFileBox('ID_CARD', idFile, setIdFile, 'idFileInput')}
               </div>
-              {/* 범죄경력조회서 첨부 */}
               <div>
                 <label className="block font-medium mb-1">범죄경력조회서 첨부</label>
                 {renderFileBox('CRIMINAL_RECORD', criminalFile, setCriminalFile, 'criminalFileInput')}
               </div>
-              {/* 건강검진서 첨부 */}
               <div>
                 <label className="block font-medium mb-1">건강검진서 첨부</label>
                 {renderFileBox('HEALTH_CERTIFICATE', healthFile, setHealthFile, 'healthFileInput')}
               </div>
               <button
                 type="submit"
-                className={`w-full py-2 rounded-lg font-semibold ${isActive ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-black disabled:bg-gray-600'}`}
-                disabled={isActive || !idFile || !criminalFile || !healthFile || loading}
+                className={`w-full py-2 rounded-lg font-semibold ${
+                  isActive
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500'
+                }`}
+                disabled={isActive || loading}
               >
-                {isActive ? '승인되었습니다' : (loading ? '제출 중...' : '서류 제출')}
+                {getButtonText()}
               </button>
             </form>
           </div>
