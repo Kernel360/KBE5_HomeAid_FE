@@ -17,10 +17,6 @@ export const apiService = {
     createProfile: (data) => api.post('/manager/profile', data),
     uploadCertifications: (formData) =>
       api.post('/manager/profile/certifications', formData, {
-<<<<<<< HEAD
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }),
-=======
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -31,7 +27,6 @@ export const apiService = {
           'Content-Type': 'multipart/form-data',
         },
       }),
->>>>>>> origin
     getCertifications: () => api.get('/manager/profile/certifications'),
   },
 
