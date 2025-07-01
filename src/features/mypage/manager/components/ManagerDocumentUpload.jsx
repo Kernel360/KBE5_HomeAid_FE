@@ -93,6 +93,15 @@ export default function ManagerDocumentUpload({ onBack }) {
     e.preventDefault();
     if (!idFile?.file && !criminalFile?.file && !healthFile?.file && 
         !documentList.length) return;
+
+    // 삭제된 파일이 있는데 새로운 파일이 없는 경우 체크
+    const hasDeletedFiles = Object.values(deletedFiles).some(isDeleted => isDeleted);
+    const hasNewFiles = [idFile, criminalFile, healthFile].some(file => file?.isNew);
+    
+    if (documentList.length > 0 && hasDeletedFiles && !hasNewFiles) {
+      alert('삭제된 파일이 있는 경우 새로운 파일을 추가해주세요.');
+      return;
+    }
     
     setLoading(true);
     const formData = new FormData();
@@ -234,6 +243,21 @@ export default function ManagerDocumentUpload({ onBack }) {
     return '서류 제출';
   };
 
+  const isSubmitDisabled = () => {
+    if (isActive) return true;
+    if (loading) return true;
+    
+    // 서류 수정 시 유효성 검사
+    if (documentList.length > 0) {
+      const hasDeletedFiles = Object.values(deletedFiles).some(isDeleted => isDeleted);
+      const hasNewFiles = [idFile, criminalFile, healthFile].some(file => file?.isNew);
+      return hasDeletedFiles && !hasNewFiles;
+    }
+    
+    // 새로운 서류 제출 시
+    return !idFile?.file && !criminalFile?.file && !healthFile?.file;
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="w-full bg-gray-50 h-screen flex flex-col" style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}>
@@ -280,11 +304,11 @@ export default function ManagerDocumentUpload({ onBack }) {
               <button
                 type="submit"
                 className={`w-full py-2 rounded-lg font-semibold ${
-                  isActive
+                  isActive || isSubmitDisabled()
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500'
                 }`}
-                disabled={isActive || loading}
+                disabled={isActive || loading || isSubmitDisabled()}
               >
                 {getButtonText()}
               </button>
