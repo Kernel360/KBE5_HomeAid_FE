@@ -247,15 +247,14 @@ export default function ManagerDocumentUpload({ onBack }) {
     if (isActive) return true;
     if (loading) return true;
     
-    // 서류 수정 시 유효성 검사
+    // 서류 수정 시 삭제된 파일이 있는데 새로운 파일이 없는 경우
     if (documentList.length > 0) {
       const hasDeletedFiles = Object.values(deletedFiles).some(isDeleted => isDeleted);
       const hasNewFiles = [idFile, criminalFile, healthFile].some(file => file?.isNew);
-      return hasDeletedFiles && !hasNewFiles;
+      if (hasDeletedFiles && !hasNewFiles) return true;
     }
     
-    // 새로운 서류 제출 시
-    return !idFile?.file && !criminalFile?.file && !healthFile?.file;
+    return false;
   };
 
   return (
