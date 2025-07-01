@@ -50,20 +50,13 @@ const UserReservationDetail = () => {
         if (data) {
           // ⭐️ 디버깅: 백엔드에서 받은 주소 데이터 확인
           console.log('📋 백엔드 예약 데이터 전체:', data);
-          console.log('📍 주소 관련 필드들:', {
-            address: data.address,
-            addressDetail: data.addressDetail,
-            customerAddress: data.customerAddress,
-            fullAddress: data.fullAddress,
-          });
 
           const transformedReservation = {
             id: data.reservationId || data.id || reservationId,
             type: data.serviceOptionName || getServiceName(1, '청소', data),
             icon: getServiceIcon(1),
             status: data.status || 'REQUESTED',
-            date: data.requestedDate,
-            time: data.requestedTime,
+            startTime: data.startTime,
             price: data.totalPrice || getServicePrice(null, 1, '청소', data),
 
             // ⭐️ address와 addressDetail을 모두 받아와서 조합
@@ -555,10 +548,10 @@ const UserReservationDetail = () => {
 
   const type = detail.serviceOptionName ?? reservation.type ?? '서비스';
 
-  const date = detail.requestedDate ?? reservation.date ?? '날짜 정보 없음';
+  const date = detail.startTime ? detail.startTime.split("T")[0] : "요청 날짜 없음";
 
-  const time = detail.requestedTime
-    ? formatTimeRange(detail.requestedTime, (detail.totalDuration ?? 3) * 60)
+  const time = detail.startTime.split("T")[1]
+    ? formatTimeRange(detail.startTime.split("T")[1], (detail.totalDuration ?? 3) * 60)
     : (reservation.time ?? '시간 정보 없음');
 
   const status = detail.status || reservation.status || 'REQUESTED';
