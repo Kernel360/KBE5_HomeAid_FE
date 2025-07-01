@@ -423,16 +423,23 @@ const ReviewManagement = () => {
     return (
       <div
         className="fixed inset-0 flex items-center justify-center z-50 p-4"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
       >
-        <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
+        <div className="bg-white rounded-xl max-w-3xl w-full max-h-[95vh] overflow-y-auto shadow-xl">
+          <div className="p-8">
             {/* 모달 헤더 */}
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="text-xl font-bold text-gray-900">리뷰 상세보기</h2>
+            <div className="flex justify-between items-center mb-8 pb-6 border-b-2 border-gray-100">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  리뷰 상세정보
+                </h2>
+                <p className="text-sm text-gray-500">
+                  고객 리뷰의 상세 내용을 확인하세요
+                </p>
+              </div>
               <button
                 onClick={closeReviewModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-all"
               >
                 <svg
                   className="w-6 h-6"
@@ -450,87 +457,193 @@ const ReviewManagement = () => {
               </button>
             </div>
 
-            {/* 평점 */}
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">평점</h3>
-              <div className="flex items-center space-x-2">
-                {renderStars(selectedReview.rating || 0)}
-                <span className="text-lg font-semibold text-gray-900">
+            {/* 평점 섹션 - 눈에 띄게 강조 */}
+            <div className="mb-8 p-6 bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 rounded-xl border border-yellow-200">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                  고객 평점
+                </h3>
+                <div className="flex items-center justify-center space-x-3 mb-2">
+                  {renderStars(selectedReview.rating || 0)}
+                </div>
+                <div className="text-3xl font-bold text-yellow-600 mb-1">
                   {selectedReview.rating || 0}점
-                </span>
+                </div>
+                <div className="text-sm text-gray-600">5점 만점</div>
               </div>
             </div>
 
-            {/* 작성자 정보 */}
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">작성자</h3>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-medium text-gray-900">
-                  {selectedReview.writerName || '상세보기'}
+            {/* 기본 정보 섹션 */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-1 h-5 bg-blue-500 rounded-full mr-3"></div>
+                기본 정보
+              </h3>
+
+              <div className="bg-gray-50 rounded-lg p-6 space-y-6">
+                {/* 사용자 정보 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="flex items-center mb-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <svg
+                          className="w-4 h-4 text-blue-600"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <h4 className="font-medium text-gray-900">작성자</h4>
+                    </div>
+                    <div className="pl-11">
+                      <p className="text-lg font-semibold text-gray-900 mb-1">
+                        {selectedReview.writerName || '정보 없음'}
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            selectedReview.writerRole === 'CUSTOMER'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-purple-100 text-purple-800'
+                          }`}
+                        >
+                          {selectedReview.writerRole === 'CUSTOMER'
+                            ? '수요자'
+                            : '매니저'}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          ID: {selectedReview.writerId || '정보 없음'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="flex items-center mb-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <svg
+                          className="w-4 h-4 text-green-600"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <h4 className="font-medium text-gray-900">대상자</h4>
+                    </div>
+                    <div className="pl-11">
+                      <p className="text-lg font-semibold text-gray-900 mb-1">
+                        {selectedReview.targetName || '정보 없음'}
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            selectedReview.targetRole === 'CUSTOMER'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-purple-100 text-purple-800'
+                          }`}
+                        >
+                          {selectedReview.targetRole === 'CUSTOMER'
+                            ? '수요자'
+                            : '매니저'}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          ID: {selectedReview.targetId || '정보 없음'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-sm text-gray-500">
-                  {selectedReview.writerRole === 'CUSTOMER'
-                    ? '수요자'
-                    : '매니저'}{' '}
-                  | ID: {selectedReview.writerId || '상세보기'}
+
+                {/* 서비스 정보 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      서비스명
+                    </label>
+                    <div className="bg-white p-3 rounded-lg border border-gray-200 text-base font-medium text-gray-900">
+                      {selectedReview.serviceName || '정보 없음'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      예약 ID
+                    </label>
+                    <div className="bg-white p-3 rounded-lg border border-gray-200 text-base font-mono text-gray-700">
+                      {selectedReview.reservationId || '정보 없음'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 작성일 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    작성일시
+                  </label>
+                  <div className="bg-white p-3 rounded-lg border border-gray-200 text-base text-gray-900 flex items-center">
+                    <svg
+                      className="w-4 h-4 text-gray-400 mr-2"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {formatDate(selectedReview.createdAt)}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* 대상자 정보 */}
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">대상자</h3>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-medium text-gray-900">
-                  {selectedReview.targetName || '상세보기'}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {selectedReview.targetRole === 'CUSTOMER'
-                    ? '수요자'
-                    : '매니저'}{' '}
-                  | ID: {selectedReview.targetId || '상세보기'}
-                </div>
-              </div>
-            </div>
-
-            {/* 서비스 정보 */}
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">서비스</h3>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-medium text-gray-900">
-                  {selectedReview.serviceName || '상세보기'}
-                </div>
-                <div className="text-sm text-gray-500">
-                  예약 ID: {selectedReview.reservationId || '상세보기'}
-                </div>
-              </div>
-            </div>
-
-            {/* 리뷰 내용 */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
+            {/* 리뷰 내용 섹션 */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-1 h-5 bg-green-500 rounded-full mr-3"></div>
                 리뷰 내용
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">
-                  {reviewContent}
-                </p>
-              </div>
-            </div>
-
-            {/* 작성일 */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">작성일</h3>
-              <div className="text-sm text-gray-900">
-                {formatDate(selectedReview.createdAt)}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 border border-gray-200">
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <svg
+                        className="w-4 h-4 text-gray-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-gray-900 whitespace-pre-wrap leading-relaxed text-base font-medium">
+                        {reviewContent}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* 모달 액션 버튼 */}
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3 pt-6 border-t-2 border-gray-100">
               <button
                 onClick={closeReviewModal}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
               >
                 닫기
               </button>
@@ -539,8 +652,7 @@ const ReviewManagement = () => {
                   handleDeleteReview(selectedReview.id);
                   closeReviewModal();
                 }}
-                className="px-4 py-2 bg-white border border-gray-300 hover:bg-red-50 rounded-lg transition-colors font-medium"
-                style={{ color: '#ef4444' }}
+                className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium shadow-sm"
               >
                 삭제
               </button>

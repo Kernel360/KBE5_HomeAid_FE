@@ -1218,3 +1218,163 @@ html {
   background-color: #6c757d;
   color: white;
 }
+
+.issue-button {
+  background-color: #6c757d;
+  color: white;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.issue-button:hover {
+  background-color: #5a6268;
+}
+
+.issue-button:disabled {
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.issue-textarea {
+  width: 100%;
+  min-height: 120px;
+  max-height: 300px;
+  padding: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.issue-textarea:focus {
+  outline: none;
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+.file-input-wrapper {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.file-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.file-input:hover {
+  background-color: #f1f3f5;
+}
+
+.file-count {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #4caf50;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-count::before {
+  content: "✓";
+  font-size: 14px;
+}
+
+/* 현재 첨부된 이미지 목록 스타일 */
+.attached-images {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.image-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.image-link {
+  flex: 1;
+  color: #2563eb;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-link:hover {
+  text-decoration: underline;
+}
+
+.delete-image-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background-color: #e5e5e5;
+  color: #666;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.delete-image-btn:hover {
+  background-color: #dc2626;
+  color: white;
+}
+
+@media (max-width: 480px) {
+  .issue-textarea {
+    min-height: 100px;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .file-input {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .attached-images a {
+    max-width: 150px;
+    font-size: 12px;
+  }
+}
+
+.issue-modal-content {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (max-width: 768px) {
+  .issue-modal-content {
+    max-width: 100%;
+    padding: 0 12px;
+  }
+}
