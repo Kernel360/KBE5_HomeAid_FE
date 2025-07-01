@@ -1,29 +1,30 @@
 import React, { useEffect, useState } from 'react';
-// TODO: 매칭내역 확인 기능 구현 시 필요
-// import { useNavigate } from 'react-router-dom';
 import './ManagerServiceCheckIn.css';
 import Footer from '../../../components/Footer.jsx';
 import Header from '../../../components/Header.jsx';
+import Modal from '../../../components/Modal.jsx';
 import useReservationStore from '../store/reservationStore.js';
 import { apiService } from '@/api';
-// TODO: 파일 업로드 기능 추가 시 필요한 import
-// import React, { useState, useEffect } from 'react';
 
 const ManagerServiceCheckIn = () => {
   const reservationId = useReservationStore.getState().reservationId;
   const [reservation, setReservation] = useState({});
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
+  const [showIssueModal, setShowIssueModal] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [checkStatus, setCheckStatus] = useState({
     checkIn: false,
     checkOut: false,
   });
   const [loading, setLoading] = useState(false);
-
-  // TODO: 체크아웃 메모와 파일 업로드 기능 구현 예정
-  // const [checkoutMemo, setCheckoutMemo] = useState('');
-  // const [checkoutFile, setCheckoutFile] = useState(null);
+  const [issueContent, setIssueContent] = useState('');
+  const [issueFiles, setIssueFiles] = useState([]);
+  const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
+  const [issueData, setIssueData] = useState(null);
+  const [currentImages, setCurrentImages] = useState([]);
+  const [deletedImageIds, setDeletedImageIds] = useState(new Set());
+  const [isEdited, setIsEdited] = useState(false);
 
   // 로컬 스토리지에서 체크 상태 불러오기
   const getStoredCheckStatus = () => {
@@ -107,6 +108,24 @@ const ManagerServiceCheckIn = () => {
     );
   };
 
+  // 이슈 데이터 불러오기
+  const fetchIssueData = async () => {
+    try {
+      const response = await apiService.workLog.getIssue(reservationId);
+      console.log('서버 응답 데이터:', response.data.data);
+      setIssueData(response.data.data);
+      if (response.data.data) {
+        setIssueContent(response.data.data.content || '');
+        // 서버에서 받은 이미지 데이터를 그대로 사용
+        setCurrentImages(response.data.data.images || []);
+        setDeletedImageIds(new Set()); // 초기화
+        setIsEdited(false); // 초기화
+      }
+    } catch (error) {
+      console.error('이슈 데이터 로딩 실패:', error);
+    }
+  };
+
   // 예약 상세 정보 불러오기 (apiService.reservation.getById만 사용)
   const fetchReservation = async () => {
     try {
@@ -174,6 +193,11 @@ const ManagerServiceCheckIn = () => {
       console.log('🔍 서버 상태:', serverStatus);
 
       updateCheckStatus(finalStatus);
+
+      // 체크아웃이 완료된 경우 이슈 데이터 로드
+      if (finalStatus.checkOut) {
+        fetchIssueData();
+      }
     } catch (error) {
       console.error('예약 정보 로딩 실패:', error);
       alert('예약 정보를 불러오는데 실패했습니다.');
@@ -337,17 +361,8 @@ const ManagerServiceCheckIn = () => {
   };
 
   const cancelCheckOut = () => {
-    // TODO: 메모와 파일 업로드 기능 구현 예정
-    // 모달 닫을 때 입력 상태 초기화
-    // setCheckoutMemo('');
-    // setCheckoutFile(null);
     setShowCheckOutModal(false);
   };
-
-  // TODO: 메모와 파일 업로드 기능 구현 예정
-  // const handleCheckoutFileChange = (e) => {
-  //   setCheckoutFile(e.target.files[0]);
-  // };
 
   // 날짜 포맷 변환 함수
   const formatDateTime = (isoString) => {
@@ -360,6 +375,162 @@ const ManagerServiceCheckIn = () => {
     const min = String(date.getMinutes()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
   };
+
+  const handleImageDelete = (imageId) => {
+    console.log('이미지 삭제 시도 - 실제 이미지 ID:', imageId);
+    setDeletedImageIds(prev => {
+      const newSet = new Set([...prev, imageId]);
+      console.log('삭제 예정인 이미지 ID들:', Array.from(newSet));
+      return newSet;
+    });
+    setIsEdited(true);
+  };
+
+  const handleIssueSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setIsSubmittingIssue(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('content', issueContent);
+      
+      // 새로 추가된 파일들 추가
+      if (issueFiles.length > 0) {
+        issueFiles.forEach((file) => {
+          formData.append('files', file);
+        });
+      }
+
+      // 삭제할 이미지 ID들을 전송
+      if (deletedImageIds.size > 0) {
+        const deleteIds = Array.from(deletedImageIds);
+        console.log('전송할 삭제 이미지 ID들:', deleteIds);
+        
+        // 각 ID를 개별적으로 추가
+        deleteIds.forEach(id => {
+          formData.append('deleteImageIds', id.toString());
+        });
+
+        // FormData 내용 확인
+        console.log('=== FormData 전송 내용 ===');
+        for (let pair of formData.entries()) {
+          console.log(`${pair[0]}: ${pair[1]}`);
+        }
+        console.log('========================');
+      }
+
+      if (issueData) {
+        // 수정
+        console.log('수정 요청 데이터:', {
+          content: issueContent,
+          files: issueFiles,
+          deleteImageIds: Array.from(deletedImageIds)
+        });
+        const response = await apiService.workLog.updateIssue(issueData.id, formData);
+        console.log('수정 응답:', response.data);
+        if (response.data.success) {
+          alert('특이사항이 수정되었습니다.');
+          setShowIssueModal(false);
+          setDeletedImageIds(new Set());
+          setIssueFiles([]);
+          setIsEdited(false);
+          // 데이터 새로고침
+          await fetchIssueData();
+        }
+      } else {
+        // 새로 생성
+        const response = await apiService.workLog.createIssue(reservationId, formData);
+        if (response.data.success) {
+          alert('특이사항이 저장되었습니다.');
+          setShowIssueModal(false);
+          setIsEdited(false);
+          // 데이터 새로고침
+          await fetchIssueData();
+        }
+      }
+    } catch (error) {
+      console.error('특이사항 저장 실패:', error);
+      console.error('에러 상세:', error.response?.data);
+      alert('저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmittingIssue(false);
+    }
+  };
+
+  const handleContentChange = (e) => {
+    setIssueContent(e.target.value);
+    setIsEdited(true);
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setIssueFiles(files);
+    setIsEdited(true);
+  };
+
+  const renderIssueModalContent = () => (
+    <div>
+      <div style={{ marginBottom: '16px' }}>
+        <label className="block mb-2 font-medium">
+          서비스 이슈 내용
+        </label>
+        <textarea
+          value={issueContent}
+          onChange={handleContentChange}
+          placeholder="서비스 중 발생한 이슈나 특이사항을 입력해주세요."
+          className="issue-textarea"
+        />
+      </div>
+
+      <div className="file-input-wrapper">
+        <label className="block mb-2 font-medium">
+          사진 첨부
+        </label>
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleFileChange}
+          className="file-input"
+        />
+        {issueFiles.length > 0 && (
+          <div className="file-count">
+            ✓ {issueFiles.length}개의 파일이 선택됨
+          </div>
+        )}
+      </div>
+
+      {currentImages.length > 0 && (
+        <div className="mt-4">
+          <label className="block mb-2 font-medium">현재 첨부된 이미지</label>
+          <div className="attached-images">
+            {currentImages
+              .filter(image => !deletedImageIds.has(image.id))
+              .map((image) => (
+                <div key={image.id} className="image-item">
+                  <a
+                    href={image.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="image-link"
+                  >
+                    {image.originalName}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => handleImageDelete(image.id)}
+                    className="delete-image-btn"
+                    title="이미지 삭제"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="manager-service-page">
@@ -456,127 +627,68 @@ const ManagerServiceCheckIn = () => {
               </div>
             </div>
 
-            {/* Check-in Confirmation Modal */}
-            {showCheckInModal && (
-              <div className="modal-overlay">
-                <div className="modal-content">
-                  <h3>체크인 확인</h3>
-                  <p>서비스 체크인을 진행하시겠습니까?</p>
-                  <div className="modal-actions">
+            {checkStatus.checkOut && (
+              <div className="action-buttons" style={{ marginTop: '12px' }}>
                     <button
-                      onClick={cancelCheckIn}
-                      className="cancel-button"
-                      disabled={loading}
-                    >
-                      취소
+                  className="issue-button"
+                  onClick={() => setShowIssueModal(true)}
+                >
+                  {issueData ? '특이사항 수정' : '특이사항 작성'}
                     </button>
-                    <button
-                      onClick={confirmCheckIn}
-                      className="confirm-button"
-                      disabled={loading}
-                    >
-                      {loading ? '처리 중...' : '확인'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Check-out Modal with File Upload and Memo */}
-            {showCheckOutModal && (
-              <div className="modal-overlay">
-                <div className="modal-content" style={{ maxWidth: '500px' }}>
-                  <h3>체크아웃</h3>
-                  <p>체크아웃을 진행하시겠습니까?</p>
-
-                  {/* TODO: 메모 작성 기능 구현 예정 */}
-                  {/* <div style={{ marginBottom: '16px' }}>
-                    <label
-                      style={{
-                        display: 'block',
-                        marginBottom: '8px',
-                        fontWeight: '500',
-                      }}
-                    >
-                      메모 (선택사항)
-                    </label>
-                    <textarea
-                      placeholder="서비스 완료 메모를 입력하세요"
-                      value={checkoutMemo}
-                      onChange={(e) => setCheckoutMemo(e.target.value)}
-                      disabled={loading}
-                      style={{
-                        width: '100%',
-                        minHeight: '80px',
-                        padding: '8px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        resize: 'vertical',
-                        fontSize: '14px',
-                      }}
-                    />
-                  </div> */}
-
-                  {/* TODO: 파일 첨부 기능 구현 예정 */}
-                  {/* <div style={{ marginBottom: '24px' }}>
-                    <label
-                      style={{
-                        display: 'block',
-                        marginBottom: '8px',
-                        fontWeight: '500',
-                      }}
-                    >
-                      파일 첨부 (선택사항)
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCheckoutFileChange}
-                      disabled={loading}
-                      style={{
-                        width: '100%',
-                        padding: '8px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                      }}
-                    />
-                    {checkoutFile && (
-                      <div
-                        style={{
-                          marginTop: '8px',
-                          fontSize: '14px',
-                          color: '#4caf50',
-                        }}
-                      >
-                        ✓ 첨부된 파일: {checkoutFile.name}
-                      </div>
-                    )}
-                  </div> */}
-
-                  <div className="modal-actions">
-                    <button
-                      onClick={cancelCheckOut}
-                      className="cancel-button"
-                      disabled={loading}
-                    >
-                      취소
-                    </button>
-                    <button
-                      onClick={confirmCheckOut}
-                      className="confirm-button"
-                      disabled={loading}
-                    >
-                      {loading ? '처리 중...' : '확인'}
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
           </div>
         </div>
       </div>
       <Footer current="/matching/service-checkin" />
+
+      {/* Check-in Modal */}
+      <Modal
+        open={showCheckInModal}
+        title="체크인 확인"
+        message="서비스 체크인을 진행하시겠습니까?"
+        onClose={() => setShowCheckInModal(false)}
+        onConfirm={confirmCheckIn}
+        confirmText={loading ? '처리 중...' : '확인'}
+        showCancel={true}
+      />
+
+      {/* Check-out Modal */}
+      <Modal
+        open={showCheckOutModal}
+        title="체크아웃"
+        message="체크아웃을 진행하시겠습니까?"
+        onClose={() => setShowCheckOutModal(false)}
+        onConfirm={confirmCheckOut}
+        confirmText={loading ? '처리 중...' : '확인'}
+        showCancel={true}
+      />
+
+      {/* Issue Modal */}
+      <Modal
+        open={showIssueModal}
+        title={issueData ? '특이사항 수정' : '특이사항 작성'}
+        onClose={() => {
+          setShowIssueModal(false);
+          setIssueContent(issueData?.content || '');
+          setIssueFiles([]);
+          setDeletedImageIds(new Set());
+          const imagesWithIds = (issueData?.images || []).map((image, index) => ({
+            ...image,
+            id: index + 1
+          }));
+          setCurrentImages(imagesWithIds);
+          setIsEdited(false);
+        }}
+        onConfirm={handleIssueSubmit}
+        confirmText={isSubmittingIssue ? '저장 중...' : '저장'}
+        confirmDisabled={!isEdited && !issueFiles.length}
+        showCancel={true}
+      >
+        <div className="issue-modal-content">
+          {renderIssueModalContent()}
+        </div>
+      </Modal>
     </div>
   );
 };
