@@ -14,12 +14,12 @@ export const apiService = {
     delete: (id) => api.delete(`/manager/${id}`),
     getManagerList: () => api.get('/managers/list'),
     changeStatus: (id, status) => api.patch(`/managers/${id}/status`, status),
-    createProfile: (data) => api.post('/managers/profile', data),
+    createProfile: (data) => api.post('/manager/profile', data),
     uploadCertifications: (formData) =>
-      api.post('/managers/profile/certifications', formData, {
+      api.post('/manager/profile/certifications', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
-    getCertifications: () => api.get('/managers/profile/certifications'),
+    getCertifications: () => api.get('/manager/profile/certifications'),
   },
 
   // 사용자 관련 API
