@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 // 고객 상세 모달 컴포넌트
 const CustomerDetailModal = ({ isOpen, onClose, customer, customerDetail }) => {
   if (!isOpen || !customer) return null;
@@ -262,7 +264,7 @@ const CustomerList = () => {
         Object.fromEntries(params)
       );
 
-      const response = await fetch(`/api/v1/admin/customers?${params}`, {
+      const response = await fetch(`${API_URL}/api/v1/admin/customers?${params}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -423,7 +425,7 @@ const CustomerList = () => {
         throw new Error('인증 토큰이 없습니다.');
       }
 
-      const response = await fetch(`/api/v1/admin/customers/${customerId}`, {
+      const response = await fetch(`${API_URL}/api/v1/admin/customers/${customerId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
