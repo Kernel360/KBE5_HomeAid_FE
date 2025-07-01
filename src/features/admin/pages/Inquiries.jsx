@@ -342,6 +342,21 @@ const Inquiries = () => {
           console.log('Raw inquiries data:', inquiriesData);
           console.log('Sample inquiry data structure:', inquiriesData[0]);
 
+          // userRole 필드 상태 확인
+          inquiriesData.forEach((inquiry, index) => {
+            if (index < 3) {
+              // 처음 3개만 로깅
+              console.log(`문의글 ${inquiry.id} userRole 분석:`, {
+                userRole: inquiry.userRole,
+                role: inquiry.role,
+                user: inquiry.user,
+                userId: inquiry.userId,
+                userName: inquiry.userName,
+                전체_데이터: inquiry,
+              });
+            }
+          });
+
           // 답변 상태가 있는 문의글들만 필터링해서 확인
           const answeredInquiries = inquiriesData.filter(
             (inquiry) =>
@@ -366,15 +381,30 @@ const Inquiries = () => {
             Boolean(inquiry.replyId) ||
             Boolean(inquiry.replyContent);
 
+          // userRole 필드 처리 - 다양한 가능성 고려
+          let userRole = inquiry.userRole || inquiry.role;
+
+          // 백엔드에서 문자열로 올 수도 있고 enum으로 올 수도 있음
+          if (typeof userRole === 'string') {
+            userRole = userRole.toUpperCase();
+          }
+
+          // user 객체 안에 role이 있을 수도 있음
+          if (!userRole && inquiry.user && inquiry.user.role) {
+            userRole = inquiry.user.role.toUpperCase();
+          }
+
           // 개발 환경에서 각 문의글의 답변 상태 로깅
           if (import.meta.env.DEV && index < 5) {
-            console.log(`문의글 ${inquiry.id} 답변 상태 분석:`, {
+            console.log(`문의글 ${inquiry.id} 처리 결과:`, {
               원본_isAnswered: inquiry.isAnswered,
               원본_answered: inquiry.answered,
               원본_replyId: inquiry.replyId,
               원본_replyContent: inquiry.replyContent,
               처리된_hasReply: hasReply,
-              전체_데이터: inquiry,
+              원본_userRole: inquiry.userRole,
+              원본_role: inquiry.role,
+              처리된_userRole: userRole,
             });
           }
 
@@ -382,6 +412,7 @@ const Inquiries = () => {
             ...inquiry,
             isAnswered: hasReply,
             answered: hasReply,
+            userRole: userRole, // 처리된 userRole 사용
           };
         });
 
@@ -399,21 +430,24 @@ const Inquiries = () => {
           totalPages: Math.ceil(totalElements / prev.size),
         }));
 
-        // 답변 통계 업데이트
+        // 현재 페이지 데이터로 통계 업데이트 (서버사이드 필터링 사용 중이므로)
         const answeredCount = processedInquiries.filter(
           (inquiry) => inquiry.isAnswered
         ).length;
-        setStats({
+
+        // 전체 통계는 API에서 totalElements를 사용
+        setStats((prevStats) => ({
+          ...prevStats,
           total: totalElements,
-          answered: answeredCount,
-          unanswered: totalElements - answeredCount,
-          customer: processedInquiries.filter(
-            (inquiry) => inquiry.userRole === 'CUSTOMER'
-          ).length,
-          manager: processedInquiries.filter(
-            (inquiry) => inquiry.userRole === 'MANAGER'
-          ).length,
-        });
+          // 현재 탭에 따라 통계 업데이트
+          ...(activeTab === '전체' && {
+            answered: answeredCount,
+            unanswered: totalElements - answeredCount,
+          }),
+          ...(activeTab === '수요자문의' && { customer: totalElements }),
+          ...(activeTab === '매니저문의' && { manager: totalElements }),
+          ...(activeTab === '미답변' && { unanswered: totalElements }),
+        }));
       }
     } catch (err) {
       console.error('문의글 목록 조회 오류:', err);
@@ -456,44 +490,8 @@ const Inquiries = () => {
     setPagination((prev) => ({ ...prev, page: 0 }));
   };
 
-  // 필터링된 문의 목록 - 클라이언트 사이드 필터링
-  const getFilteredInquiries = () => {
-    let filtered = inquiries;
-
-    // 탭별 필터링
-    if (activeTab === '수요자문의') {
-      filtered = filtered.filter((inquiry) => inquiry.userRole === 'CUSTOMER');
-    } else if (activeTab === '매니저문의') {
-      filtered = filtered.filter((inquiry) => inquiry.userRole === 'MANAGER');
-    } else if (activeTab === '미답변') {
-      filtered = filtered.filter((inquiry) => !inquiry.isAnswered);
-    }
-
-    // 검색어 필터링
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter((inquiry) => {
-        if (searchType === 'title') {
-          return inquiry.title?.toLowerCase().includes(searchLower);
-        } else if (searchType === 'content') {
-          return inquiry.content?.toLowerCase().includes(searchLower);
-        } else if (searchType === 'userName') {
-          return inquiry.userName?.toLowerCase().includes(searchLower);
-        } else {
-          // 전체 검색
-          return (
-            inquiry.title?.toLowerCase().includes(searchLower) ||
-            inquiry.content?.toLowerCase().includes(searchLower) ||
-            inquiry.userName?.toLowerCase().includes(searchLower)
-          );
-        }
-      });
-    }
-
-    return filtered;
-  };
-
-  const filteredInquiries = getFilteredInquiries();
+  // 서버사이드 필터링을 사용하므로 클라이언트사이드 필터링 불필요
+  // inquiries 배열을 직접 사용
 
   const statCards = [
     {
@@ -903,7 +901,7 @@ const Inquiries = () => {
                           </td>
                         </tr>
                       ))
-                    ) : filteredInquiries.length === 0 ? (
+                    ) : inquiries.length === 0 ? (
                       <tr>
                         <td colSpan="7" className="px-4 py-12 text-center">
                           <div className="flex flex-col items-center">
@@ -931,7 +929,7 @@ const Inquiries = () => {
                         </td>
                       </tr>
                     ) : (
-                      filteredInquiries.map((inquiry, index) => {
+                      inquiries.map((inquiry, index) => {
                         // 개발 환경에서 답변 상태 디버깅
                         if (import.meta.env.DEV) {
                           console.log(`문의글 ${inquiry.id} 렌더링 상태:`, {
