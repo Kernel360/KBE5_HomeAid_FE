@@ -17,8 +17,21 @@ export const apiService = {
     createProfile: (data) => api.post('/manager/profile', data),
     uploadCertifications: (formData) =>
       api.post('/manager/profile/certifications', formData, {
+<<<<<<< HEAD
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
+=======
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+    updateCertifications: (formData) =>
+      api.put('/manager/profile/certifications', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+>>>>>>> origin
     getCertifications: () => api.get('/manager/profile/certifications'),
   },
 
@@ -103,6 +116,22 @@ export const apiService = {
     checkIn: (data) => api.post('/managers/work-logs', data),
     checkOut: (reservationId, data) =>
       api.patch(`/managers/work-logs/${reservationId}`, data),
+    createIssue: (reservationId, formData) =>
+      api.post(`/manager/reservations/${reservationId}/issues`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+    getIssue: (reservationId) =>
+      api.get(`/reservations/${reservationId}/issues`),
+    updateIssue: (issueId, formData) =>
+      api.put(`/manager/issues/${issueId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+    deleteIssue: (issueId) =>
+      api.delete(`/manager/issues/${issueId}`),
   },
   settlement: {
     getManagerSettlements: (managerId, params = {}) => {

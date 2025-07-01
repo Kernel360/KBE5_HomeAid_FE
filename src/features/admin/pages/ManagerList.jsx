@@ -55,10 +55,6 @@ const ManagerList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState('all');
 
-  // 체크박스 선택 상태
-  const [selectedManagers, setSelectedManagers] = useState([]);
-  const [isAllSelected, setIsAllSelected] = useState(false);
-
   // 매니저 상세 모달 관련 상태
   const [selectedManager, setSelectedManager] = useState(null);
   const [managerDocuments, setManagerDocuments] = useState(null);
@@ -378,49 +374,6 @@ const ManagerList = () => {
     }
   };
 
-  // 전체 선택/해제 핸들러
-  const handleSelectAll = () => {
-    if (isAllSelected) {
-      // 전체 해제
-      setSelectedManagers([]);
-      setIsAllSelected(false);
-    } else {
-      // 전체 선택
-      const allManagerIds = managers.map((manager) => manager.id);
-      setSelectedManagers(allManagerIds);
-      setIsAllSelected(true);
-    }
-  };
-
-  // 개별 매니저 선택/해제 핸들러
-  const handleSelectManager = (managerId) => {
-    setSelectedManagers((prev) => {
-      if (prev.includes(managerId)) {
-        // 선택 해제
-        const newSelected = prev.filter((id) => id !== managerId);
-        setIsAllSelected(false);
-        return newSelected;
-      } else {
-        // 선택 추가
-        const newSelected = [...prev, managerId];
-        setIsAllSelected(newSelected.length === managers.length);
-        return newSelected;
-      }
-    });
-  };
-
-  // 매니저 데이터가 변경될 때 전체 선택 상태 업데이트
-  useEffect(() => {
-    if (managers.length > 0) {
-      setIsAllSelected(
-        selectedManagers.length === managers.length && managers.length > 0
-      );
-    } else {
-      setIsAllSelected(false);
-      setSelectedManagers([]);
-    }
-  }, [managers, selectedManagers.length]);
-
   // 매니저 상세 정보 조회
   const fetchManagerDetails = async (managerId) => {
     try {
@@ -707,7 +660,6 @@ const ManagerList = () => {
               <div className="w-full overflow-x-auto">
                 <table className="w-full min-w-[1000px]">
                   <colgroup>
-                    <col style={{ width: '80px' }} />
                     <col style={{ width: '180px' }} />
                     <col style={{ width: '120px' }} />
                     <col style={{ width: '100px' }} />
@@ -717,14 +669,6 @@ const ManagerList = () => {
                   </colgroup>
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          checked={isAllSelected}
-                          onChange={handleSelectAll}
-                          className="rounded border-gray-300"
-                        />
-                      </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         매니저 정보
                       </th>
@@ -751,9 +695,6 @@ const ManagerList = () => {
                       [...Array(5)].map((_, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="space-y-2">
                               <div className="w-20 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
                               <div className="w-24 h-3 bg-gray-200 rounded animate-pulse mx-auto"></div>
@@ -778,7 +719,7 @@ const ManagerList = () => {
                       ))
                     ) : managers.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="px-4 py-12 text-center">
+                        <td colSpan="6" className="px-4 py-12 text-center">
                           <div className="flex flex-col items-center">
                             <svg
                               className="w-12 h-12 text-gray-400 mb-4"
@@ -809,14 +750,6 @@ const ManagerList = () => {
                           key={manager.id || index}
                           className="hover:bg-gray-50"
                         >
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedManagers.includes(manager.id)}
-                              onChange={() => handleSelectManager(manager.id)}
-                              className="rounded border-gray-300"
-                            />
-                          </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div>
                               <div className="text-sm font-medium text-gray-900">
