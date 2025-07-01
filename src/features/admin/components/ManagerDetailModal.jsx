@@ -29,11 +29,29 @@ const ManagerDetailModal = ({
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '-';
+    }
+  };
+
+  const getDocumentUploadDate = (doc) => {
+    // 여러 가능한 날짜 필드명을 확인
+    return (
+      doc.uploadedAt ||
+      doc.createdAt ||
+      doc.uploadDate ||
+      doc.submittedAt ||
+      doc.dateUploaded
+    );
   };
 
   const getStatusText = (status) => {
@@ -303,32 +321,45 @@ const ManagerDetailModal = ({
               documents.documentList &&
               documents.documentList.length > 0 ? (
                 <div className="space-y-4">
-                  {documents.documentList.map((doc, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-500">서류 종류</p>
-                          <p className="text-base text-gray-900">
-                            {getDocumentTypeName(doc.documentType)}
-                          </p>
+                  {documents.documentList.map((doc, index) => {
+                    // 디버깅을 위한 콘솔 로그
+                    console.log('📄 Document data:', doc);
+                    console.log('📅 Upload date fields:', {
+                      uploadedAt: doc.uploadedAt,
+                      createdAt: doc.createdAt,
+                      uploadDate: doc.uploadDate,
+                      submittedAt: doc.submittedAt,
+                    });
+
+                    return (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <div>
+                            <p className="text-sm text-gray-500">서류 종류</p>
+                            <p className="text-base text-gray-900">
+                              {getDocumentTypeName(doc.documentType)}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm text-gray-500">제출일</p>
+                            <p className="text-base text-gray-900">
+                              {formatDate(getDocumentUploadDate(doc))}
+                            </p>
+                          </div>
+                          <div className="flex justify-end">
+                            <a
+                              href={doc.documentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                            >
+                              문서 보기
+                            </a>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-500">제출일</p>
-                          <p className="text-base text-gray-900">
-                            {formatDate(doc.uploadedAt)}
-                          </p>
-                        </div>
-                        <a
-                          href={doc.documentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                        >
-                          문서 보기
-                        </a>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">

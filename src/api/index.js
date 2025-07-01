@@ -14,12 +14,13 @@ export const apiService = {
     delete: (id) => api.delete(`/manager/${id}`),
     getManagerList: () => api.get('/managers/list'),
     changeStatus: (id, status) => api.patch(`/managers/${id}/status`, status),
-    createProfile: (data) => api.post('/managers/profile', data),
+    getProfile: () => api.get('/manager/profile'),
+    createProfile: (data) => api.post('/manager/profile', data),
     uploadCertifications: (formData) =>
-      api.post('/managers/profile/certifications', formData, {
+      api.post('/manager/profile/certifications', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
-    getCertifications: () => api.get('/managers/profile/certifications'),
+    getCertifications: () => api.get('/manager/profile/certifications'),
   },
 
   // 사용자 관련 API
@@ -117,8 +118,7 @@ export const apiService = {
           'Content-Type': 'multipart/form-data',
         },
       }),
-    deleteIssue: (issueId) =>
-      api.delete(`/manager/issues/${issueId}`),
+    deleteIssue: (issueId) => api.delete(`/manager/issues/${issueId}`),
   },
   settlement: {
     getManagerSettlements: (managerId, params = {}) => {
@@ -131,7 +131,7 @@ export const apiService = {
     },
   },
   alert: {
-  updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
-  }
+    updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
+  },
 };
 export default apiService;
