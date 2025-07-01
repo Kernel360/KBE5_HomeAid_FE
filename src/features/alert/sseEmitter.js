@@ -140,7 +140,7 @@ const sseEmitter = {
     },
 
     // 연결 종료
-    disconnect: () => {
+    disconnect: async () => {
         if (sseEmitter.eventSource) {
             console.log('🔌 SSE 연결 수동 종료');
             
@@ -160,6 +160,22 @@ const sseEmitter = {
             // 연결 종료 시 스토어도 비우기
             useAlertStore.getState().clearNotificationAlert();
             console.log('🗑️ SSE 연결 종료로 인한 알림 스토어 초기화');
+        }
+
+        // disconnect API 호출
+        try {
+            const token = useAuthStore.getState().accessToken;
+            const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            await fetch(`${API_BASE_URL}/api/v1/alerts/disconnect`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            console.log('🔗 /api/v1/alerts/disconnect 호출 완료');
+        } catch (error) {
+            console.error('disconnect API 호출 실패:', error);
         }
     },
 
