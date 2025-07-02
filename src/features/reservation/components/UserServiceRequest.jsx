@@ -49,9 +49,16 @@ const UserServiceRequest = () => {
 
   // 컴포넌트 마운트 시 기본값 설정
   useEffect(() => {
-    // 오늘 날짜를 기본값으로 설정
-    const today = new Date().toISOString().split('T')[0];
-    setFormData((prev) => ({ ...prev, date: today }));
+    // 내일 날짜를 기본값으로 설정
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDate = tomorrow.toISOString().split('T')[0];
+
+    setFormData((prev) => ({
+      ...prev,
+      date: tomorrowDate,
+      startTime: '06:00',
+    }));
 
     if (user && accessToken) {
       fetchAddresses();
@@ -331,7 +338,7 @@ const UserServiceRequest = () => {
                   <span className="service-duration">
                     약 {reservationData.totalDuration || 180}분 소요
                   </span>
-                  <span className="service-price">20,000원</span>
+                  <span className="service-price">120,000원</span>
                 </div>
               </div>
             </div>
@@ -346,7 +353,11 @@ const UserServiceRequest = () => {
                 className="date-input"
                 value={formData.date}
                 onChange={(e) => handleInputChange('date', e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
+                min={(() => {
+                  const tomorrow = new Date();
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  return tomorrow.toISOString().split('T')[0];
+                })()}
               />
 
               {/* 시작시간 입력 */}
