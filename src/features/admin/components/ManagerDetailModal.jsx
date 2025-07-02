@@ -254,6 +254,64 @@ const ManagerDetailModal = ({
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 기본 정보
               </h3>
+
+              {/* 프로필 이미지 섹션 */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {(() => {
+                      // 프로필 이미지 URL 확인
+                      const profileImage =
+                        manager.profileImageUrl || manager.profileImage;
+
+                      if (profileImage) {
+                        // 캐싱 방지를 위해 timestamp 추가
+                        const imageUrl = profileImage.includes('?')
+                          ? `${profileImage}&t=${Date.now()}`
+                          : `${profileImage}?t=${Date.now()}`;
+
+                        return (
+                          <img
+                            src={imageUrl}
+                            alt="매니저 프로필 이미지"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log(
+                                'Manager profile image load failed:',
+                                imageUrl
+                              );
+                              e.target.style.display = 'none';
+                              e.target.nextElementSibling.style.display =
+                                'flex';
+                            }}
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
+                    <span
+                      className="text-blue-600 font-semibold w-full h-full flex items-center justify-center text-lg"
+                      style={{
+                        display:
+                          manager.profileImageUrl || manager.profileImage
+                            ? 'none'
+                            : 'flex',
+                      }}
+                    >
+                      {manager.name?.charAt(0) || '?'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 text-lg">
+                      {manager.name}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      매니저 ID: {manager.id}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">이름</p>
