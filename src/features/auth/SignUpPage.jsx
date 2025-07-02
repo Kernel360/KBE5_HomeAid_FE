@@ -56,43 +56,6 @@ const SignUpPage = () => {
 
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '32px',
-            padding: '0',
-          }}
-        >
-          <div
-            style={{
-              width: 'calc(33.33% - 2px)',
-              height: '4px',
-              background: '#247cff',
-              borderRadius: '2px',
-              marginRight: '2px',
-            }}
-          ></div>
-          <div
-            style={{
-              width: 'calc(33.33% - 2px)',
-              height: '4px',
-              background: '#ddd',
-              borderRadius: '2px',
-              marginRight: '2px',
-            }}
-          ></div>
-          <div
-            style={{
-              width: 'calc(33.33% - 2px)',
-              height: '4px',
-              background: '#ddd',
-              borderRadius: '2px',
-            }}
-          ></div>
-        </div>
-
-        <div
-          style={{
             fontSize: '18px',
             fontWeight: 'bold',
             color: '#222',
