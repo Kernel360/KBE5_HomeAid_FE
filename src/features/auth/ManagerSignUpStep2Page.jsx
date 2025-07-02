@@ -118,7 +118,7 @@ const ManagerSignUpStep2Page = () => {
         >
           <div
             style={{
-              width: 'calc(33.33% - 2px)',
+              width: 'calc(50% - 2px)',
               height: '4px',
               background: '#247cff',
               borderRadius: '2px',
@@ -126,15 +126,7 @@ const ManagerSignUpStep2Page = () => {
           ></div>
           <div
             style={{
-              width: 'calc(33.33% - 2px)',
-              height: '4px',
-              background: '#247cff',
-              borderRadius: '2px',
-            }}
-          ></div>
-          <div
-            style={{
-              width: 'calc(33.33% - 2px)',
+              width: 'calc(50% - 2px)',
               height: '4px',
               background: '#247cff',
               borderRadius: '2px',

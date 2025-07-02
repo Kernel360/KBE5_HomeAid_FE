@@ -10,6 +10,8 @@ import './styles/datepicker.css'; // 새로 생성한 CSS 파일 임포트
 import useSignUpStore from '../../stores/signUpStore'; // Zustand 스토어 임포트
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import { authService } from './services/authService';
+import CustomerSignUpCompletionModal from './CustomerSignUpCompletionPage';
 
 // 날짜 선택기 커스텀 스타일
 const datePickerStyles = `
@@ -186,6 +188,9 @@ const CustomerSignUpStep1Page = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({}); // 필드별 에러 상태 추가
+  const [loading, setLoading] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [error, setError] = useState('');
 
   // 입력 필드 변경 핸들러
   const handleInputChange = (fieldName, value) => {
@@ -237,7 +242,7 @@ const CustomerSignUpStep1Page = () => {
     }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const currentValues = {
       name,
       phoneNumber,
@@ -256,21 +261,37 @@ const CustomerSignUpStep1Page = () => {
       return;
     }
 
-    // 유효성 검사 통과 후 데이터 포맷 및 스토어 저장
+    // 유효성 검사 통과 후 데이터 포맷
     const formattedDateOfBirth = format(dateOfBirth, 'yyyy-MM-dd');
 
-    setCustomerSignUpData({
+    const signUpData = {
       name,
-      phone: phoneNumber, // 하이픈 제거 없이 그대로 저장
-      gender,
+      phone: phoneNumber,
+      gender: gender.toUpperCase(),
       birth: formattedDateOfBirth,
       email: email,
       password: password,
-    });
+    };
 
-    console.log('고객 회원가입 1단계 데이터 스토어에 저장됨');
-    // 다음 단계로 이동
-    navigate('/auth/signup/customer/step2');
+    try {
+      setLoading(true);
+      const response = await authService.customerSignUp(signUpData);
+      console.log('고객 회원가입 성공:', response);
+      setCustomerSignUpData({
+        name,
+        phone: phoneNumber,
+        gender: gender.toUpperCase(),
+        birth: formattedDateOfBirth,
+        email: email,
+        password: password,
+      });
+      setShowCompletionModal(true);
+    } catch (err) {
+      setError('회원가입 중 오류가 발생했습니다.');
+      console.error('회원가입 실패:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePrevious = () => {
@@ -336,43 +357,6 @@ const CustomerSignUpStep1Page = () => {
           <div style={{ fontSize: '15px', color: '#888' }}>
             Antwork 회원으로 활동하기 위한 정보를 입력해주세요
           </div>
-        </div>
-
-        {/* Step Indicator - Step 1 of 3 */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '32px',
-            padding: '0 2px',
-          }}
-        >
-          <div
-            style={{
-              width: 'calc(33.33% - 2px)',
-              height: '4px',
-              background: '#247cff',
-              borderRadius: '2px',
-            }}
-          ></div>
-          <div
-            style={{
-              width: 'calc(33.33% - 2px)',
-              height: '4px',
-              background: '#247cff',
-              borderRadius: '2px',
-              marginRight: '2px',
-            }}
-          ></div>
-          <div
-            style={{
-              width: 'calc(33.33% - 2px)',
-              height: '4px',
-              background: '#ddd',
-              borderRadius: '2px',
-            }}
-          ></div>
         </div>
 
         {/* Section Title */}
@@ -867,6 +851,7 @@ const CustomerSignUpStep1Page = () => {
             <button
               type="button"
               onClick={handleNext}
+              disabled={loading}
               style={{
                 flexGrow: 1,
                 background: '#247cff',
@@ -876,17 +861,24 @@ const CustomerSignUpStep1Page = () => {
                 padding: '14px',
                 border: 'none',
                 borderRadius: '8px',
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 transition: 'background-color 0.3s ease',
+                opacity: loading ? 0.7 : 1,
               }}
             >
-              다음
+              {loading ? '회원가입 중...' : '회원가입'}
             </button>
           </div>
         </form>
       </div>
 
       <Footer />
+
+      {/* 회원가입 완료 모달 */}
+      <CustomerSignUpCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+      />
     </div>
   );
 };
