@@ -264,13 +264,16 @@ const CustomerList = () => {
         Object.fromEntries(params)
       );
 
-      const response = await fetch(`${API_URL}/api/v1/admin/customers?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/customers?${params}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -425,13 +428,16 @@ const CustomerList = () => {
         throw new Error('인증 토큰이 없습니다.');
       }
 
-      const response = await fetch(`${API_URL}/api/v1/admin/customers/${customerId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/customers/${customerId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -515,25 +521,6 @@ const CustomerList = () => {
         </svg>
       ),
       iconBg: 'bg-green-100',
-    },
-    {
-      title: '비활성 고객',
-      value: customerStats.inactive.toString(),
-      subValue: '탈퇴한 회원',
-      icon: (
-        <svg
-          className="w-5 h-5 text-red-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-      iconBg: 'bg-red-100',
     },
     {
       title: '신규 가입',
