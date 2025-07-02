@@ -1181,7 +1181,7 @@ const UserPayment = () => {
       });
 
       // 결제 API 호출 (백엔드 엔드포인트에 맞춤)
-      const response = await api.post('/my/payments/', paymentRequestData);
+      const response = await api.post('/my/payments', paymentRequestData);
 
       if (response.data?.data) {
         const paymentResult = response.data.data;
