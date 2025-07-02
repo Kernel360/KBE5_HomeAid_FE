@@ -42,6 +42,109 @@ const UserPayment = () => {
     }
   }, [savedPaymentData, reservationData, navigate, reservationFromDetail]);
 
+  // 실제 예약 정보 상태 관리
+  const [actualReservationData, setActualReservationData] = useState(null);
+  const [managerInfo, setManagerInfo] = useState(null);
+
+  // 매니저 정보 조회
+  const fetchManagerInfo = async (managerId) => {
+    if (!managerId) return;
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const API_BASE_URL =
+        import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+      if (!token) {
+        console.warn('토큰이 없어 매니저 정보 조회 불가');
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/managers/${managerId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          console.log('✅ 매니저 정보 조회 성공:', result.data);
+          setManagerInfo(result.data);
+          return result.data;
+        }
+      } else {
+        console.warn('매니저 정보 조회 실패:', response.status);
+      }
+    } catch (error) {
+      console.error('매니저 정보 조회 에러:', error);
+    }
+    return null;
+  };
+
+  // 실제 예약 정보 조회
+  const fetchReservationData = async (reservationId) => {
+    if (!reservationId) return;
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const API_BASE_URL =
+        import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+      if (!token) {
+        console.warn('토큰이 없어 예약 정보 조회 불가');
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/reservations/${reservationId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          console.log('✅ 실제 예약 정보 조회 성공:', result.data);
+          setActualReservationData(result.data);
+
+          // 매니저 ID가 있으면 매니저 정보도 조회
+          if (result.data.managerId) {
+            await fetchManagerInfo(result.data.managerId);
+          }
+        }
+      } else {
+        console.warn('예약 정보 조회 실패:', response.status);
+      }
+    } catch (error) {
+      console.error('예약 정보 조회 에러:', error);
+    }
+  };
+
+  // 예약 ID가 있을 때 실제 예약 정보 조회
+  useEffect(() => {
+    const reservationId =
+      reservationFromDetail?.id ||
+      reservationData.reservationId ||
+      location.state?.reservation?.id ||
+      location.state?.reservation?.reservationId;
+
+    if (reservationId) {
+      console.log('🔍 예약 정보 조회 시작:', reservationId);
+      fetchReservationData(reservationId);
+    }
+  }, [reservationFromDetail, reservationData, location.state]);
+
   // ⭐️ 디버깅용: 전달받은 데이터 확인
   useEffect(() => {
     console.log('🔍 UserPayment 페이지 데이터 확인:');
@@ -51,13 +154,13 @@ const UserPayment = () => {
       selectedServices,
     });
     console.log('💾 localStorage 저장된 데이터:', savedPaymentData);
-    // paymentData는 콘솔에서 직접 확인하도록 주석 처리 (무한 루프 방지)
-    // console.log('📊 최종 결제 데이터:', paymentData);
+    console.log('🎯 실제 조회된 예약 데이터:', actualReservationData);
   }, [
     reservationFromDetail,
     reservationData,
     selectedServices,
     savedPaymentData,
+    actualReservationData,
   ]);
 
   // Card formatting functions
@@ -95,76 +198,896 @@ const UserPayment = () => {
   const paymentData = useMemo(
     () => ({
       serviceInfo: {
-        dateTime:
+        dateTime: (() => {
+          // 다양한 소스에서 날짜와 시간 데이터 찾기
+          console.log('🔍 날짜/시간 데이터 소스 확인:', {
+            actualReservationData: actualReservationData,
+            reservationFromDetail: reservationFromDetail,
+            reservationData: reservationData,
+            savedPaymentData: savedPaymentData,
+            locationState: location.state,
+          });
+
+          // 0. 실제 백엔드 예약 데이터 최우선 확인 (startTime 우선 처리)
+          if (actualReservationData) {
+            console.log('🔍 백엔드 예약 데이터 전체:', actualReservationData);
+
+            // startTime 우선 확인 (ISO 8601 형식으로 날짜+시간 모두 포함)
+            if (actualReservationData.startTime) {
+              const startTime = actualReservationData.startTime;
+              console.log('🎯 백엔드 startTime 발견:', startTime);
+
+              // startTime이 ISO 8601 형식인 경우 (예: "2025-07-14T10:00:00")
+              if (startTime.includes('T')) {
+                const dateObj = new Date(startTime);
+                if (!isNaN(dateObj.getTime())) {
+                  const formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+                  const formattedTime = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+                  console.log(
+                    '🎯 백엔드 startTime ISO 형식 처리 결과:',
+                    `${formattedDate} ${formattedTime}`
+                  );
+                  return `${formattedDate} ${formattedTime}`;
+                }
+              }
+              // startTime이 시간만 있는 경우 (예: "14:00")
+              else if (startTime.includes(':')) {
+                let timeStr = startTime;
+                if (timeStr.includes('~')) {
+                  timeStr = timeStr.split('~')[0].trim();
+                }
+
+                // 날짜 정보를 다른 곳에서 찾아서 조합
+                const reservedDate =
+                  actualReservationData.scheduledDate ||
+                  actualReservationData.serviceDate ||
+                  actualReservationData.reservationDate ||
+                  actualReservationData.date ||
+                  actualReservationData.selectedDate;
+
+                if (reservedDate) {
+                  const dateObj = new Date(reservedDate);
+                  if (!isNaN(dateObj.getTime())) {
+                    const formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+                    console.log(
+                      '🎯 백엔드 시간+날짜 조합 결과:',
+                      `${formattedDate} ${timeStr}`
+                    );
+                    return `${formattedDate} ${timeStr}`;
+                  }
+                }
+
+                // 날짜 정보가 없으면 오늘 날짜로 처리
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+                console.log(
+                  '🎯 백엔드 오늘 날짜 + 시간 조합:',
+                  `${todayStr} ${timeStr}`
+                );
+                return `${todayStr} ${timeStr}`;
+              }
+            }
+
+            // 기존 방식: 별도의 date, time 필드 확인
+            const date =
+              actualReservationData.scheduledDate ||
+              actualReservationData.serviceDate ||
+              actualReservationData.reservationDate ||
+              actualReservationData.date ||
+              actualReservationData.requestedDate ||
+              actualReservationData.selectedDate ||
+              actualReservationData.workDate;
+
+            const time =
+              actualReservationData.scheduledTime ||
+              actualReservationData.serviceTime ||
+              actualReservationData.reservationTime ||
+              actualReservationData.time ||
+              actualReservationData.requestedTime ||
+              actualReservationData.selectedTime ||
+              actualReservationData.workTime ||
+              actualReservationData.appointmentTime;
+
+            console.log('🔍 백엔드 예약 데이터에서 별도 날짜/시간 필드:', {
+              date,
+              time,
+            });
+
+            if (date && time) {
+              let formattedDate = date;
+              if (typeof date === 'string' && date.includes('-')) {
+                const dateObj = new Date(date + 'T00:00:00');
+                if (!isNaN(dateObj.getTime())) {
+                  formattedDate = `${dateObj.getFullYear()}년 ${
+                    dateObj.getMonth() + 1
+                  }월 ${dateObj.getDate()}일`;
+                }
+              }
+
+              let timeStr = String(time);
+              if (timeStr.includes('~')) {
+                timeStr = timeStr.split('~')[0].trim();
+              }
+
+              console.log(
+                '🎯 백엔드 별도 필드 조합 결과:',
+                `${formattedDate} ${timeStr}`
+              );
+              return `${formattedDate} ${timeStr}`;
+            }
+
+            if (date) {
+              let formattedDate = date;
+              if (typeof date === 'string' && date.includes('-')) {
+                const dateObj = new Date(date + 'T00:00:00');
+                if (!isNaN(dateObj.getTime())) {
+                  formattedDate = `${dateObj.getFullYear()}년 ${
+                    dateObj.getMonth() + 1
+                  }월 ${dateObj.getDate()}일`;
+                }
+              }
+              console.log(
+                '🎯 백엔드 날짜만 있는 경우:',
+                `${formattedDate} 시간 미정`
+              );
+              return `${formattedDate} 시간 미정`;
+            }
+          }
+
+          // 1. 예약 상세 페이지에서 전달받은 데이터 확인 (startTime 우선 처리)
+          if (reservationFromDetail) {
+            console.log(
+              '🔍 예약 상세에서 전달받은 모든 데이터:',
+              reservationFromDetail
+            );
+
+            // startTime 필드 우선 확인 (예약 상세에서 가장 정확한 시간 정보)
+            if (reservationFromDetail.startTime) {
+              const startTime = reservationFromDetail.startTime;
+              console.log('🎯 startTime 발견:', startTime);
+
+              // startTime이 ISO 8601 형식인 경우 (예: "2024-01-15T14:00:00")
+              if (startTime.includes('T')) {
+                const dateObj = new Date(startTime);
+                if (!isNaN(dateObj.getTime())) {
+                  const formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+                  const formattedTime = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+                  console.log(
+                    '🎯 ISO 형식 처리 결과:',
+                    `${formattedDate} ${formattedTime}`
+                  );
+                  return `${formattedDate} ${formattedTime}`;
+                }
+              }
+              // startTime이 시간만 있는 경우 (예: "14:00")
+              else if (startTime.includes(':')) {
+                let timeStr = startTime;
+                if (timeStr.includes('~')) {
+                  timeStr = timeStr.split('~')[0].trim();
+                }
+
+                // 날짜 정보를 다른 곳에서 찾아서 조합
+                const reservedDate =
+                  reservationFromDetail.createdAt ||
+                  reservationFromDetail.date ||
+                  reservationFromDetail.serviceDate ||
+                  reservationFromDetail.reservationDate ||
+                  reservationFromDetail.scheduledDate ||
+                  reservationFromDetail.backendData?.reservedDate ||
+                  reservationFromDetail.backendData?.serviceDate;
+
+                if (reservedDate) {
+                  const dateObj = new Date(reservedDate);
+                  if (!isNaN(dateObj.getTime())) {
+                    const formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+                    console.log(
+                      '🎯 시간+날짜 조합 결과:',
+                      `${formattedDate} ${timeStr}`
+                    );
+                    return `${formattedDate} ${timeStr}`;
+                  }
+                }
+
+                // 날짜 정보가 없으면 오늘 날짜로 처리
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+                console.log(
+                  '🎯 오늘 날짜 + 시간 조합:',
+                  `${todayStr} ${timeStr}`
+                );
+                return `${todayStr} ${timeStr}`;
+              }
+            }
+
+            // 백엔드 데이터에서 startTime 확인
+            if (reservationFromDetail.backendData?.startTime) {
+              const startTime = reservationFromDetail.backendData.startTime;
+              console.log('🎯 백엔드 데이터의 startTime 발견:', startTime);
+
+              if (startTime.includes('T')) {
+                const dateObj = new Date(startTime);
+                if (!isNaN(dateObj.getTime())) {
+                  const formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+                  const formattedTime = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+                  console.log(
+                    '🎯 백엔드 ISO 형식 처리 결과:',
+                    `${formattedDate} ${formattedTime}`
+                  );
+                  return `${formattedDate} ${formattedTime}`;
+                }
+              } else if (startTime.includes(':')) {
+                let timeStr = startTime;
+                if (timeStr.includes('~')) {
+                  timeStr = timeStr.split('~')[0].trim();
+                }
+
+                const reservedDate =
+                  reservationFromDetail.backendData.reservedDate ||
+                  reservationFromDetail.backendData.serviceDate ||
+                  reservationFromDetail.createdAt;
+
+                if (reservedDate) {
+                  const dateObj = new Date(reservedDate);
+                  if (!isNaN(dateObj.getTime())) {
+                    const formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+                    console.log(
+                      '🎯 백엔드 시간+날짜 조합 결과:',
+                      `${formattedDate} ${timeStr}`
+                    );
+                    return `${formattedDate} ${timeStr}`;
+                  }
+                }
+
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+                console.log(
+                  '🎯 백엔드 오늘 날짜 + 시간 조합:',
+                  `${todayStr} ${timeStr}`
+                );
+                return `${todayStr} ${timeStr}`;
+              }
+            }
+
+            // 기존 방식: 별도의 date, time 필드 확인
+            const date =
+              reservationFromDetail.date ||
+              reservationFromDetail.serviceDate ||
+              reservationFromDetail.reservationDate ||
+              reservationFromDetail.scheduledDate;
+            const time =
+              reservationFromDetail.time ||
+              reservationFromDetail.serviceTime ||
+              reservationFromDetail.reservationTime ||
+              reservationFromDetail.scheduledTime;
+
+            console.log('🔍 기존 방식 날짜/시간 확인:', {
+              date,
+              time,
+            });
+
+            if (date && time) {
+              let formattedDate = date;
+              if (typeof date === 'string' && date.includes('-')) {
+                const dateObj = new Date(date + 'T00:00:00');
+                if (!isNaN(dateObj.getTime())) {
+                  formattedDate = `${dateObj.getFullYear()}년 ${
+                    dateObj.getMonth() + 1
+                  }월 ${dateObj.getDate()}일`;
+                }
+              }
+
+              let timeStr = String(time);
+              if (timeStr.includes('~')) {
+                timeStr = timeStr.split('~')[0].trim();
+              }
+
+              console.log('🎯 기존 방식 결과:', `${formattedDate} ${timeStr}`);
+              return `${formattedDate} ${timeStr}`;
+            }
+
+            if (date) {
+              let formattedDate = date;
+              if (typeof date === 'string' && date.includes('-')) {
+                const dateObj = new Date(date + 'T00:00:00');
+                if (!isNaN(dateObj.getTime())) {
+                  formattedDate = `${dateObj.getFullYear()}년 ${
+                    dateObj.getMonth() + 1
+                  }월 ${dateObj.getDate()}일`;
+                }
+              }
+              console.log('🎯 날짜만 있는 경우:', `${formattedDate} 시간 미정`);
+              return `${formattedDate} 시간 미정`;
+            }
+          }
+
+          // 1. location.state에서 직접 전달된 날짜/시간 확인
+          if (
+            location.state?.reservation?.date &&
+            location.state?.reservation?.time
+          ) {
+            const date = location.state.reservation.date;
+            const time = location.state.reservation.time;
+
+            console.log('🔍 location.state.reservation에서 날짜/시간:', {
+              date,
+              time,
+            });
+
+            let formattedDate = date;
+            if (typeof date === 'string' && date.includes('-')) {
+              const dateObj = new Date(date + 'T00:00:00');
+              if (!isNaN(dateObj.getTime())) {
+                formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+              }
+            }
+
+            let timeStr = String(time);
+            if (timeStr.includes('~')) {
+              timeStr = timeStr.split('~')[0].trim();
+            }
+
+            return `${formattedDate} ${timeStr}`;
+          }
+
+          if (location.state?.date && location.state?.time) {
+            const date = location.state.date;
+            const time = location.state.time;
+
+            console.log('🔍 location.state에서 날짜/시간:', { date, time });
+
+            let formattedDate = date;
+            if (typeof date === 'string' && date.includes('-')) {
+              const dateObj = new Date(date + 'T00:00:00');
+              if (!isNaN(dateObj.getTime())) {
+                formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+              }
+            }
+
+            let timeStr = String(time);
+            if (timeStr.includes('~')) {
+              timeStr = timeStr.split('~')[0].trim();
+            }
+
+            return `${formattedDate} ${timeStr}`;
+          }
+
+          // 2. reservationData 확인 (예약 페이지에서 직접 전달된 데이터)
+          if (reservationData.selectedDate && reservationData.selectedTime) {
+            const date = reservationData.selectedDate;
+            const time = reservationData.selectedTime;
+
+            console.log('🔍 reservationData에서 날짜/시간:', { date, time });
+
+            let formattedDate = date;
+            if (typeof date === 'string' && date.includes('-')) {
+              const dateObj = new Date(date + 'T00:00:00');
+              if (!isNaN(dateObj.getTime())) {
+                formattedDate = `${dateObj.getFullYear()}년 ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`;
+              }
+            }
+
+            let timeStr = String(time);
+            if (timeStr.includes('~')) {
+              timeStr = timeStr.split('~')[0].trim();
+            }
+
+            return `${formattedDate} ${timeStr}`;
+          }
+
+          // 3. 예약 상세에서 전달받은 기타 데이터 확인
+          if (reservationFromDetail) {
+            // 백엔드 데이터에서 날짜/시간 정보 확인
+            const backendData = reservationFromDetail.backendData?.data;
+            if (backendData) {
+              console.log('🔍 백엔드 데이터 확인:', backendData);
+              // 백엔드에서 가능한 날짜/시간 필드들 확인
+              const date =
+                backendData.reservationDate ||
+                backendData.serviceDate ||
+                backendData.date ||
+                backendData.startDate;
+              const time =
+                backendData.reservationTime ||
+                backendData.serviceTime ||
+                backendData.time ||
+                backendData.startTime;
+
+              if (date && time) {
+                const timeStr = time.includes('~') ? time.split('~')[0] : time;
+                return `${date} ${timeStr}`;
+              }
+              if (date) {
+                return `${date} 시간 미정`;
+              }
+            }
+
+            // 프론트엔드 데이터에서 날짜/시간 정보 확인
+            const date =
+              reservationFromDetail.date ||
+              reservationFromDetail.reservationDate ||
+              reservationFromDetail.serviceDate;
+            const time =
+              reservationFromDetail.time ||
+              reservationFromDetail.startTime || // startTime 추가
+              reservationFromDetail.reservationTime ||
+              reservationFromDetail.serviceTime;
+
+            if (date && time && time !== undefined) {
+              const timeStr = time.includes('~') ? time.split('~')[0] : time;
+              return `${date} ${timeStr}`;
+            }
+            if (date) {
+              return `${date} 시간 미정`;
+            }
+
+            // createdAt을 이용해 생성일 표시 (서비스 날짜가 없는 경우)
+            if (reservationFromDetail.createdAt) {
+              const createdDate = new Date(reservationFromDetail.createdAt);
+              const formattedDate = createdDate.toLocaleDateString('ko-KR');
+              return `${formattedDate}`;
+            }
+          }
+
+          // 2. reservationData에서 날짜와 시간 찾기
+          if (
+            reservationData.reservationDate &&
+            reservationData.reservationTime
+          ) {
+            return `${reservationData.reservationDate} ${reservationData.reservationTime}`;
+          }
+          if (reservationData.selectedDate && reservationData.selectedTime) {
+            return `${reservationData.selectedDate} ${reservationData.selectedTime}`;
+          }
+          if (reservationData.date && reservationData.time) {
+            return `${reservationData.date} ${reservationData.time}`;
+          }
+
+          // 3. savedPaymentData에서 날짜와 시간 찾기
+          if (
+            savedPaymentData?.serviceInfo?.date &&
+            savedPaymentData?.serviceInfo?.time
+          ) {
+            return `${savedPaymentData.serviceInfo.date} ${savedPaymentData.serviceInfo.time}`;
+          }
+          if (savedPaymentData?.date && savedPaymentData?.time) {
+            return `${savedPaymentData.date} ${savedPaymentData.time}`;
+          }
+
+          // 4. location.state에서 추가 데이터 확인
+          if (location.state?.date && location.state?.time) {
+            return `${location.state.date} ${location.state.time}`;
+          }
+
+          // 5. 기본값 반환
+          console.warn('⚠️ 날짜/시간 데이터를 찾을 수 없어 기본값 사용');
+          return '서비스 일정 미정';
+        })(),
+        serviceType: (() => {
+          // 다양한 소스에서 서비스 타입 찾기
+          console.log('🔍 서비스 타입 데이터 소스 확인:', {
+            actualReservationData: actualReservationData,
+            'reservationFromDetail?.type': reservationFromDetail?.type,
+            'reservationData.serviceTitle': reservationData.serviceTitle,
+            'reservationData.selectedSubOption':
+              reservationData.selectedSubOption,
+            'savedPaymentData?.serviceInfo': savedPaymentData?.serviceInfo,
+          });
+
+          // 0. 실제 백엔드 예약 데이터 우선 사용
+          if (actualReservationData) {
+            const serviceType =
+              actualReservationData.serviceName ||
+              actualReservationData.serviceType ||
+              actualReservationData.title ||
+              actualReservationData.name;
+            if (serviceType) return serviceType;
+
+            // 서비스 목록에서 첫 번째 서비스 이름 가져오기
+            if (
+              actualReservationData.services &&
+              actualReservationData.services.length > 0
+            ) {
+              return (
+                actualReservationData.services[0].serviceName ||
+                actualReservationData.services[0].name
+              );
+            }
+          }
+
           // 1. 예약 상세에서 전달받은 데이터 우선 사용
-          reservationFromDetail
-            ? `${reservationFromDetail.date} ${reservationFromDetail.time ? reservationFromDetail.time.split('~')[0] : ''}`
-            : reservationData.reservationDate && reservationData.reservationTime
-              ? `${reservationData.reservationDate} ${reservationData.reservationTime}`
-              : savedPaymentData?.serviceInfo?.date &&
-                  savedPaymentData?.serviceInfo?.time
-                ? `${savedPaymentData.serviceInfo.date} ${savedPaymentData.serviceInfo.time}`
-                : '2023-06-15 14:00',
-        serviceType:
+          if (reservationFromDetail?.type) return reservationFromDetail.type;
+          if (reservationFromDetail?.serviceType)
+            return reservationFromDetail.serviceType;
+          if (reservationFromDetail?.serviceName)
+            return reservationFromDetail.serviceName;
+
+          // 2. reservationData에서 서비스 타입 찾기
+          if (reservationData.serviceTitle) return reservationData.serviceTitle;
+          if (reservationData.selectedSubOption?.name)
+            return reservationData.selectedSubOption.name;
+          if (reservationData.serviceName) return reservationData.serviceName;
+          if (reservationData.serviceType) return reservationData.serviceType;
+
+          // 3. savedPaymentData에서 서비스 타입 찾기
+          if (savedPaymentData?.serviceInfo?.type)
+            return savedPaymentData.serviceInfo.type;
+          if (savedPaymentData?.serviceInfo?.subOptionName)
+            return savedPaymentData.serviceInfo.subOptionName;
+          if (savedPaymentData?.serviceInfo?.serviceName)
+            return savedPaymentData.serviceInfo.serviceName;
+
+          // 4. location.state에서 추가 데이터 확인
+          if (location.state?.serviceType) return location.state.serviceType;
+          if (location.state?.type) return location.state.type;
+
+          // 5. 기본값 반환
+          console.warn('⚠️ 서비스 타입 데이터를 찾을 수 없어 기본값 사용');
+          return '청소 서비스';
+        })(),
+        manager: (() => {
+          console.log('🔍 매니저 정보 소스 확인:', {
+            reservationData: reservationData,
+            locationState: location.state,
+            actualReservationData: actualReservationData,
+            managerInfo: managerInfo,
+          });
+
+          // 0. reservationData와 location.state에서 매니저 정보 우선 확인
+          if (reservationData.managerName) {
+            return reservationData.managerName;
+          }
+
+          if (location.state?.managerName) {
+            return location.state.managerName;
+          }
+
+          if (location.state?.manager?.name) {
+            return location.state.manager.name;
+          }
+
+          // 1. API로 조회한 매니저 정보 확인 (가장 정확한 정보)
+          if (managerInfo) {
+            const fetchedManagerName =
+              managerInfo.name ||
+              managerInfo.userName ||
+              managerInfo.managerName ||
+              managerInfo.fullName ||
+              managerInfo.realName;
+
+            if (fetchedManagerName) {
+              return fetchedManagerName;
+            }
+          }
+
+          // 2. 실제 예약 데이터에서 매니저 정보 조회
+          if (actualReservationData) {
+            // 매니저 이름 확인 (다양한 필드명 지원)
+            const managerName =
+              actualReservationData.managerName ||
+              actualReservationData.manager?.name ||
+              actualReservationData.manager?.userName ||
+              actualReservationData.manager?.realName ||
+              actualReservationData.assignedManagerName ||
+              actualReservationData.matchedManagerName ||
+              actualReservationData.acceptedManagerName;
+
+            if (managerName) {
+              return managerName;
+            }
+
+            // 매니저 ID만 있는 경우 (API 조회가 안된 경우의 대체값)
+            if (actualReservationData.managerId) {
+              return `매니저님`;
+            }
+
+            // 매칭 상태 확인
+            if (
+              actualReservationData.status === 'MATCHED' ||
+              actualReservationData.status === 'ACCEPTED' ||
+              actualReservationData.matchingStatus === 'MATCHED' ||
+              actualReservationData.matchingStatus === 'ACCEPTED'
+            ) {
+              return '매니저 배정 완료';
+            }
+
+            return '매니저 배정 예정';
+          }
+
+          // 기존 로직 유지
+          return '매니저 배정 예정';
+        })(),
+        reservationId: (() => {
+          // 다양한 소스에서 예약 ID 찾기
+          console.log('🔍 예약 ID 데이터 소스 확인:', {
+            'reservationFromDetail?.id': reservationFromDetail?.id,
+            'reservationFromDetail?.backendData?.data':
+              reservationFromDetail?.backendData?.data,
+            'savedPaymentData?.reservationId': savedPaymentData?.reservationId,
+          });
+
           // 1. 예약 상세에서 전달받은 데이터 우선 사용
-          reservationFromDetail?.type ||
-          reservationData.serviceTitle ||
-          savedPaymentData?.serviceInfo?.type ||
-          savedPaymentData?.serviceInfo?.subOptionName ||
-          reservationData.selectedSubOption?.name ||
-          '청소 서비스',
-        manager: '매니저 배정 예정',
-        reservationId:
+          if (reservationFromDetail?.id) return reservationFromDetail.id;
+
+          // 2. 백엔드 데이터에서 예약 ID 확인
+          const backendData = reservationFromDetail?.backendData?.data;
+          if (backendData?.id) return backendData.id;
+          if (backendData?.reservationId) return backendData.reservationId;
+
+          // 3. savedPaymentData에서 예약 ID 확인
+          if (savedPaymentData?.reservationId)
+            return savedPaymentData.reservationId;
+
+          // 4. location.state에서 예약 ID 확인
+          if (location.state?.reservationId)
+            return location.state.reservationId;
+          if (location.state?.id) return location.state.id;
+
+          return null;
+        })(),
+        status: (() => {
+          // 다양한 소스에서 상태 정보 찾기
+          console.log('🔍 상태 데이터 소스 확인:', {
+            'reservationFromDetail?.status': reservationFromDetail?.status,
+            'reservationFromDetail?.backendData?.data':
+              reservationFromDetail?.backendData?.data,
+            'savedPaymentData?.status': savedPaymentData?.status,
+          });
+
           // 1. 예약 상세에서 전달받은 데이터 우선 사용
-          reservationFromDetail?.id || savedPaymentData?.reservationId,
-        status: savedPaymentData?.status || 'PENDING',
+          if (reservationFromDetail?.status)
+            return reservationFromDetail.status;
+
+          // 2. 백엔드 데이터에서 상태 확인
+          const backendData = reservationFromDetail?.backendData?.data;
+          if (backendData?.status) return backendData.status;
+
+          // 3. savedPaymentData에서 상태 확인
+          if (savedPaymentData?.status) return savedPaymentData.status;
+
+          // 4. 기본값
+          return 'PENDING';
+        })(),
         duration:
           reservationData.totalDuration || savedPaymentData?.duration || 180,
         // 추가 정보 (예약 상세에서 전달받은 경우)
-        address: reservationFromDetail?.address,
-        addressDetail: reservationFromDetail?.addressDetail,
+        address: (() => {
+          // 다양한 소스에서 주소 정보 찾기
+          console.log('🔍 주소 데이터 소스 확인:', {
+            actualReservationData: actualReservationData,
+            'reservationFromDetail?.address': reservationFromDetail?.address,
+            'reservationFromDetail?.backendData?.data':
+              reservationFromDetail?.backendData?.data,
+            'reservationData.address': reservationData.address,
+          });
+
+          // 0. 실제 백엔드 예약 데이터 우선 사용
+          if (actualReservationData) {
+            const address =
+              actualReservationData.address ||
+              actualReservationData.serviceAddress ||
+              actualReservationData.location;
+            if (address) return address;
+          }
+
+          // 1. 예약 상세에서 전달받은 데이터 우선 사용
+          if (reservationFromDetail?.address)
+            return reservationFromDetail.address;
+
+          // 2. 백엔드 데이터에서 주소 확인
+          const backendData = reservationFromDetail?.backendData?.data;
+          if (backendData?.address) return backendData.address;
+
+          // 3. reservationData에서 주소 확인
+          if (reservationData.address) return reservationData.address;
+
+          return null;
+        })(),
+        addressDetail: (() => {
+          // 다양한 소스에서 상세 주소 정보 찾기
+          console.log('🔍 상세 주소 데이터 소스 확인:', {
+            'reservationFromDetail?.addressDetail':
+              reservationFromDetail?.addressDetail,
+            'reservationFromDetail?.backendData?.data':
+              reservationFromDetail?.backendData?.data,
+            'reservationData.addressDetail': reservationData.addressDetail,
+          });
+
+          // 1. 예약 상세에서 전달받은 데이터 우선 사용
+          if (reservationFromDetail?.addressDetail)
+            return reservationFromDetail.addressDetail;
+
+          // 2. 백엔드 데이터에서 상세 주소 확인
+          const backendData = reservationFromDetail?.backendData?.data;
+          if (backendData?.addressDetail) return backendData.addressDetail;
+
+          // 3. reservationData에서 상세 주소 확인
+          if (reservationData.addressDetail)
+            return reservationData.addressDetail;
+
+          return null;
+        })(),
       },
-      priceList:
+      priceList: (() => {
+        // 다양한 소스에서 가격 목록 찾기
+        console.log('🔍 가격 목록 데이터 소스 확인:', {
+          actualReservationData: actualReservationData,
+          reservationFromDetail: reservationFromDetail,
+          'reservationData.serviceDetails': reservationData.serviceDetails,
+          'selectedServices.length': selectedServices.length,
+          'savedPaymentData?.priceList': savedPaymentData?.priceList,
+        });
+
+        // 0. 실제 백엔드 예약 데이터 우선 사용
+        if (actualReservationData) {
+          // 서비스 목록이 있는 경우
+          if (
+            actualReservationData.services &&
+            actualReservationData.services.length > 0
+          ) {
+            return actualReservationData.services.map((service) => ({
+              name: service.serviceName || service.name || '서비스',
+              price: service.price || service.amount || 0,
+            }));
+          }
+
+          // 단일 서비스 정보로 가격 목록 생성
+          const serviceName =
+            actualReservationData.serviceName ||
+            actualReservationData.serviceType ||
+            actualReservationData.title ||
+            '서비스';
+          const servicePrice =
+            actualReservationData.totalPrice ||
+            actualReservationData.price ||
+            actualReservationData.amount ||
+            0;
+
+          if (serviceName && servicePrice > 0) {
+            return [{ name: serviceName, price: servicePrice }];
+          }
+        }
+
         // 1. 예약 상세에서 전달받은 데이터가 있으면 단일 항목으로 표시
-        reservationFromDetail
-          ? [
-              {
-                name: reservationFromDetail.type,
-                price: reservationFromDetail.price,
-              },
-            ]
-          : // 2. 서브옵션에서 선택된 서비스 데이터 우선 사용
-            reservationData.serviceDetails &&
-              reservationData.serviceDetails.length > 0
-            ? reservationData.serviceDetails.map((service) => ({
-                name: service.name,
-                price: service.price,
-              }))
-            : // 3. 기존 selectedServices 사용
-              selectedServices.length > 0
-              ? selectedServices.map((service) => ({
-                  name: service.name,
-                  price: service.price,
-                }))
-              : // 4. 기본값 사용
-                [
-                  { name: '기본 요금', price: 80000 },
-                  { name: '찬대 물기기', price: 10000 },
-                  { name: '찬장 먼지 제거', price: 20000 },
-                  { name: '일반 배출', price: 20000 },
-                  { name: '음식물 배출', price: 25000 },
-                ],
-      totalAmount:
+        if (reservationFromDetail) {
+          const serviceName =
+            reservationFromDetail.type ||
+            reservationFromDetail.serviceType ||
+            reservationFromDetail.serviceName ||
+            '서비스';
+          const servicePrice =
+            reservationFromDetail.price ||
+            reservationFromDetail.amount ||
+            reservationFromDetail.totalAmount ||
+            0;
+
+          return [
+            {
+              name: serviceName,
+              price: servicePrice,
+            },
+          ];
+        }
+
+        // 2. reservationData에서 서비스 상세 정보 사용
+        if (
+          reservationData.serviceDetails &&
+          reservationData.serviceDetails.length > 0
+        ) {
+          return reservationData.serviceDetails.map((service) => ({
+            name: service.name || service.serviceName || '서비스',
+            price: service.price || service.amount || 0,
+          }));
+        }
+
+        // 3. selectedServices 사용
+        if (selectedServices.length > 0) {
+          return selectedServices.map((service) => ({
+            name: service.name || service.serviceName || '서비스',
+            price: service.price || service.amount || 0,
+          }));
+        }
+
+        // 4. savedPaymentData에서 가격 목록 사용
+        if (
+          savedPaymentData?.priceList &&
+          savedPaymentData.priceList.length > 0
+        ) {
+          return savedPaymentData.priceList;
+        }
+
+        // 5. location.state에서 가격 목록 확인
+        if (location.state?.priceList && location.state.priceList.length > 0) {
+          return location.state.priceList;
+        }
+
+        // 6. 단일 서비스 정보로 가격 목록 생성
+        if (reservationData.serviceTitle || reservationData.serviceName) {
+          const serviceName =
+            reservationData.serviceTitle || reservationData.serviceName;
+          const servicePrice =
+            reservationData.totalPrice || reservationData.amount || 0;
+
+          return [
+            {
+              name: serviceName,
+              price: servicePrice,
+            },
+          ];
+        }
+
+        // 7. 기본값 사용
+        console.warn('⚠️ 가격 목록 데이터를 찾을 수 없어 기본값 사용');
+        return [
+          { name: '기본 요금', price: 80000 },
+          { name: '찬대 물기기', price: 10000 },
+          { name: '찬장 먼지 제거', price: 20000 },
+          { name: '일반 배출', price: 20000 },
+          { name: '음식물 배출', price: 25000 },
+        ];
+      })(),
+      totalAmount: (() => {
+        // 다양한 소스에서 총 금액 찾기
+        console.log('🔍 총 금액 데이터 소스 확인:', {
+          actualReservationData: actualReservationData,
+          'reservationFromDetail?.price': reservationFromDetail?.price,
+          'reservationData.totalPrice': reservationData.totalPrice,
+          'savedPaymentData?.amount': savedPaymentData?.amount,
+          'location.state?.amount': location.state?.amount,
+        });
+
+        // 0. 실제 백엔드 예약 데이터 우선 사용
+        if (actualReservationData) {
+          const amount =
+            actualReservationData.totalPrice ||
+            actualReservationData.price ||
+            actualReservationData.amount ||
+            actualReservationData.cost;
+          if (amount) return amount;
+        }
+
         // 1. 예약 상세에서 전달받은 데이터 우선 사용
-        reservationFromDetail?.price ||
-        // 2. 서브옵션에서 계산된 총 가격 우선 사용
-        reservationData.totalPrice ||
-        // 3. savedPaymentData 금액 사용
-        savedPaymentData?.amount ||
-        // 4. 기본값 사용
-        155000,
+        if (reservationFromDetail?.price) return reservationFromDetail.price;
+        if (reservationFromDetail?.totalAmount)
+          return reservationFromDetail.totalAmount;
+        if (reservationFromDetail?.amount) return reservationFromDetail.amount;
+
+        // 2. reservationData에서 총 가격 찾기
+        if (reservationData.totalPrice) return reservationData.totalPrice;
+        if (reservationData.totalAmount) return reservationData.totalAmount;
+        if (reservationData.amount) return reservationData.amount;
+
+        // 3. savedPaymentData에서 금액 찾기
+        if (savedPaymentData?.amount) return savedPaymentData.amount;
+        if (savedPaymentData?.totalAmount) return savedPaymentData.totalAmount;
+        if (savedPaymentData?.price) return savedPaymentData.price;
+
+        // 4. location.state에서 추가 데이터 확인
+        if (location.state?.amount) return location.state.amount;
+        if (location.state?.totalAmount) return location.state.totalAmount;
+        if (location.state?.price) return location.state.price;
+
+        // 5. selectedServices에서 계산된 총 가격
+        if (selectedServices.length > 0) {
+          const calculatedTotal = selectedServices.reduce(
+            (sum, service) => sum + (service.price || 0),
+            0
+          );
+          if (calculatedTotal > 0) return calculatedTotal;
+        }
+
+        // 6. 기본값 반환
+        console.warn('⚠️ 총 금액 데이터를 찾을 수 없어 기본값 사용');
+        return 155000;
+      })(),
     }),
-    [reservationFromDetail, reservationData, savedPaymentData, selectedServices]
+    [
+      actualReservationData,
+      managerInfo,
+      reservationFromDetail,
+      reservationData,
+      savedPaymentData,
+      selectedServices,
+    ]
   );
 
   // 약관 동의 상태 관리
@@ -200,6 +1123,12 @@ const UserPayment = () => {
   };
 
   const handlePayment = async () => {
+    // 결제 확인 창 표시
+    const confirmPayment = window.confirm('결제하시겠습니까?');
+    if (!confirmPayment) {
+      return; // 취소 클릭 시 함수 종료
+    }
+
     try {
       // 인증 상태 확인
       const localStorageToken = localStorage.getItem('accessToken');
@@ -233,7 +1162,6 @@ const UserPayment = () => {
       const paymentMethodMapping = {
         card: 'CARD',
         bank: 'TRANSFER',
-        kakao: 'KAKAO',
       };
 
       const paymentRequestData = {
@@ -361,9 +1289,19 @@ const UserPayment = () => {
               </div>
 
               <div className="info-item">
-                <span className="label">날짜 및 시간</span>
+                <span className="label">예약 날짜 및 시간</span>
                 <span className="value">
                   {paymentData.serviceInfo.dateTime}
+                </span>
+              </div>
+
+              <div className="info-item">
+                <span className="label">결제 날짜</span>
+                <span className="value">
+                  {(() => {
+                    const today = new Date();
+                    return `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+                  })()}
                 </span>
               </div>
 
@@ -445,7 +1383,7 @@ const UserPayment = () => {
 
               <div className="info-item">
                 <span className="label">매니저</span>
-                <span className="value">매니저 배정 완료 (ID: 10)</span>
+                <span className="value">{paymentData.serviceInfo.manager}</span>
               </div>
 
               {/* ⭐️ 고객 요청사항 (예약 상세에서 전달받은 정보 우선) */}
@@ -534,21 +1472,6 @@ const UserPayment = () => {
                   <span className="method-text">계좌이체</span>
                 </div>
               </label>
-
-              {/* 카카오페이 옵션 주석처리 */}
-              <label className="payment-method-item">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="kakao"
-                  checked={selectedPaymentMethod === 'kakao'}
-                  onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                />
-                <div className="method-content">
-                  <i className="fas fa-comment method-icon"></i>
-                  <span className="method-text">카카오페이</span>
-                </div>
-              </label>
             </div>
           </div>
 
@@ -629,19 +1552,6 @@ const UserPayment = () => {
                 <p>예금주: (주)홈에이드</p>
                 <p className="bank-note">
                   * 입금 후 확인까지 1-2시간 정도 소요될 수 있습니다.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* 카카오페이 정보 섹션 주석처리 */}
-          {selectedPaymentMethod === 'kakao' && (
-            <div className="kakao-info-section">
-              <h3 className="section-title">카카오페이</h3>
-              <div className="kakao-details">
-                <p>카카오페이로 간편하게 결제하세요.</p>
-                <p className="kakao-note">
-                  * 결제 버튼 클릭 시 카카오페이 앱으로 이동합니다.
                 </p>
               </div>
             </div>
