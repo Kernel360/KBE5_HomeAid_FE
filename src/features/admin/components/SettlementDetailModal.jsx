@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const SettlementDetailModal = ({
   isOpen,
@@ -6,6 +6,8 @@ const SettlementDetailModal = ({
   settlementDetail,
   loading,
 }) => {
+  const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
+
   if (!isOpen) return null;
 
   const formatCurrency = (amount) => {
@@ -227,6 +229,153 @@ const SettlementDetailModal = ({
                       관리자 수수료 (20%)
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* 결제 내역 */}
+              <div className="border border-gray-200 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center">
+                    <div className="w-2 h-6 bg-purple-500 rounded-full mr-3"></div>
+                    <h4 className="text-lg font-bold text-gray-900">
+                      결제 내역
+                    </h4>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+                      총 {settlementDetail.totalPayments}건
+                    </span>
+                    <button
+                      onClick={() =>
+                        setIsPaymentHistoryOpen(!isPaymentHistoryOpen)
+                      }
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+                    >
+                      {isPaymentHistoryOpen ? '접기' : '펼치기'}
+                      <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${isPaymentHistoryOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  className={`transition-all duration-300 ease-in-out ${isPaymentHistoryOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}
+                >
+                  {settlementDetail.payments &&
+                  settlementDetail.payments.length > 0 ? (
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {settlementDetail.payments.map((payment, index) => (
+                        <div
+                          key={payment.id || index}
+                          className="p-5 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-6 mb-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    결제 ID
+                                  </span>
+                                  <span className="text-sm font-bold text-gray-900">
+                                    #{payment.id}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    예약 ID
+                                  </span>
+                                  <span className="text-sm font-semibold text-blue-600">
+                                    #{payment.reservationId}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-8 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    결제일
+                                  </span>
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {formatDateTime(payment.paidAt)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    결제수단
+                                  </span>
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {payment.paymentMethod === 'CARD'
+                                      ? '카드'
+                                      : payment.paymentMethod ===
+                                          'BANK_TRANSFER'
+                                        ? '계좌이체'
+                                        : payment.paymentMethod ===
+                                            'VIRTUAL_ACCOUNT'
+                                          ? '가상계좌'
+                                          : payment.paymentMethod === 'MOBILE'
+                                            ? '모바일'
+                                            : payment.paymentMethod ||
+                                              '알 수 없음'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right ml-6">
+                              <p className="text-xl font-bold text-gray-900 mb-2">
+                                {formatCurrency(payment.amount)}
+                              </p>
+                              <span
+                                className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
+                                  payment.status === 'COMPLETED'
+                                    ? 'bg-green-100 text-green-800'
+                                    : payment.status === 'PENDING'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : payment.status === 'FAILED'
+                                        ? 'bg-red-100 text-red-800'
+                                        : 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
+                                {payment.status === 'COMPLETED'
+                                  ? '완료'
+                                  : payment.status === 'PENDING'
+                                    ? '대기'
+                                    : payment.status === 'FAILED'
+                                      ? '실패'
+                                      : payment.status || '알 수 없음'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <svg
+                        className="w-12 h-12 text-gray-400 mx-auto mb-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      <p className="text-gray-500">결제 내역이 없습니다.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
