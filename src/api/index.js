@@ -125,8 +125,7 @@ export const apiService = {
           'Content-Type': 'multipart/form-data',
         },
       }),
-    deleteIssue: (issueId) =>
-      api.delete(`/manager/issues/${issueId}`),
+    deleteIssue: (issueId) => api.delete(`/manager/issues/${issueId}`),
   },
   settlement: {
     getManagerSettlements: (managerId, params = {}) => {
@@ -139,7 +138,7 @@ export const apiService = {
     },
   },
   alert: {
-  updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
-  }
+    updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
+  },
 };
 export default apiService;

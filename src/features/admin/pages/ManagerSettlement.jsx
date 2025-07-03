@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import SettlementDetailModal from '../components/SettlementDetailModal';
 
 const StatCard = ({ title, value, subValue, icon, iconBg }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
@@ -66,6 +67,12 @@ const ManagerSettlement = () => {
   // 주간 정산 생성 모달 상태
   const [isWeeklySettlementModalOpen, setIsWeeklySettlementModalOpen] =
     useState(false);
+
+  // 정산 상세 모달 상태
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedSettlementDetail, setSelectedSettlementDetail] =
+    useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   // 데이터 필터링 함수
   const filterSettlements = (data, tabKey, searchData = null) => {
@@ -408,11 +415,48 @@ const ManagerSettlement = () => {
     }
   };
 
+  // 정산 상세 정보 조회
+  const fetchSettlementDetail = async (settlementId) => {
+    try {
+      setDetailLoading(true);
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
+
+      const response = await fetch(
+        `/api/v1/admin/settlements/${settlementId}/manager-detail`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success && data.data) {
+        setSelectedSettlementDetail(data.data);
+        setIsDetailModalOpen(true);
+      } else {
+        throw new Error('정산 상세 정보를 가져올 수 없습니다.');
+      }
+    } catch (err) {
+      console.error('Settlement detail fetch error:', err);
+      alert(`정산 상세 정보 조회 중 오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   // 정산 상세보기 처리
   const handleDetailSettlement = (settlement) => {
-    console.log('Settlement detail:', settlement);
-    // 상세 모달 또는 페이지로 이동하는 로직 구현 예정
-    alert('상세보기 기능은 준비 중입니다.');
+    fetchSettlementDetail(settlement.id);
   };
 
   // 정산 상태 표시
@@ -974,6 +1018,14 @@ const ManagerSettlement = () => {
         isOpen={isWeeklySettlementModalOpen}
         onClose={() => setIsWeeklySettlementModalOpen(false)}
         onSubmit={handleCreateWeeklySettlement}
+      />
+
+      {/* 정산 상세 모달 */}
+      <SettlementDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        settlementDetail={selectedSettlementDetail}
+        loading={detailLoading}
       />
     </div>
   );

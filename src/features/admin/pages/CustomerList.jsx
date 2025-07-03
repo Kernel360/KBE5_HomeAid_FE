@@ -3,7 +3,13 @@ import React, { useState, useEffect } from 'react';
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 // 고객 상세 모달 컴포넌트
-const CustomerDetailModal = ({ isOpen, onClose, customer, customerDetail }) => {
+const CustomerDetailModal = ({
+  isOpen,
+  onClose,
+  customer,
+  customerDetail,
+  loading,
+}) => {
   if (!isOpen || !customer) return null;
 
   return (
@@ -43,41 +49,102 @@ const CustomerDetailModal = ({ isOpen, onClose, customer, customerDetail }) => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               프로필 정보
             </h3>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold">
-                    {customerDetail?.profile?.name?.charAt(0) ||
-                      customer.name?.charAt(0) ||
-                      '?'}
-                  </span>
-                </div>
-                <div>
-                  <div className="font-medium text-gray-900">
-                    {customerDetail?.profile?.name || customer.name || '-'}
-                  </div>
-                  <div className="text-sm text-gray-500">ID: {customer.id}</div>
+            {loading ? (
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-gray-500">
+                  프로필 정보를 불러오는 중...
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    이메일
-                  </label>
-                  <div className="text-gray-900">
-                    {customerDetail?.profile?.email || customer.email || '-'}
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
+                    {(() => {
+                      // 가능한 모든 프로필 이미지 필드 확인
+                      const profileImage =
+                        customerDetail?.profile?.profileImage ||
+                        customerDetail?.profile?.imageUrl ||
+                        customerDetail?.profile?.image ||
+                        customerDetail?.profileImage ||
+                        customerDetail?.imageUrl ||
+                        customerDetail?.image ||
+                        customerDetail?.profile?.profileImageUrl;
+
+                      if (profileImage) {
+                        // 캐싱 방지를 위해 timestamp 추가
+                        const imageUrl = profileImage.includes('?')
+                          ? `${profileImage}&t=${Date.now()}`
+                          : `${profileImage}?t=${Date.now()}`;
+
+                        return (
+                          <img
+                            src={imageUrl}
+                            alt="프로필 이미지"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log(
+                                'Profile image load failed:',
+                                imageUrl
+                              );
+                              e.target.style.display = 'none';
+                              e.target.nextElementSibling.style.display =
+                                'flex';
+                            }}
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
+                    <span
+                      className="text-blue-600 font-semibold w-full h-full flex items-center justify-center"
+                      style={{
+                        display: (() => {
+                          const hasImage =
+                            customerDetail?.profile?.profileImage ||
+                            customerDetail?.profile?.imageUrl ||
+                            customerDetail?.profile?.image ||
+                            customerDetail?.profileImage ||
+                            customerDetail?.imageUrl ||
+                            customerDetail?.image ||
+                            customerDetail?.profile?.profileImageUrl;
+                          return hasImage ? 'none' : 'flex';
+                        })(),
+                      }}
+                    >
+                      {customerDetail?.profile?.name?.charAt(0) ||
+                        customer.name?.charAt(0) ||
+                        '?'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      {customerDetail?.profile?.name || customer.name || '-'}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      ID: {customer.id}
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    전화번호
-                  </label>
-                  <div className="text-gray-900">
-                    {customerDetail?.profile?.phone || customer.phone || '-'}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      이메일
+                    </label>
+                    <div className="text-gray-900">
+                      {customerDetail?.profile?.email || customer.email || '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      전화번호
+                    </label>
+                    <div className="text-gray-900">
+                      {customerDetail?.profile?.phone || customer.phone || '-'}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* 주소 정보 */}
@@ -264,13 +331,16 @@ const CustomerList = () => {
         Object.fromEntries(params)
       );
 
-      const response = await fetch(`${API_URL}/api/v1/admin/customers?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/customers?${params}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -425,7 +495,10 @@ const CustomerList = () => {
         throw new Error('인증 토큰이 없습니다.');
       }
 
-      const response = await fetch(`${API_URL}/api/v1/admin/customers/${customerId}`, {
+      // 캐시 방지를 위해 timestamp 추가
+      const url = `${API_URL}/api/v1/admin/customers/${customerId}?t=${Date.now()}`;
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -438,6 +511,7 @@ const CustomerList = () => {
       }
 
       const data = await response.json();
+      console.log('Customer detail API response:', data); // 디버깅용
 
       if (data.success && data.data) {
         setDetailModal((prev) => ({
@@ -461,10 +535,10 @@ const CustomerList = () => {
       isOpen: true,
       customer,
       customerDetail: null,
-      loading: false,
+      loading: true, // 로딩 상태로 변경
     });
 
-    // 상세 정보 조회
+    // 상세 정보 조회 (캐시 방지)
     await fetchCustomerDetail(customer.id);
   };
 
@@ -515,25 +589,6 @@ const CustomerList = () => {
         </svg>
       ),
       iconBg: 'bg-green-100',
-    },
-    {
-      title: '비활성 고객',
-      value: customerStats.inactive.toString(),
-      subValue: '탈퇴한 회원',
-      icon: (
-        <svg
-          className="w-5 h-5 text-red-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-      iconBg: 'bg-red-100',
     },
     {
       title: '신규 가입',
@@ -870,6 +925,7 @@ const CustomerList = () => {
         onClose={handleCloseModal}
         customer={detailModal.customer}
         customerDetail={detailModal.customerDetail}
+        loading={detailModal.loading}
       />
     </div>
   );

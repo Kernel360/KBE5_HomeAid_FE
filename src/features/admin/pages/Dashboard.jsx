@@ -206,7 +206,7 @@ const Dashboard = () => {
       value: loading
         ? '...'
         : `${dashboardStats.activeManagers.toLocaleString()}`,
-      subValue: loading ? '로딩 중...' : `승인된 매니저`,
+      subValue: loading ? '로딩 중...' : `승인완료된 매니저`,
       change: '+15.2% 지난달 대비',
       icon: (
         <svg
@@ -315,25 +315,6 @@ const Dashboard = () => {
         </svg>
       ),
     },
-    {
-      title: '플랫폼 성장률',
-      value: loading ? '...' : '94.2%',
-      subValue: loading ? '로딩 중...' : '이번 달 성장률',
-      change: '+8.3% 지난달 대비',
-      icon: (
-        <svg
-          className="w-5 h-5 text-indigo-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ),
-    },
   ];
 
   return (
@@ -357,18 +338,10 @@ const Dashboard = () => {
 
           {/* Chart Section */}
           <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-900">
                 매출 추이 (최근 7일)
               </h2>
-              <div className="flex space-x-2">
-                <button className="px-3 py-1 text-sm text-gray-600 bg-gray-100 rounded-lg">
-                  7일
-                </button>
-                <button className="px-3 py-1 text-sm text-white bg-blue-600 rounded-lg">
-                  30일
-                </button>
-              </div>
             </div>
 
             {/* Placeholder for chart */}
