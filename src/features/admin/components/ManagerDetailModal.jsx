@@ -407,28 +407,25 @@ const ManagerDetailModal = ({
                 <div className="space-y-4">
                   {documents.documentList.map((doc, index) => {
                     // 디버깅을 위한 콘솔 로그
-                    console.log('📄 Document data:', doc);
-                    console.log('📅 Upload date fields:', {
-                      uploadedAt: doc.uploadedAt,
-                      createdAt: doc.createdAt,
-                      uploadDate: doc.uploadDate,
-                      submittedAt: doc.submittedAt,
-                    });
+                    // console.log('📄 Document data:', doc);
+                    // console.log('📅 Upload date fields:', doc.createdAt);
 
                     return (
-                      <div key={index} className="border rounded-lg p-4">
+                      <div key={doc.id} className="border rounded-lg p-4">
                         <div className="grid grid-cols-3 items-center gap-4">
                           <div>
                             <p className="text-sm text-gray-500">서류 종류</p>
                             <p className="text-base text-gray-900">
                               {getDocumentTypeName(doc.documentType)}
                             </p>
+                            <p className="text-xs text-gray-400 mt-1">{doc.fileExtension?.toUpperCase()} • {doc.fileSize}</p>
                           </div>
                           <div className="text-center">
                             <p className="text-sm text-gray-500">제출일</p>
                             <p className="text-base text-gray-900">
-                              {formatDate(getDocumentUploadDate(doc))}
+                              {formatDate(doc.createdAt)}
                             </p>
+                            <p className="text-xs text-gray-400 mt-1 truncate" title={doc.originalName}>{doc.originalName}</p>
                           </div>
                           <div className="flex justify-end space-x-2">
                             <a
