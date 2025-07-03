@@ -184,6 +184,32 @@ const ManagerDetailModal = ({
     }
   };
 
+  const handleDownload = async (documentId, fileName) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/managers/${documentId}/download`,
+        {
+          headers: {
+            Authorization: token?.startsWith('Bearer ') ? token : `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error('다운로드 실패');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName || 'document';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('파일 다운로드에 실패했습니다.');
+    }
+  };
+
   return (
     <>
       <div
@@ -404,7 +430,7 @@ const ManagerDetailModal = ({
                               {formatDate(getDocumentUploadDate(doc))}
                             </p>
                           </div>
-                          <div className="flex justify-end">
+                          <div className="flex justify-end space-x-2">
                             <a
                               href={doc.documentUrl}
                               target="_blank"
@@ -413,6 +439,16 @@ const ManagerDetailModal = ({
                             >
                               문서 보기
                             </a>
+                            <button
+                              onClick={() => handleDownload(doc.id, doc.originalName || `document_${doc.id}`)}
+                              className="ml-2 p-2 rounded-lg hover:bg-gray-100"
+                              title="다운로드"
+                              type="button"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                              </svg>
+                            </button>
                           </div>
                         </div>
                       </div>
