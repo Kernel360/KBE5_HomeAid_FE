@@ -1,22 +1,26 @@
+// sseEmitter.js - 토큰 만료 시 올바른 처리
 import { useAlertStore } from "@/stores/alertStore";
 import { useAuthStore } from "@/stores/authStore";
 import { EventSourcePolyfill } from "event-source-polyfill";
-import { refreshAccessToken } from "@/api/config/api"; // 토큰 재발급 함수
+import { refreshAccessToken } from "@/api/config/api";
 import apiService from "@/api";
 
 const setAlerts = useAlertStore.getState().setNotificationAlert;
 
 const sseEmitter = {
-    eventSource: null, // 연결 인스턴스 저장
+    eventSource: null,
+    reconnectAttempts: 0,
+    maxReconnectAttempts: 3,
 
-    connection: () => {
-        const token = useAuthStore.getState().accessToken;
+    getCurrentToken: () => {
+        const localStorageToken = localStorage.getItem('accessToken');
+        const authStoreToken = useAuthStore.getState().accessToken;
+        return localStorageToken || authStoreToken;
+    },
+
+    connection: async () => {
+        const token = sseEmitter.getCurrentToken();
         const user = useAuthStore.getState().user;
-
-        // if (sseEmitter.eventSource) {
-        //     console.log('🔄 기존 SSE 연결이 이미 존재합니다');
-        //     return;
-        // }
 
         if (!token || !user) {
             console.log('❌ 토큰 또는 사용자 정보가 없어 SSE 연결 취소');
@@ -26,74 +30,88 @@ const sseEmitter = {
         console.log('=== SSE 연결 시도 START ===');
         const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-
         const eventSource = new EventSourcePolyfill(`${API_BASE_URL}/api/v1/alerts/connection`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'text/event-stream',
             },
             withCredentials: true,
-            heartbeatTimeout: 86400000 // 24시간
+            heartbeatTimeout: 2700000 // 45분 sse타임아웃이 40분보다 5분 여유로 강제종료
         });
 
         // 연결 성공
         eventSource.onopen = (event) => {
             console.log('✅ SSE 연결 성공!', event);
+            sseEmitter.reconnectAttempts = 0;
             sseEmitter.getUnreadAlerts();
-            alert('SSE 연결 성공! 알림을 수신합니다.');
         };
 
-        // 에러 처리 - 자동 재연결 로직 추가
+        // 에러 처리 - 토큰 만료 상황 고려
         eventSource.onerror = async (error) => {
             console.log('❌ SSE 연결 에러:', error);
-            // sseEmitter.eventSource.close();
-
-            // // SSE에서 401 에러 감지 - error 객체의 status 또는 readyState로 판단
-            // const is401Error = error.status === 401 || 
-            //                  (error.target && error.target.status === 401) ||
-            //                  (error.target && error.target.readyState === EventSource.CLOSED && 
-            //                   sseEmitter.reconnectAttempts === 1); // 첫 번째 재연결 시도시 토큰 만료로 간주
-
-            // if (is401Error) {
-            //     alert('🔒 토큰 만료로 인한 SSE 연결 종료, 토큰 재발급 시도 중...');
-            //     try {
-            //         // 토큰 재발급 시도
-            //         const newToken = await refreshAccessToken();
-            //         console.log('🔄 토큰 재발급 성공:', newToken);
-            //         sseEmitter.token = newToken; // 새로운 토큰 저장
-
-            //         console.log('✅ SSE 토큰 재발급 성공, 재연결 시도');
+            
+            // 연결 종료
+            eventSource.close();
+            
+            // 401 에러 (토큰 만료) 처리
+            if (sseEmitter.reconnectAttempts < sseEmitter.maxReconnectAttempts) {
+                sseEmitter.reconnectAttempts++;
+                console.log(`🔄 재연결 시도 ${sseEmitter.reconnectAttempts}/${sseEmitter.maxReconnectAttempts}`);
+                
+                try {
+                    // 토큰 갱신 시도
+                    console.log('🔄 토큰 갱신 시도');
+                    const newToken = await refreshAccessToken();
+                    useAuthStore.getState().setAccessToken(newToken);
+                    localStorage.setItem('accessToken', newToken);
+                    console.log('✅ 토큰 갱신 성공, 재연결 시도');
                     
-            //         // 기존 연결 종료
-            //         if (sseEmitter.eventSource) {
-            //             sseEmitter.eventSource.close();
-            //             sseEmitter.eventSource = null;
-            //         }
+                    // 재연결
+                    setTimeout(() => {
+                        sseEmitter.connection();
+                    }, 3000 * sseEmitter.reconnectAttempts);
                     
-            //         // 새로운 토큰으로 재연결
-            //         setTimeout(() => {
-            //             sseEmitter.connection();
-            //         }, 1000);
-
-            //     } catch (refreshError) {
-            //         console.error('❌ SSE 토큰 재발급 실패:', refreshError);
-            //     }
-            // } else {
-            //     console.log('🔄 3초 후 SSE 재연결 시도... 일단 주석');
-            //     setTimeout(() => {
-            //         const currentToken = useAuthStore.getState().accessToken;
-            //         const currentUser = useAuthStore.getState().user;
-
-            //         if (currentToken && currentUser) {
-            //             sseEmitter.connection();
-            //         }
-            //     }, 3000);
-            // }
+                } catch (refreshError) {
+                    console.error('❌ 토큰 갱신 실패:', refreshError);
+                    
+                    // REFRESH_TOKEN도 만료된 경우
+                    if (refreshError.response?.status === 401 || 
+                        refreshError.response?.data?.error === 'REFRESH_TOKEN_EXPIRED') {
+                        
+                        console.log('🚪 REFRESH_TOKEN 만료, 로그아웃 처리');
+                        
+                        // 로그아웃 처리
+                        useAuthStore.getState().logout();
+                        localStorage.removeItem('accessToken');
+                        
+                        // SSE 연결 완전 종료
+                        sseEmitter.eventSource = null;
+                        sseEmitter.reconnectAttempts = 0;
+                        
+                        // 알림 스토어 정리
+                        useAlertStore.getState().clearNotificationAlert();
+                        
+                        // 로그인 페이지로 리다이렉트 (선택사항)
+                        console.log('🔄 로그인 페이지로 리다이렉트 필요');
+                        // window.location.href = '/auth/signin';
+                        
+                        return; // 더 이상 재연결 시도 안함
+                    }
+                    
+                    // 다른 에러는 재연결 시도
+                    setTimeout(() => {
+                        sseEmitter.connection();
+                    }, 5000 * sseEmitter.reconnectAttempts);
+                }
+            } else {
+                console.log('❌ 최대 재연결 시도 횟수 초과');
+                sseEmitter.eventSource = null;
+            }
         };
 
+        // 이벤트 리스너들
         eventSource.addEventListener('unread-notification', (e) => {
             const { data: receivedConnectData } = e;
-
             try {
                 const parsedData = JSON.parse(receivedConnectData);
                 useAlertStore.getState().setNotificationAlert(parsedData);
@@ -116,53 +134,45 @@ const sseEmitter = {
         eventSource.addEventListener('disconnect', (e) => {
             console.log('🔌 서버에서 종료 신호 수신:', e.data);
             
-            // 오류 핸들러 제거 후 안전하게 종료
             eventSource.onerror = null;
             eventSource.close();
+            sseEmitter.eventSource = null;
             
             console.log('✅ 서버 요청에 따른 연결 종료 완료');
         });
 
         console.log('=== SSE 연결 시도 END ===');
-
-        // 연결 인스턴스 저장
         sseEmitter.eventSource = eventSource;
         return eventSource;
     },
 
-    // 연결 종료
     disconnect: () => {
         if (sseEmitter.eventSource) {
             console.log('🔌 SSE 연결 수동 종료');
             
-            // ✅ 핵심: onerror 핸들러 제거로 Access Denied 방지
             sseEmitter.eventSource.onerror = null;
             sseEmitter.eventSource.onopen = null;
-            
-            // 이벤트 리스너들도 제거
-            sseEmitter.eventSource.removeEventListener('unread-notification', null);
-            sseEmitter.eventSource.removeEventListener('new-notification', null);
-            sseEmitter.eventSource.removeEventListener('ping', null);
-            
-            // 연결 종료
             sseEmitter.eventSource.close();
             sseEmitter.eventSource = null;
+            sseEmitter.reconnectAttempts = 0;
 
-            // 연결 종료 시 스토어도 비우기
             useAlertStore.getState().clearNotificationAlert();
             console.log('🗑️ SSE 연결 종료로 인한 알림 스토어 초기화');
         }
     },
 
-    // 연결 상태 확인
     isConnected: () => {
         return sseEmitter.eventSource && sseEmitter.eventSource.readyState === EventSource.OPEN;
     },
 
     getUnreadAlerts: async () => {
-        const alertResponse = await apiService.alert.getUnReadAlerts();
-        console.log('알림 목록:', alertResponse.data);
-        setAlerts(alertResponse.data.data);
+        try {
+            const alertResponse = await apiService.alert.getUnReadAlerts();
+            console.log('알림 목록:', alertResponse.data);
+            setAlerts(alertResponse.data.data);
+        } catch (error) {
+            console.error('❌ 알림 목록 조회 실패:', error);
+        }
     }
 };
 
