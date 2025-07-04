@@ -2,24 +2,21 @@ import { useAlertStore } from "@/stores/alertStore";
 import { useAuthStore } from "@/stores/authStore";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { refreshAccessToken } from "@/api/config/api"; // 토큰 재발급 함수
+import apiService from "@/api";
+
+const setAlerts = useAlertStore.getState().setNotificationAlert;
 
 const sseEmitter = {
     eventSource: null, // 연결 인스턴스 저장
-    reconnectAttempts: 0, // 연결 시도 횟수
-    maxReconnects : 5, // 최대 재연결 시도 횟수
 
     connection: () => {
         const token = useAuthStore.getState().accessToken;
         const user = useAuthStore.getState().user;
 
-        // 이미 연결되어 있다면 기존 연결 종료
-        if (sseEmitter.eventSource) {
-            // console.log('🔄 기존 SSE 연결 종료 후 재연결');
-            // console.log(this);
-            // sseEmitter.eventSource.close();
-            console.log('🔄 기존 SSE 연결이 이미 존재합니다');
-            return;
-        }
+        // if (sseEmitter.eventSource) {
+        //     console.log('🔄 기존 SSE 연결이 이미 존재합니다');
+        //     return;
+        // }
 
         if (!token || !user) {
             console.log('❌ 토큰 또는 사용자 정보가 없어 SSE 연결 취소');
@@ -42,68 +39,56 @@ const sseEmitter = {
         // 연결 성공
         eventSource.onopen = (event) => {
             console.log('✅ SSE 연결 성공!', event);
-            sseEmitter.reconnectAttempts = 0; // 재연결 시도 횟수 초기화
+            sseEmitter.getUnreadAlerts();
+            alert('SSE 연결 성공! 알림을 수신합니다.');
         };
 
         // 에러 처리 - 자동 재연결 로직 추가
         eventSource.onerror = async (error) => {
-            sseEmitter.reconnectAttempts++;
+            console.log('❌ SSE 연결 에러:', error);
+            // sseEmitter.eventSource.close();
 
-            if (sseEmitter.reconnectAttempts > sseEmitter.maxReconnects) {
-                console.log('재연결 시도 한계 초과, 연결 포기');
-                eventSource.close();
-                return;
-            }
-    
-            console.log(`재연결 시도 ${sseEmitter.reconnectAttempts}/${sseEmitter.maxReconnects}`);
+            // // SSE에서 401 에러 감지 - error 객체의 status 또는 readyState로 판단
+            // const is401Error = error.status === 401 || 
+            //                  (error.target && error.target.status === 401) ||
+            //                  (error.target && error.target.readyState === EventSource.CLOSED && 
+            //                   sseEmitter.reconnectAttempts === 1); // 첫 번째 재연결 시도시 토큰 만료로 간주
 
-            // 스토어 비우기
-            useAlertStore.getState().clearNotificationAlert();
+            // if (is401Error) {
+            //     alert('🔒 토큰 만료로 인한 SSE 연결 종료, 토큰 재발급 시도 중...');
+            //     try {
+            //         // 토큰 재발급 시도
+            //         const newToken = await refreshAccessToken();
+            //         console.log('🔄 토큰 재발급 성공:', newToken);
+            //         sseEmitter.token = newToken; // 새로운 토큰 저장
 
-            // SSE에서 401 에러 감지 - error 객체의 status 또는 readyState로 판단
-            const is401Error = error.status === 401 || 
-                             (error.target && error.target.status === 401) ||
-                             (error.target && error.target.readyState === EventSource.CLOSED && 
-                              sseEmitter.reconnectAttempts === 1); // 첫 번째 재연결 시도시 토큰 만료로 간주
-
-            if (is401Error) {
-                console.log('🔄 sse instance 토큰 만료');
-
-                try {
-                    // 토큰 재발급 시도
-                    const newToken = await refreshAccessToken();
-                    console.log('🔄 토큰 재발급 성공:', newToken);
-                    sseEmitter.token = newToken; // 새로운 토큰 저장
-
-                    console.log('✅ SSE 토큰 재발급 성공, 재연결 시도');
+            //         console.log('✅ SSE 토큰 재발급 성공, 재연결 시도');
                     
-                    // 기존 연결 종료
-                    if (sseEmitter.eventSource) {
-                        sseEmitter.eventSource.close();
-                        sseEmitter.eventSource = null;
-                    }
+            //         // 기존 연결 종료
+            //         if (sseEmitter.eventSource) {
+            //             sseEmitter.eventSource.close();
+            //             sseEmitter.eventSource = null;
+            //         }
                     
-                    // 새로운 토큰으로 재연결
-                    setTimeout(() => {
-                        sseEmitter.connection();
-                    }, 1000);
+            //         // 새로운 토큰으로 재연결
+            //         setTimeout(() => {
+            //             sseEmitter.connection();
+            //         }, 1000);
 
-                } catch (refreshError) {
-                    console.error('❌ SSE 토큰 재발급 실패:', refreshError);
-                    // 로그아웃 처리는 refreshAccessToken 함수에서 이미 처리됨
-                }
-            } else {
-                // 3초 후 자동 재연결 시도
-                console.log('🔄 3초 후 SSE 재연결 시도...');
-                setTimeout(() => {
-                    const currentToken = useAuthStore.getState().accessToken;
-                    const currentUser = useAuthStore.getState().user;
+            //     } catch (refreshError) {
+            //         console.error('❌ SSE 토큰 재발급 실패:', refreshError);
+            //     }
+            // } else {
+            //     console.log('🔄 3초 후 SSE 재연결 시도... 일단 주석');
+            //     setTimeout(() => {
+            //         const currentToken = useAuthStore.getState().accessToken;
+            //         const currentUser = useAuthStore.getState().user;
 
-                    if (currentToken && currentUser) {
-                        sseEmitter.connection();
-                    }
-                }, 3000);
-            }
+            //         if (currentToken && currentUser) {
+            //             sseEmitter.connection();
+            //         }
+            //     }, 3000);
+            // }
         };
 
         eventSource.addEventListener('unread-notification', (e) => {
@@ -172,6 +157,12 @@ const sseEmitter = {
     // 연결 상태 확인
     isConnected: () => {
         return sseEmitter.eventSource && sseEmitter.eventSource.readyState === EventSource.OPEN;
+    },
+
+    getUnreadAlerts: async () => {
+        const alertResponse = await apiService.alert.getUnReadAlerts();
+        console.log('알림 목록:', alertResponse.data);
+        setAlerts(alertResponse.data.data);
     }
 };
 
