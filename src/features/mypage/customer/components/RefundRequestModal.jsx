@@ -13,41 +13,88 @@ const RefundRequestModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // 환불 사유 옵션들 (백엔드 RefundReason enum에 맞춰 설정)
+  // 환불 사유 옵션들 (사용자에게 간단한 UI 제공)
   const refundReasons = [
+    { value: 'RESERVATION_CANCEL', label: '예약 취소' },
     { value: 'CUSTOMER_DISSATISFACTION', label: '고객 불만족' },
-    { value: 'BEFORE_7_DAYS', label: '예약 7일 전 이상 취소' },
-    { value: 'BETWEEN_3_AND_7_DAYS', label: '예약 3~7일 전 취소' },
-    { value: 'LESS_THAN_3_DAYS', label: '예약 72시간 미만 취소' },
     { value: 'AFTER_COMPLETION', label: '서비스 완료 후 환불' },
   ];
+
+  // 예약 취소 선택 시 예약 날짜 기반으로 적절한 백엔드 값 결정
+  const determineReservationCancelReason = (reservationDate) => {
+    if (!reservationDate) {
+      // 예약 날짜 정보가 없으면 기본값 사용
+      return 'LESS_THAN_3_DAYS';
+    }
+
+    const now = new Date();
+    const reservation = new Date(reservationDate);
+    const diffInDays = Math.ceil((reservation - now) / (1000 * 60 * 60 * 24));
+
+    if (diffInDays >= 7) {
+      return 'BEFORE_7_DAYS';
+    } else if (diffInDays >= 3) {
+      return 'BETWEEN_3_AND_7_DAYS';
+    } else {
+      return 'LESS_THAN_3_DAYS';
+    }
+  };
+
+  // 예약 날짜 정보 확인
+  const hasReservationDate = payment?.reservationDate;
+  const getDaysUntilReservation = () => {
+    if (!hasReservationDate) return null;
+    const now = new Date();
+    const reservation = new Date(payment.reservationDate);
+    return Math.ceil((reservation - now) / (1000 * 60 * 60 * 24));
+  };
 
   // 환불 사유에 따른 환불 비율 안내
   const getRefundRateInfo = () => {
     if (!reason) return null;
 
-    switch (reason) {
-      case 'BEFORE_7_DAYS':
-        return {
-          category: 'BEFORE_7_DAYS',
-          rate: '100%',
-          description: '예약 7일 전 이상 취소 - 전액 환불 가능',
-          color: 'green',
-        };
-      case 'BETWEEN_3_AND_7_DAYS':
-        return {
-          category: 'BETWEEN_3_AND_7_DAYS',
-          rate: '최대 50%',
-          description: '예약 3~7일 전 취소 - 최대 50% 환불',
-          color: 'yellow',
-        };
-      case 'LESS_THAN_3_DAYS':
+    if (reason === 'RESERVATION_CANCEL') {
+      // 예약 취소의 경우 예약 날짜 기반으로 안내 제공
+      const actualReason = determineReservationCancelReason(
+        payment?.reservationDate
+      );
+      const daysUntilReservation = getDaysUntilReservation();
+
+      if (!hasReservationDate) {
         return {
           category: 'LESS_THAN_3_DAYS',
           rate: '최대 30%',
-          description: '예약 72시간 미만 취소 - 최대 30% 환불',
-          color: 'red',
+          description: '예약 정보 확인 불가 - 관리자 검토 후 환불 비율 결정',
+          color: 'orange',
         };
+      }
+
+      switch (actualReason) {
+        case 'BEFORE_7_DAYS':
+          return {
+            category: 'BEFORE_7_DAYS',
+            rate: '100%',
+            description: `예약까지 ${daysUntilReservation}일 - 전액 환불 가능`,
+            color: 'green',
+          };
+        case 'BETWEEN_3_AND_7_DAYS':
+          return {
+            category: 'BETWEEN_3_AND_7_DAYS',
+            rate: '최대 50%',
+            description: `예약까지 ${daysUntilReservation}일 - 최대 50% 환불`,
+            color: 'yellow',
+          };
+        case 'LESS_THAN_3_DAYS':
+          return {
+            category: 'LESS_THAN_3_DAYS',
+            rate: '최대 30%',
+            description: `예약까지 ${daysUntilReservation}일 - 최대 30% 환불`,
+            color: 'red',
+          };
+      }
+    }
+
+    switch (reason) {
       case 'CUSTOMER_DISSATISFACTION':
         return {
           category: 'CUSTOMER_DISSATISFACTION',
@@ -86,16 +133,23 @@ const RefundRequestModal = ({
       setIsSubmitting(true);
       setError(null);
 
+      // 실제 백엔드로 보낼 환불 사유 결정
+      const actualReason =
+        reason === 'RESERVATION_CANCEL'
+          ? determineReservationCancelReason(payment?.reservationDate)
+          : reason;
+
       console.log('🔄 환불 요청 시작:', {
         paymentId: payment.id,
-        reason,
+        selectedReason: reason,
+        actualReason,
         customerComment: customerComment.trim(),
       });
 
       // 백엔드 API 호출: POST /api/v1/my/refunds
       const response = await api.post('/my/refunds', {
         paymentId: payment.id,
-        reason,
+        reason: actualReason,
         customerComment: customerComment.trim(),
       });
 

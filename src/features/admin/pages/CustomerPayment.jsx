@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../../api/config/api';
+import AdminPaymentDetail from '../components/AdminPaymentDetail';
 
 const StatCard = ({ title, value, subValue, icon, iconBg, trend }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
@@ -55,6 +56,8 @@ const CustomerPayment = () => {
   });
   const [authError, setAuthError] = useState(false);
   const [activeTab, setActiveTab] = useState('전체');
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // 페이지네이션 상태 추가
   const [pagination, setPagination] = useState({
@@ -87,6 +90,11 @@ const CustomerPayment = () => {
       key: '결제실패',
       label: `결제실패 (${getTabCount('FAILED')})`,
       status: 'FAILED',
+    },
+    {
+      key: '부분환불',
+      label: `부분환불 (${getTabCount('PARTIAL_REFUNDED')})`,
+      status: 'PARTIAL_REFUNDED',
     },
     {
       key: '환불완료',
@@ -207,6 +215,7 @@ const CustomerPayment = () => {
       PAID: '결제완료',
       PENDING: '결제대기',
       FAILED: '결제실패',
+      PARTIAL_REFUNDED: '부분환불',
       REFUNDED: '환불완료',
       CANCELED: '결제취소',
     };
@@ -219,6 +228,7 @@ const CustomerPayment = () => {
       PAID: 'bg-green-100 text-green-800',
       PENDING: 'bg-yellow-100 text-yellow-800',
       FAILED: 'bg-red-100 text-red-800',
+      PARTIAL_REFUNDED: 'bg-orange-100 text-orange-800',
       REFUNDED: 'bg-blue-100 text-blue-800',
       CANCELED: 'bg-gray-100 text-gray-800',
     };
@@ -513,33 +523,29 @@ const CustomerPayment = () => {
     });
   };
 
-  // 환불 처리 함수
+  // 환불 처리 함수 (백엔드 API 스펙에 맞게 수정)
   const handleRefund = async (
     paymentId,
     isPartial = false,
     refundAmount = null
   ) => {
     try {
-      const endpoint = isPartial
-        ? `/admin/payments/${paymentId}/partial-refund`
-        : `/admin/payments/${paymentId}/refund`;
+      console.log('환불 처리 시작:', { paymentId, isPartial, refundAmount });
 
       let response;
       if (isPartial && refundAmount) {
-        // 부분 환불의 경우 쿼리 파라미터로 전송
-        response = await api.post(
-          endpoint,
-          {},
-          {
-            params: { refundAmount },
-          }
-        );
+        // 부분 환불 API 호출
+        response = await api.post(`/admin/refunds/${paymentId}/partial`, {
+          refundAmount: refundAmount,
+        });
       } else {
-        // 전액 환불의 경우
-        response = await api.post(endpoint);
+        // 전액 환불 API 호출
+        response = await api.post(`/admin/refunds/${paymentId}/full`);
       }
 
-      if (response.success !== false) {
+      console.log('환불 처리 응답:', response);
+
+      if (response.data?.success !== false) {
         alert(
           isPartial
             ? '부분 환불이 완료되었습니다.'
@@ -547,11 +553,19 @@ const CustomerPayment = () => {
         );
         fetchPayments(); // 데이터 새로고침
       } else {
-        throw new Error(response.message || '환불 처리에 실패했습니다.');
+        throw new Error(response.data?.message || '환불 처리에 실패했습니다.');
       }
     } catch (err) {
-      console.error('Refund error:', err);
-      alert(`환불 처리 중 오류가 발생했습니다: ${err.message}`);
+      console.error('환불 처리 오류:', err);
+
+      let errorMessage = '환불 처리 중 오류가 발생했습니다.';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      alert(errorMessage);
     }
   };
 
@@ -598,20 +612,25 @@ const CustomerPayment = () => {
   };
 
   // 부분 환불 처리
-  // TODO: 부분환불 기능 구현 예정
-  // const confirmPartialRefund = (paymentId, customerName, totalAmount) => {
-  //   const refundAmount = prompt(
-  //     `${customerName} 고객의 부분 환불 금액을 입력하세요 (최대: ₩${formatAmount(totalAmount)}):`
-  //   );
-  //   if (refundAmount && !isNaN(refundAmount)) {
-  //     const amount = parseInt(refundAmount);
-  //     if (amount > 0 && amount <= totalAmount) {
-  //       handleRefund(paymentId, true, amount);
-  //     } else {
-  //       alert('올바른 환불 금액을 입력해주세요.');
-  //     }
-  //   }
-  // };
+  const confirmPartialRefund = (paymentId, customerName, totalAmount) => {
+    const refundAmount = prompt(
+      `${customerName} 고객의 부분 환불 금액을 입력하세요 (최대: ₩${formatAmount(totalAmount)}):`
+    );
+    if (refundAmount && !isNaN(refundAmount)) {
+      const amount = parseInt(refundAmount);
+      if (amount > 0 && amount <= totalAmount) {
+        if (
+          window.confirm(
+            `${customerName} 고객에게 ₩${formatAmount(amount)} 부분 환불을 진행하시겠습니까?`
+          )
+        ) {
+          handleRefund(paymentId, true, amount);
+        }
+      } else {
+        alert('올바른 환불 금액을 입력해주세요.');
+      }
+    }
+  };
 
   // 금액 포맷팅
   const formatAmount = (amount) => {
@@ -922,6 +941,9 @@ const CustomerPayment = () => {
                             결제일시
                           </th>
                           <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                            상세보기
+                          </th>
+                          <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                             작업
                           </th>
                         </tr>
@@ -976,6 +998,18 @@ const CustomerPayment = () => {
                                 {payment.createdAt}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-center">
+                                {/* 상세보기 버튼 - 모든 결제에 대해 표시 */}
+                                <button
+                                  onClick={() => {
+                                    setSelectedPayment(payment);
+                                    setShowDetailModal(true);
+                                  }}
+                                  className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
+                                >
+                                  상세보기
+                                </button>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
                                 <div className="flex items-center justify-center space-x-2">
                                   {payment.status === 'PAID' && (
                                     <>
@@ -986,22 +1020,43 @@ const CustomerPayment = () => {
                                             payment.customerName
                                           )
                                         }
-                                        className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded hover:bg-red-200 transition-colors"
+                                        className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 transition-colors font-medium"
+                                        style={{ color: '#dc2626' }}
                                       >
                                         전액환불
                                       </button>
-                                      {/* TODO: 부분환불 기능 구현 필요 */}
                                       <button
-                                        onClick={() => {
-                                          alert(
-                                            '부분환불 기능은 준비중입니다.'
-                                          );
-                                        }}
-                                        className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded cursor-not-allowed"
-                                        disabled
+                                        onClick={() =>
+                                          confirmPartialRefund(
+                                            payment.id,
+                                            payment.customerName,
+                                            payment.amount
+                                          )
+                                        }
+                                        className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 transition-colors font-medium"
+                                        style={{ color: '#16a34a' }}
                                       >
-                                        부분환불 (준비중)
+                                        부분환불
                                       </button>
+                                    </>
+                                  )}
+                                  {payment.status === 'PARTIAL_REFUNDED' && (
+                                    <>
+                                      <button
+                                        onClick={() =>
+                                          confirmRefund(
+                                            payment.id,
+                                            payment.customerName
+                                          )
+                                        }
+                                        className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 transition-colors font-medium"
+                                        style={{ color: '#1f2937' }}
+                                      >
+                                        추가환불
+                                      </button>
+                                      <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
+                                        부분환불완료
+                                      </span>
                                     </>
                                   )}
                                   {payment.status === 'PENDING' && (
@@ -1023,7 +1078,7 @@ const CustomerPayment = () => {
                         ) : (
                           <tr>
                             <td
-                              colSpan="7"
+                              colSpan="8"
                               className="px-6 py-12 text-center text-gray-500"
                             >
                               {searchTerm
@@ -1081,6 +1136,16 @@ const CustomerPayment = () => {
           </div>
         </div>
       </div>
+
+      {/* 결제 상세 정보 모달 */}
+      <AdminPaymentDetail
+        payment={selectedPayment}
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedPayment(null);
+        }}
+      />
     </div>
   );
 };
