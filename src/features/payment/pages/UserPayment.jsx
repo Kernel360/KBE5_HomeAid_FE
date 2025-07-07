@@ -45,6 +45,53 @@ const UserPayment = () => {
   // 실제 예약 정보 상태 관리
   const [actualReservationData, setActualReservationData] = useState(null);
   const [managerInfo, setManagerInfo] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+
+  // 결제 상태 체크 함수
+  const checkPaymentStatus = async (reservationId) => {
+    if (!reservationId) return null;
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const API_BASE_URL =
+        import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+      if (!token) {
+        console.warn('토큰이 없어 결제 상태 조회 불가');
+        return null;
+      }
+
+      // 결제 정보 조회
+      const response = await fetch(`${API_BASE_URL}/api/v1/my/payments/list`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          // 해당 예약의 결제 정보 찾기
+          const payment = result.data.find(
+            (p) => p.reservationId === parseInt(reservationId)
+          );
+          console.log('🔍 결제 상태 조회 결과:', payment);
+
+          if (payment) {
+            setPaymentStatus(payment.status);
+            return payment.status;
+          }
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('결제 상태 조회 에러:', error);
+      return null;
+    }
+  };
 
   // 매니저 정보 조회
   const fetchManagerInfo = async (managerId) => {
@@ -122,6 +169,9 @@ const UserPayment = () => {
           if (result.data.managerId) {
             await fetchManagerInfo(result.data.managerId);
           }
+
+          // 결제 상태도 확인
+          await checkPaymentStatus(reservationId);
         }
       } else {
         console.warn('예약 정보 조회 실패:', response.status);
@@ -142,6 +192,25 @@ const UserPayment = () => {
     if (reservationId) {
       console.log('🔍 예약 정보 조회 시작:', reservationId);
       fetchReservationData(reservationId);
+
+      // localStorage에서 최근 결제 완료 정보 확인
+      const recentPaymentCompletion = localStorage.getItem(
+        'recentPaymentCompletion'
+      );
+      if (recentPaymentCompletion) {
+        try {
+          const paymentInfo = JSON.parse(recentPaymentCompletion);
+          if (paymentInfo.reservationId === parseInt(reservationId)) {
+            console.log(
+              '🔍 localStorage에서 결제 완료 정보 발견:',
+              paymentInfo
+            );
+            setPaymentStatus('PAID');
+          }
+        } catch (error) {
+          console.error('결제 완료 정보 파싱 오류:', error);
+        }
+      }
     }
   }, [reservationFromDetail, reservationData, location.state]);
 
@@ -1559,26 +1628,107 @@ const UserPayment = () => {
 
           {/* 버튼 섹션 */}
           <div className="button-section">
-            {/* TODO: 백엔드 예약 상태 관리 시스템이 완성되면 아래 주석을 해제하여 실제 상태별 버튼 제어 */}
-            {/* 현재는 프론트엔드 개발 및 테스트를 위해 항상 결제 버튼 활성화 */}
-
-            {/* ⭐️ 예약 상태에 따른 결제 버튼 제어 (TODO: 백엔드 상태 관리 완성 후 활성화)
             {(() => {
-              // ⭐️ 백엔드 데이터에서 실제 상태값 가져오기 (Spring Boot ReservationStatus)
-              const backendStatus = reservationFromDetail?.backendData?.status;
+              // 결제 상태 확인
+              console.log('🔍 결제 버튼 상태 확인:', {
+                paymentStatus,
+                actualReservationData,
+                reservationFromDetail,
+              });
+
+              // 1. 백엔드 예약 데이터에서 결제 정보 확인
+              const hasPaymentInfo =
+                actualReservationData?.paymentId ||
+                actualReservationData?.paidAt ||
+                actualReservationData?.paymentStatus === 'PAID' ||
+                actualReservationData?.isPaid === true;
+
+              if (hasPaymentInfo) {
+                return (
+                  <>
+                    <button className="payment-button disabled" disabled>
+                      결제 완료됨
+                    </button>
+                    <div className="payment-notice">
+                      <p>✅ 이미 결제가 완료된 예약입니다.</p>
+                    </div>
+                  </>
+                );
+              }
+
+              // 2. 결제 상태가 이미 완료된 경우
+              if (paymentStatus === 'PAID') {
+                return (
+                  <>
+                    <button className="payment-button disabled" disabled>
+                      결제 완료됨
+                    </button>
+                    <div className="payment-notice">
+                      <p>✅ 이미 결제가 완료된 예약입니다.</p>
+                    </div>
+                  </>
+                );
+              }
+
+              // 3. 결제 상태가 환불된 경우
+              if (paymentStatus === 'REFUNDED') {
+                return (
+                  <>
+                    <button className="payment-button disabled" disabled>
+                      환불 완료됨
+                    </button>
+                    <div className="payment-notice">
+                      <p>↩️ 환불이 완료된 예약입니다.</p>
+                    </div>
+                  </>
+                );
+              }
+
+              // 4. 결제 상태가 실패한 경우
+              if (paymentStatus === 'FAILED') {
+                return (
+                  <>
+                    <button className="payment-button disabled" disabled>
+                      결제 실패
+                    </button>
+                    <div className="payment-notice">
+                      <p>❌ 결제가 실패한 예약입니다.</p>
+                    </div>
+                  </>
+                );
+              }
+
+              // 5. 결제 상태가 취소된 경우
+              if (paymentStatus === 'CANCELLED') {
+                return (
+                  <>
+                    <button className="payment-button disabled" disabled>
+                      결제 취소됨
+                    </button>
+                    <div className="payment-notice">
+                      <p>❌ 결제가 취소된 예약입니다.</p>
+                    </div>
+                  </>
+                );
+              }
+
+              // 6. 백엔드 데이터에서 실제 상태값 가져오기 (Spring Boot ReservationStatus)
+              const backendStatus =
+                actualReservationData?.status ||
+                reservationFromDetail?.backendData?.status;
               const frontendStatus = reservationFromDetail?.status;
 
               // 백엔드 상태를 우선으로 사용하고, 없으면 프론트엔드 상태 사용
               const actualStatus = backendStatus || frontendStatus;
 
-              console.log('🔍 결제 버튼 상태 확인:', {
+              console.log('🔍 예약 상태 확인:', {
                 backendStatus,
                 frontendStatus,
                 actualStatus,
               });
 
               if (actualStatus) {
-                // ⭐️ Spring Boot ReservationStatus에 따른 결제 버튼 제어
+                // Spring Boot ReservationStatus에 따른 결제 버튼 제어
                 switch (actualStatus) {
                   case 'REQUESTED':
                   case 'MATCHING':
@@ -1596,14 +1746,36 @@ const UserPayment = () => {
 
                   case 'MATCHED':
                   case 'completed': // 프론트엔드 매핑 (MATCHED = 예약완료)
-                    return (
-                      <button
-                        className="payment-button"
-                        onClick={handlePayment}
-                      >
-                        {paymentData.totalAmount.toLocaleString()}원 결제하기
-                      </button>
-                    );
+                    // 결제 상태가 없거나 PENDING인 경우에만 결제 가능
+                    if (!paymentStatus || paymentStatus === 'PENDING') {
+                      return (
+                        <button
+                          className="payment-button"
+                          onClick={handlePayment}
+                          disabled={!allRequired}
+                          style={{
+                            backgroundColor: allRequired
+                              ? '#007bff'
+                              : '#cccccc',
+                            cursor: allRequired ? 'pointer' : 'not-allowed',
+                            opacity: allRequired ? 1 : 0.6,
+                          }}
+                        >
+                          {paymentData.totalAmount.toLocaleString()}원 결제하기
+                        </button>
+                      );
+                    } else {
+                      return (
+                        <>
+                          <button className="payment-button disabled" disabled>
+                            결제 완료됨
+                          </button>
+                          <div className="payment-notice">
+                            <p>✅ 이미 결제가 완료된 예약입니다.</p>
+                          </div>
+                        </>
+                      );
+                    }
 
                   case 'COMPLETED':
                   case 'visited': // 프론트엔드 매핑 (COMPLETED = 방문완료)
@@ -1632,41 +1804,40 @@ const UserPayment = () => {
                     );
 
                   default:
+                    // 기본적으로 결제 가능하도록 설정
                     return (
-                      <>
-                        <button className="payment-button disabled" disabled>
-                          결제 불가
-                        </button>
-                        <div className="payment-notice">
-                          <p>⚠️ 알 수 없는 예약 상태입니다.</p>
-                        </div>
-                      </>
+                      <button
+                        className="payment-button"
+                        onClick={handlePayment}
+                        disabled={!allRequired}
+                        style={{
+                          backgroundColor: allRequired ? '#007bff' : '#cccccc',
+                          cursor: allRequired ? 'pointer' : 'not-allowed',
+                          opacity: allRequired ? 1 : 0.6,
+                        }}
+                      >
+                        {paymentData.totalAmount.toLocaleString()}원 결제하기
+                      </button>
                     );
                 }
               } else {
                 // 예약 상세에서 오지 않은 경우 기본 결제 버튼
                 return (
-                  <button className="payment-button" onClick={handlePayment}>
+                  <button
+                    className="payment-button"
+                    onClick={handlePayment}
+                    disabled={!allRequired}
+                    style={{
+                      backgroundColor: allRequired ? '#007bff' : '#cccccc',
+                      cursor: allRequired ? 'pointer' : 'not-allowed',
+                      opacity: allRequired ? 1 : 0.6,
+                    }}
+                  >
                     {paymentData.totalAmount.toLocaleString()}원 결제하기
                   </button>
                 );
               }
             })()}
-            */}
-
-            {/* ⭐️ 임시 결제 버튼 (항상 활성화 - TODO: 백엔드 상태 관리 완성 후 제거) */}
-            <button
-              className="payment-button"
-              onClick={handlePayment}
-              disabled={!allRequired}
-              style={{
-                backgroundColor: allRequired ? '#007bff' : '#cccccc',
-                cursor: allRequired ? 'pointer' : 'not-allowed',
-                opacity: allRequired ? 1 : 0.6,
-              }}
-            >
-              {paymentData.totalAmount.toLocaleString()}원 결제하기
-            </button>
 
             <button className="cancel-button" onClick={handleCancel}>
               취소하기

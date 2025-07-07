@@ -12,6 +12,47 @@ const getBaseUrl = () => {
   return `${API_BASE_URL}/api/${API_VERSION}`;
 };
 
+// 결제 상태 확인을 위한 간단한 함수 추가 (파일 최상단 근처에 추가)
+const checkIfPaymentCompleted = async (reservationId) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return { isPaid: false, isRefunded: false, status: null };
+
+    const API_BASE_URL =
+      import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    const response = await fetch(`${API_BASE_URL}/api/v1/my/payments/list`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data) {
+        const payment = result.data.find(
+          (p) => p.reservationId === parseInt(reservationId)
+        );
+        if (payment) {
+          console.log('🔒 결제 상태 확인:', payment);
+          return {
+            isPaid: payment.status === 'PAID',
+            isRefunded:
+              payment.status === 'REFUNDED' ||
+              payment.status === 'PARTIAL_REFUNDED',
+            status: payment.status,
+            payment: payment,
+          };
+        }
+      }
+    }
+  } catch (error) {
+    console.error('결제 상태 확인 중 오류:', error);
+  }
+  return { isPaid: false, isRefunded: false, status: null };
+};
+
 const UserReservationDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,6 +82,41 @@ const UserReservationDetail = () => {
       }
 
       const baseUrl = getBaseUrl();
+
+      // 먼저 결제 목록 API 시도
+      try {
+        const response = await fetch(`${baseUrl}/my/payments/list`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            // 해당 예약의 결제 정보 찾기
+            const payment = result.data.find(
+              (p) => p.reservationId === parseInt(reservationId)
+            );
+            if (payment) {
+              console.log(
+                '✅ 결제 목록에서 해당 예약의 결제 정보 발견:',
+                payment
+              );
+
+              // 결제 상태 업데이트
+              setPaymentStatus(payment.status);
+              setIsPaymentCompleted(payment.status === 'PAID');
+
+              return payment;
+            }
+          }
+        }
+      } catch (error) {
+        console.log('❌ 결제 목록 조회 실패:', error);
+      }
 
       // 가능한 결제 정보 조회 엔드포인트들을 시도
       const possibleEndpoints = [
@@ -312,10 +388,16 @@ const UserReservationDetail = () => {
     return colorMapping[status] || '#6c757d';
   };
 
+  // 결제 상태 state 추가
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [isPaymentCompleted, setIsPaymentCompleted] = useState(false);
+
   const canMakePayment = (status) => {
     console.log('🔍 결제 가능 여부 확인 시작:', {
       status,
       reservationId: reservation?.id || reservationId,
+      paymentStatus,
+      isPaymentCompleted,
       backendData: reservation?.backendData,
       fullReservation: reservation, // 전체 예약 객체 로그
     });
@@ -329,6 +411,18 @@ const UserReservationDetail = () => {
     4. 결제가 완료되었다면 paymentId, paidAt, paymentStatus 등의 필드가 있어야 합니다
     `);
 
+    // 0. 결제 상태 API 조회 결과 우선 확인 (비동기 처리)
+    const currentReservationId = reservation?.id || reservationId;
+
+    // 즉시 결제 상태 확인 (동기적 처리를 위해)
+    if (isPaymentCompleted || paymentStatus === 'PAID') {
+      console.log('🔒 API 조회 결과로 결제 완료 확인 - 결제 버튼 비활성화:', {
+        paymentStatus,
+        isPaymentCompleted,
+      });
+      return false;
+    }
+
     // 1. localStorage에서 최근 결제 완료 정보 확인
     const recentPaymentCompletion = localStorage.getItem(
       'recentPaymentCompletion'
@@ -336,7 +430,6 @@ const UserReservationDetail = () => {
     if (recentPaymentCompletion) {
       try {
         const paymentInfo = JSON.parse(recentPaymentCompletion);
-        const currentReservationId = reservation.id || reservationId;
 
         if (paymentInfo.reservationId === parseInt(currentReservationId)) {
           console.log(
@@ -479,8 +572,6 @@ const UserReservationDetail = () => {
     }
 
     // 6. UserReservationList.jsx와 동일한 결제 완료 상태 체크 로직 추가
-    const currentReservationId = reservation?.reservationId || reservation?.id;
-
     // localStorage에서 결제 완료 상태 확인 (UserReservationList.jsx와 동일)
     const paymentCompletedKey = `payment_completed_${currentReservationId}`;
     const reservationStatusKey = `reservation_status_${currentReservationId}`;
@@ -988,54 +1079,15 @@ const UserReservationDetail = () => {
             </div>
           </div>
 
-          {canMakePayment(status) && (
-            <div className="payment-section">
-              <div className="payment-info">
-                <p className="payment-notice">
-                  매니저가 배정되었습니다! 이제 결제를 진행하세요.
-                </p>
-                <div className="manager-info">
-                  <span className="manager-label">배정된 매니저:</span>
-                  <span className="manager-value">{managerName}</span>
-                </div>
-              </div>
-              <button className="payment-btn" onClick={handlePayment}>
-                💳 {price.toLocaleString()}원 결제하기
-              </button>
-            </div>
-          )}
-
-          {(!canMakePayment(status) &&
-            (status === 'MATCHED' || status === 'completed')) ||
-          (reservation?.backendData &&
-            (reservation.backendData.paymentId ||
-              reservation.backendData.paidAt ||
-              reservation.backendData.paymentStatus === 'PAID' ||
-              reservation.backendData.paymentStatus === 'COMPLETED' ||
-              reservation.backendData.isPaid === true)) ? (
-            <div className="payment-completed-section">
-              <div className="payment-completed-info">
-                <p className="payment-completed-notice">
-                  ✅ 결제가 완료되었습니다!
-                </p>
-                {reservation?.backendData && reservation.backendData.paidAt && (
-                  <div className="payment-date-info">
-                    <span className="payment-date-label">결제 일시:</span>
-                    <span className="payment-date-value">
-                      {new Date(reservation.backendData.paidAt).toLocaleString(
-                        'ko-KR'
-                      )}
-                    </span>
-                  </div>
-                )}
-                <div className="service-ready-info">
-                  <p className="service-ready-notice">
-                    💼 매니저가 서비스 준비 중입니다.
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : null}
+          <PaymentButtonWrapper
+            reservationId={reservationId}
+            status={status}
+            price={price}
+            managerName={managerName}
+            onPayment={handlePayment}
+            canMakePayment={canMakePayment}
+            checkIfPaymentCompleted={checkIfPaymentCompleted}
+          />
 
           {status === 'pending' ||
           status === 'REQUESTED' ||
@@ -1161,10 +1213,38 @@ const UserReservationDetail = () => {
           )}
 
           {(status === 'CANCELLED' || status === 'cancelled') && (
-            <div className="cancelled-section">
+            <div
+              className="cancelled-section"
+              style={{
+                backgroundColor: '#ffebee',
+                border: '2px solid #f44336',
+                borderRadius: '12px',
+                padding: '20px',
+                margin: '15px 0',
+              }}
+            >
               <div className="cancelled-info">
-                <p className="cancelled-notice">❌ 예약이 취소되었습니다.</p>
-                <p className="cancelled-description">
+                <p
+                  className="cancelled-notice"
+                  style={{
+                    color: '#d32f2f',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    margin: '0 0 10px 0',
+                    textAlign: 'center',
+                  }}
+                >
+                  ❌ 예약이 취소되었습니다.
+                </p>
+                <p
+                  className="cancelled-description"
+                  style={{
+                    color: '#c62828',
+                    fontSize: '14px',
+                    textAlign: 'center',
+                    margin: '10px 0 0 0',
+                  }}
+                >
                   새로운 예약을 원하시면 다시 신청해 주세요.
                 </p>
               </div>
@@ -1175,6 +1255,158 @@ const UserReservationDetail = () => {
       <Footer current="/customer/reservations" />
     </div>
   );
+};
+
+// PaymentButtonWrapper 컴포넌트 정의 (파일 하단에 추가)
+const PaymentButtonWrapper = ({
+  reservationId,
+  status,
+  price,
+  managerName,
+  onPayment,
+  canMakePayment,
+  checkIfPaymentCompleted,
+}) => {
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkPayment = async () => {
+      setIsLoading(true);
+      const paymentResult = await checkIfPaymentCompleted(reservationId);
+      setPaymentStatus(paymentResult);
+      setIsLoading(false);
+    };
+
+    if (reservationId) {
+      checkPayment();
+    }
+  }, [reservationId, checkIfPaymentCompleted]);
+
+  if (isLoading) {
+    return (
+      <div className="payment-section">
+        <div className="payment-info">
+          <p className="payment-notice">결제 상태 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 환불 완료 상태
+  if (paymentStatus?.isRefunded) {
+    return (
+      <div
+        className="refund-completed-section"
+        style={{
+          backgroundColor: '#fff3e0',
+          border: '2px solid #ff9800',
+          borderRadius: '12px',
+          padding: '20px',
+          margin: '15px 0',
+        }}
+      >
+        <div className="refund-completed-info">
+          <p
+            className="refund-completed-notice"
+            style={{
+              color: '#ef6c00',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              margin: '0 0 10px 0',
+              textAlign: 'center',
+            }}
+          >
+            ↩️ 환불이 완료되었습니다!
+          </p>
+          {paymentStatus?.payment?.paidAt && (
+            <div
+              className="refund-date-info"
+              style={{
+                backgroundColor: '#ffe0b2',
+                padding: '10px',
+                borderRadius: '8px',
+                margin: '10px 0',
+                fontSize: '14px',
+              }}
+            >
+              <span
+                className="refund-date-label"
+                style={{ color: '#bf360c', fontWeight: 'bold' }}
+              >
+                결제 일시:
+              </span>
+              <span
+                className="refund-date-value"
+                style={{ color: '#e65100', marginLeft: '8px' }}
+              >
+                {new Date(paymentStatus.payment.paidAt).toLocaleString('ko-KR')}
+              </span>
+            </div>
+          )}
+          <div className="refund-info">
+            <p
+              className="refund-notice"
+              style={{
+                color: '#f57c00',
+                fontSize: '14px',
+                textAlign: 'center',
+                margin: '10px 0 0 0',
+              }}
+            >
+              💰 환불 처리가 완료되었습니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 결제 완료 상태
+  if (paymentStatus?.isPaid) {
+    return (
+      <div className="payment-completed-section">
+        <div className="payment-completed-info">
+          <p className="payment-completed-notice">✅ 결제가 완료되었습니다!</p>
+          {paymentStatus?.payment?.paidAt && (
+            <div className="payment-date-info">
+              <span className="payment-date-label">결제 일시:</span>
+              <span className="payment-date-value">
+                {new Date(paymentStatus.payment.paidAt).toLocaleString('ko-KR')}
+              </span>
+            </div>
+          )}
+          <div className="service-ready-info">
+            <p className="service-ready-notice">
+              💼 매니저가 서비스 준비 중입니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 결제 가능 상태
+  if (canMakePayment(status)) {
+    return (
+      <div className="payment-section">
+        <div className="payment-info">
+          <p className="payment-notice">
+            매니저가 배정되었습니다! 이제 결제를 진행하세요.
+          </p>
+          <div className="manager-info">
+            <span className="manager-label">배정된 매니저:</span>
+            <span className="manager-value">{managerName}</span>
+          </div>
+        </div>
+        <button className="payment-btn" onClick={onPayment}>
+          💳 {price.toLocaleString()}원 결제하기
+        </button>
+      </div>
+    );
+  }
+
+  return null;
 };
 
 export default UserReservationDetail;
