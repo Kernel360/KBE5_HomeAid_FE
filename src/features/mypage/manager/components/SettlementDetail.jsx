@@ -145,7 +145,7 @@ const SettlementDetail = ({ settlement, onBack }) => {
   }, [settlement?.id]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       <div
         className="w-full bg-white h-screen flex flex-col"
         style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}

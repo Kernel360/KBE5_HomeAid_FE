@@ -235,7 +235,7 @@ const SettlementHistory = ({ onBack }) => {
 
   // 정산 목록 렌더링
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       <div
         className="w-full bg-white h-screen flex flex-col"
         style={{ maxWidth: '512px', margin: '0 auto', position: 'relative' }}
