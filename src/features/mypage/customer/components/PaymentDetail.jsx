@@ -144,12 +144,10 @@ const PaymentDetail = ({ paymentId, onBack }) => {
     switch (status) {
       case 'PAID':
         return <CheckCircle className="w-6 h-6 text-green-500" />;
-      case 'PENDING':
-      case 'PROCESSING':
-        return <Clock className="w-6 h-6 text-yellow-500" />;
-      case 'FAILED':
-      case 'CANCELLED':
+      case 'CANCELED':
         return <XCircle className="w-6 h-6 text-red-500" />;
+      case 'PARTIAL_REFUNDED':
+        return <AlertCircle className="w-6 h-6 text-orange-500" />;
       case 'REFUNDED':
         return <AlertCircle className="w-6 h-6 text-blue-500" />;
       default:
@@ -162,16 +160,12 @@ const PaymentDetail = ({ paymentId, onBack }) => {
     switch (status) {
       case 'PAID':
         return '결제완료';
-      case 'PENDING':
-        return '결제대기';
-      case 'PROCESSING':
-        return '결제처리중';
-      case 'FAILED':
-        return '결제실패';
-      case 'CANCELLED':
+      case 'CANCELED':
         return '결제취소';
+      case 'PARTIAL_REFUNDED':
+        return '부분환불';
       case 'REFUNDED':
-        return '환불완료';
+        return '전체환불';
       default:
         return '알 수 없음';
     }
@@ -182,12 +176,10 @@ const PaymentDetail = ({ paymentId, onBack }) => {
     switch (status) {
       case 'PAID':
         return 'text-green-600 bg-green-50 border-green-200';
-      case 'PENDING':
-      case 'PROCESSING':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'FAILED':
-      case 'CANCELLED':
+      case 'CANCELED':
         return 'text-red-600 bg-red-50 border-red-200';
+      case 'PARTIAL_REFUNDED':
+        return 'text-orange-600 bg-orange-50 border-orange-200';
       case 'REFUNDED':
         return 'text-blue-600 bg-blue-50 border-blue-200';
       default:

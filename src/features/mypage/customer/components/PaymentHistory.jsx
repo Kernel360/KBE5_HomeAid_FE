@@ -76,12 +76,10 @@ const PaymentHistory = ({ onBack, onViewDetail }) => {
     switch (status) {
       case 'PAID':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'PENDING':
-      case 'PROCESSING':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
-      case 'FAILED':
-      case 'CANCELLED':
+      case 'CANCELED':
         return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'PARTIAL_REFUNDED':
+        return <AlertCircle className="w-5 h-5 text-orange-500" />;
       case 'REFUNDED':
         return <AlertCircle className="w-5 h-5 text-blue-500" />;
       default:
@@ -94,16 +92,12 @@ const PaymentHistory = ({ onBack, onViewDetail }) => {
     switch (status) {
       case 'PAID':
         return '결제완료';
-      case 'PENDING':
-        return '결제대기';
-      case 'PROCESSING':
-        return '결제처리중';
-      case 'FAILED':
-        return '결제실패';
-      case 'CANCELLED':
+      case 'CANCELED':
         return '결제취소';
+      case 'PARTIAL_REFUNDED':
+        return '부분환불';
       case 'REFUNDED':
-        return '환불완료';
+        return '전체환불';
       default:
         return '알 수 없음';
     }
@@ -114,12 +108,10 @@ const PaymentHistory = ({ onBack, onViewDetail }) => {
     switch (status) {
       case 'PAID':
         return 'text-green-600 bg-green-50 border-green-200';
-      case 'PENDING':
-      case 'PROCESSING':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'FAILED':
-      case 'CANCELLED':
+      case 'CANCELED':
         return 'text-red-600 bg-red-50 border-red-200';
+      case 'PARTIAL_REFUNDED':
+        return 'text-orange-600 bg-orange-50 border-orange-200';
       case 'REFUNDED':
         return 'text-blue-600 bg-blue-50 border-blue-200';
       default:
@@ -156,22 +148,18 @@ const PaymentHistory = ({ onBack, onViewDetail }) => {
       count: payments.filter((p) => p.status === 'PAID').length,
     },
     {
-      key: 'PENDING',
-      label: '결제중',
-      count: payments.filter(
-        (p) => p.status === 'PENDING' || p.status === 'PROCESSING'
-      ).length,
+      key: 'CANCELED',
+      label: '결제취소',
+      count: payments.filter((p) => p.status === 'CANCELED').length,
     },
     {
-      key: 'FAILED',
-      label: '실패/취소',
-      count: payments.filter(
-        (p) => p.status === 'FAILED' || p.status === 'CANCELLED'
-      ).length,
+      key: 'PARTIAL_REFUNDED',
+      label: '부분환불',
+      count: payments.filter((p) => p.status === 'PARTIAL_REFUNDED').length,
     },
     {
       key: 'REFUNDED',
-      label: '환불',
+      label: '전체환불',
       count: payments.filter((p) => p.status === 'REFUNDED').length,
     },
   ];
@@ -183,10 +171,10 @@ const PaymentHistory = ({ onBack, onViewDetail }) => {
     switch (selectedFilter) {
       case 'PAID':
         return payment.status === 'PAID';
-      case 'PENDING':
-        return payment.status === 'PENDING' || payment.status === 'PROCESSING';
-      case 'FAILED':
-        return payment.status === 'FAILED' || payment.status === 'CANCELLED';
+      case 'CANCELED':
+        return payment.status === 'CANCELED';
+      case 'PARTIAL_REFUNDED':
+        return payment.status === 'PARTIAL_REFUNDED';
       case 'REFUNDED':
         return payment.status === 'REFUNDED';
       default:
@@ -368,7 +356,7 @@ const PaymentHistory = ({ onBack, onViewDetail }) => {
                         </button>
 
                         {/* 추가 액션 버튼 */}
-                        {payment.status === 'FAILED' && (
+                        {payment.status === 'CANCELED' && (
                           <button className="text-red-600 text-sm font-medium">
                             재결제
                           </button>

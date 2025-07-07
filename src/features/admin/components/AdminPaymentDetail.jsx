@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../../api/config/api';
 
-const AdminPaymentDetail = ({ payment, isOpen, onClose }) => {
+const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
   const [paymentDetail, setPaymentDetail] = useState(null);
   const [refundHistory, setRefundHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -79,18 +79,47 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose }) => {
     }
   };
 
-  // 환불 승인 처리 (백엔드 API 스펙에 맞게 수정)
+  // 환불 승인 처리 (RefundAdminDecisionRequestDto 스펙에 맞게 수정)
   const handleApproveRefund = async (refundId) => {
     const adminComment = prompt('승인 사유를 입력하세요:');
     if (!adminComment?.trim()) return;
 
+    // 환불 사유 선택 (간단한 prompt로 구현)
+    const refundReasonOptions = [
+      'CUSTOMER_DISSATISFACTION',
+      'BEFORE_7_DAYS',
+      'BETWEEN_3_AND_7_DAYS',
+      'LESS_THAN_3_DAYS',
+      'AFTER_COMPLETION',
+      'CUSTOMER_REQUEST',
+      'ADMIN_MANUAL_REFUND',
+    ];
+
+    const selectedReason = prompt(
+      `환불 사유를 선택하세요:\n1. CUSTOMER_DISSATISFACTION (고객 불만족)\n2. BEFORE_7_DAYS (예약 7일 전 이상 취소)\n3. BETWEEN_3_AND_7_DAYS (예약 3~7일 전 취소)\n4. LESS_THAN_3_DAYS (예약 72시간 미만 취소)\n5. AFTER_COMPLETION (서비스 완료 후 환불)\n6. CUSTOMER_REQUEST (고객이 환불을 요청했을 때)\n7. ADMIN_MANUAL_REFUND (관리자가 수동으로 환불했을 때)\n\n번호를 입력하세요 (1-7):`
+    );
+
+    const reasonIndex = parseInt(selectedReason) - 1;
+    if (reasonIndex < 0 || reasonIndex >= refundReasonOptions.length) {
+      alert('올바른 번호를 선택해주세요.');
+      return;
+    }
+
+    const refundReason = refundReasonOptions[reasonIndex];
+
     try {
       setLoading(true);
-      console.log('환불 승인:', refundId, adminComment);
+      console.log('환불 승인:', refundId, adminComment, refundReason);
 
-      const response = await api.post(`/admin/refunds/${refundId}/approve`, {
+      const decisionRequest = {
+        refundReason: refundReason,
         adminComment: adminComment.trim(),
-      });
+      };
+
+      const response = await api.post(
+        `/admin/refunds/${refundId}/approve`,
+        decisionRequest
+      );
 
       console.log('환불 승인 응답:', response);
 
@@ -99,6 +128,8 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose }) => {
 
         // 환불 내역 다시 조회
         await fetchRefundHistory(paymentDetail.id);
+        // 부모 컴포넌트 데이터 새로고침
+        if (onRefresh) onRefresh();
       } else {
         throw new Error(response.data?.message || '환불 승인에 실패했습니다.');
       }
@@ -118,18 +149,47 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose }) => {
     }
   };
 
-  // 환불 거절 처리 (백엔드 API 스펙에 맞게 수정)
+  // 환불 거절 처리 (RefundAdminDecisionRequestDto 스펙에 맞게 수정)
   const handleRejectRefund = async (refundId) => {
     const adminComment = prompt('거절 사유를 입력하세요:');
     if (!adminComment?.trim()) return;
 
+    // 환불 사유 선택 (간단한 prompt로 구현)
+    const refundReasonOptions = [
+      'CUSTOMER_DISSATISFACTION',
+      'BEFORE_7_DAYS',
+      'BETWEEN_3_AND_7_DAYS',
+      'LESS_THAN_3_DAYS',
+      'AFTER_COMPLETION',
+      'CUSTOMER_REQUEST',
+      'ADMIN_MANUAL_REFUND',
+    ];
+
+    const selectedReason = prompt(
+      `환불 사유를 선택하세요:\n1. CUSTOMER_DISSATISFACTION (고객 불만족)\n2. BEFORE_7_DAYS (예약 7일 전 이상 취소)\n3. BETWEEN_3_AND_7_DAYS (예약 3~7일 전 취소)\n4. LESS_THAN_3_DAYS (예약 72시간 미만 취소)\n5. AFTER_COMPLETION (서비스 완료 후 환불)\n6. CUSTOMER_REQUEST (고객이 환불을 요청했을 때)\n7. ADMIN_MANUAL_REFUND (관리자가 수동으로 환불했을 때)\n\n번호를 입력하세요 (1-7):`
+    );
+
+    const reasonIndex = parseInt(selectedReason) - 1;
+    if (reasonIndex < 0 || reasonIndex >= refundReasonOptions.length) {
+      alert('올바른 번호를 선택해주세요.');
+      return;
+    }
+
+    const refundReason = refundReasonOptions[reasonIndex];
+
     try {
       setLoading(true);
-      console.log('환불 거절:', refundId, adminComment);
+      console.log('환불 거절:', refundId, adminComment, refundReason);
 
-      const response = await api.post(`/admin/refunds/${refundId}/reject`, {
+      const decisionRequest = {
+        refundReason: refundReason,
         adminComment: adminComment.trim(),
-      });
+      };
+
+      const response = await api.post(
+        `/admin/refunds/${refundId}/reject`,
+        decisionRequest
+      );
 
       console.log('환불 거절 응답:', response);
 
@@ -138,6 +198,8 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose }) => {
 
         // 환불 내역 다시 조회
         await fetchRefundHistory(paymentDetail.id);
+        // 부모 컴포넌트 데이터 새로고침
+        if (onRefresh) onRefresh();
       } else {
         throw new Error(response.data?.message || '환불 거절에 실패했습니다.');
       }
@@ -189,6 +251,8 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose }) => {
       BETWEEN_3_AND_7_DAYS: '예약 3~7일 전 취소',
       LESS_THAN_3_DAYS: '예약 72시간 미만 취소',
       AFTER_COMPLETION: '서비스 완료 후 환불',
+      CUSTOMER_REQUEST: '고객이 환불을 요청했을 때',
+      ADMIN_MANUAL_REFUND: '관리자가 수동으로 환불했을 때',
     };
     return reasonMap[reason] || reason;
   };
@@ -196,6 +260,128 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose }) => {
   // 금액 포맷팅
   const formatAmount = (amount) => {
     return new Intl.NumberFormat('ko-KR').format(amount);
+  };
+
+  // 전액 환불 처리
+  const handleFullRefund = async () => {
+    const confirmMessage = `${paymentDetail.customerName} 고객의 결제를 전액 환불하시겠습니까?`;
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      setLoading(true);
+      console.log('전액 환불 처리:', paymentDetail.id);
+
+      const decisionRequest = {
+        refundReason: 'ADMIN_MANUAL_REFUND',
+        adminComment: '관리자 전액 환불 처리',
+      };
+
+      const response = await api.post(
+        `/admin/refunds/${paymentDetail.id}/full`,
+        decisionRequest
+      );
+
+      if (response.data?.success !== false) {
+        alert('전액 환불이 완료되었습니다.');
+        // 환불 내역 다시 조회
+        await fetchRefundHistory(paymentDetail.id);
+        // 부모 컴포넌트 데이터 새로고침
+        if (onRefresh) onRefresh();
+      } else {
+        throw new Error(response.data?.message || '환불 처리에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error('전액 환불 실패:', err);
+      let errorMessage = '환불 처리 중 오류가 발생했습니다.';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 부분 환불 처리 (간단한 prompt 방식)
+  const handlePartialRefund = async () => {
+    const refundType = window.confirm(
+      '환불 방식을 선택하세요.\n\n확인: 금액으로 지정\n취소: 비율로 지정'
+    );
+
+    let refundData = {};
+
+    if (refundType) {
+      // 금액으로 지정
+      const amount = prompt(
+        `환불할 금액을 입력하세요 (최대: ₩${formatAmount(paymentDetail.amount)})`
+      );
+      if (!amount) return;
+
+      const refundAmount = parseInt(amount.replace(/[^0-9]/g, ''));
+      if (
+        isNaN(refundAmount) ||
+        refundAmount <= 0 ||
+        refundAmount > paymentDetail.amount
+      ) {
+        alert('올바른 환불 금액을 입력해주세요.');
+        return;
+      }
+      refundData.refundAmount = refundAmount;
+    } else {
+      // 비율로 지정
+      const percentage = prompt('환불 비율을 입력하세요 (1-100%)');
+      if (!percentage) return;
+
+      const refundPercentage = parseInt(percentage);
+      if (
+        isNaN(refundPercentage) ||
+        refundPercentage <= 0 ||
+        refundPercentage > 100
+      ) {
+        alert('올바른 환불 비율을 입력해주세요. (1-100%)');
+        return;
+      }
+      refundData.refundPercentage = refundPercentage;
+    }
+
+    const adminComment = prompt('관리자 코멘트를 입력하세요:');
+    if (!adminComment?.trim()) {
+      alert('관리자 코멘트를 입력해주세요.');
+      return;
+    }
+
+    refundData.refundReason = 'ADMIN_MANUAL_REFUND';
+    refundData.adminComment = adminComment.trim();
+
+    try {
+      setLoading(true);
+      console.log('부분 환불 처리:', paymentDetail.id, refundData);
+
+      const response = await api.post(
+        `/admin/refunds/${paymentDetail.id}/partial`,
+        refundData
+      );
+
+      if (response.data?.success !== false) {
+        alert('부분 환불이 완료되었습니다.');
+        // 환불 내역 다시 조회
+        await fetchRefundHistory(paymentDetail.id);
+        // 부모 컴포넌트 데이터 새로고침
+        if (onRefresh) onRefresh();
+      } else {
+        throw new Error(response.data?.message || '환불 처리에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error('부분 환불 실패:', err);
+      let errorMessage = '환불 처리 중 오류가 발생했습니다.';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 모달이 열릴 때 데이터 로드
@@ -396,6 +582,88 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose }) => {
                     <p className="text-gray-500">환불 내역이 없습니다.</p>
                   </div>
                 )}
+
+                {/* 환불 관리 버튼들 */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <h4 className="text-md font-medium text-gray-900 mb-3">
+                    환불 관리
+                  </h4>
+                  <div className="flex flex-wrap gap-3">
+                    {/* 환불 요청이 있는 경우 승인/거절 버튼 */}
+                    {refundHistory.some(
+                      (refund) => refund.status === 'REQUESTED'
+                    ) ? (
+                      <div className="w-full bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
+                        <div className="flex items-center mb-2">
+                          <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                          <p className="text-sm text-purple-800 font-medium">
+                            💡 고객의 환불 요청이 대기 중입니다
+                          </p>
+                        </div>
+                        <p className="text-xs text-purple-700">
+                          환불 승인/거절 버튼은 각 환불 내역에서 처리할 수
+                          있습니다.
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {/* 결제 상태별 환불 버튼들 */}
+                    {paymentDetail.status === 'PAID' && (
+                      <>
+                        <button
+                          onClick={() => handleFullRefund()}
+                          className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                          style={{
+                            backgroundColor: '#ffffff',
+                            color: '#dc2626',
+                          }}
+                          disabled={loading}
+                        >
+                          전액 환불
+                        </button>
+                        <button
+                          onClick={() => handlePartialRefund()}
+                          className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                          style={{
+                            backgroundColor: '#ffffff',
+                            color: '#16a34a',
+                          }}
+                          disabled={loading}
+                        >
+                          부분 환불
+                        </button>
+                      </>
+                    )}
+
+                    {paymentDetail.status === 'PARTIAL_REFUNDED' && (
+                      <>
+                        <button
+                          onClick={() => handleFullRefund()}
+                          className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                          style={{
+                            backgroundColor: '#ffffff',
+                            color: '#1d4ed8',
+                          }}
+                          disabled={loading}
+                        >
+                          추가 환불
+                        </button>
+                        <span className="px-4 py-2 bg-orange-100 text-orange-800 rounded-lg text-sm">
+                          부분환불 완료
+                        </span>
+                      </>
+                    )}
+
+                    {(paymentDetail.status === 'PENDING' ||
+                      paymentDetail.status === 'FAILED' ||
+                      paymentDetail.status === 'REFUNDED' ||
+                      paymentDetail.status === 'CANCELED') && (
+                      <span className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm">
+                        환불 불가능한 상태
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}

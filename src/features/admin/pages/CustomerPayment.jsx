@@ -48,11 +48,14 @@ const CustomerPayment = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState('all');
   const [allPayments, setAllPayments] = useState([]); // 전체 데이터 저장
+  const [allRefunds, setAllRefunds] = useState([]); // 환불 내역 저장
   const [paymentStats, setPaymentStats] = useState({
     totalPayment: 0,
     refundAmount: 0,
     successRate: 0,
     pendingPayments: 0,
+    refundRequests: 0, // 환불 요청 건수
+    refundRequestAmount: 0, // 환불 요청 금액
   });
   const [authError, setAuthError] = useState(false);
   const [activeTab, setActiveTab] = useState('전체');
@@ -70,6 +73,15 @@ const CustomerPayment = () => {
   // 탭별 결제 건수 계산 함수를 먼저 정의
   const getTabCount = (status) => {
     if (status === null) return allPayments.length;
+    if (status === 'REFUND_REQUESTED') {
+      // 환불 요청이 있는 결제 건수 계산
+      const refundRequestedPaymentIds = allRefunds
+        .filter((refund) => refund.status === 'REQUESTED')
+        .map((refund) => refund.paymentId);
+      return allPayments.filter((payment) =>
+        refundRequestedPaymentIds.includes(payment.id)
+      ).length;
+    }
     return allPayments.filter((payment) => payment.status === status).length;
   };
 
@@ -85,6 +97,11 @@ const CustomerPayment = () => {
       key: '결제대기',
       label: `결제대기 (${getTabCount('PENDING')})`,
       status: 'PENDING',
+    },
+    {
+      key: '환불요청대기',
+      label: `환불요청대기 (${getTabCount('REFUND_REQUESTED')})`,
+      status: 'REFUND_REQUESTED',
     },
     {
       key: '결제실패',
@@ -127,9 +144,19 @@ const CustomerPayment = () => {
     // 활성 탭에 따른 상태 필터링
     const selectedTab = tabs.find((tab) => tab.key === activeTab);
     if (selectedTab && selectedTab.status !== null) {
-      filtered = filtered.filter(
-        (payment) => payment.status === selectedTab.status
-      );
+      if (selectedTab.status === 'REFUND_REQUESTED') {
+        // 환불 요청이 있는 결제만 필터링
+        const refundRequestedPaymentIds = allRefunds
+          .filter((refund) => refund.status === 'REQUESTED')
+          .map((refund) => refund.paymentId);
+        filtered = filtered.filter((payment) =>
+          refundRequestedPaymentIds.includes(payment.id)
+        );
+      } else {
+        filtered = filtered.filter(
+          (payment) => payment.status === selectedTab.status
+        );
+      }
     }
 
     // 검색어 필터링 - 최적화된 버전
@@ -271,6 +298,31 @@ const CustomerPayment = () => {
     }
   };
 
+  // 환불 내역 조회 함수
+  const fetchRefunds = async () => {
+    try {
+      console.log('🔍 환불 내역 조회 시작');
+      const response = await api.get('/admin/refunds', {
+        params: { page: 0, size: 1000 }, // 충분히 큰 사이즈로 모든 환불 내역 조회
+      });
+
+      if (response?.data?.data) {
+        const refundsData = response.data.data.content || response.data.data;
+        console.log('✅ 환불 내역 조회 성공:', refundsData.length, '건');
+        setAllRefunds(refundsData);
+        return refundsData;
+      } else {
+        console.log('ℹ️ 환불 내역 없음');
+        setAllRefunds([]);
+        return [];
+      }
+    } catch (err) {
+      console.error('❌ 환불 내역 조회 실패:', err);
+      setAllRefunds([]);
+      return [];
+    }
+  };
+
   // API 호출 함수
   const fetchPayments = async () => {
     try {
@@ -278,27 +330,18 @@ const CustomerPayment = () => {
       setError(null);
       setAuthError(false);
 
-      // 디버깅을 위한 토큰 확인
       const token = localStorage.getItem('accessToken');
-      console.log('=== 결제 API 호출 시작 ===');
-      console.log('토큰 존재 여부:', token ? '있음' : '없음');
 
       if (token) {
-        console.log('토큰 길이:', token.length);
-        console.log('토큰 앞 20자:', token.substring(0, 20));
-
         // 토큰 검증
         const tokenValidation = validateToken(token);
-        console.log('토큰 검증 결과:', tokenValidation);
 
         if (!tokenValidation.valid) {
-          console.error('토큰 검증 실패:', tokenValidation.reason);
           setAuthError(true);
           setError(`토큰 오류: ${tokenValidation.reason}`);
           return;
         }
       } else {
-        console.error('토큰이 없습니다.');
         setAuthError(true);
         setError('로그인이 필요합니다.');
         return;
@@ -311,13 +354,11 @@ const CustomerPayment = () => {
       // 여러 가지 API 호출 방식을 시도
       while (attemptCount < maxAttempts) {
         attemptCount++;
-        console.log(`=== API 호출 시도 ${attemptCount} ===`);
 
         try {
           switch (attemptCount) {
             case 1:
               // 시도 1: 기본 파라미터 방식
-              console.log('시도 1: 기본 파라미터 방식');
               response = await api.get('/admin/payments/list', {
                 params: {
                   page: 0,
@@ -328,7 +369,6 @@ const CustomerPayment = () => {
 
             case 2:
               // 시도 2: 다른 엔드포인트 시도
-              console.log('시도 2: /admin/payments 엔드포인트');
               response = await api.get('/admin/payments', {
                 params: {
                   page: 0,
@@ -339,7 +379,6 @@ const CustomerPayment = () => {
 
             case 3:
               // 시도 3: POST 방식으로 시도
-              console.log('시도 3: POST 방식');
               response = await api.post('/admin/payments/list', {
                 page: 0,
                 size: 100,
@@ -348,7 +387,6 @@ const CustomerPayment = () => {
 
             case 4:
               // 시도 4: 파라미터 없이 시도
-              console.log('시도 4: 파라미터 없이');
               response = await api.get('/admin/payments/list');
               break;
 
@@ -357,17 +395,8 @@ const CustomerPayment = () => {
           }
 
           // 성공한 경우 루프 종료
-          console.log(`=== API 호출 성공 (시도 ${attemptCount}) ===`);
-          console.log('응답 상태:', response.status);
-          console.log('응답 데이터:', response.data);
           break;
         } catch (attemptError) {
-          console.error(
-            `시도 ${attemptCount} 실패:`,
-            attemptError.response?.status,
-            attemptError.response?.data
-          );
-
           // 마지막 시도가 아니면 계속 시도
           if (attemptCount < maxAttempts) {
             continue;
@@ -384,9 +413,6 @@ const CustomerPayment = () => {
       if (data && data.success !== false) {
         // 백엔드에서 List<PaymentResponseDto>를 직접 반환
         const paymentsArray = data.data || data || [];
-
-        console.log('결제 데이터 배열:', paymentsArray);
-        console.log('결제 데이터 개수:', paymentsArray.length);
 
         const paymentsData = paymentsArray.map((payment) => {
           const mappedPayment = {
@@ -418,25 +444,21 @@ const CustomerPayment = () => {
           return mappedPayment;
         });
 
-        console.log('매핑된 결제 데이터:', paymentsData);
-
         // ID 기준으로 내림차순 정렬 (최신 결제 내역이 상단에 오도록)
         const sortedPayments = paymentsData.sort((a, b) => b.id - a.id);
-        console.log('정렬된 결제 데이터:', sortedPayments);
 
         setAllPayments(sortedPayments);
+
+        // 환불 내역도 함께 조회
+        const refundsData = await fetchRefunds();
+
+        // 통계 계산 (결제 + 환불 데이터)
+        calculateStats(sortedPayments, refundsData);
       } else {
-        console.log('응답 데이터가 비었거나 실패 응답');
         setAllPayments([]);
+        await fetchRefunds(); // 환불 내역도 조회 시도
       }
     } catch (err) {
-      console.error('=== Payment fetch error ===');
-      console.error('에러 객체:', err);
-      console.error('에러 메시지:', err.message);
-      console.error('응답 상태:', err.response?.status);
-      console.error('응답 데이터:', err.response?.data);
-      console.error('요청 설정:', err.config);
-
       // 더 구체적인 에러 처리
       if (err.response?.status === 401) {
         setAuthError(true);
@@ -495,7 +517,7 @@ const CustomerPayment = () => {
   };
 
   // 통계 데이터 가져오기 (백엔드에 통계 API가 없으므로 클라이언트에서 계산)
-  const calculateStats = (paymentsData) => {
+  const calculateStats = (paymentsData, refundsData = []) => {
     const totalPayment = paymentsData
       .filter((p) => p.status === 'PAID')
       .reduce((sum, p) => sum + p.amount, 0);
@@ -515,58 +537,26 @@ const CustomerPayment = () => {
       .filter((p) => p.status === 'PENDING')
       .reduce((sum, p) => sum + p.amount, 0);
 
+    // 환불 요청 통계 계산
+    const requestedRefunds = refundsData.filter(
+      (r) => r.status === 'REQUESTED'
+    );
+    const refundRequests = requestedRefunds.length;
+
+    // 환불 요청 금액 계산 (결제 내역과 매칭)
+    const refundRequestAmount = requestedRefunds.reduce((sum, refund) => {
+      const payment = paymentsData.find((p) => p.id === refund.paymentId);
+      return sum + (payment ? payment.amount : 0);
+    }, 0);
+
     setPaymentStats({
       totalPayment,
       refundAmount,
       successRate: parseFloat(successRate),
       pendingPayments,
+      refundRequests,
+      refundRequestAmount,
     });
-  };
-
-  // 환불 처리 함수 (백엔드 API 스펙에 맞게 수정)
-  const handleRefund = async (
-    paymentId,
-    isPartial = false,
-    refundAmount = null
-  ) => {
-    try {
-      console.log('환불 처리 시작:', { paymentId, isPartial, refundAmount });
-
-      let response;
-      if (isPartial && refundAmount) {
-        // 부분 환불 API 호출
-        response = await api.post(`/admin/refunds/${paymentId}/partial`, {
-          refundAmount: refundAmount,
-        });
-      } else {
-        // 전액 환불 API 호출
-        response = await api.post(`/admin/refunds/${paymentId}/full`);
-      }
-
-      console.log('환불 처리 응답:', response);
-
-      if (response.data?.success !== false) {
-        alert(
-          isPartial
-            ? '부분 환불이 완료되었습니다.'
-            : '전액 환불이 완료되었습니다.'
-        );
-        fetchPayments(); // 데이터 새로고침
-      } else {
-        throw new Error(response.data?.message || '환불 처리에 실패했습니다.');
-      }
-    } catch (err) {
-      console.error('환불 처리 오류:', err);
-
-      let errorMessage = '환불 처리 중 오류가 발생했습니다.';
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
-      alert(errorMessage);
-    }
   };
 
   // 컴포넌트 마운트 시 데이터 로드
@@ -577,9 +567,19 @@ const CustomerPayment = () => {
   // payments 데이터가 변경될 때마다 통계 계산
   useEffect(() => {
     if (allPayments.length > 0) {
-      calculateStats(allPayments);
+      calculateStats(allPayments, allRefunds);
     }
-  }, [allPayments]);
+  }, [allPayments, allRefunds]);
+
+  // 정기적 자동 새로고침 (30초마다) - 실시간 동기화
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      console.log('🔄 자동 새로고침 실행 (30초 주기)');
+      await fetchPayments(); // fetchPayments 내에서 fetchRefunds도 함께 호출됨
+    }, 30000); // 30초마다
+
+    return () => clearInterval(interval);
+  }, []);
 
   // 검색 핸들러 - 리뷰 관리와 동일한 방식
   const handleSearch = () => {
@@ -599,36 +599,6 @@ const CustomerPayment = () => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSearch();
-    }
-  };
-
-  // 환불 처리 확인 다이얼로그
-  const confirmRefund = (paymentId, customerName) => {
-    if (
-      window.confirm(`${customerName} 고객의 결제를 전액 환불하시겠습니까?`)
-    ) {
-      handleRefund(paymentId, false);
-    }
-  };
-
-  // 부분 환불 처리
-  const confirmPartialRefund = (paymentId, customerName, totalAmount) => {
-    const refundAmount = prompt(
-      `${customerName} 고객의 부분 환불 금액을 입력하세요 (최대: ₩${formatAmount(totalAmount)}):`
-    );
-    if (refundAmount && !isNaN(refundAmount)) {
-      const amount = parseInt(refundAmount);
-      if (amount > 0 && amount <= totalAmount) {
-        if (
-          window.confirm(
-            `${customerName} 고객에게 ₩${formatAmount(amount)} 부분 환불을 진행하시겠습니까?`
-          )
-        ) {
-          handleRefund(paymentId, true, amount);
-        }
-      } else {
-        alert('올바른 환불 금액을 입력해주세요.');
-      }
     }
   };
 
@@ -735,6 +705,25 @@ const CustomerPayment = () => {
                 </svg>
               }
               iconBg="bg-yellow-100"
+            />
+            <StatCard
+              title="환불 요청 대기"
+              value={`${paymentStats.refundRequests}건`}
+              subValue={`요청 금액 : ₩${formatAmount(paymentStats.refundRequestAmount)}\n승인 대기 중인 환불 요청`}
+              icon={
+                <svg
+                  className="w-5 h-5 text-purple-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+              iconBg="bg-purple-100"
             />
           </div>
 
@@ -941,17 +930,26 @@ const CustomerPayment = () => {
                             결제일시
                           </th>
                           <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            상세보기
-                          </th>
-                          <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            작업
+                            관리
                           </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {paginatedPayments.length > 0 ? (
                           paginatedPayments.map((payment) => (
-                            <tr key={payment.id} className="hover:bg-gray-50">
+                            <tr
+                              key={payment.id}
+                              className={`hover:bg-gray-50 ${
+                                // 환불 요청이 있는 결제는 보라색 배경으로 강조
+                                allRefunds.some(
+                                  (refund) =>
+                                    refund.paymentId === payment.id &&
+                                    refund.status === 'REQUESTED'
+                                )
+                                  ? 'bg-purple-50 border-l-4 border-l-purple-400'
+                                  : ''
+                              }`}
+                            >
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
                                 #{payment.id}
                               </td>
@@ -986,99 +984,47 @@ const CustomerPayment = () => {
                                 </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                <span
-                                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(
-                                    payment.status
-                                  )}`}
-                                >
-                                  {getPaymentStatusText(payment.status)}
-                                </span>
+                                <div className="flex flex-col space-y-1">
+                                  <span
+                                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(
+                                      payment.status
+                                    )}`}
+                                  >
+                                    {getPaymentStatusText(payment.status)}
+                                  </span>
+                                  {/* 환불 요청 표시 */}
+                                  {allRefunds.some(
+                                    (refund) =>
+                                      refund.paymentId === payment.id &&
+                                      refund.status === 'REQUESTED'
+                                  ) && (
+                                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                                      환불요청중
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {payment.createdAt}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-center">
-                                {/* 상세보기 버튼 - 모든 결제에 대해 표시 */}
+                                {/* 상세 관리 버튼 - 모든 결제에 대해 표시 */}
                                 <button
                                   onClick={() => {
                                     setSelectedPayment(payment);
                                     setShowDetailModal(true);
                                   }}
-                                  className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
+                                  className="px-4 py-2 text-sm bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors font-medium"
                                 >
-                                  상세보기
+                                  상세 관리
                                 </button>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-center">
-                                <div className="flex items-center justify-center space-x-2">
-                                  {payment.status === 'PAID' && (
-                                    <>
-                                      <button
-                                        onClick={() =>
-                                          confirmRefund(
-                                            payment.id,
-                                            payment.customerName
-                                          )
-                                        }
-                                        className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 transition-colors font-medium"
-                                        style={{ color: '#dc2626' }}
-                                      >
-                                        전액환불
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          confirmPartialRefund(
-                                            payment.id,
-                                            payment.customerName,
-                                            payment.amount
-                                          )
-                                        }
-                                        className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 transition-colors font-medium"
-                                        style={{ color: '#16a34a' }}
-                                      >
-                                        부분환불
-                                      </button>
-                                    </>
-                                  )}
-                                  {payment.status === 'PARTIAL_REFUNDED' && (
-                                    <>
-                                      <button
-                                        onClick={() =>
-                                          confirmRefund(
-                                            payment.id,
-                                            payment.customerName
-                                          )
-                                        }
-                                        className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 transition-colors font-medium"
-                                        style={{ color: '#1f2937' }}
-                                      >
-                                        추가환불
-                                      </button>
-                                      <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
-                                        부분환불완료
-                                      </span>
-                                    </>
-                                  )}
-                                  {payment.status === 'PENDING' && (
-                                    <span className="px-3 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-lg">
-                                      대기중
-                                    </span>
-                                  )}
-                                  {(payment.status === 'FAILED' ||
-                                    payment.status === 'REFUNDED' ||
-                                    payment.status === 'CANCELED') && (
-                                    <span className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg">
-                                      처리완료
-                                    </span>
-                                  )}
-                                </div>
                               </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
                             <td
-                              colSpan="8"
+                              colSpan="7"
                               className="px-6 py-12 text-center text-gray-500"
                             >
                               {searchTerm
@@ -1145,6 +1091,7 @@ const CustomerPayment = () => {
           setShowDetailModal(false);
           setSelectedPayment(null);
         }}
+        onRefresh={fetchPayments}
       />
     </div>
   );
