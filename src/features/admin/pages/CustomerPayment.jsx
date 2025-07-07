@@ -908,29 +908,41 @@ const CustomerPayment = () => {
               {!loading && !error && (
                 <>
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <table
+                      className="min-w-full divide-y divide-gray-200"
+                      style={{ tableLayout: 'fixed' }}
+                    >
+                      <colgroup>
+                        <col style={{ width: '10%' }} /> {/* 결제 ID */}
+                        <col style={{ width: '16%' }} /> {/* 고객 정보 */}
+                        <col style={{ width: '16%' }} /> {/* 서비스 정보 */}
+                        <col style={{ width: '14%' }} /> {/* 결제 정보 */}
+                        <col style={{ width: '16%' }} /> {/* 상태 */}
+                        <col style={{ width: '16%' }} /> {/* 결제일시 */}
+                        <col style={{ width: '12%' }} /> {/* 관리 */}
+                      </colgroup>
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            결제 ID
+                          <th className="px-4 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <div className="truncate">결제 ID</div>
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            고객 정보
+                          <th className="px-4 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <div className="truncate">고객 정보</div>
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            서비스 정보
+                          <th className="px-4 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <div className="truncate">서비스 정보</div>
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            결제 정보
+                          <th className="px-4 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <div className="truncate">결제 정보</div>
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            상태
+                          <th className="px-4 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <div className="truncate">상태</div>
                           </th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            결제일시
+                          <th className="px-4 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <div className="truncate">결제일시</div>
                           </th>
-                          <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            관리
+                          <th className="px-4 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <div className="truncate">관리</div>
                           </th>
                         </tr>
                       </thead>
@@ -950,43 +962,43 @@ const CustomerPayment = () => {
                                   : ''
                               }`}
                             >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                                #{payment.id}
+                              <td className="px-4 py-4 text-sm font-mono text-gray-900 text-center">
+                                <div className="truncate">#{payment.id}</div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">
+                              <td className="px-4 py-4 text-center">
+                                <div className="space-y-1">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
                                     {payment.customerName}
                                   </p>
-                                  <p className="text-sm text-gray-500">
+                                  <p className="text-xs text-gray-500 truncate">
                                     예약 ID: {payment.reservationId || 'N/A'}
                                   </p>
                                 </div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">
+                              <td className="px-4 py-4 text-center">
+                                <div className="space-y-1">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
                                     {payment.serviceName}
                                   </p>
-                                  <p className="text-sm text-gray-500">
+                                  <p className="text-xs text-gray-500 truncate">
                                     매니저: {payment.managerName}
                                   </p>
                                 </div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">
+                              <td className="px-4 py-4 text-center">
+                                <div className="space-y-1">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
                                     ₩{formatAmount(payment.amount)}
                                   </p>
-                                  <p className="text-sm text-gray-500">
+                                  <p className="text-xs text-gray-500 truncate">
                                     {payment.paymentMethodText}
                                   </p>
                                 </div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex flex-col space-y-1">
+                              <td className="px-4 py-4">
+                                <div className="flex flex-col items-center space-y-1 min-h-[3rem]">
                                   <span
-                                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(
+                                    className={`inline-block px-1.5 py-0.5 text-xs font-medium rounded ${getPaymentStatusColor(
                                       payment.status
                                     )}`}
                                   >
@@ -998,23 +1010,25 @@ const CustomerPayment = () => {
                                       refund.paymentId === payment.id &&
                                       refund.status === 'REQUESTED'
                                   ) && (
-                                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                                    <span className="inline-block px-1.5 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">
                                       환불요청중
                                     </span>
                                   )}
                                 </div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {payment.createdAt}
+                              <td className="px-4 py-4 text-sm text-gray-900 text-center">
+                                <div className="truncate text-xs">
+                                  {payment.createdAt}
+                                </div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <td className="px-4 py-4 text-center">
                                 {/* 상세 관리 버튼 - 모든 결제에 대해 표시 */}
                                 <button
                                   onClick={() => {
                                     setSelectedPayment(payment);
                                     setShowDetailModal(true);
                                   }}
-                                  className="px-4 py-2 text-sm bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors font-medium"
+                                  className="w-full px-3 py-2 text-xs bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors font-medium"
                                 >
                                   상세 관리
                                 </button>
@@ -1025,7 +1039,7 @@ const CustomerPayment = () => {
                           <tr>
                             <td
                               colSpan="7"
-                              className="px-6 py-12 text-center text-gray-500"
+                              className="px-4 py-12 text-center text-gray-500"
                             >
                               {searchTerm
                                 ? '검색 결과가 없습니다.'

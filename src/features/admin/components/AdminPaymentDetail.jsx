@@ -10,11 +10,226 @@ import {
 } from 'lucide-react';
 import { api } from '../../../api/config/api';
 
+// 부분환불 모달 컴포넌트
+const PartialRefundModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  maxAmount,
+  loading,
+}) => {
+  const [refundType, setRefundType] = useState('amount'); // 'amount' or 'percentage'
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundPercentage, setRefundPercentage] = useState('');
+  const [adminComment, setAdminComment] = useState('');
+  const [error, setError] = useState('');
+
+  // 모달이 열릴 때 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setRefundType('amount');
+      setRefundAmount('');
+      setRefundPercentage('');
+      setAdminComment('');
+      setError('');
+    }
+  }, [isOpen]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+
+    // 유효성 검사
+    if (!adminComment.trim()) {
+      setError('관리자 코멘트를 입력해주세요.');
+      return;
+    }
+
+    let refundData = {
+      refundReason: 'ADMIN_MANUAL_REFUND',
+      adminComment: adminComment.trim(),
+    };
+
+    if (refundType === 'amount') {
+      const amount = parseInt(refundAmount.replace(/[^0-9]/g, ''));
+      if (isNaN(amount) || amount <= 0 || amount > maxAmount) {
+        setError(
+          `올바른 환불 금액을 입력해주세요. (최대: ₩${formatAmount(maxAmount)})`
+        );
+        return;
+      }
+      refundData.refundAmount = amount;
+    } else {
+      const percentage = parseInt(refundPercentage);
+      if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+        setError('올바른 환불 비율을 입력해주세요. (1-100%)');
+        return;
+      }
+      refundData.refundPercentage = percentage;
+    }
+
+    onSubmit(refundData);
+  };
+
+  const formatAmount = (amount) => {
+    return new Intl.NumberFormat('ko-KR').format(amount);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center z-[60] p-4"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+    >
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-gray-200">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">부분 환불</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+            disabled={loading}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* 내용 */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* 환불 방식 선택 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              환불 방식
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="amount"
+                  checked={refundType === 'amount'}
+                  onChange={(e) => setRefundType(e.target.value)}
+                  className="mr-2"
+                  disabled={loading}
+                />
+                <span className="text-sm">금액으로 지정</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="percentage"
+                  checked={refundType === 'percentage'}
+                  onChange={(e) => setRefundType(e.target.value)}
+                  className="mr-2"
+                  disabled={loading}
+                />
+                <span className="text-sm">비율로 지정</span>
+              </label>
+            </div>
+          </div>
+
+          {/* 환불 금액 입력 */}
+          {refundType === 'amount' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                환불 금액 (최대: ₩{formatAmount(maxAmount)})
+              </label>
+              <input
+                type="text"
+                value={refundAmount}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  setRefundAmount(value ? formatAmount(parseInt(value)) : '');
+                }}
+                placeholder="환불할 금액을 입력하세요"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              />
+            </div>
+          )}
+
+          {/* 환불 비율 입력 */}
+          {refundType === 'percentage' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                환불 비율 (1-100%)
+              </label>
+              <input
+                type="number"
+                value={refundPercentage}
+                onChange={(e) => setRefundPercentage(e.target.value)}
+                placeholder="환불 비율을 입력하세요"
+                min="1"
+                max="100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              />
+              {refundPercentage && (
+                <p className="text-xs text-gray-500 mt-1">
+                  환불 예상 금액: ₩
+                  {formatAmount(
+                    Math.floor(
+                      (maxAmount * (parseInt(refundPercentage) || 0)) / 100
+                    )
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 관리자 코멘트 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              관리자 코멘트 <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={adminComment}
+              onChange={(e) => setAdminComment(e.target.value)}
+              placeholder="환불 사유나 추가 설명을 입력하세요"
+              rows="3"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
+            />
+          </div>
+
+          {/* 에러 메시지 */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* 버튼 */}
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              disabled={loading}
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
+              disabled={loading}
+            >
+              {loading && <RefreshCw className="w-4 h-4 animate-spin mr-2" />}
+              환불 처리
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
   const [paymentDetail, setPaymentDetail] = useState(null);
   const [refundHistory, setRefundHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPartialRefundModal, setShowPartialRefundModal] = useState(false);
 
   // 결제 상세 정보 조회
   const fetchPaymentDetail = async (paymentId) => {
@@ -303,57 +518,13 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
     }
   };
 
-  // 부분 환불 처리 (간단한 prompt 방식)
-  const handlePartialRefund = async () => {
-    const refundType = window.confirm(
-      '환불 방식을 선택하세요.\n\n확인: 금액으로 지정\n취소: 비율로 지정'
-    );
+  // 부분 환불 처리 (모달 방식)
+  const handlePartialRefund = () => {
+    setShowPartialRefundModal(true);
+  };
 
-    let refundData = {};
-
-    if (refundType) {
-      // 금액으로 지정
-      const amount = prompt(
-        `환불할 금액을 입력하세요 (최대: ₩${formatAmount(paymentDetail.amount)})`
-      );
-      if (!amount) return;
-
-      const refundAmount = parseInt(amount.replace(/[^0-9]/g, ''));
-      if (
-        isNaN(refundAmount) ||
-        refundAmount <= 0 ||
-        refundAmount > paymentDetail.amount
-      ) {
-        alert('올바른 환불 금액을 입력해주세요.');
-        return;
-      }
-      refundData.refundAmount = refundAmount;
-    } else {
-      // 비율로 지정
-      const percentage = prompt('환불 비율을 입력하세요 (1-100%)');
-      if (!percentage) return;
-
-      const refundPercentage = parseInt(percentage);
-      if (
-        isNaN(refundPercentage) ||
-        refundPercentage <= 0 ||
-        refundPercentage > 100
-      ) {
-        alert('올바른 환불 비율을 입력해주세요. (1-100%)');
-        return;
-      }
-      refundData.refundPercentage = refundPercentage;
-    }
-
-    const adminComment = prompt('관리자 코멘트를 입력하세요:');
-    if (!adminComment?.trim()) {
-      alert('관리자 코멘트를 입력해주세요.');
-      return;
-    }
-
-    refundData.refundReason = 'ADMIN_MANUAL_REFUND';
-    refundData.adminComment = adminComment.trim();
-
+  // 부분 환불 모달에서 제출 처리
+  const handlePartialRefundSubmit = async (refundData) => {
     try {
       setLoading(true);
       console.log('부분 환불 처리:', paymentDetail.id, refundData);
@@ -365,6 +536,7 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
 
       if (response.data?.success !== false) {
         alert('부분 환불이 완료되었습니다.');
+        setShowPartialRefundModal(false);
         // 환불 내역 다시 조회
         await fetchRefundHistory(paymentDetail.id);
         // 부모 컴포넌트 데이터 새로고침
@@ -537,13 +709,17 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
                           <div>
                             <p className="text-gray-600">환불 금액</p>
                             <p className="font-medium">
-                              ₩{formatAmount(refund.refundAmount)}
+                              {refund.refundAmount
+                                ? formatAmount(refund.refundAmount)
+                                : '미처리'}
                             </p>
                           </div>
                           <div>
                             <p className="text-gray-600">환불 사유</p>
                             <p className="font-medium">
-                              {getRefundReasonText(refund.reason)}
+                              {refund.reason
+                                ? getRefundReasonText(refund.reason)
+                                : '미처리'}
                             </p>
                           </div>
                           <div>
@@ -679,6 +855,17 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
           </button>
         </div>
       </div>
+
+      {/* 부분환불 모달 */}
+      {showPartialRefundModal && (
+        <PartialRefundModal
+          isOpen={showPartialRefundModal}
+          onClose={() => setShowPartialRefundModal(false)}
+          onSubmit={handlePartialRefundSubmit}
+          maxAmount={paymentDetail.amount}
+          loading={loading}
+        />
+      )}
     </div>
   );
 };
