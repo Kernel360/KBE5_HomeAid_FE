@@ -8,12 +8,13 @@ import {
   Clock,
   AlertCircle,
   ChevronRight,
+  Eye,
 } from 'lucide-react';
 import api from '../../../../api/config/api';
 import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 
-const PaymentHistory = ({ onBack }) => {
+const PaymentHistory = ({ onBack, onViewDetail }) => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,32 +29,52 @@ const PaymentHistory = ({ onBack }) => {
       setLoading(true);
       setError(null);
 
-      // 고객 결제 내역 조회 API 호출
-      const response = await api.get('/my/payments');
+      // 백엔드 API 구조에 맞춰 고객 결제 내역 조회
+      const response = await api.get('/my/payments/list');
 
-      if (response.data?.data) {
-        setPayments(response.data.data);
+      console.log('✅ 결제 내역 API 응답:', response);
+
+      // CommonApiResponse<List<PaymentResponseDto>> 구조 처리
+      if (response.data?.success && response.data?.data) {
+        const paymentList = response.data.data;
+        console.log('✅ 결제 내역 데이터:', paymentList);
+        setPayments(paymentList);
       } else if (response.data && Array.isArray(response.data)) {
+        // 직접 배열이 반환되는 경우 처리
         setPayments(response.data);
       } else {
+        console.log('⚠️ 예상과 다른 응답 구조:', response.data);
         setPayments([]);
       }
-
-      console.log('✅ 결제 내역 조회 성공:', response.data);
     } catch (err) {
       console.error('❌ 결제 내역 조회 실패:', err);
-      setError('결제 내역을 불러오는데 실패했습니다.');
+
+      // 에러 상세 정보 확인
+      if (err.response) {
+        console.error('응답 상태:', err.response.status);
+        console.error('응답 데이터:', err.response.data);
+
+        if (err.response.status === 404) {
+          setError('결제 내역을 찾을 수 없습니다.');
+        } else if (err.response.status === 403) {
+          setError('결제 내역 조회 권한이 없습니다.');
+        } else {
+          setError('결제 내역을 불러오는데 실패했습니다.');
+        }
+      } else {
+        setError('네트워크 오류가 발생했습니다.');
+      }
+
       setPayments([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 결제 상태에 따른 아이콘 반환
+  // 결제 상태에 따른 아이콘 반환 - 백엔드 PaymentStatus enum에 맞춰 수정
   const getStatusIcon = (status) => {
     switch (status) {
       case 'PAID':
-      case 'COMPLETED':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'PENDING':
       case 'PROCESSING':
@@ -68,15 +89,15 @@ const PaymentHistory = ({ onBack }) => {
     }
   };
 
-  // 결제 상태에 따른 텍스트 반환
+  // 결제 상태에 따른 텍스트 반환 - 백엔드 PaymentStatus enum에 맞춰 수정
   const getStatusText = (status) => {
     switch (status) {
       case 'PAID':
-      case 'COMPLETED':
         return '결제완료';
       case 'PENDING':
+        return '결제대기';
       case 'PROCESSING':
-        return '결제중';
+        return '결제처리중';
       case 'FAILED':
         return '결제실패';
       case 'CANCELLED':
@@ -88,11 +109,10 @@ const PaymentHistory = ({ onBack }) => {
     }
   };
 
-  // 결제 상태에 따른 색상 클래스 반환
+  // 결제 상태에 따른 색상 클래스 반환 - 백엔드 PaymentStatus enum에 맞춰 수정
   const getStatusColorClass = (status) => {
     switch (status) {
       case 'PAID':
-      case 'COMPLETED':
         return 'text-green-600 bg-green-50 border-green-200';
       case 'PENDING':
       case 'PROCESSING':
@@ -127,21 +147,13 @@ const PaymentHistory = ({ onBack }) => {
     }
   };
 
-  // 필터된 결제 내역
-  const filteredPayments = payments.filter((payment) => {
-    if (selectedFilter === 'ALL') return true;
-    return payment.status === selectedFilter;
-  });
-
-  // 필터 버튼들
+  // 필터 버튼들 - 백엔드 PaymentStatus enum에 맞춰 수정
   const filterButtons = [
     { key: 'ALL', label: '전체', count: payments.length },
     {
       key: 'PAID',
       label: '결제완료',
-      count: payments.filter(
-        (p) => p.status === 'PAID' || p.status === 'COMPLETED'
-      ).length,
+      count: payments.filter((p) => p.status === 'PAID').length,
     },
     {
       key: 'PENDING',
@@ -163,6 +175,24 @@ const PaymentHistory = ({ onBack }) => {
       count: payments.filter((p) => p.status === 'REFUNDED').length,
     },
   ];
+
+  // 필터된 결제 내역 - 백엔드 PaymentStatus에 맞춰 수정
+  const filteredPayments = payments.filter((payment) => {
+    if (selectedFilter === 'ALL') return true;
+
+    switch (selectedFilter) {
+      case 'PAID':
+        return payment.status === 'PAID';
+      case 'PENDING':
+        return payment.status === 'PENDING' || payment.status === 'PROCESSING';
+      case 'FAILED':
+        return payment.status === 'FAILED' || payment.status === 'CANCELLED';
+      case 'REFUNDED':
+        return payment.status === 'REFUNDED';
+      default:
+        return payment.status === selectedFilter;
+    }
+  });
 
   if (loading) {
     return (
@@ -325,17 +355,25 @@ const PaymentHistory = ({ onBack }) => {
                       </div>
 
                       {/* 상태별 액션 버튼 */}
-                      {payment.status === 'PAID' ||
-                      payment.status === 'COMPLETED' ? (
-                        <button className="text-blue-600 text-sm font-medium flex items-center">
+                      <div className="flex items-center space-x-2">
+                        {/* 상세보기 버튼 - 모든 상태에 대해 표시 */}
+                        <button
+                          onClick={() =>
+                            onViewDetail && onViewDetail(payment.id)
+                          }
+                          className="text-blue-600 text-sm font-medium flex items-center hover:text-blue-800 transition-colors"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
                           상세보기
-                          <ChevronRight className="w-4 h-4 ml-1" />
                         </button>
-                      ) : payment.status === 'FAILED' ? (
-                        <button className="text-red-600 text-sm font-medium">
-                          재결제
-                        </button>
-                      ) : null}
+
+                        {/* 추가 액션 버튼 */}
+                        {payment.status === 'FAILED' && (
+                          <button className="text-red-600 text-sm font-medium">
+                            재결제
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

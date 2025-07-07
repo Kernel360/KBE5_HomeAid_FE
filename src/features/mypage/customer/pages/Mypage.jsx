@@ -12,10 +12,12 @@ import AddressRegister from '../components/AddressRegister.jsx';
 import CreateInquiry from '../components/CreateInquiry.jsx';
 import InquiryDetail from '../components/InquiryDetail.jsx';
 import PaymentHistory from '../components/PaymentHistory.jsx';
+import PaymentDetail from '../components/PaymentDetail.jsx';
 
 export default function MyPage() {
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry', 'createInquiry', 'inquiryDetail', 'paymentHistory'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry', 'createInquiry', 'inquiryDetail', 'paymentHistory', 'paymentDetail'
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
+  const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const { user } = useAuthStore();
   const [userProfile, setUserProfile] = useState(null);
 
@@ -179,7 +181,22 @@ export default function MyPage() {
         />
       );
     case 'paymentHistory':
-      return <PaymentHistory onBack={() => setCurrentView('main')} />;
+      return (
+        <PaymentHistory
+          onBack={() => setCurrentView('main')}
+          onViewDetail={(paymentId) => {
+            setSelectedPaymentId(paymentId);
+            setCurrentView('paymentDetail');
+          }}
+        />
+      );
+    case 'paymentDetail':
+      return (
+        <PaymentDetail
+          paymentId={selectedPaymentId}
+          onBack={() => setCurrentView('paymentHistory')}
+        />
+      );
     default:
       return <MainView />;
   }
