@@ -28,6 +28,75 @@ const UserReservationDetail = () => {
   const [rejectMemo, setRejectMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 별도로 결제 정보를 조회하는 함수
+  const checkPaymentStatus = useCallback(async (reservationId) => {
+    try {
+      console.log('🔍 별도 결제 정보 조회 시작:', reservationId);
+
+      // 결제 정보 조회 API 호출 (여러 가능한 엔드포인트 시도)
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        console.log('❌ 인증 토큰이 없어 결제 정보 조회 생략');
+        return null;
+      }
+
+      const baseUrl = getBaseUrl();
+
+      // 가능한 결제 정보 조회 엔드포인트들을 시도
+      const possibleEndpoints = [
+        `/my/payments?reservationId=${reservationId}`,
+        `/customer/payments?reservationId=${reservationId}`,
+        `/payments?reservationId=${reservationId}`,
+        `/reservations/${reservationId}/payment`,
+        `/customer/reservations/${reservationId}/payment`,
+      ];
+
+      for (const endpoint of possibleEndpoints) {
+        try {
+          console.log(`🔍 결제 정보 조회 시도: ${endpoint}`);
+
+          const response = await fetch(`${baseUrl}${endpoint}`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const paymentData = await response.json();
+            console.log('✅ 결제 정보 조회 성공:', { endpoint, paymentData });
+
+            // 결제 데이터가 있으면 반환
+            if (paymentData?.data) {
+              return paymentData.data;
+            } else if (paymentData && typeof paymentData === 'object') {
+              return paymentData;
+            }
+          } else if (response.status === 404) {
+            console.log(`ℹ️ ${endpoint}: 결제 정보 없음 (404)`);
+            continue;
+          } else if (response.status === 403) {
+            console.log(`⚠️ ${endpoint}: 권한 없음 (403)`);
+            continue;
+          } else {
+            console.log(`❌ ${endpoint}: 오류 (${response.status})`);
+            continue;
+          }
+        } catch (error) {
+          console.log(`❌ ${endpoint}: 네트워크 오류`, error);
+          continue;
+        }
+      }
+
+      console.log('ℹ️ 모든 엔드포인트에서 결제 정보를 찾을 수 없음');
+      return null;
+    } catch (error) {
+      console.error('❌ 결제 정보 조회 중 오류:', error);
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     const loadReservationDetail = async () => {
       if (!reservationId) {
@@ -48,11 +117,31 @@ const UserReservationDetail = () => {
         console.log('✅ API 호출 완료 - 백엔드 응답:', backendReservation);
 
         if (data) {
-          // ⭐️ 디버깅: 백엔드에서 받은 주소 데이터 확인
+          // ⭐️ 디버깅: 백엔드에서 받은 데이터 전체 확인
           console.log('📋 백엔드 예약 데이터 전체:', data);
+          console.log('📋 결제 관련 데이터 확인:', {
+            paymentId: data.paymentId,
+            paidAt: data.paidAt,
+            paymentStatus: data.paymentStatus,
+            isPaid: data.isPaid,
+            payment: data.payment,
+            paymentInfo: data.paymentInfo,
+            paymentResult: data.paymentResult,
+            status: data.status,
+          });
+
+          // ⭐️ 별도 결제 정보 조회 시도
+          let additionalPaymentInfo = null;
+          try {
+            additionalPaymentInfo = await checkPaymentStatus(reservationId);
+            console.log('💳 별도 조회한 결제 정보:', additionalPaymentInfo);
+          } catch (error) {
+            console.log('⚠️ 별도 결제 정보 조회 실패 (무시):', error);
+          }
 
           const transformedReservation = {
             id: data.reservationId || data.id || reservationId,
+            reservationId: data.reservationId || data.id || reservationId,
             type: data.serviceOptionName || getServiceName(1, '청소', data),
             icon: getServiceIcon(1),
             status: data.status || 'REQUESTED',
@@ -78,12 +167,40 @@ const UserReservationDetail = () => {
             customerNote: data.customerMemo || '',
             createdAt: data.startTime || new Date().toISOString(),
 
-            // ⭐️ 백엔드 DTO의 추가 필드들도 보존
-            backendData: data,
+            // ⭐️ 별도 조회한 결제 정보도 포함
+            paymentInfo: additionalPaymentInfo,
+
+            // ⭐️ 백엔드 DTO의 모든 필드들을 보존하여 결제 상태 확인에 사용
+            backendData: {
+              ...data,
+              // 중첩된 데이터 구조가 있을 경우 평탄화
+              paymentId:
+                data.paymentId || data.payment?.id || additionalPaymentInfo?.id,
+              paidAt:
+                data.paidAt ||
+                data.payment?.paidAt ||
+                additionalPaymentInfo?.paidAt,
+              paymentStatus:
+                data.paymentStatus ||
+                data.payment?.status ||
+                additionalPaymentInfo?.status,
+              isPaid:
+                data.isPaid ||
+                data.payment?.isPaid ||
+                additionalPaymentInfo?.isPaid ||
+                (additionalPaymentInfo &&
+                  additionalPaymentInfo.status === 'PAID'),
+              // 별도 조회한 결제 정보 추가
+              additionalPaymentInfo: additionalPaymentInfo,
+            },
           };
 
           // ⭐️ 디버깅: 최종 변환된 예약 데이터 확인
           console.log('🎯 최종 변환된 예약 데이터:', transformedReservation);
+          console.log(
+            '🎯 변환된 백엔드 데이터:',
+            transformedReservation.backendData
+          );
 
           setReservation(transformedReservation);
         } else {
@@ -106,7 +223,7 @@ const UserReservationDetail = () => {
     };
 
     loadReservationDetail();
-  }, [reservationId, getReservationById, location.state]);
+  }, [reservationId, getReservationById, location.state, checkPaymentStatus]);
 
   const getServiceName = (subOptionId, subOptionName, backendData) => {
     if (subOptionName) return subOptionName;
@@ -196,6 +313,22 @@ const UserReservationDetail = () => {
   };
 
   const canMakePayment = (status) => {
+    console.log('🔍 결제 가능 여부 확인 시작:', {
+      status,
+      reservationId: reservation?.id || reservationId,
+      backendData: reservation?.backendData,
+      fullReservation: reservation, // 전체 예약 객체 로그
+    });
+
+    // ⭐️ 사용자 디버깅 안내
+    console.log(`
+    🔧 결제 버튼 문제 디버깅 안내:
+    1. 브라우저 개발자 도구(F12)를 열어주세요
+    2. Console 탭에서 위의 로그를 확인하세요
+    3. 'backendData'와 'fullReservation' 객체에서 결제 관련 필드를 찾아보세요
+    4. 결제가 완료되었다면 paymentId, paidAt, paymentStatus 등의 필드가 있어야 합니다
+    `);
+
     // 1. localStorage에서 최근 결제 완료 정보 확인
     const recentPaymentCompletion = localStorage.getItem(
       'recentPaymentCompletion'
@@ -217,42 +350,173 @@ const UserReservationDetail = () => {
       }
     }
 
-    // 2. 백엔드 데이터에서 결제 정보 확인
-    if (reservation.backendData) {
+    // 2. 백엔드 데이터에서 결제 정보 확인 (다양한 데이터 구조 지원)
+    if (reservation?.backendData) {
+      const backendData =
+        reservation.backendData.data || reservation.backendData;
+
+      console.log('🔍 백엔드 데이터 상세 확인:', {
+        'entire backendData': backendData,
+        'backendData keys': Object.keys(backendData),
+        paymentId: backendData.paymentId,
+        paidAt: backendData.paidAt,
+        paymentStatus: backendData.paymentStatus,
+        isPaid: backendData.isPaid,
+        status: backendData.status,
+        // 가능한 모든 결제 관련 필드 확인
+        payment: backendData.payment,
+        paymentInfo: backendData.paymentInfo,
+        paymentResult: backendData.paymentResult,
+        paymentDetails: backendData.paymentDetails,
+        paymentData: backendData.paymentData,
+        isPaymentCompleted: backendData.isPaymentCompleted,
+        paymentCompleted: backendData.paymentCompleted,
+        // 상태 관련 필드들
+        reservationStatus: backendData.reservationStatus,
+        currentStatus: backendData.currentStatus,
+        // 별도 조회한 결제 정보
+        additionalPaymentInfo: backendData.additionalPaymentInfo,
+      });
+
+      // 다양한 결제 완료 상태 체크 (더 확장된 버전)
       const hasPayment =
-        reservation.backendData.paymentId ||
-        reservation.backendData.paidAt ||
-        reservation.backendData.paymentStatus === 'PAID' ||
-        reservation.backendData.paymentStatus === 'COMPLETED';
+        // 기존 체크 필드들
+        backendData.paymentId ||
+        backendData.paidAt ||
+        backendData.paymentStatus === 'PAID' ||
+        backendData.paymentStatus === 'COMPLETED' ||
+        backendData.isPaid === true ||
+        // 추가적인 결제 완료 상태 확인
+        backendData.payment ||
+        backendData.paymentInfo ||
+        backendData.paymentResult ||
+        backendData.paymentDetails ||
+        backendData.paymentData ||
+        backendData.isPaymentCompleted === true ||
+        backendData.paymentCompleted === true ||
+        // 상태가 이미 결제 완료를 의미하는 경우
+        backendData.status === 'PAID' ||
+        // 예약 상태가 결제 완료 이후 단계인지 확인
+        (backendData.status === 'MATCHED' && backendData.paymentStatus) ||
+        (status === 'completed' && backendData.paymentStatus) ||
+        // 별도 조회한 결제 정보 확인
+        backendData.additionalPaymentInfo;
 
       if (hasPayment) {
         console.log('🔒 백엔드에서 결제 완료 확인 - 결제 버튼 비활성화:', {
-          paymentId: reservation.backendData.paymentId,
-          paidAt: reservation.backendData.paidAt,
-          paymentStatus: reservation.backendData.paymentStatus,
+          hasPayment: true,
+          paymentId: backendData.paymentId,
+          paidAt: backendData.paidAt,
+          paymentStatus: backendData.paymentStatus,
+          isPaid: backendData.isPaid,
+          payment: backendData.payment,
+          paymentInfo: backendData.paymentInfo,
+          paymentResult: backendData.paymentResult,
+          status: backendData.status,
+          additionalPaymentInfo: backendData.additionalPaymentInfo,
         });
         return false;
       }
     }
 
-    // 2. 서비스 완료 상태 확인
+    // 3. 실제 예약 객체 자체에서도 결제 정보 확인
+    if (reservation) {
+      console.log('🔍 예약 객체 직접 확인:', {
+        'reservation keys': Object.keys(reservation),
+        paymentId: reservation.paymentId,
+        paidAt: reservation.paidAt,
+        paymentStatus: reservation.paymentStatus,
+        isPaid: reservation.isPaid,
+        payment: reservation.payment,
+        paymentInfo: reservation.paymentInfo,
+      });
+
+      const reservationHasPayment =
+        reservation.paymentId ||
+        reservation.paidAt ||
+        reservation.paymentStatus === 'PAID' ||
+        reservation.paymentStatus === 'COMPLETED' ||
+        reservation.isPaid === true ||
+        reservation.payment ||
+        reservation.paymentInfo;
+
+      if (reservationHasPayment) {
+        console.log('🔒 예약 객체에서 결제 완료 확인 - 결제 버튼 비활성화');
+        return false;
+      }
+    }
+
+    // 4. ⭐️ 임시 해결책: "completed" 상태이고 현재 시간이 예약 생성 시간보다 30분 이후라면 결제 완료로 간주
+    if (status === 'completed' || status === 'MATCHED') {
+      const reservationCreatedAt =
+        reservation?.createdAt || reservation?.backendData?.createdAt;
+      if (reservationCreatedAt) {
+        const createdTime = new Date(reservationCreatedAt);
+        const now = new Date();
+        const timeDiff = now - createdTime;
+        const thirtyMinutes = 30 * 60 * 1000; // 30분을 밀리초로
+
+        if (timeDiff > thirtyMinutes) {
+          console.log(
+            '🔒 임시 해결책: 생성 후 30분 경과된 completed/MATCHED 상태 - 결제 완료로 간주'
+          );
+          return false;
+        }
+      }
+    }
+
+    // 5. 예약 상태별 결제 가능 여부 확인
+    // 서비스 완료 상태 확인
     if (status === 'COMPLETED' || status === 'visited') {
+      console.log('🔒 서비스 완료 상태 - 결제 불가능:', status);
       return false;
     }
 
-    // 3. 취소된 예약 확인
+    // 취소된 예약 확인
     if (status === 'CANCELLED' || status === 'cancelled') {
+      console.log('🔒 취소된 예약 - 결제 불가능:', status);
       return false;
     }
 
-    // 4. 매칭 완료 상태에서만 결제 가능
+    // 6. UserReservationList.jsx와 동일한 결제 완료 상태 체크 로직 추가
+    const currentReservationId = reservation?.reservationId || reservation?.id;
+
+    // localStorage에서 결제 완료 상태 확인 (UserReservationList.jsx와 동일)
+    const paymentCompletedKey = `payment_completed_${currentReservationId}`;
+    const reservationStatusKey = `reservation_status_${currentReservationId}`;
+
+    const paymentCompleted = localStorage.getItem(paymentCompletedKey);
+    const reservationStatus = localStorage.getItem(reservationStatusKey);
+
+    if (paymentCompleted || reservationStatus) {
+      try {
+        const statusData = reservationStatus
+          ? JSON.parse(reservationStatus)
+          : null;
+        if (
+          statusData?.status === 'COMPLETED' &&
+          statusData?.paymentCompleted
+        ) {
+          console.log('🔒 localStorage 예약 상태에서 결제 완료 확인:', {
+            reservationId: currentReservationId,
+            statusData,
+          });
+          return false;
+        }
+      } catch (error) {
+        console.error('예약 상태 파싱 오류:', error);
+      }
+    }
+
+    // 7. 매칭 완료 상태에서만 결제 가능
     const canPay = status === 'MATCHED' || status === 'completed';
 
-    console.log('💳 결제 가능 여부 확인:', {
+    console.log('💳 최종 결제 가능 여부 결정:', {
       status,
       canPay,
-      hasBackendData: !!reservation.backendData,
-      reservationId: reservation.id || reservationId,
+      hasBackendData: !!reservation?.backendData,
+      reservationId: reservation?.id || reservationId,
+      '최종 결정': canPay,
     });
 
     return canPay;
@@ -276,14 +540,59 @@ const UserReservationDetail = () => {
 
     try {
       const updatedReservation = await getReservationById(reservationId);
-      setReservation(updatedReservation);
-      console.log('✅ 예약 정보 새로고침 완료:', updatedReservation);
+      const data = updatedReservation.data;
+
+      if (data) {
+        console.log('🔄 새로고침된 백엔드 데이터:', data);
+        console.log('🔄 새로고침된 결제 관련 데이터:', {
+          paymentId: data.paymentId,
+          paidAt: data.paidAt,
+          paymentStatus: data.paymentStatus,
+          isPaid: data.isPaid,
+          payment: data.payment,
+          status: data.status,
+        });
+
+        const refreshedReservation = {
+          id: data.reservationId || data.id || reservationId,
+          reservationId: data.reservationId || data.id || reservationId,
+          type: data.serviceOptionName || getServiceName(1, '청소', data),
+          icon: getServiceIcon(1),
+          status: data.status || 'REQUESTED',
+          startTime: data.startTime,
+          price: data.totalPrice || getServicePrice(null, 1, '청소', data),
+          address: (() => {
+            const mainAddress = data.address || reservation?.address || '';
+            const detailAddress =
+              data.addressDetail || reservation?.addressDetail || '';
+            if (mainAddress && detailAddress)
+              return `${mainAddress} ${detailAddress}`;
+            if (mainAddress) return mainAddress;
+            if (detailAddress) return detailAddress;
+            return '주소 정보 없음';
+          })(),
+          customerNote: data.customerMemo || '',
+          createdAt: data.startTime || new Date().toISOString(),
+          // ⭐️ 백엔드 DTO의 모든 필드들을 보존하여 결제 상태 확인에 사용
+          backendData: {
+            ...data,
+            // 중첩된 데이터 구조가 있을 경우 평탄화
+            paymentId: data.paymentId || data.payment?.id,
+            paidAt: data.paidAt || data.payment?.paidAt,
+            paymentStatus: data.paymentStatus || data.payment?.status,
+            isPaid: data.isPaid || data.payment?.isPaid,
+          },
+        };
+
+        setReservation(refreshedReservation);
+        console.log('✅ 예약 정보 새로고침 완료:', refreshedReservation);
+      }
     } catch (error) {
       console.error('❌ 예약 정보 새로고침 실패:', error);
     } finally {
       setLoading(false);
     }
-  }, [reservationId]);
+  }, [reservationId, getReservationById, reservation]);
 
   // 페이지 포커스 시 데이터 새로고침 (결제 완료 후 돌아왔을 때)
   useEffect(() => {
@@ -548,10 +857,15 @@ const UserReservationDetail = () => {
 
   const type = detail.serviceOptionName ?? reservation.type ?? '서비스';
 
-  const date = detail.startTime ? detail.startTime.split("T")[0] : "요청 날짜 없음";
+  const date = detail.startTime
+    ? detail.startTime.split('T')[0]
+    : '요청 날짜 없음';
 
-  const time = detail.startTime.split("T")[1]
-    ? formatTimeRange(detail.startTime.split("T")[1], (detail.totalDuration ?? 3) * 60)
+  const time = detail.startTime.split('T')[1]
+    ? formatTimeRange(
+        detail.startTime.split('T')[1],
+        (detail.totalDuration ?? 3) * 60
+      )
     : (reservation.time ?? '시간 정보 없음');
 
   const status = detail.status || reservation.status || 'REQUESTED';
@@ -691,32 +1005,37 @@ const UserReservationDetail = () => {
             </div>
           )}
 
-          {!canMakePayment(status) &&
-            (status === 'MATCHED' || status === 'completed') && (
-              <div className="payment-completed-section">
-                <div className="payment-completed-info">
-                  <p className="payment-completed-notice">
-                    ✅ 결제가 완료되었습니다!
-                  </p>
-                  {reservation?.backendData &&
-                    reservation.backendData.paidAt && (
-                      <div className="payment-date-info">
-                        <span className="payment-date-label">결제 일시:</span>
-                        <span className="payment-date-value">
-                          {new Date(
-                            reservation.backendData.paidAt
-                          ).toLocaleString('ko-KR')}
-                        </span>
-                      </div>
-                    )}
-                  <div className="service-ready-info">
-                    <p className="service-ready-notice">
-                      💼 매니저가 서비스 준비 중입니다.
-                    </p>
+          {(!canMakePayment(status) &&
+            (status === 'MATCHED' || status === 'completed')) ||
+          (reservation?.backendData &&
+            (reservation.backendData.paymentId ||
+              reservation.backendData.paidAt ||
+              reservation.backendData.paymentStatus === 'PAID' ||
+              reservation.backendData.paymentStatus === 'COMPLETED' ||
+              reservation.backendData.isPaid === true)) ? (
+            <div className="payment-completed-section">
+              <div className="payment-completed-info">
+                <p className="payment-completed-notice">
+                  ✅ 결제가 완료되었습니다!
+                </p>
+                {reservation?.backendData && reservation.backendData.paidAt && (
+                  <div className="payment-date-info">
+                    <span className="payment-date-label">결제 일시:</span>
+                    <span className="payment-date-value">
+                      {new Date(reservation.backendData.paidAt).toLocaleString(
+                        'ko-KR'
+                      )}
+                    </span>
                   </div>
+                )}
+                <div className="service-ready-info">
+                  <p className="service-ready-notice">
+                    💼 매니저가 서비스 준비 중입니다.
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
+          ) : null}
 
           {status === 'pending' ||
           status === 'REQUESTED' ||

@@ -1,6 +1,5 @@
 import { User, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../../stores/authStore';
 import { apiService } from '@/api';
 import Header from '../../../../components/Header.jsx';
@@ -12,12 +11,12 @@ import InquiryBoard from '../components/InquiryBoard.jsx';
 import AddressRegister from '../components/AddressRegister.jsx';
 import CreateInquiry from '../components/CreateInquiry.jsx';
 import InquiryDetail from '../components/InquiryDetail.jsx';
+import PaymentHistory from '../components/PaymentHistory.jsx';
 
 export default function MyPage() {
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry', 'createInquiry', 'inquiryDetail'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'profile', 'address', 'review', 'inquiry', 'createInquiry', 'inquiryDetail', 'paymentHistory'
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
   const { user } = useAuthStore();
-  const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
@@ -61,7 +60,7 @@ export default function MyPage() {
                   className="w-12 h-12 object-cover object-center rounded-full"
                 />
               ) : (
-              <User className="w-6 h-6 text-blue-600" />
+                <User className="w-6 h-6 text-blue-600" />
               )}
             </div>
             <div>
@@ -108,6 +107,14 @@ export default function MyPage() {
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
             <span className="text-gray-900">💬 1:1 문의하기</span>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+
+          <button
+            onClick={() => setCurrentView('paymentHistory')}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-gray-900">💳 결제 확인하기</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
         </div>
@@ -171,6 +178,8 @@ export default function MyPage() {
           onInquiryUpdated={() => setCurrentView('inquiry')}
         />
       );
+    case 'paymentHistory':
+      return <PaymentHistory onBack={() => setCurrentView('main')} />;
     default:
       return <MainView />;
   }
