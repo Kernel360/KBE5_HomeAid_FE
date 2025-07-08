@@ -3,7 +3,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { AppRoutes } from './routes/AppRoutes';
 import { useThemeStore } from './stores/themeStore';
 import { useAuthStore } from './stores/authStore';
-// import sseEmitter from './features/alert/sseEmitter';
+import sseEmitter from './features/alert/sseEmitter';
 import './App.css';
 
 function App() {
@@ -16,9 +16,9 @@ function App() {
   const { user, accessToken } = useAuthStore();
 
   useEffect(() => {
-    // if (user && accessToken && !sseEmitter.isConnected()) {
-    //   sseEmitter.connection();
-    // }
+    if (user && accessToken && !sseEmitter.isConnected()) {
+      sseEmitter.connection();
+    }
   }, [user, accessToken]);
 
   return (

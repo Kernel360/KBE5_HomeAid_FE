@@ -2,6 +2,7 @@ import { useAlertStore } from "@/stores/alertStore";
 import { useAuthStore } from "@/stores/authStore";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import apiService from "@/api";
+import { refreshAccessToken } from "@/api/config/api";
 
 const setAlerts = useAlertStore.getState().setNotificationAlert;
 
@@ -30,17 +31,24 @@ const sseEmitter = {
 
         eventSource.onopen = () => {
             console.log('✅ SSE 연결 성공!', new Date());
-            sseEmitter.isTokenExpired = false; // 연결 성공시 토큰 상태 리셋
             sseEmitter.getUnreadAlerts();
         };
 
         eventSource.onerror = (error) => {
             if (error.status === 401) { //토큰 만료
-                console.log('🔒 토큰 관련 에러 - 다음 API 요청까지 대기');
-                sseEmitter.isTokenExpired = true;
-                return; 
+                refreshAccessToken()
+                    .then((newToken) => {
+                        console.log('🔄 토큰 갱신 성공:', newToken);
+                        useAuthStore.getState().setAccessToken(newToken);
+                        localStorage.setItem('accessToken', newToken);
+                        // 새 토큰으로 SSE 재연결
+                        sseEmitter.disconnect();
+                        sseEmitter.connection();
+                    })
+                    .catch((err) => {
+                        console.error('❌ 토큰 갱신 실패:', err);
+                    });
             }
-           
         };
 
         eventSource.addEventListener('new-notification', (e) => {
@@ -50,11 +58,11 @@ const sseEmitter = {
 
         eventSource.addEventListener('disconnect', (e) => {
             console.log('🔌 서버에서 종료 신호 수신:', e.data);
-            
+
             // 오류 핸들러 제거 후 안전하게 종료
             eventSource.onerror = null;
             eventSource.close();
-            
+
             console.log('✅ 서버 요청에 따른 연결 종료 완료');
         });
 
@@ -64,37 +72,21 @@ const sseEmitter = {
     },
 
     // 연결 종료
-    disconnect: async () => {
+    disconnect: () => {
         if (sseEmitter.eventSource) {
             console.log('🔌 SSE 연결 수동 종료');
-            
+
             // ✅ 핵심: onerror 핸들러 제거로 Access Denied 방지
             sseEmitter.eventSource.onerror = null;
             sseEmitter.eventSource.onopen = null;
-            
+
             // 이벤트 리스너들도 제거
             sseEmitter.eventSource.removeEventListener('new-notification', null);
             sseEmitter.eventSource.removeEventListener('ping', null);
-            
+
             // 연결 종료
             sseEmitter.eventSource.close();
             sseEmitter.eventSource = null;
-        }
-
-        // disconnect API 호출
-        try {
-            const token = useAuthStore.getState().accessToken;
-            const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-            await fetch(`${API_BASE_URL}/api/v1/alerts/disconnect`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-            console.log('🔗 /api/v1/alerts/disconnect 호출 완료');
-        } catch (error) {
-            console.error('disconnect API 호출 실패:', error);
         }
     },
 
