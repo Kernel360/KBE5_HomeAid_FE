@@ -29,11 +29,29 @@ const ManagerDetailModal = ({
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '-';
+    }
+  };
+
+  const getDocumentUploadDate = (doc) => {
+    // 여러 가능한 날짜 필드명을 확인
+    return (
+      doc.uploadedAt ||
+      doc.createdAt ||
+      doc.uploadDate ||
+      doc.submittedAt ||
+      doc.dateUploaded
+    );
   };
 
   const getStatusText = (status) => {
@@ -166,6 +184,32 @@ const ManagerDetailModal = ({
     }
   };
 
+  const handleDownload = async (documentId, fileName) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(
+        `${API_URL}/api/v1/admin/managers/${documentId}/download`,
+        {
+          headers: {
+            Authorization: token?.startsWith('Bearer ') ? token : `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error('다운로드 실패');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName || 'document';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('파일 다운로드에 실패했습니다.');
+    }
+  };
+
   return (
     <>
       <div
@@ -236,6 +280,64 @@ const ManagerDetailModal = ({
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 기본 정보
               </h3>
+
+              {/* 프로필 이미지 섹션 */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {(() => {
+                      // 프로필 이미지 URL 확인
+                      const profileImage =
+                        manager.profileImageUrl || manager.profileImage;
+
+                      if (profileImage) {
+                        // 캐싱 방지를 위해 timestamp 추가
+                        const imageUrl = profileImage.includes('?')
+                          ? `${profileImage}&t=${Date.now()}`
+                          : `${profileImage}?t=${Date.now()}`;
+
+                        return (
+                          <img
+                            src={imageUrl}
+                            alt="매니저 프로필 이미지"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log(
+                                'Manager profile image load failed:',
+                                imageUrl
+                              );
+                              e.target.style.display = 'none';
+                              e.target.nextElementSibling.style.display =
+                                'flex';
+                            }}
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
+                    <span
+                      className="text-blue-600 font-semibold w-full h-full flex items-center justify-center text-lg"
+                      style={{
+                        display:
+                          manager.profileImageUrl || manager.profileImage
+                            ? 'none'
+                            : 'flex',
+                      }}
+                    >
+                      {manager.name?.charAt(0) || '?'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 text-lg">
+                      {manager.name}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      매니저 ID: {manager.id}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">이름</p>
@@ -303,32 +405,52 @@ const ManagerDetailModal = ({
               documents.documentList &&
               documents.documentList.length > 0 ? (
                 <div className="space-y-4">
-                  {documents.documentList.map((doc, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-500">서류 종류</p>
-                          <p className="text-base text-gray-900">
-                            {getDocumentTypeName(doc.documentType)}
-                          </p>
+                  {documents.documentList.map((doc, index) => {
+                    // 디버깅을 위한 콘솔 로그
+                    // console.log('📄 Document data:', doc);
+                    // console.log('📅 Upload date fields:', doc.createdAt);
+
+                    return (
+                      <div key={doc.id} className="border rounded-lg p-4">
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <div>
+                            <p className="text-sm text-gray-500">서류 종류</p>
+                            <p className="text-base text-gray-900">
+                              {getDocumentTypeName(doc.documentType)}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">{doc.fileExtension?.toUpperCase()} • {doc.fileSize}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm text-gray-500">제출일</p>
+                            <p className="text-base text-gray-900">
+                              {formatDate(doc.createdAt)}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1 truncate" title={doc.originalName}>{doc.originalName}</p>
+                          </div>
+                          <div className="flex justify-end space-x-2">
+                            <a
+                              href={doc.documentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                            >
+                              문서 보기
+                            </a>
+                            <button
+                              onClick={() => handleDownload(doc.id, doc.originalName || `document_${doc.id}`)}
+                              className="ml-2 p-2 rounded-lg hover:bg-gray-100"
+                              title="다운로드"
+                              type="button"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-500">제출일</p>
-                          <p className="text-base text-gray-900">
-                            {formatDate(doc.uploadedAt)}
-                          </p>
-                        </div>
-                        <a
-                          href={doc.documentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                        >
-                          문서 보기
-                        </a>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">

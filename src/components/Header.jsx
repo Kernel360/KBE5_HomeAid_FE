@@ -136,12 +136,12 @@ function Header({
               </div>
             </button>
           )}
-          
+
           <AlertCard 
             onClose={closeAlert}
             isVisible={open}
           />
-          
+
           {user ? (
             // 로그인된 사용자용 버튼들
             <div className="flex items-center gap-3">

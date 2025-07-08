@@ -221,7 +221,40 @@ const UserPaymentComplete = () => {
             {/* 배정된 매니저 정보 */}
             <div className="info-item">
               <span className="info-label">배정 매니저: </span>
-              <span className="info-value">배정중</span>
+              <span className="info-value">
+                {(() => {
+                  // 1. serviceInfo에서 매니저 정보 확인
+                  if (
+                    serviceInfo?.manager &&
+                    serviceInfo.manager !== '매니저 배정 완료 (ID: 10)'
+                  ) {
+                    return serviceInfo.manager;
+                  }
+
+                  // 2. paymentResult에서 매니저 정보 확인
+                  if (paymentResult?.managerName) {
+                    return paymentResult.managerName;
+                  }
+
+                  // 3. reservationData에서 매니저 정보 확인
+                  if (reservationData.managerName) {
+                    return reservationData.managerName;
+                  }
+
+                  // 4. 매니저 ID만 있는 경우
+                  const managerId =
+                    serviceInfo?.managerId ||
+                    paymentResult?.managerId ||
+                    reservationData.managerId;
+
+                  if (managerId) {
+                    return `매니저님 (ID: ${managerId})`;
+                  }
+
+                  // 5. 기본값
+                  return '배정중';
+                })()}
+              </span>
             </div>
 
             {(serviceInfo?.dateTime || reservationData.reservationDate) && (

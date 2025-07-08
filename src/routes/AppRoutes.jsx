@@ -1,5 +1,5 @@
 import { useRoutes, Navigate } from 'react-router-dom';
-import { AuthRoutes } from '../features/auth/routes';
+import AuthRoutes from '../features/auth/routes';
 import { NotFound } from '../shared/NotFound.jsx';
 import { Forbidden } from '../shared/Forbidden.jsx';
 import MainPage from '../features/main/MainPage';

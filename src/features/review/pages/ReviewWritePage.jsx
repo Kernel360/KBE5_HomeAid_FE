@@ -137,15 +137,34 @@ const ReviewWritePage = () => {
           setReservationDetails(transformedReservation);
 
           // 실제 targetId 업데이트
+          console.log('🔍 백엔드 예약 데이터 확인:', backendReservation);
+          console.log('🔍 매니저 ID:', backendReservation.managerId);
+          console.log('🔍 예약 상태:', backendReservation.status);
+          console.log('🔍 사용자 역할:', user?.role);
+
           if (user?.role === 'ROLE_CUSTOMER' && backendReservation.managerId) {
             // 고객이 매니저를 평가하는 경우 - 백엔드에서 받은 실제 매니저ID 사용
+            console.log(
+              '✅ 실제 매니저 ID로 업데이트:',
+              backendReservation.managerId
+            );
             setTargetId(backendReservation.managerId);
           } else if (
             user?.role === 'ROLE_MANAGER' &&
             backendReservation.customerId
           ) {
             // 매니저가 고객을 평가하는 경우
+            console.log(
+              '✅ 실제 고객 ID로 업데이트:',
+              backendReservation.customerId
+            );
             setTargetId(backendReservation.customerId);
+          } else {
+            console.warn('⚠️ targetId 업데이트 실패 - 데이터 부족:', {
+              userRole: user?.role,
+              managerId: backendReservation.managerId,
+              customerId: backendReservation.customerId,
+            });
           }
         }
       } catch (err) {
