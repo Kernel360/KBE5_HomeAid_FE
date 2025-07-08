@@ -10,6 +10,7 @@ import InquiryBoard from '../components/InquiryBoard.jsx';
 import CreateInquiry from '../components/CreateInquiry.jsx';
 import InquiryDetail from '../components/InquiryDetail.jsx';
 import ManagerDocumentUpload from '../components/ManagerDocumentUpload.jsx';
+import SettlementHistory from '../components/SettlementHistory.jsx';
 import ServiceRegistration from '../../../additional-info/pages/index.jsx';
 
 function MatchingInfoView({ onBack }) {
@@ -139,9 +140,16 @@ export default function ManagerMypage() {
           </button>
           <button
             onClick={() => setCurrentView('inquiry')}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full px-6 py-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
             <span className="text-gray-900">💬 1:1 문의하기</span>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+          <button
+            onClick={() => setCurrentView('settlement')}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-gray-900">💰 정산조회하기</span>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
         </div>
@@ -184,11 +192,12 @@ export default function ManagerMypage() {
         />
       );
     case 'matchingInfo':
-      return <ServiceRegistration onBack={() => setCurrentView('main')} />;
+      return <MatchingInfoView onBack={() => setCurrentView('main')} />;
     case 'documentUpload':
       return <ManagerDocumentUpload onBack={() => setCurrentView('main')} />;
+    case 'settlement':
+      return <SettlementHistory onBack={() => setCurrentView('main')} />;
     default:
       return <MainView />;
   }
 }
- 
