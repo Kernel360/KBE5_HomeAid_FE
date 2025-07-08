@@ -76,6 +76,7 @@ apiClient.interceptors.response.use(
         const token = await refreshAccessToken();
         // 새로운 토큰으로 원래 요청의 헤더를 교체
         originalRequest.headers.Authorization = `Bearer ${token}`;
+        useAuthStore.getState().setAccessToken(token);
         // 원래 요청 재시도
         return apiClient(originalRequest);
       } catch (e) {
