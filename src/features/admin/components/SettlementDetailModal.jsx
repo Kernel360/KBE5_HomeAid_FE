@@ -109,7 +109,8 @@ const SettlementDetailModal = ({
                         정산 ID
                       </label>
                       <p className="text-base font-semibold text-gray-900">
-                        #{settlementDetail.id}
+                        #
+                        {settlementDetail.settlement?.id || settlementDetail.id}
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -118,10 +119,18 @@ const SettlementDetailModal = ({
                       </label>
                       <span
                         className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                          getSettlementStatus(settlementDetail.status).color
+                          getSettlementStatus(
+                            settlementDetail.settlement?.status ||
+                              settlementDetail.status
+                          ).color
                         }`}
                       >
-                        {getSettlementStatus(settlementDetail.status).text}
+                        {
+                          getSettlementStatus(
+                            settlementDetail.settlement?.status ||
+                              settlementDetail.status
+                          ).text
+                        }
                       </span>
                     </div>
                     <div className="space-y-1">
@@ -129,8 +138,15 @@ const SettlementDetailModal = ({
                         정산 기간
                       </label>
                       <p className="text-base font-semibold text-gray-900">
-                        {formatDate(settlementDetail.from)} ~{' '}
-                        {formatDate(settlementDetail.to)}
+                        {formatDate(
+                          settlementDetail.settlement?.settlementWeekStart ||
+                            settlementDetail.from
+                        )}{' '}
+                        ~{' '}
+                        {formatDate(
+                          settlementDetail.settlement?.settlementWeekEnd ||
+                            settlementDetail.to
+                        )}
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -138,7 +154,32 @@ const SettlementDetailModal = ({
                         정산 생성일
                       </label>
                       <p className="text-base font-semibold text-gray-900">
-                        {formatDateTime(settlementDetail.settledAt)}
+                        {formatDateTime(
+                          settlementDetail.settlement?.createdAt ||
+                            settlementDetail.settledAt
+                        )}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-sm font-medium text-gray-400 uppercase tracking-wide">
+                        승인일
+                      </label>
+                      <p className="text-base font-semibold text-gray-900">
+                        {formatDateTime(
+                          settlementDetail.settlement?.confirmedAt ||
+                            settlementDetail.confirmedAt
+                        )}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-sm font-medium text-gray-400 uppercase tracking-wide">
+                        지급일
+                      </label>
+                      <p className="text-base font-semibold text-gray-900">
+                        {formatDateTime(
+                          settlementDetail.settlement?.paidAt ||
+                            settlementDetail.paidAt
+                        )}
                       </p>
                     </div>
                   </div>
@@ -155,10 +196,18 @@ const SettlementDetailModal = ({
                     </div>
                     <span
                       className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                        getManagerStatus(settlementDetail.managerStatus).color
+                        getManagerStatus(
+                          settlementDetail.manager?.status ||
+                            settlementDetail.managerStatus
+                        ).color
                       }`}
                     >
-                      {getManagerStatus(settlementDetail.managerStatus).text}
+                      {
+                        getManagerStatus(
+                          settlementDetail.manager?.status ||
+                            settlementDetail.managerStatus
+                        ).text
+                      }
                     </span>
                   </div>
                   <div className="space-y-6">
@@ -167,7 +216,9 @@ const SettlementDetailModal = ({
                         매니저 ID
                       </label>
                       <p className="text-base font-semibold text-gray-900">
-                        #{settlementDetail.managerId}
+                        #
+                        {settlementDetail.manager?.id ||
+                          settlementDetail.managerId}
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -175,7 +226,8 @@ const SettlementDetailModal = ({
                         매니저 이름
                       </label>
                       <p className="text-base font-semibold text-gray-900">
-                        {settlementDetail.managerName}
+                        {settlementDetail.manager?.name ||
+                          settlementDetail.managerName}
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -183,7 +235,8 @@ const SettlementDetailModal = ({
                         연락처
                       </label>
                       <p className="text-base font-semibold text-gray-900">
-                        {settlementDetail.managerPhone}
+                        {settlementDetail.manager?.phone ||
+                          settlementDetail.managerPhone}
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -191,7 +244,16 @@ const SettlementDetailModal = ({
                         이메일
                       </label>
                       <p className="text-base font-semibold text-gray-900">
-                        {settlementDetail.managerEmail}
+                        {settlementDetail.manager?.email ||
+                          settlementDetail.managerEmail}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-sm font-medium text-gray-400 uppercase tracking-wide">
+                        전문분야
+                      </label>
+                      <p className="text-base font-semibold text-gray-900">
+                        {settlementDetail.manager?.specialty || '-'}
                       </p>
                     </div>
                   </div>
@@ -207,7 +269,10 @@ const SettlementDetailModal = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="text-2xl font-bold text-gray-900 mb-2">
-                      {formatCurrency(settlementDetail.totalAmount)}
+                      {formatCurrency(
+                        settlementDetail.settlement?.totalAmount ||
+                          settlementDetail.totalAmount
+                      )}
                     </div>
                     <div className="text-sm font-medium text-gray-600">
                       총 수익
@@ -215,7 +280,10 @@ const SettlementDetailModal = ({
                   </div>
                   <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="text-2xl font-bold text-gray-900 mb-2">
-                      {formatCurrency(settlementDetail.managerAmount)}
+                      {formatCurrency(
+                        settlementDetail.settlement?.managerAmount ||
+                          settlementDetail.managerAmount
+                      )}
                     </div>
                     <div className="text-sm font-medium text-gray-600">
                       매니저 정산액 (80%)
@@ -223,7 +291,10 @@ const SettlementDetailModal = ({
                   </div>
                   <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="text-2xl font-bold text-gray-900 mb-2">
-                      {formatCurrency(settlementDetail.adminAmount)}
+                      {formatCurrency(
+                        settlementDetail.settlement?.adminAmount ||
+                          settlementDetail.adminAmount
+                      )}
                     </div>
                     <div className="text-sm font-medium text-gray-600">
                       관리자 수수료 (20%)
@@ -243,7 +314,11 @@ const SettlementDetailModal = ({
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
-                      총 {settlementDetail.totalPayments}건
+                      총{' '}
+                      {settlementDetail.payments
+                        ? settlementDetail.payments.length
+                        : settlementDetail.totalPayments || 0}
+                      건
                     </span>
                     <button
                       onClick={() =>
@@ -270,11 +345,11 @@ const SettlementDetailModal = ({
                 </div>
 
                 <div
-                  className={`transition-all duration-300 ease-in-out ${isPaymentHistoryOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}
+                  className={`transition-all duration-300 ease-in-out ${isPaymentHistoryOpen ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}
                 >
                   {settlementDetail.payments &&
                   settlementDetail.payments.length > 0 ? (
-                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                    <div className="space-y-3 max-h-none overflow-visible">
                       {settlementDetail.payments.map((payment, index) => (
                         <div
                           key={payment.id || index}
@@ -296,7 +371,9 @@ const SettlementDetailModal = ({
                                     예약 ID
                                   </span>
                                   <span className="text-sm font-semibold text-blue-600">
-                                    #{payment.reservationId}
+                                    #
+                                    {payment.reservation?.id ||
+                                      payment.reservationId}
                                   </span>
                                 </div>
                               </div>
@@ -324,11 +401,41 @@ const SettlementDetailModal = ({
                                           ? '가상계좌'
                                           : payment.paymentMethod === 'MOBILE'
                                             ? '모바일'
-                                            : payment.paymentMethod ||
-                                              '알 수 없음'}
+                                            : payment.paymentMethod ===
+                                                'KAKAO_PAY'
+                                              ? '카카오페이'
+                                              : payment.paymentMethod ===
+                                                  'NAVER_PAY'
+                                                ? '네이버페이'
+                                                : payment.paymentMethod ===
+                                                    'TOSS'
+                                                  ? '토스'
+                                                  : payment.paymentMethod ||
+                                                    '알 수 없음'}
                                   </span>
                                 </div>
+                                {payment.reservation && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                      서비스
+                                    </span>
+                                    <span className="text-sm font-medium text-gray-900">
+                                      {payment.reservation.serviceType ||
+                                        '일반청소'}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
+                              {payment.reservation?.customer && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    고객
+                                  </span>
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {payment.reservation.customer.name}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             <div className="text-right ml-6">
                               <p className="text-xl font-bold text-gray-900 mb-2">
@@ -336,22 +443,39 @@ const SettlementDetailModal = ({
                               </p>
                               <span
                                 className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
+                                  payment.status === 'PAID' ||
                                   payment.status === 'COMPLETED'
                                     ? 'bg-green-100 text-green-800'
-                                    : payment.status === 'PENDING'
+                                    : payment.status === 'PENDING' ||
+                                        payment.status === 'PROCESSING'
                                       ? 'bg-yellow-100 text-yellow-800'
-                                      : payment.status === 'FAILED'
+                                      : payment.status === 'FAILED' ||
+                                          payment.status === 'CANCELLED'
                                         ? 'bg-red-100 text-red-800'
-                                        : 'bg-gray-100 text-gray-800'
+                                        : payment.status === 'PARTIAL_REFUNDED'
+                                          ? 'bg-orange-100 text-orange-800'
+                                          : payment.status === 'REFUNDED'
+                                            ? 'bg-purple-100 text-purple-800'
+                                            : 'bg-gray-100 text-gray-800'
                                 }`}
                               >
-                                {payment.status === 'COMPLETED'
-                                  ? '완료'
+                                {payment.status === 'PAID' ||
+                                payment.status === 'COMPLETED'
+                                  ? '결제완료'
                                   : payment.status === 'PENDING'
-                                    ? '대기'
-                                    : payment.status === 'FAILED'
-                                      ? '실패'
-                                      : payment.status || '알 수 없음'}
+                                    ? '결제대기'
+                                    : payment.status === 'PROCESSING'
+                                      ? '처리중'
+                                      : payment.status === 'FAILED'
+                                        ? '결제실패'
+                                        : payment.status === 'CANCELLED'
+                                          ? '결제취소'
+                                          : payment.status ===
+                                              'PARTIAL_REFUNDED'
+                                            ? '부분환불'
+                                            : payment.status === 'REFUNDED'
+                                              ? '전액환불'
+                                              : payment.status || '알 수 없음'}
                               </span>
                             </div>
                           </div>
@@ -412,20 +536,24 @@ const SettlementDetailModal = ({
                           </p>
                         </div>
                         <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
-                          {formatDateTime(settlementDetail.settledAt)}
+                          {formatDateTime(
+                            settlementDetail.settlement?.createdAt ||
+                              settlementDetail.settledAt
+                          )}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center relative">
                       <div
                         className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center mr-4 ${
+                          settlementDetail.settlement?.confirmedAt ||
                           settlementDetail.confirmedAt
                             ? 'bg-green-500'
                             : 'bg-gray-300'
                         }`}
                       >
                         <svg
-                          className={`w-4 h-4 ${settlementDetail.confirmedAt ? 'text-white' : 'text-gray-500'}`}
+                          className={`w-4 h-4 ${settlementDetail.settlement?.confirmedAt || settlementDetail.confirmedAt ? 'text-white' : 'text-gray-500'}`}
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -439,37 +567,42 @@ const SettlementDetailModal = ({
                       <div className="flex-1 flex justify-between items-center">
                         <div>
                           <h5
-                            className={`text-lg font-semibold ${settlementDetail.confirmedAt ? 'text-gray-900' : 'text-gray-400'}`}
+                            className={`text-lg font-semibold ${settlementDetail.settlement?.confirmedAt || settlementDetail.confirmedAt ? 'text-gray-900' : 'text-gray-400'}`}
                           >
                             승인 완료
                           </h5>
                           <p
-                            className={`text-sm ${settlementDetail.confirmedAt ? 'text-gray-500' : 'text-gray-400'}`}
+                            className={`text-sm ${settlementDetail.settlement?.confirmedAt || settlementDetail.confirmedAt ? 'text-gray-500' : 'text-gray-400'}`}
                           >
                             관리자가 정산을 승인했습니다
                           </p>
                         </div>
                         <span
                           className={`text-sm font-medium px-3 py-1 rounded-lg ${
+                            settlementDetail.settlement?.confirmedAt ||
                             settlementDetail.confirmedAt
                               ? 'text-gray-600 bg-gray-100'
                               : 'text-gray-400 bg-gray-50'
                           }`}
                         >
-                          {formatDateTime(settlementDetail.confirmedAt)}
+                          {formatDateTime(
+                            settlementDetail.settlement?.confirmedAt ||
+                              settlementDetail.confirmedAt
+                          )}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center relative">
                       <div
                         className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center mr-4 ${
+                          settlementDetail.settlement?.paidAt ||
                           settlementDetail.paidAt
                             ? 'bg-green-500'
                             : 'bg-gray-300'
                         }`}
                       >
                         <svg
-                          className={`w-4 h-4 ${settlementDetail.paidAt ? 'text-white' : 'text-gray-500'}`}
+                          className={`w-4 h-4 ${settlementDetail.settlement?.paidAt || settlementDetail.paidAt ? 'text-white' : 'text-gray-500'}`}
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -483,24 +616,28 @@ const SettlementDetailModal = ({
                       <div className="flex-1 flex justify-between items-center">
                         <div>
                           <h5
-                            className={`text-lg font-semibold ${settlementDetail.paidAt ? 'text-gray-900' : 'text-gray-400'}`}
+                            className={`text-lg font-semibold ${settlementDetail.settlement?.paidAt || settlementDetail.paidAt ? 'text-gray-900' : 'text-gray-400'}`}
                           >
                             지급 완료
                           </h5>
                           <p
-                            className={`text-sm ${settlementDetail.paidAt ? 'text-gray-500' : 'text-gray-400'}`}
+                            className={`text-sm ${settlementDetail.settlement?.paidAt || settlementDetail.paidAt ? 'text-gray-500' : 'text-gray-400'}`}
                           >
                             매니저에게 정산금이 지급되었습니다
                           </p>
                         </div>
                         <span
                           className={`text-sm font-medium px-3 py-1 rounded-lg ${
+                            settlementDetail.settlement?.paidAt ||
                             settlementDetail.paidAt
                               ? 'text-gray-600 bg-gray-100'
                               : 'text-gray-400 bg-gray-50'
                           }`}
                         >
-                          {formatDateTime(settlementDetail.paidAt)}
+                          {formatDateTime(
+                            settlementDetail.settlement?.paidAt ||
+                              settlementDetail.paidAt
+                          )}
                         </span>
                       </div>
                     </div>

@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom';
 const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const location = useLocation();
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [ open, setOpen ] = useState(false);
+  const [open, setOpen] = useState(false);
   const notificationAlert = useAlertStore((state) => state.notificationAlert);
 
   // 읽지 않은 알림이 있는지 확인
@@ -53,11 +53,9 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         return '대시보드';
     }
   };
-    
   const openAlert = useCallback(() => {
     setOpen(true);
   }, []);
-    
   const closeAlert = useCallback(() => {
     setOpen(false);
   }, []);
@@ -107,7 +105,7 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
             {getPageTitle()}
           </h1>
         </div>
-        
+
         {/* 중앙 - 알림 아이콘 */}
         <div className="flex items-center">
           <button
@@ -124,7 +122,7 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
             </div>
           </button>
         </div>
-        
+
         <AlertCard onClose={closeAlert} isVisible={open} />
 
         {/* Right side - Real-time Update Indicator */}

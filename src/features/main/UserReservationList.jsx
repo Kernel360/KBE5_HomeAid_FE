@@ -384,25 +384,162 @@ const UserReservationList = () => {
 
   // 결제 가능 여부 확인
   const canMakePayment = (reservation) => {
+    console.log('🔍 UserReservationList - 결제 가능 여부 확인:', {
+      reservationId: reservation?.reservationId || reservation?.id,
+      status: reservation?.status,
+      backendData: reservation?.backendData,
+      fullReservation: reservation, // 전체 예약 객체 로그
+    });
+
+    // ⭐️ 사용자 디버깅 안내
+    console.log(`
+    🔧 결제 버튼 문제 디버깅 안내 (예약 목록):
+    1. 브라우저 개발자 도구(F12)를 열어주세요
+    2. Console 탭에서 위의 로그를 확인하세요
+    3. 'backendData'와 'fullReservation' 객체에서 결제 관련 필드를 찾아보세요
+    4. 결제가 완료되었다면 paymentId, paidAt, paymentStatus 등의 필드가 있어야 합니다
+    `);
+
     const backendData =
       reservation?.backendData?.data || reservation?.backendData || {};
 
-    // 결제 완료 상태 확인
+    console.log('🔍 UserReservationList - 백엔드 데이터 상세 확인:', {
+      'entire backendData': backendData,
+      'backendData keys': Object.keys(backendData),
+      paymentId: backendData.paymentId,
+      paidAt: backendData.paidAt,
+      paymentStatus: backendData.paymentStatus,
+      isPaid: backendData.isPaid,
+      status: backendData.status,
+      // 가능한 모든 결제 관련 필드 확인
+      payment: backendData.payment,
+      paymentInfo: backendData.paymentInfo,
+      paymentResult: backendData.paymentResult,
+      paymentDetails: backendData.paymentDetails,
+      paymentData: backendData.paymentData,
+      isPaymentCompleted: backendData.isPaymentCompleted,
+      paymentCompleted: backendData.paymentCompleted,
+      additionalPaymentInfo: backendData.additionalPaymentInfo,
+    });
+
+    // 1. localStorage에서 최근 결제 완료 정보 확인 (UserReservationDetail과 동일)
+    const reservationId = reservation?.reservationId || reservation?.id;
+    const recentPaymentCompletion = localStorage.getItem(
+      'recentPaymentCompletion'
+    );
+    if (recentPaymentCompletion) {
+      try {
+        const paymentInfo = JSON.parse(recentPaymentCompletion);
+        if (paymentInfo.reservationId === parseInt(reservationId)) {
+          console.log(
+            '🔒 localStorage에서 결제 완료 확인 - 결제 불가능:',
+            paymentInfo
+          );
+          return false;
+        }
+      } catch (error) {
+        console.error('localStorage 결제 정보 파싱 오류:', error);
+      }
+    }
+
+    // 2. 백엔드 데이터에서 결제 완료 상태 확인 (확장된 체크)
     const hasPayment =
+      // 기존 체크 필드들
       backendData.paymentId ||
       backendData.paidAt ||
       backendData.paymentStatus === 'PAID' ||
       backendData.paymentStatus === 'COMPLETED' ||
-      backendData.isPaid === true;
+      backendData.isPaid === true ||
+      // 추가적인 결제 완료 상태 확인
+      backendData.payment ||
+      backendData.paymentInfo ||
+      backendData.paymentResult ||
+      backendData.paymentDetails ||
+      backendData.paymentData ||
+      backendData.isPaymentCompleted === true ||
+      backendData.paymentCompleted === true ||
+      // 상태가 이미 결제 완료를 의미하는 경우
+      backendData.status === 'PAID' ||
+      // 예약 상태가 결제 완료 이후 단계인지 확인
+      (backendData.status === 'MATCHED' && backendData.paymentStatus) ||
+      // 별도 조회한 결제 정보 확인
+      backendData.additionalPaymentInfo;
 
-    if (hasPayment) return false;
+    // 3. 실제 예약 객체 자체에서도 결제 정보 확인
+    const reservationHasPayment =
+      reservation?.paymentId ||
+      reservation?.paidAt ||
+      reservation?.paymentStatus === 'PAID' ||
+      reservation?.paymentStatus === 'COMPLETED' ||
+      reservation?.isPaid === true ||
+      reservation?.payment ||
+      reservation?.paymentInfo;
 
-    // 매칭 확인 상태 체크
+    if (hasPayment || reservationHasPayment) {
+      console.log('🔒 백엔드에서 결제 완료 확인 - 결제 불가능:', {
+        hasPayment,
+        reservationHasPayment,
+        paymentId: backendData.paymentId || reservation?.paymentId,
+        paidAt: backendData.paidAt || reservation?.paidAt,
+        paymentStatus: backendData.paymentStatus || reservation?.paymentStatus,
+        isPaid: backendData.isPaid || reservation?.isPaid,
+      });
+      return false;
+    }
+
+    // 4. ⭐️ 임시 해결책: "completed" 상태이고 현재 시간이 예약 생성 시간보다 30분 이후라면 결제 완료로 간주
+    const status = reservation?.status;
+    if (status === 'completed' || status === 'MATCHED') {
+      const reservationCreatedAt =
+        reservation?.createdAt || reservation?.backendData?.createdAt;
+      if (reservationCreatedAt) {
+        const createdTime = new Date(reservationCreatedAt);
+        const now = new Date();
+        const timeDiff = now - createdTime;
+        const thirtyMinutes = 30 * 60 * 1000; // 30분을 밀리초로
+
+        if (timeDiff > thirtyMinutes) {
+          console.log(
+            '🔒 임시 해결책 (목록): 생성 후 30분 경과된 completed/MATCHED 상태 - 결제 완료로 간주'
+          );
+          return false;
+        }
+      }
+    }
+
+    // 5. localStorage에서 결제 완료 상태 확인 (UserReservationDetail과 동일)
+    const paymentCompletedKey = `payment_completed_${reservationId}`;
+    const reservationStatusKey = `reservation_status_${reservationId}`;
+
+    const paymentCompleted = localStorage.getItem(paymentCompletedKey);
+    const reservationStatus = localStorage.getItem(reservationStatusKey);
+
+    if (paymentCompleted || reservationStatus) {
+      try {
+        const statusData = reservationStatus
+          ? JSON.parse(reservationStatus)
+          : null;
+        if (
+          statusData?.status === 'COMPLETED' &&
+          statusData?.paymentCompleted
+        ) {
+          console.log('🔒 localStorage 예약 상태에서 결제 완료 확인:', {
+            reservationId,
+            statusData,
+          });
+          return false;
+        }
+      } catch (error) {
+        console.error('예약 상태 파싱 오류:', error);
+      }
+    }
+
+    // 6. 매칭 확인 상태 체크
     const isMatchingConfirmed =
       backendData.matchingStatus === 'CONFIRMED' ||
       backendData.matchingStatus === 'ACCEPTED';
 
-    // 매칭 완료 상태 체크
+    // 7. 매칭 완료 상태 체크
     const isMatched =
       reservation.status === 'MATCHED' ||
       backendData.status === 'MATCHED' ||
@@ -410,15 +547,27 @@ const UserReservationList = () => {
       backendData.status === 'CONFIRMED' ||
       reservation.status === 'completed'; // 프론트엔드 매핑된 상태도 포함
 
-    // 매니저 정보가 있는지 확인
+    // 8. 매니저 정보가 있는지 확인
     const hasManager =
       backendData.managerId ||
       backendData.manager ||
       backendData.matchedManagerId ||
       backendData.matchedManagerName;
 
-    // 최종 결제 가능 판단
-    return (isMatched && isMatchingConfirmed) || (isMatched && hasManager);
+    // 9. 최종 결제 가능 판단
+    const canPay =
+      (isMatched && isMatchingConfirmed) || (isMatched && hasManager);
+
+    console.log('💳 UserReservationList - 최종 결제 가능 여부:', {
+      reservationId,
+      isMatched,
+      isMatchingConfirmed,
+      hasManager,
+      canPay,
+      '최종 결정': canPay,
+    });
+
+    return canPay;
   };
 
   // 결제 페이지로 이동
