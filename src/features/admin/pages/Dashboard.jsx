@@ -179,9 +179,9 @@ const Dashboard = () => {
     fetchDashboardStats();
 
     // 30초마다 데이터 새로고침 (실시간 업데이트)
-    const interval = setInterval(fetchDashboardStats, 30000);
+    //const interval = setInterval(fetchDashboardStats, 30000);
 
-    return () => clearInterval(interval);
+    //return () => clearInterval(interval);
   }, []);
 
   // 관리자용 통계 카드 설정

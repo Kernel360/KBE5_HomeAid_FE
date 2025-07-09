@@ -572,14 +572,14 @@ const CustomerPayment = () => {
   }, [allPayments, allRefunds]);
 
   // 정기적 자동 새로고침 (30초마다) - 실시간 동기화
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      console.log('🔄 자동 새로고침 실행 (30초 주기)');
-      await fetchPayments(); // fetchPayments 내에서 fetchRefunds도 함께 호출됨
-    }, 30000); // 30초마다
+  // useEffect(() => {
+  //   const interval = setInterval(async () => {
+  //     console.log('🔄 자동 새로고침 실행 (30초 주기)');
+  //     await fetchPayments(); // fetchPayments 내에서 fetchRefunds도 함께 호출됨
+  //   }, 30000); // 30초마다
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // 검색 핸들러 - 리뷰 관리와 동일한 방식
   const handleSearch = () => {
