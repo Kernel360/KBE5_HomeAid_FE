@@ -17,9 +17,7 @@ export const apiService = {
     createProfile: (data) => api.post('/manager/profile', data),
     uploadCertifications: (formData) =>
       api.post('/manager/profile/certifications', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       }),
     updateCertifications: (formData) =>
       api.put('/manager/profile/certifications', formData, {
@@ -86,7 +84,7 @@ export const apiService = {
   serviceOption: {
     getAll: () => api.get('/admin/service-option'),
     getById: (id) => api.get(`/service-option/${id}`),
-    create: (data) => api.post('/managers/profile', data),
+    create: (data) => api.post('/manager/profile', data),
     update: (id, data) => api.put(`/service-option/${id}`, data),
     delete: (id) => api.delete(`/service-option/${id}`),
   },
@@ -108,25 +106,12 @@ export const apiService = {
       api.post('/admin/matchings', { reservationId, managerId }),
   },
   workLog: {
-    checkIn: (data) => api.post('/managers/work-logs', data),
-    checkOut: (reservationId, data) =>
-      api.patch(`/managers/work-logs/${reservationId}`, data),
-    createIssue: (reservationId, formData) =>
-      api.post(`/manager/reservations/${reservationId}/issues`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }),
-    getIssue: (reservationId) =>
-      api.get(`/reservations/${reservationId}/issues`),
-    updateIssue: (issueId, formData) =>
-      api.put(`/manager/issues/${issueId}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }),
-    deleteIssue: (issueId) => api.delete(`/manager/issues/${issueId}`),
+    checkIn: (matchingId, data) => api.patch(`/managers/work-logs/matchings/${matchingId}/check-in`, data),
+    checkOut: (matchingId, data) =>
+      api.patch(`/managers/work-logs/matchings/${matchingId}/check-out`, data),
+    getWorkLog: (matchingId) => api.get(`/managers/work-logs/matchings/${matchingId}`),
   },
+
   settlement: {
     getManagerSettlements: (managerId, params = {}) => {
       const queryParams = new URLSearchParams(params);
@@ -138,7 +123,7 @@ export const apiService = {
     },
   },
   alert: {
-    updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
-  },
+  updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
+  }
 };
 export default apiService;
