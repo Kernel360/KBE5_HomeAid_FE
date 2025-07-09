@@ -26,7 +26,7 @@ const sseEmitter = {
                 'Accept': 'text/event-stream',
             },
             withCredentials: true,
-            heartbeatTimeout: 90000 //900000 15분 sse 타임아웃 10분 보다 5분 더 길게 설정
+            //기본 설정 45초동안 sse 액션이 없으면 연결종료 서버는 30초마다 ping 이벤트를 보냄 
         });
 
         eventSource.onopen = () => {
