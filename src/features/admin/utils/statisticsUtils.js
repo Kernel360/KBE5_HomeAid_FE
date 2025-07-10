@@ -60,12 +60,77 @@ export const generateChartPath = (values, max) => {
 };
 
 /**
+ * 해당 년도/월의 일수를 반환하는 함수
+ * @param {number} year - 연도
+ * @param {number} month - 월 (1-12)
+ * @returns {number} 해당 월의 일수
+ */
+export const getDaysInMonth = (year, month) => {
+  return new Date(year, month, 0).getDate();
+};
+
+/**
+ * 선택된 월의 일별 라벨을 생성하는 함수
+ * @param {number} year - 선택된 연도
+ * @param {number} month - 선택된 월 (1-12)
+ * @returns {string[]} 일별 라벨 배열
+ */
+export const generateDailyLabels = (year, month) => {
+  if (!month) {
+    // 월이 선택되지 않은 경우 월별 라벨 반환
+    return [
+      '1월',
+      '2월',
+      '3월',
+      '4월',
+      '5월',
+      '6월',
+      '7월',
+      '8월',
+      '9월',
+      '10월',
+      '11월',
+      '12월',
+    ];
+  }
+
+  const daysInMonth = getDaysInMonth(year, month);
+  return Array.from({ length: daysInMonth }, (_, i) => `${i + 1}일`);
+};
+
+/**
+ * 선택된 월의 일별 더미 데이터를 생성하는 함수
+ * @param {number} baseValue - 기준값
+ * @param {number} daysCount - 일수
+ * @returns {number[]} 일별 더미 데이터 배열
+ */
+export const generateDailyValues = (baseValue, daysCount) => {
+  return Array.from({ length: daysCount }, (_, i) => {
+    // 월 초부터 점진적으로 증가하는 패턴
+    const progress = i / (daysCount - 1);
+    const randomFactor = 0.8 + Math.random() * 0.4; // 0.8~1.2 사이의 랜덤값
+    return Math.round(baseValue * (0.3 + progress * 0.7) * randomFactor);
+  });
+};
+
+/**
  * 차트 데이터 생성 함수
  * @param {string} activeTab - 활성 탭
  * @param {Object} stats - 통계 데이터
+ * @param {number} selectedYear - 선택된 연도
+ * @param {number} selectedMonth - 선택된 월
  * @returns {Object} 차트 데이터
  */
-export const generateChartData = (activeTab, stats) => {
+export const generateChartData = (
+  activeTab,
+  stats,
+  selectedYear,
+  selectedMonth
+) => {
+  // 라벨 생성 (월별 또는 일별)
+  const labels = generateDailyLabels(selectedYear, selectedMonth);
+  const dataCount = labels.length;
+
   if (activeTab === '회원현황' && stats) {
     const totalUsers = Number(stats.totalUsers) || 100;
     const signupCount = Number(stats.signupCount) || 0;
@@ -73,18 +138,9 @@ export const generateChartData = (activeTab, stats) => {
     const maxValue = Math.max(totalUsers, 100);
 
     return {
-      values: [
-        totalUsers * 0.7,
-        totalUsers * 0.75,
-        totalUsers * 0.8,
-        totalUsers * 0.85,
-        totalUsers * 0.9,
-        totalUsers * 0.95,
-        totalUsers,
-        totalUsers,
-      ],
+      values: generateDailyValues(totalUsers, dataCount),
       max: maxValue * 1.2,
-      labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
+      labels,
       mainValue: totalUsers,
       subValues: [signupCount, withdrawCount],
     };
@@ -94,18 +150,9 @@ export const generateChartData = (activeTab, stats) => {
     const maxValue = Math.max(requestedCount, 10);
 
     return {
-      values: [
-        paidCount * 0.3,
-        paidCount * 0.5,
-        paidCount * 0.65,
-        paidCount * 0.75,
-        paidCount * 0.85,
-        paidCount * 0.9,
-        paidCount * 0.95,
-        paidCount,
-      ],
+      values: generateDailyValues(paidCount, dataCount),
       max: maxValue * 1.2,
-      labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
+      labels,
       mainValue: requestedCount,
       subValues: [paidCount, requestedCount - paidCount],
     };
@@ -115,18 +162,9 @@ export const generateChartData = (activeTab, stats) => {
     const maxValue = Math.max(totalAmount, 1000);
 
     return {
-      values: [
-        totalAmount * 0.4,
-        totalAmount * 0.55,
-        totalAmount * 0.7,
-        totalAmount * 0.8,
-        totalAmount * 0.85,
-        totalAmount * 0.9,
-        totalAmount * 0.95,
-        totalAmount,
-      ],
+      values: generateDailyValues(totalAmount, dataCount),
       max: maxValue * 1.2,
-      labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
+      labels,
       mainValue: totalAmount,
       subValues: [totalAmount - cancelAmount, cancelAmount],
     };
@@ -136,18 +174,9 @@ export const generateChartData = (activeTab, stats) => {
     const maxValue = Math.max(reservationCount, 100);
 
     return {
-      values: [
-        reservationCount * 0.3,
-        reservationCount * 0.45,
-        reservationCount * 0.6,
-        reservationCount * 0.75,
-        reservationCount * 0.8,
-        reservationCount * 0.85,
-        reservationCount * 0.95,
-        reservationCount,
-      ],
+      values: generateDailyValues(reservationCount, dataCount),
       max: maxValue * 1.2,
-      labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
+      labels,
       mainValue: reservationCount,
       subValues: [reservationCount - cancelledCount, cancelledCount],
     };
@@ -157,18 +186,9 @@ export const generateChartData = (activeTab, stats) => {
     const maxValue = Math.max(avgRating, 5);
 
     return {
-      values: [
-        avgRating * 0.7,
-        avgRating * 0.75,
-        avgRating * 0.8,
-        avgRating * 0.85,
-        avgRating * 0.9,
-        avgRating * 0.95,
-        avgRating * 0.98,
-        avgRating,
-      ],
+      values: generateDailyValues(avgRating, dataCount),
       max: maxValue * 1.2,
-      labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
+      labels,
       mainValue: avgRating,
       subValues: [reviewCount],
     };
@@ -178,18 +198,9 @@ export const generateChartData = (activeTab, stats) => {
     const maxValue = Math.max(totalCount, 100);
 
     return {
-      values: [
-        totalCount * 0.25,
-        totalCount * 0.4,
-        totalCount * 0.55,
-        totalCount * 0.7,
-        totalCount * 0.8,
-        totalCount * 0.9,
-        totalCount * 0.95,
-        totalCount,
-      ],
+      values: generateDailyValues(totalCount, dataCount),
       max: maxValue * 1.2,
-      labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월'],
+      labels,
       mainValue: totalCount,
       subValues: [successCount, stats.failCount],
     };

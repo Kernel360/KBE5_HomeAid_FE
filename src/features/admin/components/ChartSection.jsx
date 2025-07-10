@@ -11,9 +11,17 @@ import {
  * @param {string} props.activeTab - 활성 탭
  * @param {Object} props.stats - 통계 데이터
  * @param {boolean} props.loading - 로딩 상태
+ * @param {number} props.selectedYear - 선택된 연도
+ * @param {number} props.selectedMonth - 선택된 월
  * @returns {JSX.Element} 차트 섹션 컴포넌트
  */
-const ChartSection = ({ activeTab, stats, loading }) => {
+const ChartSection = ({
+  activeTab,
+  stats,
+  loading,
+  selectedYear,
+  selectedMonth,
+}) => {
   const chartTitle = getChartTitle(activeTab);
 
   // 전체 탭의 경우 차트 대신 메시지 표시
@@ -87,7 +95,12 @@ const ChartSection = ({ activeTab, stats, loading }) => {
   }
 
   // 차트 데이터 생성
-  const chartData = generateChartData(activeTab, stats);
+  const chartData = generateChartData(
+    activeTab,
+    stats,
+    selectedYear,
+    selectedMonth
+  );
   const { values, max, labels } = chartData;
   const chartPath = generateChartPath(values, max);
   const fillPath = chartPath + ' L750,200 L50,200 Z';
@@ -127,27 +140,76 @@ const ChartSection = ({ activeTab, stats, loading }) => {
           </defs>
           <path d={chartPath} fill="none" stroke="#3B82F6" strokeWidth="3" />
           <path d={fillPath} fill="url(#chartGradient)" />
-          {values.map((value, index) => {
-            const x = 50 + index * (700 / (values.length - 1));
-            const y = 160 - (value / max) * 160 + 40;
-            return (
-              <circle
-                key={index}
-                cx={x}
-                cy={y}
-                r="4"
-                fill="#3B82F6"
-                stroke="white"
-                strokeWidth="2"
-              />
-            );
-          })}
         </svg>
-        <div className="absolute bottom-4 left-6 flex justify-between w-full pr-12 text-sm text-gray-600">
-          {labels.slice(0, 5).map((label, index) => (
-            <span key={index}>{label}</span>
-          ))}
-        </div>
+        {/* 라벨들을 SVG 내부에 위치시켜서 정확한 위치 조정 */}
+        <svg
+          viewBox="0 0 800 240"
+          className="absolute bottom-0 left-0 w-full h-full pointer-events-none"
+        >
+          {(() => {
+            // 월별 라벨인 경우 (전체 선택)
+            if (!selectedMonth) {
+              const displayLabels = labels.slice(0, 6);
+              return displayLabels.map((label, index) => {
+                const x = 50 + index * (700 / (displayLabels.length - 1));
+                return (
+                  <text
+                    key={index}
+                    x={x}
+                    y={230}
+                    textAnchor="middle"
+                    className="text-xs fill-gray-600"
+                    fontSize="12"
+                  >
+                    {label}
+                  </text>
+                );
+              });
+            }
+
+            // 일별 라벨인 경우 (특정 월 선택)
+            const totalDays = labels.length;
+            let displayLabels = [];
+            let displayIndices = [];
+
+            if (totalDays <= 7) {
+              // 7일 이하면 모든 라벨 표시
+              displayLabels = [...labels];
+              displayIndices = labels.map((_, i) => i);
+            } else {
+              // 7일 초과면 적절한 간격으로 최대 5개 표시
+              const maxLabels = 5;
+              const interval = Math.floor(totalDays / (maxLabels - 1));
+
+              for (let i = 0; i < maxLabels - 1; i++) {
+                const index = i * interval;
+                displayLabels.push(labels[index]);
+                displayIndices.push(index);
+              }
+
+              // 마지막 날 추가
+              displayLabels.push(labels[totalDays - 1]);
+              displayIndices.push(totalDays - 1);
+            }
+
+            return displayLabels.map((label, index) => {
+              const originalIndex = displayIndices[index];
+              const x = 50 + originalIndex * (700 / (totalDays - 1));
+              return (
+                <text
+                  key={index}
+                  x={x}
+                  y={230}
+                  textAnchor="middle"
+                  className="text-xs fill-gray-600"
+                  fontSize="12"
+                >
+                  {label}
+                </text>
+              );
+            });
+          })()}
+        </svg>
       </div>
     </div>
   );

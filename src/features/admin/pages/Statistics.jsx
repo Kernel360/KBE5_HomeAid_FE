@@ -446,6 +446,8 @@ const Statistics = () => {
               activeTab={activeMainTab}
               stats={getCurrentStats()}
               loading={loading}
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
             />
 
             {/* Distribution Chart */}
