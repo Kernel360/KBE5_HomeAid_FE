@@ -98,12 +98,14 @@ const Statistics = () => {
   const [matchingStats, setMatchingStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [noData, setNoData] = useState(false); // 데이터 없음 상태
 
   // 통계 데이터 로드
   const loadStats = async () => {
     try {
       setLoading(true);
       setError(null);
+      setNoData(false); // 데이터 없음 상태 초기화
       console.log('📊 통계 로딩 시작:', {
         selectedYear,
         selectedMonth,
@@ -185,40 +187,17 @@ const Statistics = () => {
 
       // 404 오류인 경우 (데이터가 없는 경우)
       if (err.message && err.message.includes('404')) {
-        console.log('📅 404 오류 발생, 어제 날짜로 리셋 중...');
-
-        // 어제 날짜로 자동 리셋
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayYear = yesterday.getFullYear();
-        const yesterdayMonth = yesterday.getMonth() + 1;
-
-        // 선택된 날짜가 어제 날짜와 다른 경우에만 리셋
-        if (
-          selectedYear !== yesterdayYear ||
-          selectedMonth !== yesterdayMonth
-        ) {
-          setSelectedYear(yesterdayYear);
-          setSelectedMonth(yesterdayMonth);
-          setSelectedDay(null);
-
-          setError(
-            `${selectedYear}년 ${selectedMonth}월 데이터가 없습니다. 어제 날짜(${yesterdayYear}년 ${yesterdayMonth}월)로 자동 조회합니다.`
-          );
-
-          // 3초 후 오류 메시지 자동 제거
-          setTimeout(() => {
-            setError(null);
-          }, 3000);
-
-          return; // 리셋 후 다시 로드되므로 여기서 종료
-        }
-
-        setError(
-          `선택한 날짜의 통계 데이터가 존재하지 않습니다. 다른 날짜를 선택해주세요.`
+        console.log(
+          '📅 데이터 없음: 선택한 날짜에 통계 데이터가 존재하지 않습니다.'
         );
+
+        // 오류가 아닌 데이터 없음 상태로 처리
+        setNoData(true);
+        setError(null);
       } else {
+        // 실제 API 오류인 경우만 error 상태로 처리
         setError('통계 데이터를 불러오는 중 오류가 발생했습니다.');
+        setNoData(false);
       }
     } finally {
       setLoading(false);
@@ -403,6 +382,37 @@ const Statistics = () => {
                   >
                     다시 시도
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* No Data Message */}
+          {noData && !error && (
+            <div className="w-full bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-blue-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-blue-700 mt-1">
+                    {selectedYear}년{selectedMonth ? ` ${selectedMonth}월` : ''}
+                    {selectedDay ? ` ${selectedDay}일` : ''}에 해당하는 통계
+                    데이터가 없습니다.
+                    <br />
+                    다른 날짜를 선택하시거나 데이터가 생성될 때까지 기다려
+                    주세요.
+                  </p>
                 </div>
               </div>
             </div>

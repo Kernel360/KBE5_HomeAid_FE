@@ -421,7 +421,9 @@ const CustomerPayment = () => {
             customerName: payment.customerName || '알 수 없음',
             managerName: '매니저 정보 없음',
             serviceName: '홈케어 서비스',
-            amount: payment.amount || 0,
+            amount: payment.netAmount || payment.amount || 0,
+            originalAmount: payment.amount || 0,
+            refundedAmount: payment.refundedAmount || 0,
             method: payment.paymentMethod || 'CARD',
             status: payment.status || 'PENDING',
             createdAt: payment.paidAt
@@ -518,13 +520,16 @@ const CustomerPayment = () => {
 
   // 통계 데이터 가져오기 (백엔드에 통계 API가 없으므로 클라이언트에서 계산)
   const calculateStats = (paymentsData, refundsData = []) => {
+    // 실제 결제금액 (환불 제외)
     const totalPayment = paymentsData
       .filter((p) => p.status === 'PAID')
       .reduce((sum, p) => sum + p.amount, 0);
 
-    const refundAmount = paymentsData
-      .filter((p) => p.status === 'REFUNDED')
-      .reduce((sum, p) => sum + p.amount, 0);
+    // 환불된 총 금액 계산 (refundedAmount 기준)
+    const refundAmount = paymentsData.reduce(
+      (sum, p) => sum + (p.refundedAmount || 0),
+      0
+    );
 
     const totalCount = paymentsData.length;
     const completedCount = paymentsData.filter(
