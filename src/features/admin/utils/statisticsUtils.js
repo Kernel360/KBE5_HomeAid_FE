@@ -127,86 +127,188 @@ export const generateChartData = (
   selectedYear,
   selectedMonth
 ) => {
-  // 라벨 생성 (월별 또는 일별)
-  const labels = generateDailyLabels(selectedYear, selectedMonth);
-  const dataCount = labels.length;
-
-  if (activeTab === '회원현황' && stats) {
-    const totalUsers = Number(stats.totalUsers) || 100;
-    const signupCount = Number(stats.signupCount) || 0;
-    const withdrawCount = Number(stats.withdrawCount) || 0;
-    const maxValue = Math.max(totalUsers, 100);
-
-    return {
-      values: generateDailyValues(totalUsers, dataCount),
-      max: maxValue * 1.2,
-      labels,
-      mainValue: totalUsers,
-      subValues: [signupCount, withdrawCount],
-    };
-  } else if (activeTab === '정산' && stats) {
-    const requestedCount = Number(stats.requestedCount) || 10;
-    const paidCount = Number(stats.paidCount) || 0;
-    const maxValue = Math.max(requestedCount, 10);
-
-    return {
-      values: generateDailyValues(paidCount, dataCount),
-      max: maxValue * 1.2,
-      labels,
-      mainValue: requestedCount,
-      subValues: [paidCount, requestedCount - paidCount],
-    };
-  } else if (activeTab === '결제' && stats) {
-    const totalAmount = Number(stats.totalAmount) || 1000;
-    const cancelAmount = Number(stats.cancelAmount) || 0;
-    const maxValue = Math.max(totalAmount, 1000);
-
-    return {
-      values: generateDailyValues(totalAmount, dataCount),
-      max: maxValue * 1.2,
-      labels,
-      mainValue: totalAmount,
-      subValues: [totalAmount - cancelAmount, cancelAmount],
-    };
-  } else if (activeTab === '예약관리' && stats) {
-    const reservationCount = Number(stats.reservationCount) || 100;
-    const cancelledCount = Number(stats.cancelledCount) || 0;
-    const maxValue = Math.max(reservationCount, 100);
-
-    return {
-      values: generateDailyValues(reservationCount, dataCount),
-      max: maxValue * 1.2,
-      labels,
-      mainValue: reservationCount,
-      subValues: [reservationCount - cancelledCount, cancelledCount],
-    };
-  } else if (activeTab === '매니저별점' && stats) {
-    const avgRating = Number(stats.avgRating) || 4.0;
-    const reviewCount = Number(stats.reviewCount) || 100;
-    const maxValue = Math.max(avgRating, 5);
-
-    return {
-      values: generateDailyValues(avgRating, dataCount),
-      max: maxValue * 1.2,
-      labels,
-      mainValue: avgRating,
-      subValues: [reviewCount],
-    };
-  } else if (activeTab === '매칭' && stats) {
-    const totalCount = Number(stats.totalCount) || 100;
-    const successCount = Number(stats.successCount) || 0;
-    const maxValue = Math.max(totalCount, 100);
-
-    return {
-      values: generateDailyValues(totalCount, dataCount),
-      max: maxValue * 1.2,
-      labels,
-      mainValue: totalCount,
-      subValues: [successCount, stats.failCount],
-    };
+  // 통계 데이터가 없거나 유효하지 않으면 빈 데이터 반환
+  if (!stats) {
+    return { values: [], max: 100, labels: [], hasData: false };
   }
 
-  return { values: [], max: 100, labels: [] };
+  // 현재 날짜 기준으로 실제 데이터가 있는 날짜만 처리
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1;
+  const currentDay = today.getDate();
+
+  // 선택된 월이 현재 월보다 미래이거나, 같은 월에서 미래 날짜인 경우 데이터 없음 처리
+  if (selectedMonth) {
+    if (
+      selectedYear > currentYear ||
+      (selectedYear === currentYear && selectedMonth > currentMonth)
+    ) {
+      return { values: [], max: 100, labels: [], hasData: false };
+    }
+
+    // 현재 월인 경우 오늘까지만 라벨 생성
+    const isCurrentMonth =
+      selectedYear === currentYear && selectedMonth === currentMonth;
+    const maxDay = isCurrentMonth
+      ? currentDay
+      : getDaysInMonth(selectedYear, selectedMonth);
+
+    const labels = Array.from({ length: maxDay }, (_, i) => `${i + 1}일`);
+
+    // 실제 데이터가 있는지 확인하고 단일 값만 반환 (더미 데이터 생성하지 않음)
+    if (activeTab === '회원현황') {
+      const totalUsers = Number(stats.totalUsers) || 0;
+      const signupCount = Number(stats.signupCount) || 0;
+      const withdrawCount = Number(stats.withdrawCount) || 0;
+
+      if (totalUsers === 0 && signupCount === 0 && withdrawCount === 0) {
+        return { values: [], max: 100, labels: [], hasData: false };
+      }
+
+      // 실제 값 하나만 표시 (오늘의 값)
+      const values = [totalUsers];
+      const maxValue = Math.max(totalUsers, 100);
+
+      return {
+        values,
+        max: maxValue * 1.2,
+        labels: labels.slice(-1), // 마지막 날짜만
+        mainValue: totalUsers,
+        subValues: [signupCount, withdrawCount],
+        hasData: true,
+      };
+    } else if (activeTab === '정산') {
+      const requestedCount = Number(stats.requestedCount) || 0;
+      const paidCount = Number(stats.paidCount) || 0;
+
+      if (requestedCount === 0 && paidCount === 0) {
+        return { values: [], max: 100, labels: [], hasData: false };
+      }
+
+      const values = [paidCount];
+      const maxValue = Math.max(requestedCount, 10);
+
+      return {
+        values,
+        max: maxValue * 1.2,
+        labels: labels.slice(-1),
+        mainValue: requestedCount,
+        subValues: [paidCount, requestedCount - paidCount],
+        hasData: true,
+      };
+    } else if (activeTab === '결제') {
+      const totalAmount = Number(stats.totalAmount) || 0;
+      const cancelAmount = Number(stats.cancelAmount) || 0;
+
+      if (totalAmount === 0 && cancelAmount === 0) {
+        return { values: [], max: 100, labels: [], hasData: false };
+      }
+
+      const values = [totalAmount];
+      const maxValue = Math.max(totalAmount, 1000);
+
+      return {
+        values,
+        max: maxValue * 1.2,
+        labels: labels.slice(-1),
+        mainValue: totalAmount,
+        subValues: [totalAmount - cancelAmount, cancelAmount],
+        hasData: true,
+      };
+    } else if (activeTab === '예약관리') {
+      const reservationCount = Number(stats.reservationCount) || 0;
+      const cancelledCount = Number(stats.cancelledCount) || 0;
+
+      if (reservationCount === 0 && cancelledCount === 0) {
+        return { values: [], max: 100, labels: [], hasData: false };
+      }
+
+      const values = [reservationCount];
+      const maxValue = Math.max(reservationCount, 100);
+
+      return {
+        values,
+        max: maxValue * 1.2,
+        labels: labels.slice(-1),
+        mainValue: reservationCount,
+        subValues: [reservationCount - cancelledCount, cancelledCount],
+        hasData: true,
+      };
+    } else if (activeTab === '매니저별점') {
+      const avgRating = Number(stats.avgRating) || 0;
+      const reviewCount = Number(stats.reviewCount) || 0;
+
+      if (avgRating === 0 && reviewCount === 0) {
+        return { values: [], max: 100, labels: [], hasData: false };
+      }
+
+      const values = [avgRating];
+      const maxValue = Math.max(avgRating, 5);
+
+      return {
+        values,
+        max: maxValue * 1.2,
+        labels: labels.slice(-1),
+        mainValue: avgRating,
+        subValues: [reviewCount],
+        hasData: true,
+      };
+    } else if (activeTab === '매칭') {
+      const totalCount = Number(stats.totalCount) || 0;
+      const successCount = Number(stats.successCount) || 0;
+      const failCount = Number(stats.failCount) || 0;
+
+      if (totalCount === 0 && successCount === 0 && failCount === 0) {
+        return { values: [], max: 100, labels: [], hasData: false };
+      }
+
+      const values = [totalCount];
+      const maxValue = Math.max(totalCount, 100);
+
+      return {
+        values,
+        max: maxValue * 1.2,
+        labels: labels.slice(-1),
+        mainValue: totalCount,
+        subValues: [successCount, failCount],
+        hasData: true,
+      };
+    }
+  } else {
+    // 전체 선택 시 (월별 라벨)
+    const labels = [
+      '1월',
+      '2월',
+      '3월',
+      '4월',
+      '5월',
+      '6월',
+      '7월',
+      '8월',
+      '9월',
+      '10월',
+      '11월',
+      '12월',
+    ];
+    const currentMonthLabels = labels.slice(0, currentMonth);
+
+    // 간단한 단일 값 표시
+    if (activeTab === '회원현황') {
+      const totalUsers = Number(stats.totalUsers) || 0;
+      if (totalUsers === 0) {
+        return { values: [], max: 100, labels: [], hasData: false };
+      }
+      return {
+        values: [totalUsers],
+        max: totalUsers * 1.2,
+        labels: currentMonthLabels.slice(-1),
+        hasData: true,
+      };
+    }
+  }
+
+  return { values: [], max: 100, labels: [], hasData: false };
 };
 
 /**
