@@ -289,15 +289,7 @@ const SettlementDetailModal = ({
 
                   return (
                     <>
-                      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="text-sm text-blue-800 font-medium mb-2">
-                          💰 최종 정산 금액
-                        </div>
-                        <div className="text-xs text-blue-600 mb-3">
-                          ※ 아래 금액들은 환불을 제외한 실제 정산 금액입니다
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                           <div className="text-2xl font-bold text-blue-900 mb-2">
                             {formatCurrency(actualTotalAmount)}
@@ -316,9 +308,6 @@ const SettlementDetailModal = ({
                           <div className="text-sm font-medium text-green-700">
                             매니저 정산액 (80%)
                           </div>
-                          <div className="text-xs text-green-600 mt-1">
-                            실제 지급 금액
-                          </div>
                         </div>
                         <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
                           <div className="text-2xl font-bold text-purple-900 mb-2">
@@ -330,23 +319,16 @@ const SettlementDetailModal = ({
                           <div className="text-sm font-medium text-purple-700">
                             관리자 수수료 (20%)
                           </div>
-                          <div className="text-xs text-purple-600 mt-1">
-                            실제 수익 금액
+                        </div>
+                        <div className="text-center p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                          <div className="text-2xl font-bold text-orange-900 mb-2">
+                            {formatCurrency(totalRefunded)}
+                          </div>
+                          <div className="text-sm font-medium text-orange-700">
+                            총 환불 금액
                           </div>
                         </div>
                       </div>
-                      {totalRefunded > 0 && (
-                        <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <div className="text-xs text-gray-600 font-medium mb-1">
-                            📊 참고 정보
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            이번 정산 기간에 총 {formatCurrency(totalRefunded)}
-                            의 환불이 발생했으며, 위 금액들은 환불을 제외한 최종
-                            정산 금액입니다.
-                          </div>
-                        </div>
-                      )}
                     </>
                   );
                 })()}
@@ -475,13 +457,15 @@ const SettlementDetailModal = ({
                                   </div>
                                 )}
                               </div>
-                              {payment.reservation?.customer && (
+                              {(payment.customerName ||
+                                payment.reservation?.customer?.name) && (
                                 <div className="flex items-center gap-2 mt-2">
                                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     고객
                                   </span>
                                   <span className="text-sm font-medium text-gray-900">
-                                    {payment.reservation.customer.name}
+                                    {payment.customerName ||
+                                      payment.reservation.customer.name}
                                   </span>
                                 </div>
                               )}
