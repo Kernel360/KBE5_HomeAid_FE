@@ -266,41 +266,72 @@ const SettlementDetailModal = ({
                   <div className="w-2 h-6 bg-green-500 rounded-full mr-3"></div>
                   <h4 className="text-lg font-bold text-gray-900">금액 정보</h4>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-2xl font-bold text-gray-900 mb-2">
-                      {formatCurrency(
-                        settlementDetail.settlement?.totalAmount ||
-                          settlementDetail.totalAmount
-                      )}
-                    </div>
-                    <div className="text-sm font-medium text-gray-600">
-                      총 수익
-                    </div>
-                  </div>
-                  <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-2xl font-bold text-gray-900 mb-2">
-                      {formatCurrency(
-                        settlementDetail.settlement?.managerAmount ||
-                          settlementDetail.managerAmount
-                      )}
-                    </div>
-                    <div className="text-sm font-medium text-gray-600">
-                      매니저 정산액 (80%)
-                    </div>
-                  </div>
-                  <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-2xl font-bold text-gray-900 mb-2">
-                      {formatCurrency(
-                        settlementDetail.settlement?.adminAmount ||
-                          settlementDetail.adminAmount
-                      )}
-                    </div>
-                    <div className="text-sm font-medium text-gray-600">
-                      관리자 수수료 (20%)
-                    </div>
-                  </div>
-                </div>
+                {(() => {
+                  // 총 환불금액 계산 (참고용)
+                  const totalRefunded = settlementDetail.payments
+                    ? settlementDetail.payments.reduce(
+                        (sum, payment) => sum + (payment.refundedAmount || 0),
+                        0
+                      )
+                    : 0;
+
+                  // 실제 정산 금액 계산 (netAmount 사용)
+                  const actualTotalAmount = settlementDetail.payments
+                    ? settlementDetail.payments.reduce(
+                        (sum, payment) =>
+                          sum +
+                          (payment.netAmount ||
+                            payment.amount - (payment.refundedAmount || 0)),
+                        0
+                      )
+                    : settlementDetail.settlement?.totalAmount ||
+                      settlementDetail.totalAmount;
+
+                  return (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                          <div className="text-2xl font-bold text-blue-900 mb-2">
+                            {formatCurrency(actualTotalAmount)}
+                          </div>
+                          <div className="text-sm font-medium text-blue-700">
+                            실제 정산 금액
+                          </div>
+                        </div>
+                        <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                          <div className="text-2xl font-bold text-green-900 mb-2">
+                            {formatCurrency(
+                              settlementDetail.settlement?.managerAmount ||
+                                settlementDetail.managerAmount
+                            )}
+                          </div>
+                          <div className="text-sm font-medium text-green-700">
+                            매니저 정산액 (80%)
+                          </div>
+                        </div>
+                        <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                          <div className="text-2xl font-bold text-purple-900 mb-2">
+                            {formatCurrency(
+                              settlementDetail.settlement?.adminAmount ||
+                                settlementDetail.adminAmount
+                            )}
+                          </div>
+                          <div className="text-sm font-medium text-purple-700">
+                            관리자 수수료 (20%)
+                          </div>
+                        </div>
+                        <div className="text-center p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                          <div className="text-2xl font-bold text-orange-900 mb-2">
+                            {formatCurrency(totalRefunded)}
+                          </div>
+                          <div className="text-sm font-medium text-orange-700">
+                            총 환불 금액
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* 결제 내역 */}
@@ -426,57 +457,93 @@ const SettlementDetailModal = ({
                                   </div>
                                 )}
                               </div>
-                              {payment.reservation?.customer && (
+                              {(payment.customerName ||
+                                payment.reservation?.customer?.name) && (
                                 <div className="flex items-center gap-2 mt-2">
                                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                     고객
                                   </span>
                                   <span className="text-sm font-medium text-gray-900">
-                                    {payment.reservation.customer.name}
+                                    {payment.customerName ||
+                                      payment.reservation.customer.name}
                                   </span>
                                 </div>
                               )}
                             </div>
                             <div className="text-right ml-6">
-                              <p className="text-xl font-bold text-gray-900 mb-2">
-                                {formatCurrency(payment.amount)}
-                              </p>
-                              <span
-                                className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                                  payment.status === 'PAID' ||
-                                  payment.status === 'COMPLETED'
-                                    ? 'bg-green-100 text-green-800'
-                                    : payment.status === 'PENDING' ||
-                                        payment.status === 'PROCESSING'
-                                      ? 'bg-yellow-100 text-yellow-800'
-                                      : payment.status === 'FAILED' ||
-                                          payment.status === 'CANCELLED'
-                                        ? 'bg-red-100 text-red-800'
-                                        : payment.status === 'PARTIAL_REFUNDED'
-                                          ? 'bg-orange-100 text-orange-800'
-                                          : payment.status === 'REFUNDED'
-                                            ? 'bg-purple-100 text-purple-800'
-                                            : 'bg-gray-100 text-gray-800'
-                                }`}
-                              >
-                                {payment.status === 'PAID' ||
-                                payment.status === 'COMPLETED'
-                                  ? '결제완료'
-                                  : payment.status === 'PENDING'
-                                    ? '결제대기'
-                                    : payment.status === 'PROCESSING'
-                                      ? '처리중'
-                                      : payment.status === 'FAILED'
-                                        ? '결제실패'
-                                        : payment.status === 'CANCELLED'
-                                          ? '결제취소'
+                              <div className="space-y-2">
+                                <div className="flex flex-col items-end">
+                                  {payment.refundedAmount &&
+                                  payment.refundedAmount > 0 ? (
+                                    <>
+                                      <div className="text-xs text-gray-500 mb-1">
+                                        원래 결제금액
+                                      </div>
+                                      <p className="text-lg text-gray-400 line-through">
+                                        {formatCurrency(payment.amount)}
+                                      </p>
+                                      <div className="text-xs text-orange-600 mt-1">
+                                        환불: -
+                                        {formatCurrency(payment.refundedAmount)}
+                                      </div>
+
+                                      <p className="text-xl font-bold text-blue-900">
+                                        {formatCurrency(
+                                          payment.netAmount ||
+                                            payment.amount -
+                                              payment.refundedAmount
+                                        )}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="text-xl font-bold text-blue-900">
+                                        {formatCurrency(
+                                          payment.netAmount || payment.amount
+                                        )}
+                                      </p>
+                                    </>
+                                  )}
+                                </div>
+                                <span
+                                  className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
+                                    payment.status === 'PAID' ||
+                                    payment.status === 'COMPLETED'
+                                      ? 'bg-green-100 text-green-800'
+                                      : payment.status === 'PENDING' ||
+                                          payment.status === 'PROCESSING'
+                                        ? 'bg-yellow-100 text-yellow-800'
+                                        : payment.status === 'FAILED' ||
+                                            payment.status === 'CANCELLED'
+                                          ? 'bg-red-100 text-red-800'
                                           : payment.status ===
                                               'PARTIAL_REFUNDED'
-                                            ? '부분환불'
+                                            ? 'bg-orange-100 text-orange-800'
                                             : payment.status === 'REFUNDED'
-                                              ? '전액환불'
-                                              : payment.status || '알 수 없음'}
-                              </span>
+                                              ? 'bg-purple-100 text-purple-800'
+                                              : 'bg-gray-100 text-gray-800'
+                                  }`}
+                                >
+                                  {payment.status === 'PAID' ||
+                                  payment.status === 'COMPLETED'
+                                    ? '결제완료'
+                                    : payment.status === 'PENDING'
+                                      ? '결제대기'
+                                      : payment.status === 'PROCESSING'
+                                        ? '처리중'
+                                        : payment.status === 'FAILED'
+                                          ? '결제실패'
+                                          : payment.status === 'CANCELLED'
+                                            ? '결제취소'
+                                            : payment.status ===
+                                                'PARTIAL_REFUNDED'
+                                              ? '부분환불'
+                                              : payment.status === 'REFUNDED'
+                                                ? '전액환불'
+                                                : payment.status ||
+                                                  '알 수 없음'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>

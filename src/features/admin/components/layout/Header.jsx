@@ -1,21 +1,21 @@
 import AlertCard from '@/features/alert/AlertCard';
 import { Bell } from 'lucide-react';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const location = useLocation();
-  const [lastUpdate, setLastUpdate] = useState(new Date());
+  //const [lastUpdate, setLastUpdate] = useState(new Date());
   const [open, setOpen] = useState(false);
 
   // 매 분마다 업데이트 시간 갱신
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLastUpdate(new Date());
-    }, 60000); // 1분마다 업데이트
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setLastUpdate(new Date());
+  //   }, 60000); // 1분마다 업데이트
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const getPageTitle = () => {
     const path = location.pathname;
@@ -104,14 +104,14 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         <AlertCard onClose={closeAlert} isVisible={open}></AlertCard>
 
         {/* Right side - Real-time Update Indicator */}
-        <div className="flex items-center px-2 lg:px-3 xl:px-4">
+        {/* <div className="flex items-center px-2 lg:px-3 xl:px-4">
           <div className="text-sm text-gray-500">
             <span className="inline-flex items-center">
               <span className="w-2 h-2 rounded-full mr-2 bg-green-500"></span>
               실시간 업데이트: {lastUpdate.toLocaleString('ko-KR')}
             </span>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Mobile Menu Overlay */}
