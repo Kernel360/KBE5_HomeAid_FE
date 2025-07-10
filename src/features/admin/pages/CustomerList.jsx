@@ -272,6 +272,9 @@ const CustomerList = () => {
   const [searchType, setSearchType] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // 한글 입력 처리를 위한 상태
+  const [isComposing, setIsComposing] = useState(false);
   const [pagination, setPagination] = useState({
     page: 0,
     size: 10,
@@ -301,35 +304,120 @@ const CustomerList = () => {
     }
   };
 
-  // API 호출 함수
+  // 개별 필드 검색을 위한 API 호출 함수
+  const fetchCustomersByField = async (field, query, page) => {
+    const token = localStorage.getItem('accessToken');
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: '50', // 전체 검색 시 더 많은 결과 가져오기
+    });
+
+    params.append(field, query);
+
+    const response = await fetch(
+      `${API_URL}/api/v1/admin/customers?${params}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.success && data.data ? data.data.content || [] : [];
+  };
+
+  // API 호출 함수 - 전체 검색 시 OR 조건 지원
   const fetchCustomers = async (page = 0, searchData = null) => {
     try {
       setLoading(true);
       setError(null);
 
       const token = localStorage.getItem('accessToken');
-      console.log('Current token:', token);
       if (!token) {
         throw new Error('인증 토큰이 없습니다.');
       }
 
-      // 검색 파라미터 구성
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: pagination.size.toString(),
-      });
-
-      // 검색 조건이 있을 때만 검색 파라미터 추가
-      if (searchData && searchData.query && searchData.query.trim()) {
+      // 전체 검색인 경우 OR 조건을 위해 각 필드별로 검색 후 결합
+      if (
+        searchData &&
+        searchData.query &&
+        searchData.query.trim() &&
+        searchData.scope === 'all'
+      ) {
         const query = searchData.query.trim();
-        // 모든 검색을 keyword 파라미터로 통일
-        params.append('keyword', query);
+
+        console.log('전체 검색 실행:', query);
+
+        // 병렬로 각 필드 검색 실행
+        const [nameResults, emailResults, phoneResults] = await Promise.all([
+          fetchCustomersByField('name', query, 0),
+          fetchCustomersByField('email', query, 0),
+          fetchCustomersByField('phone', query, 0),
+        ]);
+
+        // 중복 제거하여 결과 합치기 (id 기준)
+        const allResults = [...nameResults, ...emailResults, ...phoneResults];
+        const uniqueResults = allResults.filter(
+          (customer, index, arr) =>
+            arr.findIndex((c) => c.id === customer.id) === index
+        );
+
+        console.log('전체 검색 결과:', {
+          name: nameResults.length,
+          email: emailResults.length,
+          phone: phoneResults.length,
+          unique: uniqueResults.length,
+        });
+
+        // 페이징 처리
+        const pageSize = 10;
+        const startIndex = page * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedResults = uniqueResults.slice(startIndex, endIndex);
+
+        setCustomers(paginatedResults);
+        setPagination({
+          page: page,
+          size: pageSize,
+          totalElements: uniqueResults.length,
+          totalPages: Math.ceil(uniqueResults.length / pageSize),
+        });
+
+        return;
       }
 
-      console.log(
-        'Fetching customers with params:',
-        Object.fromEntries(params)
-      );
+      // 개별 필드 검색 또는 검색어 없는 경우
+      const params = new URLSearchParams({
+        page: page.toString(),
+        size: '10',
+      });
+
+      // 개별 필드 검색
+      if (searchData && searchData.query && searchData.query.trim()) {
+        const query = searchData.query.trim();
+        const scope = searchData.scope;
+
+        switch (scope) {
+          case 'name':
+            params.append('name', query);
+            break;
+          case 'email':
+            params.append('email', query);
+            break;
+          case 'phone':
+            params.append('phone', query);
+            break;
+        }
+      }
+
+      console.log('개별 검색 실행:', Object.fromEntries(params));
 
       const response = await fetch(
         `${API_URL}/api/v1/admin/customers?${params}`,
@@ -347,7 +435,6 @@ const CustomerList = () => {
       }
 
       const data = await response.json();
-      console.log('Customer API response:', data);
 
       if (data.success && data.data) {
         setCustomers(data.data.content || []);
@@ -357,11 +444,18 @@ const CustomerList = () => {
           totalElements: data.data.totalElements || 0,
           totalPages: data.data.totalPages || 0,
         });
+      } else {
+        setCustomers([]);
+        setPagination({
+          page: 0,
+          size: 10,
+          totalElements: 0,
+          totalPages: 0,
+        });
       }
     } catch (err) {
       console.error('Customer fetch error:', err);
       setError(err.message);
-      // 오류 시 빈 배열로 설정
       setCustomers([]);
       setPagination({
         page: 0,
@@ -430,6 +524,21 @@ const CustomerList = () => {
     }
   };
 
+  // 디바운스된 검색 - 한글 입력 최적화
+  useEffect(() => {
+    // 한글 조합 중일 때는 검색하지 않음
+    if (isComposing) return;
+
+    const timeoutId = setTimeout(() => {
+      // 검색어가 있을 때만 검색 실행 (500ms 디바운스)
+      if (searchTerm.trim()) {
+        handleSearch();
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, searchType, isComposing]);
+
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchCustomers(pagination.page);
@@ -456,11 +565,16 @@ const CustomerList = () => {
 
   // 검색 초기화
   const handleReset = () => {
+    const wasSearching = searchTerm.trim() !== '';
+
     setSearchTerm('');
     setSearchType('all');
-    // 초기화 시 첫 페이지로 이동하고 전체 데이터 로드
-    setPagination((prev) => ({ ...prev, page: 0 }));
-    fetchCustomers(0, null);
+
+    // 검색어가 있었을 때만 데이터 다시 로드
+    if (wasSearching) {
+      setPagination((prev) => ({ ...prev, page: 0 }));
+      fetchCustomers(0, null);
+    }
   };
 
   // 엔터 키 검색 핸들러
@@ -671,7 +785,17 @@ const CustomerList = () => {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder="검색어를 입력하세요"
+                      onCompositionStart={() => setIsComposing(true)}
+                      onCompositionEnd={() => setIsComposing(false)}
+                      placeholder={
+                        searchType === 'all'
+                          ? '이름, 이메일, 전화번호에서 통합 검색'
+                          : searchType === 'name'
+                            ? '이름을 입력하세요'
+                            : searchType === 'email'
+                              ? '이메일을 입력하세요'
+                              : '전화번호를 입력하세요'
+                      }
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
