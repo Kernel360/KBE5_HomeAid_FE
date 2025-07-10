@@ -61,10 +61,33 @@ const StatCard = ({ title, value, subValue, icon, iconBg, loading }) => (
 );
 
 const Statistics = () => {
+  // 어제 날짜 정보 설정 (00시 기준으로 어제 데이터 표시)
+  const getYesterdayDate = () => {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1); // 어제 날짜로 설정
+
+    console.log('📅 어제 날짜 설정:', {
+      현재: now.toISOString(),
+      어제: yesterday.toISOString(),
+      년도: yesterday.getFullYear(),
+      월: yesterday.getMonth() + 1,
+    });
+
+    return {
+      year: yesterday.getFullYear(),
+      month: yesterday.getMonth() + 1, // 0-based index이므로 +1
+      day: null, // 기본적으로 일별 조회는 하지 않음 (월별 조회)
+    };
+  };
+
+  const currentDate = getYesterdayDate();
+  console.log('🚀 Statistics 컴포넌트 초기화:', currentDate);
+
   const [activeMainTab, setActiveMainTab] = useState('전체');
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(currentDate.year);
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.month);
+  const [selectedDay, setSelectedDay] = useState(currentDate.day);
 
   // 통계 데이터 상태
   const [userStats, setUserStats] = useState(null);
@@ -85,6 +108,9 @@ const Statistics = () => {
         selectedYear,
         selectedMonth,
         selectedDay,
+        현재날짜: new Date().toISOString(),
+        현재년도: new Date().getFullYear(),
+        현재월: new Date().getMonth() + 1,
       });
 
       if (activeMainTab === '전체') {
@@ -156,14 +182,99 @@ const Statistics = () => {
       }
     } catch (err) {
       console.error('💥 통계 로딩 실패:', err);
-      setError('통계 데이터를 불러오는 중 오류가 발생했습니다.');
+
+      // 404 오류인 경우 (데이터가 없는 경우)
+      if (err.message && err.message.includes('404')) {
+        console.log('📅 404 오류 발생, 어제 날짜로 리셋 중...');
+
+        // 어제 날짜로 자동 리셋
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayYear = yesterday.getFullYear();
+        const yesterdayMonth = yesterday.getMonth() + 1;
+
+        // 선택된 날짜가 어제 날짜와 다른 경우에만 리셋
+        if (
+          selectedYear !== yesterdayYear ||
+          selectedMonth !== yesterdayMonth
+        ) {
+          setSelectedYear(yesterdayYear);
+          setSelectedMonth(yesterdayMonth);
+          setSelectedDay(null);
+
+          setError(
+            `${selectedYear}년 ${selectedMonth}월 데이터가 없습니다. 어제 날짜(${yesterdayYear}년 ${yesterdayMonth}월)로 자동 조회합니다.`
+          );
+
+          // 3초 후 오류 메시지 자동 제거
+          setTimeout(() => {
+            setError(null);
+          }, 3000);
+
+          return; // 리셋 후 다시 로드되므로 여기서 종료
+        }
+
+        setError(
+          `선택한 날짜의 통계 데이터가 존재하지 않습니다. 다른 날짜를 선택해주세요.`
+        );
+      } else {
+        setError('통계 데이터를 불러오는 중 오류가 발생했습니다.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // 날짜 유효성 검사 (어제 기준)
+  const validateDate = (year, month, day) => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const yesterdayYear = yesterday.getFullYear();
+    const yesterdayMonth = yesterday.getMonth() + 1;
+    const yesterdayDay = yesterday.getDate();
+
+    console.log('📅 날짜 유효성 검사:', {
+      입력값: { year, month, day },
+      어제기준: {
+        year: yesterdayYear,
+        month: yesterdayMonth,
+        day: yesterdayDay,
+      },
+    });
+
+    // 어제보다 미래 날짜 체크
+    if (year > yesterdayYear) return false;
+    if (year === yesterdayYear && month > yesterdayMonth) return false;
+    if (
+      year === yesterdayYear &&
+      month === yesterdayMonth &&
+      day &&
+      day > yesterdayDay
+    )
+      return false;
+
+    return true;
+  };
+
   // 컴포넌트 마운트 시 및 연도/월/일 변경 시 데이터 로드
   useEffect(() => {
+    // 날짜 유효성 검사
+    if (!validateDate(selectedYear, selectedMonth, selectedDay)) {
+      console.warn(
+        '⚠️ 어제보다 미래 날짜가 선택되었습니다. 어제 날짜로 리셋합니다.'
+      );
+      const current = getYesterdayDate();
+      setSelectedYear(current.year);
+      setSelectedMonth(current.month);
+      setSelectedDay(current.day);
+      setError(
+        '어제보다 미래 날짜는 선택할 수 없습니다. 어제 날짜로 설정되었습니다.'
+      );
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
     loadStats();
   }, [selectedYear, selectedMonth, selectedDay, activeMainTab]);
 

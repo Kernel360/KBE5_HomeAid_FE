@@ -382,7 +382,11 @@ const Inquiries = () => {
             Boolean(inquiry.replyContent);
 
           // userRole 필드 처리 - 다양한 가능성 고려
-          let userRole = inquiry.userRole || inquiry.role;
+          let userRole =
+            inquiry.userRole ||
+            inquiry.role ||
+            inquiry.writerRole ||
+            inquiry.authorRole;
 
           // 백엔드에서 문자열로 올 수도 있고 enum으로 올 수도 있음
           if (typeof userRole === 'string') {
@@ -392,6 +396,18 @@ const Inquiries = () => {
           // user 객체 안에 role이 있을 수도 있음
           if (!userRole && inquiry.user && inquiry.user.role) {
             userRole = inquiry.user.role.toUpperCase();
+          }
+
+          // 여전히 userRole이 없으면 현재 탭 기반으로 추측
+          if (!userRole) {
+            if (activeTab === '수요자문의') {
+              userRole = 'CUSTOMER';
+            } else if (activeTab === '매니저문의') {
+              userRole = 'MANAGER';
+            } else {
+              // 전체 탭인 경우 기본값으로 CUSTOMER 설정 (더 안전한 선택)
+              userRole = 'CUSTOMER';
+            }
           }
 
           // 개발 환경에서 각 문의글의 답변 상태 로깅

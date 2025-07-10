@@ -42,7 +42,18 @@ const fetchStatistics = async (endpoint, year, month, day) => {
       console.error(`❌ ${endpoint} 통계 API 오류:`, {
         status: response.status,
         error: errorText,
+        url: url,
+        requestDate: { year, month, day },
       });
+
+      // 404 오류의 경우 더 구체적인 메시지 제공
+      if (response.status === 404) {
+        const dateStr = `${year}년${month ? ` ${month}월` : ''}${day ? ` ${day}일` : ''}`;
+        throw new Error(
+          `${endpoint} 통계 API 오류: 404 - ${dateStr} 데이터가 존재하지 않습니다.`
+        );
+      }
+
       throw new Error(`${endpoint} 통계 API 오류: ${response.status}`);
     }
   } catch (err) {
