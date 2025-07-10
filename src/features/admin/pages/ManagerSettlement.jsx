@@ -676,7 +676,13 @@ const ManagerSettlement = () => {
                   정산 목록
                 </h3>
                 <div className="flex items-center space-x-3">
-                  {/* 주간 정산 생성 버튼 */}
+                  {/* TODO: 주간 정산 생성 기능 구현 필요
+                      - 주간 단위로 매니저 정산 자동 생성 기능
+                      - 주간 정산 기간 선택 및 매니저 선택 모달
+                      - 백엔드 API 연동 및 정산 로직 검증
+                      - 정산 생성 후 목록 새로고침 처리
+                  */}
+                  {/* 주간 정산 생성 버튼 - 기능 개발 대기 중으로 임시 주석 처리
                   <button
                     onClick={() => {
                       alert('주간 정산 생성 기능은 준비 중입니다.');
@@ -699,6 +705,7 @@ const ManagerSettlement = () => {
                     </svg>
                     <span>주간 정산 생성 (준비중)</span>
                   </button>
+                  */}
 
                   {/* 검색 범위 선택 */}
                   <select
