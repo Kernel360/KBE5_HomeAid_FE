@@ -677,12 +677,12 @@ const ManagerSettlement = () => {
                 </h3>
                 <div className="flex items-center space-x-3">
                   {/* 주간 정산 생성 버튼 */}
-                  {/* TODO: 주간 정산 생성 기능 구현 필요 */}
                   <button
                     onClick={() => {
                       alert('주간 정산 생성 기능은 준비 중입니다.');
                     }}
-                    className="px-4 py-2 text-black bg-green-600 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                    disabled
+                    className="px-4 py-2 text-gray-500 bg-gray-200 rounded-lg cursor-not-allowed opacity-75 flex items-center space-x-2"
                   >
                     <svg
                       className="w-4 h-4"
@@ -697,7 +697,7 @@ const ManagerSettlement = () => {
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    <span>주간 정산 생성</span>
+                    <span>주간 정산 생성 (준비중)</span>
                   </button>
 
                   {/* 검색 범위 선택 */}
