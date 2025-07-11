@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   CreditCard,
   CheckCircle,
@@ -9,6 +9,7 @@ import {
   User,
   Receipt,
   ArrowLeft,
+  Download,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../../api/config/api';
@@ -16,6 +17,8 @@ import Header from '../../../../components/Header.jsx';
 import Footer from '../../../../components/Footer.jsx';
 import RefundRequestModal from './RefundRequestModal.jsx';
 import RefundStatusModal from './RefundStatusModal.jsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const PaymentDetail = ({ paymentId, onBack }) => {
   const navigate = useNavigate();
@@ -26,6 +29,10 @@ const PaymentDetail = ({ paymentId, onBack }) => {
   const [isRefundStatusModalOpen, setIsRefundStatusModalOpen] = useState(false);
   const [refundData, setRefundData] = useState(null);
   const [hasRefundRequest, setHasRefundRequest] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // 영수증 컴포넌트 참조
+  const receiptRef = useRef(null);
 
   useEffect(() => {
     if (paymentId) {
@@ -137,6 +144,58 @@ const PaymentDetail = ({ paymentId, onBack }) => {
 
     // 성공 메시지 표시 (필요한 경우)
     alert('환불 요청이 성공적으로 접수되었습니다.');
+  };
+
+  // 영수증 PDF 생성 함수
+  const generateReceiptPDF = async () => {
+    if (!payment || !receiptRef.current) {
+      alert('영수증 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      setIsGeneratingPdf(true);
+
+      // html2canvas로 영수증 영역을 이미지로 변환
+      const canvas = await html2canvas(receiptRef.current, {
+        scale: 2, // 고해상도를 위한 스케일
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 400, // 영수증 너비
+        height: 600, // 영수증 높이 (자동 조정됨)
+      });
+
+      // PDF 생성 (A4 크기)
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      // 캔버스 이미지를 PDF에 추가
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 150; // PDF에서의 이미지 너비 (mm)
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // 페이지 중앙에 배치
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const x = (pageWidth - imgWidth) / 2;
+
+      pdf.addImage(imgData, 'PNG', x, 20, imgWidth, imgHeight);
+
+      // PDF 다운로드
+      const fileName = `영수증_${payment.id}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      pdf.save(fileName);
+
+      console.log('✅ 영수증 PDF 생성 완료:', fileName);
+    } catch (error) {
+      console.error('❌ 영수증 PDF 생성 실패:', error);
+      alert('영수증 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   // 결제 상태에 따른 아이콘 반환
@@ -406,8 +465,22 @@ const PaymentDetail = ({ paymentId, onBack }) => {
             </h3>
 
             <div className="space-y-3">
-              <button className="w-full bg-gray-50 text-gray-700 py-3 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
-                영수증 다운로드
+              <button
+                onClick={generateReceiptPDF}
+                disabled={isGeneratingPdf}
+                className="w-full bg-gray-50 text-gray-700 py-3 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                    영수증 생성 중...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    영수증 다운로드
+                  </>
+                )}
               </button>
 
               {hasRefundRequest ? (
@@ -442,6 +515,244 @@ const PaymentDetail = ({ paymentId, onBack }) => {
         onClose={() => setIsRefundModalOpen(false)}
         onRefundRequested={handleRefundRequested}
       />
+
+      {/* 영수증 컴포넌트 (PDF 생성용, 화면에 보이지 않음) */}
+      <div
+        ref={receiptRef}
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          top: '0',
+          backgroundColor: '#ffffff',
+          padding: '32px',
+          width: '400px',
+          fontSize: '14px',
+          lineHeight: '1.4',
+          fontFamily: 'Arial, sans-serif',
+        }}
+      >
+        {payment && (
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
+          >
+            {/* 영수증 헤더 */}
+            <div
+              style={{
+                textAlign: 'center',
+                borderBottom: '2px solid #1f2937',
+                paddingBottom: '16px',
+              }}
+            >
+              <h1
+                style={{
+                  fontSize: '28px',
+                  fontWeight: 'bold',
+                  color: '#111827',
+                  margin: '0 0 8px 0',
+                }}
+              >
+                영수증
+              </h1>
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  margin: '0',
+                }}
+              >
+                Payment Receipt
+              </p>
+            </div>
+
+            {/* 발행 정보 */}
+            <div style={{ textAlign: 'center' }}>
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  margin: '0 0 4px 0',
+                }}
+              >
+                발행일시
+              </p>
+              <p
+                style={{
+                  fontWeight: '500',
+                  margin: '0',
+                  color: '#111827',
+                }}
+              >
+                {new Date().toLocaleString('ko-KR')}
+              </p>
+            </div>
+
+            {/* 결제 정보 */}
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              <h3
+                style={{
+                  fontWeight: 'bold',
+                  fontSize: '18px',
+                  borderBottom: '1px solid #d1d5db',
+                  paddingBottom: '4px',
+                  margin: '0',
+                  color: '#111827',
+                }}
+              >
+                결제 정보
+              </h3>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#6b7280' }}>결제 번호</span>
+                <span style={{ fontWeight: '500', color: '#111827' }}>
+                  #{payment.id}
+                </span>
+              </div>
+
+              {payment.reservationId && (
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
+                >
+                  <span style={{ color: '#6b7280' }}>예약 번호</span>
+                  <span style={{ fontWeight: '500', color: '#111827' }}>
+                    #{payment.reservationId}
+                  </span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#6b7280' }}>결제 방법</span>
+                <span style={{ fontWeight: '500', color: '#111827' }}>
+                  {getPaymentMethodText(payment.paymentMethod)}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#6b7280' }}>결제 상태</span>
+                <span style={{ fontWeight: '500', color: '#111827' }}>
+                  {getStatusText(payment.status)}
+                </span>
+              </div>
+
+              {payment.paidAt && (
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
+                >
+                  <span style={{ color: '#6b7280' }}>결제 일시</span>
+                  <div style={{ textAlign: 'right' }}>
+                    <p
+                      style={{
+                        fontWeight: '500',
+                        margin: '0',
+                        color: '#111827',
+                      }}
+                    >
+                      {new Date(payment.paidAt).toLocaleDateString('ko-KR')}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        margin: '0',
+                      }}
+                    >
+                      {new Date(payment.paidAt).toLocaleTimeString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {payment.customerName && (
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
+                >
+                  <span style={{ color: '#6b7280' }}>결제자</span>
+                  <span style={{ fontWeight: '500', color: '#111827' }}>
+                    {payment.customerName}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* 금액 정보 */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                borderTop: '2px solid #1f2937',
+                paddingTop: '16px',
+              }}
+            >
+              <h3
+                style={{
+                  fontWeight: 'bold',
+                  fontSize: '18px',
+                  margin: '0',
+                  color: '#111827',
+                }}
+              >
+                금액 정보
+              </h3>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '18px',
+                }}
+              >
+                <span style={{ fontWeight: 'bold', color: '#111827' }}>
+                  총 결제금액
+                </span>
+                <span
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '24px',
+                    color: '#111827',
+                  }}
+                >
+                  {payment.amount?.toLocaleString() || '0'}원
+                </span>
+              </div>
+            </div>
+
+            {/* 영수증 푸터 */}
+            <div
+              style={{
+                textAlign: 'center',
+                fontSize: '11px',
+                color: '#6b7280',
+                borderTop: '1px solid #d1d5db',
+                paddingTop: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+              }}
+            >
+              <p style={{ margin: '0' }}>
+                본 영수증은 결제 완료를 증명하는 문서입니다.
+              </p>
+              <p style={{ margin: '0' }}>
+                문의사항이 있으시면 고객센터로 연락해 주세요.
+              </p>
+              <p
+                style={{
+                  fontWeight: '500',
+                  margin: '0',
+                  color: '#374151',
+                }}
+              >
+                HomeAid 서비스
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* 환불 상태 확인 모달 */}
       <RefundStatusModal

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SettlementDetailModal from '../components/SettlementDetailModal';
+import { apiService } from '../../../api/index.js';
 
 const StatCard = ({ title, value, subValue, icon, iconBg }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
@@ -31,6 +32,128 @@ const StatCard = ({ title, value, subValue, icon, iconBg }) => (
   </div>
 );
 
+// 주차별 정산 카드 컴포넌트
+const WeeklySettlementCard = ({
+  weekData,
+  onDetailClick,
+  formatCurrency,
+  formatDate,
+  getSettlementStatus,
+}) => (
+  <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+    {/* 주차 헤더 */}
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200 rounded-t-xl">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {weekData.weekLabel}
+          </h3>
+          <span className="text-sm text-gray-600">
+            ({formatDate(weekData.startDate.toISOString())} ~{' '}
+            {formatDate(weekData.endDate.toISOString())})
+          </span>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="text-right">
+            <div className="text-sm text-gray-500">정산 건수</div>
+            <div className="text-lg font-bold text-blue-600">
+              {weekData.count}건
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-500">총 정산액</div>
+            <div className="text-lg font-bold text-green-600">
+              {formatCurrency(weekData.managerAmount)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* 정산 목록 */}
+    <div className="p-6">
+      {weekData.settlements.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="w-12 h-12 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+            <svg
+              className="w-6 h-6 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <p className="text-gray-500">해당 주차에 정산 내역이 없습니다.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {weekData.settlements.map((settlement) => (
+            <div
+              key={settlement.settlementId}
+              className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer"
+              onClick={() => onDetailClick(settlement)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-600">
+                        {settlement.managerId}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      매니저 ID: {settlement.managerId}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      정산일: {formatDate(settlement.settlementDate)}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-6">
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">총 수익</div>
+                    <div className="font-semibold text-gray-900">
+                      {formatCurrency(settlement.totalAmount)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">매니저 정산액</div>
+                    <div className="font-semibold text-green-600">
+                      {formatCurrency(settlement.managerAmount)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">관리자 수수료</div>
+                    <div className="font-semibold text-blue-600">
+                      {formatCurrency(settlement.adminFee)}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSettlementStatus(settlement).color}`}
+                    >
+                      {getSettlementStatus(settlement).text}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 const ManagerSettlement = () => {
   // 상태 관리
   const [allSettlements, setAllSettlements] = useState([]); // 모든 정산 데이터
@@ -49,6 +172,14 @@ const ManagerSettlement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchScope, setSearchScope] = useState('all');
   const [isSearching, setIsSearching] = useState(false);
+
+  // 월별 조회 상태 추가
+  const [isMonthlyView, setIsMonthlyView] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+
+  // 주차별 그룹화 상태 추가
+  const [weeklyGroupedSettlements, setWeeklyGroupedSettlements] = useState([]);
 
   // 체크박스 선택 상태
   const [selectedSettlements, setSelectedSettlements] = useState([]);
@@ -191,6 +322,88 @@ const ManagerSettlement = () => {
     }
   };
 
+  // 월별 정산 조회 함수 (새로운 API 구조 적용)
+  const fetchMonthlySettlements = async (year, month) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('📅 관리자 월별 정산 조회:', { year, month });
+
+      const response = await apiService.settlement.getAdminMonthlySettlements(
+        year,
+        month
+      );
+
+      console.log('📡 월별 정산 API 응답:', {
+        status: response.status,
+        data: response?.data?.data,
+      });
+
+      if (response?.data?.data) {
+        const monthlyData = response.data.data;
+
+        // 전체 정산 데이터
+        const settlementsData = monthlyData.settlements || [];
+        setAllSettlements(settlementsData);
+
+        // 백엔드에서 제공하는 주차별 그룹 데이터 처리
+        const weeklyGrouped = monthlyData.weeklyGrouped || {};
+        const weeklyGroupsArray = Object.entries(weeklyGrouped).map(
+          ([weekLabel, groupData]) => ({
+            weekLabel,
+            totalAmount: groupData.totalAmount || 0,
+            managerAmount: groupData.managerAmount || 0,
+            adminAmount: groupData.adminAmount || 0,
+            settlements: groupData.settlements || [],
+            count: groupData.settlements ? groupData.settlements.length : 0,
+            // 주차 날짜 범위는 weekLabel과 year로 계산
+            startDate: getWeekStartDate(weekLabel, year),
+            endDate: getWeekEndDate(weekLabel, year),
+          })
+        );
+
+        setWeeklyGroupedSettlements(weeklyGroupsArray);
+
+        // 현재 활성 탭과 검색 조건에 맞게 필터링
+        const searchData = searchQuery.trim()
+          ? { query: searchQuery.trim(), scope: searchScope }
+          : null;
+        const filtered = filterSettlements(
+          settlementsData,
+          activeTab,
+          searchData
+        );
+        setSettlements(filtered);
+
+        // 페이지네이션 정보 업데이트
+        setPagination((prev) => ({
+          ...prev,
+          page: 0,
+          totalElements: filtered.length,
+          totalPages: Math.ceil(filtered.length / prev.size),
+        }));
+
+        console.log('✅ 월별 정산 조회 성공:', settlementsData.length, '건');
+        console.log('📊 주차별 그룹화 완료:', weeklyGroupsArray.length, '주차');
+      } else {
+        console.log('📭 조회된 월별 정산 내역 없음');
+        setAllSettlements([]);
+        setSettlements([]);
+        setWeeklyGroupedSettlements([]);
+      }
+    } catch (err) {
+      console.error('❌ 월별 정산 조회 실패:', err);
+      setError('월별 정산 내역을 불러오는 중 오류가 발생했습니다.');
+      setAllSettlements([]);
+      setSettlements([]);
+      setWeeklyGroupedSettlements([]);
+    } finally {
+      setLoading(false);
+      setIsSearching(false);
+    }
+  };
+
   // 통계 데이터 계산
   const calculateStats = (settlementsData) => {
     const weeklyTotal = settlementsData.reduce(
@@ -228,8 +441,12 @@ const ManagerSettlement = () => {
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
-    fetchSettlements();
-  }, []);
+    if (isMonthlyView) {
+      fetchMonthlySettlements(selectedYear, selectedMonth);
+    } else {
+      fetchSettlements();
+    }
+  }, [isMonthlyView, selectedYear, selectedMonth]);
 
   // allSettlements 변경 시 통계 계산
   useEffect(() => {
@@ -617,6 +834,74 @@ const ManagerSettlement = () => {
     }
   };
 
+  // 월별 보기 토글
+  const handleToggleMonthlyView = () => {
+    setIsMonthlyView(!isMonthlyView);
+    setError(null);
+  };
+
+  // 연도 변경
+  const handleYearChange = (year) => {
+    setSelectedYear(year);
+  };
+
+  // 월 변경
+  const handleMonthChange = (month) => {
+    setSelectedMonth(month);
+  };
+
+  // 연도 옵션 생성 (현재 연도 기준 +/- 2년)
+  const getYearOptions = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 2; i <= currentYear + 1; i++) {
+      years.push(i);
+    }
+    return years;
+  };
+
+  // 월 옵션 생성
+  const getMonthOptions = () => {
+    return Array.from({ length: 12 }, (_, i) => i + 1);
+  };
+
+  // 주차 라벨에서 실제 주차 시작일 계산 (한국 기준 weekOfMonth 로직과 일치)
+  const getWeekStartDate = (weekLabel, year) => {
+    if (!weekLabel || !year) return new Date();
+
+    // weekLabel에서 월과 주차 추출 (예: "12월 1주차")
+    const match = weekLabel.match(/(\d+)월\s*(\d+)주차/);
+    if (!match) return new Date();
+
+    const month = parseInt(match[1], 10) - 1; // JavaScript Date는 0부터 시작
+    const weekNumber = parseInt(match[2], 10);
+
+    // 해당 월의 1일 찾기
+    const firstDayOfMonth = new Date(year, month, 1);
+
+    // 해당 월 1일이 속한 주의 월요일 찾기 (한국 기준)
+    const firstDayOfWeek = firstDayOfMonth.getDay(); // 0=일요일, 1=월요일, ...
+    const firstWeekMonday = new Date(
+      year,
+      month,
+      1 - (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1)
+    );
+
+    // n주차의 월요일 계산
+    const weekStart = new Date(firstWeekMonday);
+    weekStart.setDate(firstWeekMonday.getDate() + (weekNumber - 1) * 7);
+
+    return weekStart;
+  };
+
+  // 주차 라벨에서 실제 주차 종료일 계산 (해당 주차의 일요일)
+  const getWeekEndDate = (weekLabel, year) => {
+    const weekStart = getWeekStartDate(weekLabel, year);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6); // 월요일 + 6일 = 일요일
+    return weekEnd;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="px-4 sm:px-6 lg:px-8 py-6">
@@ -676,7 +961,13 @@ const ManagerSettlement = () => {
                   정산 목록
                 </h3>
                 <div className="flex items-center space-x-3">
-                  {/* 주간 정산 생성 버튼 */}
+                  {/* TODO: 주간 정산 생성 기능 구현 필요
+                      - 주간 단위로 매니저 정산 자동 생성 기능
+                      - 주간 정산 기간 선택 및 매니저 선택 모달
+                      - 백엔드 API 연동 및 정산 로직 검증
+                      - 정산 생성 후 목록 새로고침 처리
+                  */}
+                  {/* 주간 정산 생성 버튼 - 기능 개발 대기 중으로 임시 주석 처리
                   <button
                     onClick={() => {
                       alert('주간 정산 생성 기능은 준비 중입니다.');
@@ -699,6 +990,7 @@ const ManagerSettlement = () => {
                     </svg>
                     <span>주간 정산 생성 (준비중)</span>
                   </button>
+                  */}
 
                   {/* 검색 범위 선택 */}
                   <select
@@ -753,6 +1045,92 @@ const ManagerSettlement = () => {
                 </div>
               </div>
 
+              {/* 보기 방식 선택 및 월별 필터 */}
+              <div className="mb-4 space-y-4">
+                {/* 보기 방식 토글 */}
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm font-medium text-gray-700">
+                    보기 방식:
+                  </span>
+                  <button
+                    onClick={handleToggleMonthlyView}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      !isMonthlyView
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    전체 보기
+                  </button>
+                  <button
+                    onClick={handleToggleMonthlyView}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isMonthlyView
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    월별 보기
+                  </button>
+                </div>
+
+                {/* 월별 선택기 */}
+                {isMonthlyView && (
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          className="w-4 h-4 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span className="text-sm font-medium text-blue-800">
+                          월별 정산 조회:
+                        </span>
+                      </div>
+                      <select
+                        value={selectedYear}
+                        onChange={(e) =>
+                          handleYearChange(parseInt(e.target.value))
+                        }
+                        className="px-3 py-1 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {getYearOptions().map((year) => (
+                          <option key={year} value={year}>
+                            {year}년
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={selectedMonth}
+                        onChange={(e) =>
+                          handleMonthChange(parseInt(e.target.value))
+                        }
+                        className="px-3 py-1 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {getMonthOptions().map((month) => (
+                          <option key={month} value={month}>
+                            {month}월
+                          </option>
+                        ))}
+                      </select>
+                      <div className="text-sm text-blue-700">
+                        {selectedYear}년 {selectedMonth}월 정산 내역을
+                        조회합니다
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* 구분선 */}
               <div className="border-b border-gray-200 bg-white"></div>
 
@@ -779,7 +1157,14 @@ const ManagerSettlement = () => {
                       </h3>
                       <p className="text-sm text-red-700 mt-1">{error}</p>
                       <button
-                        onClick={() => fetchSettlements()}
+                        onClick={() =>
+                          isMonthlyView
+                            ? fetchMonthlySettlements(
+                                selectedYear,
+                                selectedMonth
+                              )
+                            : fetchSettlements()
+                        }
                         className="mt-2 text-sm text-red-800 underline hover:no-underline"
                       >
                         다시 시도
@@ -789,225 +1174,300 @@ const ManagerSettlement = () => {
                 </div>
               )}
 
-              <div className="w-full overflow-x-auto mt-4">
-                <table className="w-full min-w-[1500px]">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          checked={isAllSelected}
-                          onChange={handleSelectAll}
-                          className="rounded border-gray-300"
-                        />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        매니저ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        정산기간
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        총 수익
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        매니저 정산액
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        관리자 수수료
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        정산일
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        승인일
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        지급일
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        상태
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        액션
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {loading ? (
-                      // 로딩 상태
-                      [...Array(5)].map((_, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          {[...Array(11)].map((_, colIndex) => (
-                            <td
-                              key={colIndex}
-                              className="px-6 py-4 whitespace-nowrap"
-                            >
-                              <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
-                            </td>
-                          ))}
-                        </tr>
-                      ))
-                    ) : settlements.length === 0 ? (
-                      // 데이터 없음
-                      <tr>
-                        <td colSpan="11" className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center">
-                            <svg
-                              className="w-12 h-12 text-gray-400 mb-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                            <h3 className="text-lg font-medium text-gray-900 mb-1">
-                              정산 데이터가 없습니다
-                            </h3>
-                            <p className="text-gray-500">
-                              조건을 변경하거나 데이터를 다시 로드해보세요.
-                            </p>
+              {/* 월별 보기 시 주차별 카드 렌더링, 전체 보기 시 테이블 렌더링 */}
+              {isMonthlyView ? (
+                // 주차별 카드 뷰
+                <div className="mt-4 space-y-6">
+                  {loading ? (
+                    // 로딩 상태 - 주차별 카드 스켈레톤
+                    <div className="space-y-6">
+                      {[...Array(4)].map((_, index) => (
+                        <div
+                          key={index}
+                          className="bg-white rounded-xl border border-gray-200 p-6"
+                        >
+                          <div className="animate-pulse">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="h-6 w-20 bg-gray-200 rounded"></div>
+                              <div className="h-6 w-32 bg-gray-200 rounded"></div>
+                            </div>
+                            <div className="space-y-3">
+                              {[...Array(2)].map((_, cardIndex) => (
+                                <div
+                                  key={cardIndex}
+                                  className="h-16 bg-gray-100 rounded-lg"
+                                ></div>
+                              ))}
+                            </div>
                           </div>
-                        </td>
+                        </div>
+                      ))}
+                    </div>
+                  ) : weeklyGroupedSettlements.length === 0 ? (
+                    // 데이터 없음
+                    <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <svg
+                          className="w-12 h-12 text-gray-400 mb-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        <h3 className="text-lg font-medium text-gray-900 mb-1">
+                          해당 월에 정산 데이터가 없습니다
+                        </h3>
+                        <p className="text-gray-500">
+                          {selectedYear}년 {selectedMonth}월에 생성된 정산
+                          내역이 없습니다.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    // 실제 주차별 데이터
+                    weeklyGroupedSettlements.map((weekData, index) => (
+                      <WeeklySettlementCard
+                        key={`${selectedYear}-${selectedMonth}-week-${index + 1}`}
+                        weekData={weekData}
+                        onDetailClick={handleDetailSettlement}
+                        formatCurrency={formatCurrency}
+                        formatDate={formatDate}
+                        getSettlementStatus={getSettlementStatus}
+                      />
+                    ))
+                  )}
+                </div>
+              ) : (
+                // 기존 테이블 뷰
+                <div className="w-full overflow-x-auto mt-4">
+                  <table className="w-full min-w-[1500px]">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <input
+                            type="checkbox"
+                            checked={isAllSelected}
+                            onChange={handleSelectAll}
+                            className="rounded border-gray-300"
+                          />
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          매니저ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          정산기간
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          총 수익
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          매니저 정산액
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          관리자 수수료
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          정산일
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          승인일
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          지급일
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          상태
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          액션
+                        </th>
                       </tr>
-                    ) : (
-                      // 실제 데이터
-                      settlements.map((settlement) => {
-                        const status = getSettlementStatus(settlement);
-                        const settlementId = settlement.id;
-
-                        return (
-                          <tr key={settlementId} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <input
-                                type="checkbox"
-                                checked={selectedSettlements.includes(
-                                  settlementId
-                                )}
-                                onChange={() =>
-                                  handleSelectSettlement(settlementId)
-                                }
-                                className="rounded border-gray-300"
-                              />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">
-                                {settlement.managerId}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">
-                                {formatDate(settlement.from)} ~{' '}
-                                {formatDate(settlement.to)}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {formatCurrency(settlement.totalAmount)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                              {formatCurrency(settlement.managerAmount)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {formatCurrency(settlement.adminAmount)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatDate(settlement.settledAt)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatDate(settlement.confirmedAt)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatDate(settlement.paidAt)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${status.color}`}
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {loading ? (
+                        // 로딩 상태
+                        [...Array(5)].map((_, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            {[...Array(11)].map((_, colIndex) => (
+                              <td
+                                key={colIndex}
+                                className="px-6 py-4 whitespace-nowrap"
                               >
-                                {status.text}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <div className="flex space-x-2">
-                                {!settlement.confirmedAt && (
-                                  <button
-                                    onClick={() =>
-                                      handleConfirmSettlement(settlement.id)
-                                    }
-                                    className="px-2 py-1 text-sm text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
-                                  >
-                                    승인
-                                  </button>
-                                )}
-                                {settlement.confirmedAt &&
-                                  !settlement.paidAt && (
+                                <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : settlements.length === 0 ? (
+                        // 데이터 없음
+                        <tr>
+                          <td colSpan="11" className="px-6 py-12 text-center">
+                            <div className="flex flex-col items-center">
+                              <svg
+                                className="w-12 h-12 text-gray-400 mb-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
+                              <h3 className="text-lg font-medium text-gray-900 mb-1">
+                                정산 데이터가 없습니다
+                              </h3>
+                              <p className="text-gray-500">
+                                조건을 변경하거나 데이터를 다시 로드해보세요.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        // 실제 데이터
+                        settlements.map((settlement) => {
+                          const status = getSettlementStatus(settlement);
+                          const settlementId =
+                            settlement.settlementId || settlement.id;
+
+                          return (
+                            <tr key={settlementId} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSettlements.includes(
+                                    settlementId
+                                  )}
+                                  onChange={() =>
+                                    handleSelectSettlement(settlementId)
+                                  }
+                                  className="rounded border-gray-300"
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {settlement.managerId}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {formatDate(settlement.from)} ~{' '}
+                                  {formatDate(settlement.to)}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {formatCurrency(settlement.totalAmount)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                                {formatCurrency(settlement.managerAmount)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {formatCurrency(settlement.adminAmount)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {formatDate(settlement.settledAt)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {formatDate(settlement.confirmedAt)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {formatDate(settlement.paidAt)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${status.color}`}
+                                >
+                                  {status.text}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div className="flex space-x-2">
+                                  {!settlement.confirmedAt && (
                                     <button
                                       onClick={() =>
-                                        handlePaySettlement(settlement.id)
+                                        handleConfirmSettlement(settlementId)
                                       }
-                                      className="px-2 py-1 text-sm text-green-600 bg-green-50 rounded hover:bg-green-100 transition-colors"
+                                      className="px-2 py-1 text-sm text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
                                     >
-                                      지급
+                                      승인
                                     </button>
                                   )}
-                                <button
-                                  onClick={() =>
-                                    handleDetailSettlement(settlement)
-                                  }
-                                  className="px-2 py-1 text-sm text-gray-600 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
-                                >
-                                  상세
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                                  {settlement.confirmedAt &&
+                                    !settlement.paidAt && (
+                                      <button
+                                        onClick={() =>
+                                          handlePaySettlement(settlementId)
+                                        }
+                                        className="px-2 py-1 text-sm text-green-600 bg-green-50 rounded hover:bg-green-100 transition-colors"
+                                      >
+                                        지급
+                                      </button>
+                                    )}
+                                  <button
+                                    onClick={() =>
+                                      handleDetailSettlement(settlement)
+                                    }
+                                    className="px-2 py-1 text-sm text-gray-600 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+                                  >
+                                    상세
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-              {/* Pagination */}
-              <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
-                <div className="text-sm text-gray-700">
-                  총 {pagination.totalElements}개 중{' '}
-                  {pagination.page * pagination.size + 1}-
-                  {Math.min(
-                    (pagination.page + 1) * pagination.size,
-                    pagination.totalElements
-                  )}
-                  개 표시
+              {/* Pagination - 전체 보기일 때만 표시 */}
+              {!isMonthlyView && (
+                <div className="w-full flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-200 gap-4">
+                  <div className="text-sm text-gray-700">
+                    총 {pagination.totalElements}개 중{' '}
+                    {pagination.page * pagination.size + 1}-
+                    {Math.min(
+                      (pagination.page + 1) * pagination.size,
+                      pagination.totalElements
+                    )}
+                    개 표시
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 0 || loading}
+                    >
+                      ‹
+                    </button>
+                    <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
+                      {pagination.page + 1}
+                    </span>
+                    <span className="px-3 py-1 text-sm text-gray-500">
+                      / {pagination.totalPages}
+                    </span>
+                    <button
+                      className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={
+                        pagination.page >= pagination.totalPages - 1 || loading
+                      }
+                    >
+                      ›
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 0 || loading}
-                  >
-                    ‹
-                  </button>
-                  <span className="px-3 py-1 text-sm text-white bg-blue-600 rounded">
-                    {pagination.page + 1}
-                  </span>
-                  <span className="px-3 py-1 text-sm text-gray-500">
-                    / {pagination.totalPages}
-                  </span>
-                  <button
-                    className="px-3 py-1 text-sm text-gray-500 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={
-                      pagination.page >= pagination.totalPages - 1 || loading
-                    }
-                  >
-                    ›
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

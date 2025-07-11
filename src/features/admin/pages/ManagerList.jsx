@@ -51,62 +51,38 @@ const ManagerList = () => {
     rejected: 0,
   });
 
-  // 검색 관련 상태 - 리뷰 관리와 동일한 패턴
+  // 검색 관련 상태 - 백엔드 DTO 구조에 맞춤
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState('all');
+
+  // 한글 입력 처리를 위한 상태
+  const [isComposing, setIsComposing] = useState(false);
 
   // 매니저 상세 모달 관련 상태
   const [selectedManager, setSelectedManager] = useState(null);
   const [managerDocuments, setManagerDocuments] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // 디바운스된 검색 - 성능 최적화
+  // 디바운스된 검색 - 한글 입력 최적화
   useEffect(() => {
+    // 한글 조합 중일 때는 검색하지 않음
+    if (isComposing) return;
+
     const timeoutId = setTimeout(() => {
-      // 검색어가 변경된 후 300ms 후에 실행
+      // 검색어가 있을 때만 검색 실행 (500ms 디바운스)
       if (searchTerm.trim()) {
         handleSearch();
       }
-    }, 300);
+      // 검색어가 비어있을 때는 자동으로 아무것도 하지 않음
+      // 사용자가 명시적으로 초기화 버튼을 눌렀을 때만 초기화
+    }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  }, [searchTerm, searchType, isComposing]);
 
-  // 검색과 필터를 적용한 매니저 필터링 - 성능 최적화
-  const getFilteredManagers = () => {
-    if (!managers.length) return [];
-
-    let filtered = managers;
-
-    // 검색어 필터링 - 최적화된 버전
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter((manager) => {
-        switch (searchType) {
-          case 'name':
-            return manager.name?.toLowerCase().includes(term);
-          case 'email':
-            return manager.email?.toLowerCase().includes(term);
-          case 'phone':
-            return manager.phone?.toLowerCase().includes(term);
-          case 'career':
-            return manager.career?.toLowerCase().includes(term);
-          case 'all':
-          default:
-            return (
-              manager.name?.toLowerCase().includes(term) ||
-              manager.email?.toLowerCase().includes(term) ||
-              manager.phone?.toLowerCase().includes(term) ||
-              manager.career?.toLowerCase().includes(term)
-            );
-        }
-      });
-    }
-
-    return filtered;
-  };
-
-  const filteredManagers = getFilteredManagers();
+  // 서버 사이드 검색을 사용하므로 클라이언트 사이드 필터링 제거
+  // 백엔드에서 검색된 결과를 직접 사용
+  const filteredManagers = managers;
 
   // 탭 이름과 API 상태값 매핑
   const getStatusForAPI = (tabName) => {
@@ -139,7 +115,37 @@ const ManagerList = () => {
     return colorMap[status] || 'bg-gray-100 text-gray-800';
   };
 
-  // API 호출 함수
+  // 개별 필드 검색을 위한 API 호출 함수
+  const fetchManagersByField = async (field, query, page, filterStatus) => {
+    const token = localStorage.getItem('accessToken');
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: '50', // 전체 검색 시 더 많은 결과 가져오기
+    });
+
+    const apiStatus = getStatusForAPI(filterStatus);
+    if (apiStatus) {
+      params.append('status', apiStatus);
+    }
+    params.append(field, query);
+
+    const response = await fetch(`${API_URL}/api/v1/admin/managers?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.success && data.data ? data.data.content || [] : [];
+  };
+
+  // API 호출 함수 - 전체 검색 시 OR 조건 지원
   const fetchManagers = async (
     page = 0,
     filterStatus = null,
@@ -154,53 +160,85 @@ const ManagerList = () => {
         throw new Error('인증 토큰이 없습니다.');
       }
 
-      // 검색 파라미터 구성 - size를 고정값으로 사용
+      // 전체 검색인 경우 OR 조건을 위해 각 필드별로 검색 후 결합
+      if (
+        searchData &&
+        searchData.query &&
+        searchData.query.trim() &&
+        searchData.scope === 'all'
+      ) {
+        const query = searchData.query.trim();
+
+        console.log('전체 검색 실행:', query);
+
+        // 병렬로 각 필드 검색 실행
+        const [nameResults, phoneResults, careerResults] = await Promise.all([
+          fetchManagersByField('name', query, 0, filterStatus),
+          fetchManagersByField('phone', query, 0, filterStatus),
+          fetchManagersByField('career', query, 0, filterStatus),
+        ]);
+
+        // 중복 제거하여 결과 합치기 (id 기준)
+        const allResults = [...nameResults, ...phoneResults, ...careerResults];
+        const uniqueResults = allResults.filter(
+          (manager, index, arr) =>
+            arr.findIndex((m) => m.id === manager.id) === index
+        );
+
+        console.log('전체 검색 결과:', {
+          name: nameResults.length,
+          phone: phoneResults.length,
+          career: careerResults.length,
+          unique: uniqueResults.length,
+        });
+
+        // 페이징 처리
+        const pageSize = 10;
+        const startIndex = page * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedResults = uniqueResults.slice(startIndex, endIndex);
+
+        setManagers(paginatedResults);
+        setPagination({
+          page: page,
+          size: pageSize,
+          totalElements: uniqueResults.length,
+          totalPages: Math.ceil(uniqueResults.length / pageSize),
+        });
+
+        return;
+      }
+
+      // 개별 필드 검색 또는 검색어 없는 경우
       const params = new URLSearchParams({
         page: page.toString(),
-        size: '10', // 고정값 사용
+        size: '10',
       });
 
-      // 상태 필터 추가 - API 상태값으로 변환
       const apiStatus = getStatusForAPI(filterStatus);
       if (apiStatus) {
         params.append('status', apiStatus);
       }
 
-      // 검색 파라미터 추가
-      if (searchData) {
-        const query = searchData.query;
+      // 개별 필드 검색
+      if (searchData && searchData.query && searchData.query.trim()) {
+        const query = searchData.query.trim();
         const scope = searchData.scope;
 
-        if (query && query.trim()) {
-          // 선택된 범위에 따라 검색 파라미터 추가
-          switch (scope) {
-            case 'name':
-              params.append('name', query.trim());
-              break;
-            case 'email':
-              params.append('email', query.trim());
-              break;
-            case 'phone':
-              params.append('phone', query.trim());
-              break;
-            case 'career':
-              params.append('career', query.trim());
-              break;
-            case 'all':
-            default:
-              // 전체 검색인 경우 모든 필드에 검색
-              params.append('name', query.trim());
-              params.append('email', query.trim());
-              params.append('phone', query.trim());
-              params.append('career', query.trim());
-              break;
-          }
+        switch (scope) {
+          case 'name':
+            params.append('name', query);
+            break;
+          case 'phone':
+            params.append('phone', query);
+            break;
+          case 'career':
+            params.append('career', query);
+            break;
         }
       }
 
-      console.log('Fetching managers with params:', Object.fromEntries(params));
-      console.log('Filter status:', filterStatus, '-> API status:', apiStatus);
-      console.log('Search params:', searchData);
+      console.log('개별 검색 실행:', Object.fromEntries(params));
 
       const response = await fetch(
         `${API_URL}/api/v1/admin/managers?${params}`,
@@ -218,7 +256,6 @@ const ManagerList = () => {
       }
 
       const data = await response.json();
-      console.log('API Response:', data);
 
       if (data.success && data.data) {
         setManagers(data.data.content || []);
@@ -229,8 +266,13 @@ const ManagerList = () => {
           totalPages: data.data.totalPages || 0,
         });
       } else {
-        console.warn('No data received from API');
         setManagers([]);
+        setPagination({
+          page: 0,
+          size: 10,
+          totalElements: 0,
+          totalPages: 0,
+        });
       }
     } catch (err) {
       console.error('Manager fetch error:', err);
@@ -355,16 +397,20 @@ const ManagerList = () => {
 
   // 검색 초기화 함수
   const handleClearSearch = () => {
+    const wasSearching = searchTerm.trim() !== '';
+
     setSearchTerm('');
     setSearchType('all');
 
-    // 검색 초기화 후 현재 탭의 데이터 다시 로드
-    setPagination((prev) => ({
-      ...prev,
-      page: 0,
-    }));
+    // 검색어가 있었을 때만 데이터 다시 로드
+    if (wasSearching) {
+      setPagination((prev) => ({
+        ...prev,
+        page: 0,
+      }));
 
-    fetchManagers(0, activeTab, null);
+      fetchManagers(0, activeTab, null);
+    }
   };
 
   // 엔터 키 검색 핸들러
@@ -582,7 +628,6 @@ const ManagerList = () => {
                   >
                     <option value="all">전체</option>
                     <option value="name">이름</option>
-                    <option value="email">이메일</option>
                     <option value="phone">전화번호</option>
                     <option value="career">경력</option>
                   </select>
@@ -608,9 +653,18 @@ const ManagerList = () => {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       onKeyDown={handleKeyPress}
-                      placeholder="검색어를 입력하세요"
+                      onCompositionStart={() => setIsComposing(true)}
+                      onCompositionEnd={() => setIsComposing(false)}
+                      placeholder={
+                        searchType === 'all'
+                          ? '이름, 전화번호, 경력에서 통합 검색'
+                          : searchType === 'name'
+                            ? '이름을 입력하세요'
+                            : searchType === 'phone'
+                              ? '전화번호를 입력하세요'
+                              : '경력을 입력하세요'
+                      }
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={loading}
                     />
                   </div>
 
@@ -673,10 +727,10 @@ const ManagerList = () => {
                         매니저 정보
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        경력
+                        전문분야
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        전문분야
+                        경력
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         상태
