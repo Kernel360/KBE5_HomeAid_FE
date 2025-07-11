@@ -1376,11 +1376,6 @@ const PaymentButtonWrapper = ({
               </span>
             </div>
           )}
-          <div className="service-ready-info">
-            <p className="service-ready-notice">
-              💼 매니저가 서비스 준비 중입니다.
-            </p>
-          </div>
         </div>
       </div>
     );
