@@ -135,6 +135,12 @@ export const apiService = {
     getMySettlements: (startDate) => {
       return api.get(`/my/settlement/weekly?start=${startDate}`);
     },
+    getMyMonthlySettlements: (year, month) => {
+      return api.get(`/my/settlement/monthly?year=${year}&month=${month}`);
+    },
+    getAdminMonthlySettlements: (year, month) => {
+      return api.get(`/admin/settlements/monthly?year=${year}&month=${month}`);
+    },
     getSettlementPayments: (settlementId) => {
       return api.get(`/my/settlement/${settlementId}/payments`);
     },

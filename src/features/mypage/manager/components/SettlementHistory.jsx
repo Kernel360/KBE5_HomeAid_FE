@@ -18,7 +18,6 @@ const SettlementHistory = ({ onBack }) => {
   const [settlements, setSettlements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [currentView, setCurrentView] = useState('list'); // 'list' or 'detail'
   const [selectedSettlement, setSelectedSettlement] = useState(null);
   const [stats, setStats] = useState({
@@ -28,14 +27,19 @@ const SettlementHistory = ({ onBack }) => {
     totalServices: 0,
   });
 
-  // 정산 내역 조회 (여러 주간 데이터)
+  // 월별 주차 필터 상태 추가
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [isMonthlyView, setIsMonthlyView] = useState(false);
+  const [weeklySettlements, setWeeklySettlements] = useState([]);
+
+  // 정산 내역 조회 (간단한 조회)
   const fetchSettlements = async () => {
     try {
       setLoading(true);
       setError(null);
 
       console.log('🗓️ 정산 내역 조회 시작:', {
-        선택기간: selectedPeriod,
         로그인사용자: user,
         사용자ID: user?.id,
         사용자유형: user?.userType,
@@ -44,9 +48,9 @@ const SettlementHistory = ({ onBack }) => {
           : '토큰 없음',
       });
 
-      // 여러 주간의 정산 데이터를 수집
+      // 최근 10주간의 정산 데이터를 수집
       const allSettlements = [];
-      const weeksToFetch = getWeeksToFetch(selectedPeriod);
+      const weeksToFetch = getWeeksToFetch();
 
       console.log('📅 조회할 주간 목록:', weeksToFetch);
 
@@ -109,29 +113,89 @@ const SettlementHistory = ({ onBack }) => {
     }
   };
 
-  // 조회할 주간 목록 생성 (여러 주간 정산 조회용)
-  const getWeeksToFetch = (period) => {
+  // 특정 월의 주차별 정산 조회
+  const fetchMonthlyWeeklySettlements = async (year, month) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('📅 월별 주차 정산 조회 시작:', { year, month });
+
+      // 백엔드 월별 정산 API 호출
+      const response = await apiService.settlement.getMyMonthlySettlements(
+        year,
+        month
+      );
+
+      console.log('📡 월별 정산 API 응답:', {
+        status: response.status,
+        dataLength: response?.data?.data?.length || 0,
+        data: response?.data?.data,
+      });
+
+      if (response?.data?.data && Array.isArray(response.data.data)) {
+        const settlements = response.data.data;
+
+        // 해당 월의 주차 정보 계산
+        const weeks = getWeeksInMonth(year, month);
+        console.log('🗓️ 계산된 주차 정보:', weeks);
+
+        // 정산 데이터를 주차별로 그룹핑
+        const groupedByWeek = weeks.map((week) => {
+          // 해당 주차에 해당하는 정산들을 찾기
+          const weekSettlements = settlements.filter((settlement) => {
+            const settlementStart = new Date(settlement.from);
+            const settlementEnd = new Date(settlement.to);
+            const weekStart = new Date(week.start);
+            const weekEnd = new Date(week.end);
+
+            // 정산 기간이 해당 주차와 겹치는지 확인
+            return settlementStart <= weekEnd && settlementEnd >= weekStart;
+          });
+
+          // 주차 정보를 정산 데이터에 추가
+          const settlementsWithWeek = weekSettlements.map((settlement) => ({
+            ...settlement,
+            weekInfo: week,
+          }));
+
+          return {
+            ...week,
+            settlements: settlementsWithWeek,
+            totalAmount: settlementsWithWeek.reduce(
+              (sum, s) => sum + s.totalAmount,
+              0
+            ),
+            count: settlementsWithWeek.length,
+          };
+        });
+
+        setWeeklySettlements(groupedByWeek);
+        console.log('📊 주차별 그룹핑 완료:', groupedByWeek);
+
+        // 전체 통계도 업데이트
+        calculateStats(settlements);
+      } else {
+        console.log('📭 조회된 정산 내역 없음');
+        setWeeklySettlements([]);
+      }
+    } catch (err) {
+      console.error('❌ 월별 주차 정산 조회 실패:', err);
+      setError('월별 정산 내역을 불러오는 중 오류가 발생했습니다.');
+
+      // 에러 시 더미 주차 데이터 생성
+      const dummyWeeklyData = generateDummyWeeklyData(year, month);
+      setWeeklySettlements(dummyWeeklyData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 조회할 주간 목록 생성 (고정된 10주간)
+  const getWeeksToFetch = () => {
     const now = new Date();
     const weeks = [];
-    let weeksCount;
-
-    switch (period) {
-      case 'week':
-        weeksCount = 1; // 최근 1주
-        break;
-      case 'month':
-        weeksCount = 4; // 최근 4주 (1개월)
-        break;
-      case 'quarter':
-        weeksCount = 12; // 최근 12주 (3개월)
-        break;
-      case 'year':
-        weeksCount = 52; // 최근 52주 (1년)
-        break;
-      default: // 'all'
-        weeksCount = 10; // 최근 10주 (적당한 범위)
-        break;
-    }
+    const weeksCount = 10; // 최근 10주
 
     // 각 주의 시작일을 계산
     for (let i = 0; i < weeksCount; i++) {
@@ -143,6 +207,59 @@ const SettlementHistory = ({ onBack }) => {
     }
 
     return weeks;
+  };
+
+  // 특정 월의 주차 계산
+  const getWeeksInMonth = (year, month) => {
+    const weeks = [];
+    const firstDayOfMonth = new Date(year, month - 1, 1);
+    const lastDayOfMonth = new Date(year, month, 0);
+
+    // 월의 첫째 주 시작일 (월요일 기준)
+    const firstMonday = new Date(firstDayOfMonth);
+    const dayOfWeek = firstDayOfMonth.getDay();
+    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 일요일은 6일 전이 월요일
+    firstMonday.setDate(firstDayOfMonth.getDate() - daysToMonday);
+
+    let currentWeekStart = new Date(firstMonday);
+    let weekNumber = 1;
+
+    // 해당 월에 포함되는 모든 주차 계산
+    while (currentWeekStart <= lastDayOfMonth) {
+      const weekEnd = new Date(currentWeekStart);
+      weekEnd.setDate(currentWeekStart.getDate() + 6); // 일요일까지
+
+      // 주차가 해당 월과 겹치는지 확인
+      const weekOverlapsMonth =
+        currentWeekStart <= lastDayOfMonth && weekEnd >= firstDayOfMonth;
+
+      if (weekOverlapsMonth) {
+        weeks.push({
+          weekNumber: weekNumber,
+          start: formatDateForAPI(currentWeekStart),
+          end: formatDateForAPI(weekEnd),
+          startDate: new Date(currentWeekStart),
+          endDate: new Date(weekEnd),
+          label: `${month}월 ${weekNumber}주차`,
+        });
+      }
+
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+      weekNumber++;
+
+      // 무한 루프 방지 (최대 6주)
+      if (weekNumber > 6) break;
+    }
+
+    return weeks;
+  };
+
+  // API용 날짜 포맷팅
+  const formatDateForAPI = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // 날짜 포맷팅 헬퍼 함수
@@ -197,6 +314,44 @@ const SettlementHistory = ({ onBack }) => {
         status: statuses[Math.floor(Math.random() * statuses.length)],
       };
     });
+  };
+
+  // 더미 주차별 데이터 생성
+  const generateDummyWeeklyData = (year, month) => {
+    const weeks = getWeeksInMonth(year, month);
+
+    return weeks.map((week) => ({
+      ...week,
+      settlements: Array.from(
+        { length: Math.floor(Math.random() * 3) + 1 },
+        (_, index) => {
+          const totalAmount = Math.floor(Math.random() * 300000) + 50000;
+          const managerAmount = Math.round(totalAmount * 0.8);
+          const adminAmount = totalAmount - managerAmount;
+
+          return {
+            id: `${week.weekNumber}-${index + 1}`,
+            managerId: 1,
+            from: week.start,
+            to: week.end,
+            totalAmount,
+            managerAmount,
+            adminAmount,
+            settledAt: new Date().toISOString(),
+            status: ['PENDING', 'CONFIRMED', 'PAID'][
+              Math.floor(Math.random() * 3)
+            ],
+            weekInfo: week,
+          };
+        }
+      ),
+      get totalAmount() {
+        return this.settlements.reduce((sum, s) => sum + s.totalAmount, 0);
+      },
+      get count() {
+        return this.settlements.length;
+      },
+    }));
   };
 
   // 정산 상세 보기
@@ -310,7 +465,7 @@ const SettlementHistory = ({ onBack }) => {
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchSettlements();
-  }, [selectedPeriod]);
+  }, []);
 
   // 정산 상세 보기 렌더링
   if (currentView === 'detail' && selectedSettlement) {
@@ -363,31 +518,6 @@ const SettlementHistory = ({ onBack }) => {
               <p className="text-lg font-bold text-gray-900">
                 ₩{formatAmount(stats.pendingSettlement)}
               </p>
-            </div>
-          </div>
-
-          {/* 기간 필터 */}
-          <div className="mb-4">
-            <div className="flex space-x-2 overflow-x-auto pb-2">
-              {[
-                { value: 'week', label: '최근 1주' },
-                { value: 'month', label: '최근 1개월' },
-                { value: 'quarter', label: '최근 3개월' },
-                { value: 'year', label: '최근 1년' },
-                { value: 'all', label: '전체' },
-              ].map((period) => (
-                <button
-                  key={period.value}
-                  onClick={() => setSelectedPeriod(period.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    selectedPeriod === period.value
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  {period.label}
-                </button>
-              ))}
             </div>
           </div>
 
@@ -496,7 +626,7 @@ const SettlementHistory = ({ onBack }) => {
                   <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500 mb-2">정산 내역이 없습니다</p>
                   <p className="text-sm text-gray-400">
-                    해당 기간에 정산된 내역이 없습니다
+                    아직 정산된 내역이 없습니다
                   </p>
                 </div>
               )}
