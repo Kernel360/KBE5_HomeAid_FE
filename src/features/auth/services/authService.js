@@ -66,7 +66,7 @@ export const authService = {
     console.log('🔄 고객 회원가입 API 호출:', customerData);
 
     try {
-      const response = await api.post('/users/signup/customers', customerData);
+      const response = await api.post('/auth/signup/customers', customerData);
       console.log('✅ 고객 회원가입 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -99,7 +99,7 @@ export const authService = {
     console.log('🔄 매니저 회원가입 API 호출:', managerData);
 
     try {
-      const response = await api.post('/users/signup/managers', managerData);
+      const response = await api.post('/auth/signup/managers', managerData);
       console.log('✅ 매니저 회원가입 성공:', response.data);
       return response.data;
     } catch (error) {
@@ -169,7 +169,36 @@ export const authService = {
 
   // 회원가입 단계별 데이터 저장 (예시)
   saveSignUpStep: async (step, data) => {
-    const response = await api.post(`/users/signup/step/${step}`, data);
+    const response = await api.post(`/auth/signup/step/${step}`, data);
     return response.data;
   },
+
+  socialSignIn: async (oauthCode) => {
+    try {
+      const response = await api.post('/auth/oauth/token', { oauthCode });
+      const { accessToken, refreshToken, userId, username, role } = response.data;
+
+      localStorage.setItem('accessToken', accessToken);
+
+      const { setAccessToken, setUser, setRefreshToken } = useAuthStore.getState();
+      setAccessToken(accessToken);
+      setRefreshToken(refreshToken);
+      setUser({ userId, username, role });
+
+      if (api.defaults) {
+        api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+      }
+
+      return { userId, username, role };
+    } catch (error) {
+      console.error('❌ 소셜 로그인 API 오류:', error);
+      if (error.response) {
+        console.error('🚨 응답 상태:', error.response.status);
+        console.error('🚨 응답 데이터:', error.response.data);
+      } else {
+        console.error('🚨 에러 메시지:', error.message);
+      }
+      throw error;
+    }
+  }
 };

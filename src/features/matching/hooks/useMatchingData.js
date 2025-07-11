@@ -68,6 +68,7 @@ export const useMatchingData = () => {
       workTime: formatDateTime(item.startTime),
       status: getTabNameFromStatus(item.matchingStatus),
       statusColor: getStatusColor(item.matchingStatus),
+      matchingId: item.matchingId,
     }));
   };
 

@@ -641,8 +641,18 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
                   <div>
                     <p className="text-sm text-gray-600">결제 금액</p>
                     <p className="font-medium text-lg">
-                      ₩{formatAmount(paymentDetail.amount)}
+                      ₩
+                      {formatAmount(
+                        paymentDetail.netAmount || paymentDetail.amount
+                      )}
                     </p>
+                    {paymentDetail.refundedAmount &&
+                      paymentDetail.refundedAmount > 0 && (
+                        <p className="text-xs text-gray-500">
+                          원래: ₩{formatAmount(paymentDetail.amount)} | 환불: ₩
+                          {formatAmount(paymentDetail.refundedAmount)}
+                        </p>
+                      )}
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">결제 수단</p>
@@ -862,7 +872,7 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
           isOpen={showPartialRefundModal}
           onClose={() => setShowPartialRefundModal(false)}
           onSubmit={handlePartialRefundSubmit}
-          maxAmount={paymentDetail.amount}
+          maxAmount={paymentDetail.netAmount || paymentDetail.amount}
           loading={loading}
         />
       )}

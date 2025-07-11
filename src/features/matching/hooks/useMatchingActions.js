@@ -51,7 +51,7 @@ export const useMatchingActions = () => {
 
     navigate('/manager/matching/matching-request', {
       state: {
-        matchingId: matchingItem.id,
+        matchingId: matchingItem.matchingId,
       },
     });
   };
