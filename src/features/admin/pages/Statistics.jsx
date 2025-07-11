@@ -11,6 +11,7 @@ import {
   fetchReservationStats,
   fetchManagerRatingStats,
   fetchMatchingStats,
+  fetchMonthlyTrendStats,
 } from '../services/statisticsAPI.js';
 import {
   getUserStatsCards,
@@ -99,6 +100,67 @@ const Statistics = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [noData, setNoData] = useState(false); // 데이터 없음 상태
+
+  // 월별 일별 추이 데이터 상태
+  const [monthlyTrendData, setMonthlyTrendData] = useState(null);
+  const [trendLoading, setTrendLoading] = useState(false);
+
+  // 월별 일별 추이 데이터 로드
+  const loadMonthlyTrend = async () => {
+    if (!selectedMonth || activeMainTab === '전체') {
+      setMonthlyTrendData(null);
+      return;
+    }
+
+    try {
+      setTrendLoading(true);
+      console.log('📈 월별 추이 데이터 로딩 시작:', {
+        activeMainTab,
+        selectedYear,
+        selectedMonth,
+      });
+
+      let endpoint = '';
+      switch (activeMainTab) {
+        case '회원현황':
+          endpoint = 'users';
+          break;
+        case '정산':
+          endpoint = 'settlements';
+          break;
+        case '결제':
+          endpoint = 'payments';
+          break;
+        case '예약관리':
+          endpoint = 'reservations';
+          break;
+        case '매니저별점':
+          endpoint = 'manager-ratings';
+          break;
+        case '매칭':
+          endpoint = 'matching';
+          break;
+        default:
+          console.log('지원하지 않는 탭입니다:', activeMainTab);
+          setMonthlyTrendData(null);
+          return;
+      }
+
+      const trendData = await fetchMonthlyTrendStats(
+        endpoint,
+        selectedYear,
+        selectedMonth
+      );
+      setMonthlyTrendData(trendData);
+
+      console.log('✅ 월별 추이 데이터 로딩 완료:', trendData);
+    } catch (err) {
+      console.error('❌ 월별 추이 데이터 로딩 실패:', err);
+      setMonthlyTrendData(null);
+    } finally {
+      setTrendLoading(false);
+    }
+  };
 
   // 통계 데이터 로드
   const loadStats = async () => {
@@ -255,6 +317,10 @@ const Statistics = () => {
     }
 
     loadStats();
+    // 월이 선택된 경우에만 추이 데이터 로딩
+    if (selectedMonth) {
+      loadMonthlyTrend();
+    }
   }, [selectedYear, selectedMonth, selectedDay, activeMainTab]);
 
   // 현재 탭에 따른 통계 카드 반환
@@ -448,6 +514,8 @@ const Statistics = () => {
               loading={loading}
               selectedYear={selectedYear}
               selectedMonth={selectedMonth}
+              monthlyTrendData={monthlyTrendData}
+              trendLoading={trendLoading}
             />
 
             {/* Distribution Chart */}

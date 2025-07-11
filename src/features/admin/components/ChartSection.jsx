@@ -9,6 +9,8 @@ import { generateChartData, getChartTitle } from '../utils/statisticsUtils.js';
  * @param {boolean} props.loading - 로딩 상태
  * @param {number} props.selectedYear - 선택된 연도
  * @param {number} props.selectedMonth - 선택된 월
+ * @param {Array} props.monthlyTrendData - 월별 일별 추이 데이터
+ * @param {boolean} props.trendLoading - 추이 데이터 로딩 상태
  * @returns {JSX.Element} 차트 섹션 컴포넌트
  */
 const ChartSection = ({
@@ -17,8 +19,179 @@ const ChartSection = ({
   loading,
   selectedYear,
   selectedMonth,
+  monthlyTrendData,
+  trendLoading,
 }) => {
   const chartTitle = getChartTitle(activeTab);
+
+  // 월별 일별 추이 차트 렌더링
+  const renderMonthlyTrendChart = () => {
+    if (!selectedMonth || !monthlyTrendData) return null;
+
+    // 추이 데이터에서 차트용 데이터 추출
+    const extractChartValue = (dayData) => {
+      if (!dayData || dayData.hasData === false) return 0;
+
+      switch (activeTab) {
+        case '회원현황':
+          return dayData.totalUsers || dayData.signupCount || 0;
+        case '정산':
+          return dayData.paidCount || dayData.requestedCount || 0;
+        case '결제':
+          return dayData.totalAmount || dayData.completedCount || 0;
+        case '예약관리':
+          return dayData.totalCount || dayData.completedCount || 0;
+        case '매니저별점':
+          return dayData.averageRating || 0;
+        case '매칭':
+          return dayData.totalCount || dayData.successCount || 0;
+        default:
+          return 0;
+      }
+    };
+
+    const values = monthlyTrendData.map(extractChartValue);
+    const labels = monthlyTrendData.map((d) => `${d.day}일`);
+    const maxValue = Math.max(...values, 10);
+
+    return (
+      <div className="w-full bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            {chartTitle} - {selectedYear}년 {selectedMonth}월 일별 추이
+          </h3>
+          {trendLoading && (
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-gray-600">로딩 중...</span>
+            </div>
+          )}
+        </div>
+
+        <div className="w-full h-64 lg:h-80 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 relative overflow-hidden">
+          {/* Grid Lines */}
+          <div className="absolute inset-4 grid grid-rows-5 grid-cols-1 gap-0 opacity-20">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="border-t border-gray-300"></div>
+            ))}
+          </div>
+
+          {/* Chart Bars */}
+          <div className="relative h-full flex items-end justify-center space-x-1 px-2">
+            {values.map((value, index) => {
+              const height = Math.max((value / maxValue) * 200, 4);
+              const isToday = index === values.length - 1;
+
+              return (
+                <div
+                  key={index}
+                  className="flex flex-col items-center flex-1 max-w-8"
+                  title={`${labels[index]}: ${value.toLocaleString()}`}
+                >
+                  {/* Bar */}
+                  <div
+                    className={`w-full rounded-t-sm transition-all duration-300 hover:opacity-80 ${
+                      isToday
+                        ? 'bg-gradient-to-t from-blue-600 to-blue-400 shadow-lg'
+                        : value > 0
+                          ? 'bg-gradient-to-t from-blue-400 to-blue-300'
+                          : 'bg-gray-200'
+                    }`}
+                    style={{ height: `${height}px` }}
+                  >
+                    {/* Value label for today or high values */}
+                    {(isToday || value > maxValue * 0.8) && value > 0 && (
+                      <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-gray-700 bg-white px-1 rounded shadow">
+                        {value.toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Day label */}
+                  <div
+                    className={`mt-1 text-xs text-center ${
+                      isToday ? 'font-bold text-blue-600' : 'text-gray-500'
+                    }`}
+                  >
+                    {index % 5 === 0 || isToday
+                      ? `${monthlyTrendData[index].day}`
+                      : ''}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Y-axis labels */}
+          <div className="absolute left-0 top-4 bottom-8 flex flex-col justify-between text-xs text-gray-500">
+            <span>{maxValue.toLocaleString()}</span>
+            <span>{Math.round(maxValue * 0.75).toLocaleString()}</span>
+            <span>{Math.round(maxValue * 0.5).toLocaleString()}</span>
+            <span>{Math.round(maxValue * 0.25).toLocaleString()}</span>
+            <span>0</span>
+          </div>
+
+          {/* Summary Stats */}
+          <div className="absolute top-4 right-4 bg-white bg-opacity-90 rounded-lg p-3 text-xs">
+            <div className="space-y-1">
+              <div>총 데이터: {values.filter((v) => v > 0).length}일</div>
+              <div>최대값: {Math.max(...values).toLocaleString()}</div>
+              <div>
+                평균:{' '}
+                {Math.round(
+                  values.reduce((a, b) => a + b, 0) / values.length
+                ).toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 월이 선택된 경우 일별 추이 차트 표시
+  if (selectedMonth && activeTab !== '전체') {
+    if (trendLoading) {
+      return (
+        <div className="w-full bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {chartTitle}
+            </h3>
+          </div>
+
+          <div className="w-full h-64 lg:h-80 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg flex items-center justify-center relative">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-600">일별 추이 데이터 로딩 중...</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (monthlyTrendData && monthlyTrendData.length > 0) {
+      return renderMonthlyTrendChart();
+    }
+
+    // 월별 추이 데이터가 없는 경우
+    return (
+      <div className="w-full bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <h3 className="text-lg font-semibold text-gray-900">{chartTitle}</h3>
+        </div>
+
+        <div className="w-full h-64 lg:h-80 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg flex items-center justify-center relative">
+          <div className="text-gray-500 text-center">
+            <div className="text-lg font-medium mb-2">일별 데이터 없음</div>
+            <div className="text-sm">
+              {selectedYear}년 {selectedMonth}월에 해당하는 데이터가 없습니다.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // 전체 탭의 경우 차트 대신 메시지 표시
   if (activeTab === '전체') {
