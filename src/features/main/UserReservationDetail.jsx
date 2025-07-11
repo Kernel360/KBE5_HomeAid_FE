@@ -756,8 +756,11 @@ const UserReservationDetail = () => {
         return;
       }
 
+      const backendReservation = await getReservationById(reservationId);
+      const data = backendReservation.data;
+
       const response = await fetch(
-        `${getBaseUrl()}/customer/matchings/${reservationId}/to-manager`,
+        `${getBaseUrl()}/customer/matchings/${data.data.matchingId}/to-manager`,
         {
           method: 'PATCH',
           headers: {
@@ -782,9 +785,6 @@ const UserReservationDetail = () => {
         const errorData = await response.json();
         throw new Error(errorData.message || '매칭 응답 처리에 실패했습니다.');
       }
-
-      const backendReservation = await getReservationById(reservationId);
-      const data = backendReservation.data;
 
       if (data) {
         const transformedReservation = {

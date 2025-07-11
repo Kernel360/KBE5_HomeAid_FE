@@ -6,6 +6,7 @@ import Modal from '../../../components/Modal.jsx';
 import useReservationStore from '../store/reservationStore.js';
 import { apiService } from '@/api';
 
+
 const ManagerServiceCheckIn = () => {
   const reservationId = useReservationStore.getState().reservationId;
   const [reservation, setReservation] = useState({});
@@ -17,7 +18,8 @@ const ManagerServiceCheckIn = () => {
     checkIn: false,
     checkOut: false,
   });
-  const [loading, setLoading] = useState(false);
+  const [workLog, setWorkLog] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [issueContent, setIssueContent] = useState('');
   const [issueFiles, setIssueFiles] = useState([]);
   const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
@@ -206,6 +208,18 @@ const ManagerServiceCheckIn = () => {
     }
   };
 
+  const fetchWorkLog = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.workLog.getWorkLog(reservation.matchingId);
+      setWorkLog(response.data.data);
+    } catch (error) {
+      console.error('체크인/아웃 상태 로딩 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     getCurrentLocation();
     if (reservationId) {
@@ -216,19 +230,31 @@ const ManagerServiceCheckIn = () => {
       }
       fetchReservation();
     }
-  }, [reservationId]);
+
+    if (reservation?.matchingId) {
+      fetchWorkLog();
+    }
+  }, [reservation?.matchingId]);
+
+
+  const status = workLog?.status;
+  const 체크인완료 = status !== 'NOT_STARTED';
+  const 체크아웃완료 = status === 'CHECKOUT';
+  
+  const 체크인버튼활성 = status === 'NOT_STARTED';
+  const 체크아웃버튼활성 = status === 'CHECKIN';
 
   // 디버깅을 위한 상태 변화 로그
-  useEffect(() => {
-    console.log('🔍 현재 체크 상태:', checkStatus);
-    console.log('  - 체크인:', checkStatus.checkIn ? '완료' : '미완료');
-    console.log('  - 체크아웃:', checkStatus.checkOut ? '완료' : '미완료');
-    console.log('  - 체크인 버튼 활성화:', !checkStatus.checkIn && !loading);
-    console.log(
-      '  - 체크아웃 버튼 활성화:',
-      checkStatus.checkIn && !checkStatus.checkOut && !loading
-    );
-  }, [checkStatus, loading]);
+  // useEffect(() => {
+  //   console.log('🔍 현재 체크 상태:', checkStatus);
+  //   console.log('  - 체크인:', checkStatus.checkIn ? '완료' : '미완료');
+  //   console.log('  - 체크아웃:', checkStatus.checkOut ? '완료' : '미완료');
+  //   console.log('  - 체크인 버튼 활성화:', !checkStatus.checkIn && !loading);
+  //   console.log(
+  //     '  - 체크아웃 버튼 활성화:',
+  //     checkStatus.checkIn && !checkStatus.checkOut && !loading
+  //   );
+  // }, [checkStatus, loading]);
 
   const toggleCheckInModal = () => {
     setShowCheckInModal(!showCheckInModal);
@@ -274,7 +300,7 @@ const ManagerServiceCheckIn = () => {
       }
 
       // 이미 체크인된 상태인지 확인
-      if (checkStatus.checkIn) {
+      if (workLog?.status === 'CHECKIN') {
         alert('이미 체크인이 완료되었습니다.');
         toggleCheckInModal();
         return;
@@ -283,21 +309,15 @@ const ManagerServiceCheckIn = () => {
       const requestData = {
         lat: currentLocation.lat,
         lng: currentLocation.lng,
-        reservationId: reservationId,
       };
+    
+      await apiService.workLog.checkIn(reservation.matchingId, requestData);
 
-      const response = await apiService.workLog.checkIn(requestData);
 
-      if (response.data?.data) {
-        // 체크인 성공 시 상태 업데이트
-        updateCheckStatus({
-          checkIn: true,
-          checkOut: false,
-        });
+      alert('체크인이 완료되었습니다.');
+      toggleCheckInModal();
+      await fetchWorkLog();
 
-        alert('체크인이 완료되었습니다.');
-        toggleCheckInModal();
-      }
     } catch (error) {
       console.error('체크인 실패:', error);
       console.error('에러 상세:', error.response?.data);
@@ -328,40 +348,21 @@ const ManagerServiceCheckIn = () => {
       }
 
       // 위치 정보만 전송
-      const response = await apiService.workLog.checkOut(reservationId, {
+      await apiService.workLog.checkOut(reservation.matchingId, {
         lat: currentLocation.lat,
         lng: currentLocation.lng,
       });
 
-      console.log('체크아웃 결과 데이터', response.data);
-
-      // 체크아웃 성공 시 즉시 상태 업데이트
-      updateCheckStatus({
-        checkIn: true, // 체크인은 이미 완료된 상태 유지
-        checkOut: true, // 체크아웃 완료
-      });
 
       alert('체크아웃이 완료되었습니다.');
       toggleCheckOutModal();
-
-      // 서버와 동기화를 위해 예약 정보 다시 불러오기
-      setTimeout(() => {
-        fetchReservation();
-      }, 500);
+      await fetchWorkLog();
     } catch (error) {
       console.error('체크아웃 실패:', error);
       alert(error.response?.data?.message || '체크아웃에 실패했습니다.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const cancelCheckIn = () => {
-    setShowCheckInModal(false);
-  };
-
-  const cancelCheckOut = () => {
-    setShowCheckOutModal(false);
   };
 
   // 날짜 포맷 변환 함수
@@ -584,17 +585,17 @@ const ManagerServiceCheckIn = () => {
                 <div className="status-card-item">
                   <div className="status-label">체크인</div>
                   <div
-                    className={`status-badge ${checkStatus.checkIn ? 'completed' : 'pending'}`}
+                    className={`status-badge ${체크인완료 ? 'completed' : 'pending'}`}
                   >
-                    {checkStatus.checkIn ? '완료' : '미완료'}
+                    {체크인완료 ? '완료' : '미완료'}
                   </div>
                 </div>
                 <div className="status-card-item">
                   <div className="status-label">체크아웃</div>
                   <div
-                    className={`status-badge ${checkStatus.checkOut ? 'completed' : 'pending'}`}
+                    className={`status-badge ${체크아웃완료 ? 'completed' : 'pending'}`}
                   >
-                    {checkStatus.checkOut ? '완료' : '미완료'}
+                    {체크아웃완료 ? '완료' : '미완료'}
                   </div>
                 </div>
               </div>
@@ -603,31 +604,21 @@ const ManagerServiceCheckIn = () => {
                 <button
                   className="checkin-button"
                   onClick={handleCheckIn}
-                  disabled={checkStatus.checkIn || loading}
+                  disabled={!체크인버튼활성}
                 >
-                  {loading && !checkStatus.checkIn
-                    ? '처리 중...'
-                    : checkStatus.checkIn
-                      ? '체크인 완료'
-                      : '체크인 하기'}
+                  체크인 하기
                 </button>
                 <button
                   className="checkout-button"
                   onClick={handleCheckOut}
-                  disabled={
-                    !checkStatus.checkIn || checkStatus.checkOut || loading
-                  }
+                  disabled={!체크아웃버튼활성}
                 >
-                  {loading && checkStatus.checkIn && !checkStatus.checkOut
-                    ? '처리 중...'
-                    : checkStatus.checkOut
-                      ? '체크아웃 완료'
-                      : '체크아웃 하기'}
+                  체크아웃 하기
                 </button>
               </div>
             </div>
 
-            {checkStatus.checkOut && (
+            {!체크아웃버튼활성 && (
               <div className="action-buttons" style={{ marginTop: '12px' }}>
                     <button
                   className="issue-button"
@@ -649,7 +640,7 @@ const ManagerServiceCheckIn = () => {
         message="서비스 체크인을 진행하시겠습니까?"
         onClose={() => setShowCheckInModal(false)}
         onConfirm={confirmCheckIn}
-        confirmText={loading ? '처리 중...' : '확인'}
+        confirmText={'확인'}
         showCancel={true}
       />
 
