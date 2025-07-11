@@ -157,8 +157,12 @@ const SignInPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    // 실제 구글 로그인 연동 필요 (OAuth 등)
-    alert('Google 로그인은 아직 구현되지 않았습니다.');
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+      alert('API 서버 주소가 설정되지 않았습니다.');
+      return;
+    }
+    window.location.href = `${apiUrl}/oauth2/authorization/google`;
   };
 
   const togglePasswordVisibility = () => {
