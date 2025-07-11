@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
-import { api } from '../../../../api/config/api';
+import { apiService } from '../../../../api/index.js';
 
 const SettlementDetail = ({ settlement, onBack }) => {
   const [paymentDetails, setPaymentDetails] = useState(null);
@@ -25,8 +25,8 @@ const SettlementDetail = ({ settlement, onBack }) => {
 
       console.log('정산 상세 조회:', settlement.id);
 
-      const response = await api.get(
-        `/my/settlement/${settlement.id}/payments`
+      const response = await apiService.settlement.getSettlementPayments(
+        settlement.id
       );
 
       if (response?.data?.data) {
@@ -65,9 +65,16 @@ const SettlementDetail = ({ settlement, onBack }) => {
       customerName: `고객${index + 1}`,
       serviceName:
         serviceTypes[Math.floor(Math.random() * serviceTypes.length)],
-      paidAt: new Date(
-        Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
-      ).toISOString(),
+      paidAt: (() => {
+        const now = new Date();
+        const koreaOffset = 9 * 60; // 한국은 UTC+9
+        const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+        const koreaTimeNow = utc + koreaOffset * 60000;
+        const paidDate = new Date(
+          koreaTimeNow - Math.random() * 7 * 24 * 60 * 60 * 1000
+        );
+        return paidDate.toISOString().replace('Z', '+09:00');
+      })(),
     }));
 
     const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -115,26 +122,62 @@ const SettlementDetail = ({ settlement, onBack }) => {
     return new Intl.NumberFormat('ko-KR').format(amount);
   };
 
-  // 날짜 포맷팅
+  // 날짜 포맷팅 (한국 시간대 고려)
   const formatDate = (dateString) => {
     if (!dateString) return '미정';
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
+
+    try {
+      // YYYY-MM-DD 형식의 문자열인 경우 직접 파싱
+      if (
+        typeof dateString === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(dateString)
+      ) {
+        const [year, month, day] = dateString.split('-');
+        return `${year}.${month}.${day}`;
+      }
+
+      // ISO 문자열이나 다른 형식인 경우 한국 시간대로 변환
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '날짜 오류';
+
+      const koreaOffset = 9 * 60; // 한국은 UTC+9
+      const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+      const koreaDate = new Date(utc + koreaOffset * 60000);
+
+      return koreaDate.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } catch (error) {
+      console.error('날짜 포맷팅 오류:', error, dateString);
+      return '날짜 오류';
+    }
   };
 
-  // 날짜와 시간 포맷팅
+  // 날짜와 시간 포맷팅 (한국 시간대 고려)
   const formatDateTime = (dateString) => {
     if (!dateString) return '미정';
-    return new Date(dateString).toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '날짜 오류';
+
+      const koreaOffset = 9 * 60; // 한국은 UTC+9
+      const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+      const koreaDate = new Date(utc + koreaOffset * 60000);
+
+      return koreaDate.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      console.error('날짜 시간 포맷팅 오류:', error, dateString);
+      return '날짜 오류';
+    }
   };
 
   // 컴포넌트 마운트 시 데이터 로드

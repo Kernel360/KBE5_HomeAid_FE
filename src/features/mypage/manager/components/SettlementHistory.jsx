@@ -10,9 +10,11 @@ import {
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import SettlementDetail from './SettlementDetail.jsx';
-import { api } from '../../../../api/config/api';
+import { apiService } from '../../../../api/index.js';
+import { useAuthStore } from '../../../../stores/authStore.js';
 
 const SettlementHistory = ({ onBack }) => {
+  const { user } = useAuthStore();
   const [settlements, setSettlements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,36 +28,79 @@ const SettlementHistory = ({ onBack }) => {
     totalServices: 0,
   });
 
-  // 정산 내역 조회
+  // 정산 내역 조회 (여러 주간 데이터)
   const fetchSettlements = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // 기간에 따른 시작 날짜 계산
-      const startDate = getStartDateForPeriod(selectedPeriod);
-
-      console.log('정산 내역 조회:', startDate);
-
-      // 매니저 정산 내역 API 호출 (백엔드 API 스펙에 맞춤)
-      const response = await api.get('/my/settlement/weekly', {
-        params: {
-          start: startDate,
-        },
+      console.log('🗓️ 정산 내역 조회 시작:', {
+        선택기간: selectedPeriod,
+        로그인사용자: user,
+        사용자ID: user?.id,
+        사용자유형: user?.userType,
+        accessToken: localStorage.getItem('accessToken')
+          ? '토큰 존재'
+          : '토큰 없음',
       });
 
-      if (response?.data?.data) {
-        const settlementsData = response.data.data;
-        setSettlements(settlementsData);
-        calculateStats(settlementsData);
-        console.log('정산 내역 조회 성공:', settlementsData.length, '건');
+      // 여러 주간의 정산 데이터를 수집
+      const allSettlements = [];
+      const weeksToFetch = getWeeksToFetch(selectedPeriod);
+
+      console.log('📅 조회할 주간 목록:', weeksToFetch);
+
+      // 각 주간별로 API 호출
+      for (const weekStart of weeksToFetch) {
+        try {
+          console.log(`🔗 주간 정산 API 호출: ${weekStart}`);
+
+          const response =
+            await apiService.settlement.getMySettlements(weekStart);
+
+          console.log(`📡 ${weekStart} 주간 응답:`, {
+            status: response.status,
+            dataLength: response?.data?.data?.length || 0,
+            data: response?.data?.data,
+          });
+
+          if (response?.data?.data && Array.isArray(response.data.data)) {
+            allSettlements.push(...response.data.data);
+            console.log(`✅ ${weekStart} 주간: ${response.data.data.length}건`);
+          }
+        } catch (weekError) {
+          console.warn(`⚠️ ${weekStart} 주간 조회 실패:`, weekError);
+          // 개별 주간 실패는 무시하고 계속 진행
+        }
+      }
+
+      console.log('📊 전체 정산 데이터 수집 완료:', {
+        총데이터수: allSettlements.length,
+        조회한주간수: weeksToFetch.length,
+        전체데이터: allSettlements,
+      });
+
+      if (allSettlements.length > 0) {
+        // 중복 제거 및 날짜순 정렬
+        const uniqueSettlements = allSettlements
+          .filter(
+            (settlement, index, arr) =>
+              arr.findIndex((s) => s.id === settlement.id) === index
+          )
+          .sort((a, b) => new Date(b.settledAt) - new Date(a.settledAt));
+
+        setSettlements(uniqueSettlements);
+        calculateStats(uniqueSettlements);
+        console.log('✅ 정산 내역 조회 성공:', uniqueSettlements.length, '건');
       } else {
         setSettlements([]);
+        console.log('📭 조회된 정산 내역 없음');
       }
     } catch (err) {
-      console.error('정산 내역 조회 실패:', err);
+      console.error('❌ 정산 내역 조회 실패:', err);
       setError('정산 내역을 불러오는 중 오류가 발생했습니다.');
-      // 테스트용 더미 데이터
+
+      // 에러 시 더미 데이터 표시
       const dummyData = generateDummyData();
       setSettlements(dummyData);
       calculateStats(dummyData);
@@ -64,28 +109,52 @@ const SettlementHistory = ({ onBack }) => {
     }
   };
 
-  // 기간에 따른 시작 날짜 계산
-  const getStartDateForPeriod = (period) => {
+  // 조회할 주간 목록 생성 (여러 주간 정산 조회용)
+  const getWeeksToFetch = (period) => {
     const now = new Date();
-    let startDate;
+    const weeks = [];
+    let weeksCount;
 
     switch (period) {
       case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        weeksCount = 1; // 최근 1주
         break;
       case 'month':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        weeksCount = 4; // 최근 4주 (1개월)
         break;
       case 'quarter':
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        weeksCount = 12; // 최근 12주 (3개월)
         break;
-      default:
-        // 'all'인 경우 3개월 전부터
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      case 'year':
+        weeksCount = 52; // 최근 52주 (1년)
+        break;
+      default: // 'all'
+        weeksCount = 10; // 최근 10주 (적당한 범위)
         break;
     }
 
-    return startDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+    // 각 주의 시작일을 계산
+    for (let i = 0; i < weeksCount; i++) {
+      const weekStart = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      const year = weekStart.getFullYear();
+      const month = String(weekStart.getMonth() + 1).padStart(2, '0');
+      const day = String(weekStart.getDate()).padStart(2, '0');
+      weeks.push(`${year}-${month}-${day}`);
+    }
+
+    return weeks;
+  };
+
+  // 날짜 포맷팅 헬퍼 함수
+  const formatKoreaDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatKoreaDateTime = (date) => {
+    return date.toISOString();
   };
 
   // 더미 데이터 생성 (개발/테스트용)
@@ -97,33 +166,34 @@ const SettlementHistory = ({ onBack }) => {
       const managerAmount = Math.round(totalAmount * 0.8);
       const adminAmount = totalAmount - managerAmount;
 
+      // 현재 시간 기준으로 날짜 생성
+      const now = Date.now();
+
+      const fromDate = new Date(now - (index + 1) * 7 * 24 * 60 * 60 * 1000);
+      const toDate = new Date(now - index * 7 * 24 * 60 * 60 * 1000);
+      const settledDate = new Date(
+        now - Math.random() * 30 * 24 * 60 * 60 * 1000
+      );
+      const confirmedDate =
+        Math.random() > 0.5
+          ? new Date(now - Math.random() * 7 * 24 * 60 * 60 * 1000)
+          : null;
+      const paidDate =
+        Math.random() > 0.7
+          ? new Date(now - Math.random() * 3 * 24 * 60 * 60 * 1000)
+          : null;
+
       return {
         id: index + 1,
         managerId: 1,
-        from: new Date(Date.now() - (index + 1) * 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0],
-        to: new Date(Date.now() - index * 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0],
+        from: formatKoreaDate(fromDate),
+        to: formatKoreaDate(toDate),
         totalAmount,
         managerAmount,
         adminAmount,
-        settledAt: new Date(
-          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        confirmedAt:
-          Math.random() > 0.5
-            ? new Date(
-                Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
-              ).toISOString()
-            : null,
-        paidAt:
-          Math.random() > 0.7
-            ? new Date(
-                Date.now() - Math.random() * 3 * 24 * 60 * 60 * 1000
-              ).toISOString()
-            : null,
+        settledAt: formatKoreaDateTime(settledDate),
+        confirmedAt: confirmedDate ? formatKoreaDateTime(confirmedDate) : null,
+        paidAt: paidDate ? formatKoreaDateTime(paidDate) : null,
         status: statuses[Math.floor(Math.random() * statuses.length)],
       };
     });
@@ -211,11 +281,30 @@ const SettlementHistory = ({ onBack }) => {
   // 날짜 포맷팅
   const formatDate = (dateString) => {
     if (!dateString) return '미정';
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
+
+    try {
+      // YYYY-MM-DD 형식의 문자열인 경우 직접 파싱
+      if (
+        typeof dateString === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(dateString)
+      ) {
+        const [year, month, day] = dateString.split('-');
+        return `${year}.${month}.${day}`;
+      }
+
+      // ISO 문자열이나 다른 형식인 경우 Date 객체로 변환
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '날짜 오류';
+
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } catch (error) {
+      console.error('날짜 포맷팅 오류:', error, dateString);
+      return '날짜 오류';
+    }
   };
 
   // 컴포넌트 마운트 시 데이터 로드
@@ -281,10 +370,11 @@ const SettlementHistory = ({ onBack }) => {
           <div className="mb-4">
             <div className="flex space-x-2 overflow-x-auto pb-2">
               {[
-                { value: 'all', label: '전체' },
                 { value: 'week', label: '최근 1주' },
                 { value: 'month', label: '최근 1개월' },
                 { value: 'quarter', label: '최근 3개월' },
+                { value: 'year', label: '최근 1년' },
+                { value: 'all', label: '전체' },
               ].map((period) => (
                 <button
                   key={period.value}
