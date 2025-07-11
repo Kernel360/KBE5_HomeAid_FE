@@ -138,3 +138,79 @@ export const fetchManagerRatingStats = async (year, month, day) => {
 export const fetchMatchingStats = async (year, month, day) => {
   return await fetchStatistics('matching', year, month, day);
 };
+
+/**
+ * 월별 일별 추이 통계 조회 (해당 월의 모든 일별 데이터)
+ * @param {string} endpoint - 통계 엔드포인트 (users, settlements, payments, etc.)
+ * @param {number} year - 연도
+ * @param {number} month - 월
+ * @returns {Promise<Object[]>} 일별 통계 데이터 배열
+ */
+export const fetchMonthlyTrendStats = async (endpoint, year, month) => {
+  const dailyStats = [];
+  const daysInMonth = new Date(year, month, 0).getDate(); // 해당 월의 일수
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1;
+  const currentDay = today.getDate();
+
+  // 현재 월인 경우 오늘까지만, 과거 월인 경우 전체 일수
+  const maxDay =
+    year === currentYear && month === currentMonth
+      ? Math.min(currentDay, daysInMonth)
+      : daysInMonth;
+
+  console.log(`📅 ${endpoint} 월별 추이 데이터 수집 시작:`, {
+    year,
+    month,
+    maxDay,
+    daysInMonth,
+  });
+
+  // 각 날짜별로 병렬 API 호출
+  const promises = [];
+  for (let day = 1; day <= maxDay; day++) {
+    promises.push(
+      fetchStatistics(endpoint, year, month, day)
+        .then((data) => ({ day, data, success: true }))
+        .catch((error) => ({
+          day,
+          data: null,
+          success: false,
+          error: error.message,
+        }))
+    );
+  }
+
+  try {
+    const results = await Promise.all(promises);
+
+    for (const result of results) {
+      if (result.success && result.data) {
+        dailyStats.push({
+          day: result.day,
+          date: `${year}-${String(month).padStart(2, '0')}-${String(result.day).padStart(2, '0')}`,
+          ...result.data,
+        });
+      } else {
+        // 데이터가 없는 날은 기본값으로 설정
+        dailyStats.push({
+          day: result.day,
+          date: `${year}-${String(month).padStart(2, '0')}-${String(result.day).padStart(2, '0')}`,
+          hasData: false,
+        });
+      }
+    }
+
+    console.log(`✅ ${endpoint} 월별 추이 데이터 수집 완료:`, {
+      총일수: maxDay,
+      성공건수: dailyStats.filter((d) => d.hasData !== false).length,
+      데이터: dailyStats,
+    });
+
+    return dailyStats;
+  } catch (error) {
+    console.error(`❌ ${endpoint} 월별 추이 데이터 수집 실패:`, error);
+    throw error;
+  }
+};

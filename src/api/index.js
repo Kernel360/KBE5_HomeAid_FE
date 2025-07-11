@@ -115,11 +115,19 @@ export const apiService = {
   settlement: {
     getManagerSettlements: (managerId, params = {}) => {
       const queryParams = new URLSearchParams(params);
-      return api.get(`/managers/settlements/${managerId}?${queryParams}`);
+      return api.get(`/admin/settlements/managers/${managerId}?${queryParams}`);
     },
-    getMySettlements: (params = {}) => {
-      const queryParams = new URLSearchParams(params);
-      return api.get(`/managers/settlements?${queryParams}`);
+    getMySettlements: (startDate) => {
+      return api.get(`/my/settlement/weekly?start=${startDate}`);
+    },
+    getMyMonthlySettlements: (year, month) => {
+      return api.get(`/my/settlement/monthly?year=${year}&month=${month}`);
+    },
+    getAdminMonthlySettlements: (year, month) => {
+      return api.get(`/admin/settlements/monthly?year=${year}&month=${month}`);
+    },
+    getSettlementPayments: (settlementId) => {
+      return api.get(`/my/settlement/${settlementId}/payments`);
     },
   },
   alert: {

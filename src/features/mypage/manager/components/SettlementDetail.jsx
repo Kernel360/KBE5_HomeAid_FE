@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
-import { api } from '../../../../api/config/api';
+import { apiService } from '../../../../api/index.js';
 
 const SettlementDetail = ({ settlement, onBack }) => {
   const [paymentDetails, setPaymentDetails] = useState(null);
@@ -25,8 +25,8 @@ const SettlementDetail = ({ settlement, onBack }) => {
 
       console.log('정산 상세 조회:', settlement.id);
 
-      const response = await api.get(
-        `/my/settlement/${settlement.id}/payments`
+      const response = await apiService.settlement.getSettlementPayments(
+        settlement.id
       );
 
       if (response?.data?.data) {
@@ -56,25 +56,52 @@ const SettlementDetail = ({ settlement, onBack }) => {
       '반려동물 돌봄',
     ];
 
-    const payments = Array.from({ length: 8 }, (_, index) => ({
-      id: index + 1,
-      reservationId: 1000 + index,
-      amount: Math.floor(Math.random() * 100000) + 30000,
-      paymentMethod:
-        paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-      customerName: `고객${index + 1}`,
-      serviceName:
-        serviceTypes[Math.floor(Math.random() * serviceTypes.length)],
-      paidAt: new Date(
-        Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
-      ).toISOString(),
-    }));
+    const payments = Array.from({ length: 8 }, (_, index) => {
+      const amount = Math.floor(Math.random() * 100000) + 30000;
+      // 20% 확률로 환불 발생
+      const hasRefund = Math.random() < 0.2;
+      const refundedAmount = hasRefund
+        ? Math.floor(amount * (0.1 + Math.random() * 0.4))
+        : 0; // 10~50% 환불
+      const netAmount = amount - refundedAmount;
 
+      return {
+        id: index + 1,
+        reservationId: 1000 + index,
+        amount: amount,
+        refundedAmount: refundedAmount,
+        netAmount: netAmount,
+        paymentMethod:
+          paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+        customerName: `고객${index + 1}`,
+        serviceName:
+          serviceTypes[Math.floor(Math.random() * serviceTypes.length)],
+        paidAt: (() => {
+          const now = new Date();
+          const koreaOffset = 9 * 60; // 한국은 UTC+9
+          const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+          const koreaTimeNow = utc + koreaOffset * 60000;
+          const paidDate = new Date(
+            koreaTimeNow - Math.random() * 7 * 24 * 60 * 60 * 1000
+          );
+          return paidDate.toISOString().replace('Z', '+09:00');
+        })(),
+      };
+    });
+
+    // 백엔드 DTO 구조에 맞춰 총 금액 계산
     const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalRefundedAmount = payments.reduce(
+      (sum, p) => sum + p.refundedAmount,
+      0
+    );
+    const totalNetAmount = payments.reduce((sum, p) => sum + p.netAmount, 0);
 
     return {
       payments,
       totalAmount,
+      totalRefundedAmount,
+      totalNetAmount,
     };
   };
 
@@ -115,26 +142,62 @@ const SettlementDetail = ({ settlement, onBack }) => {
     return new Intl.NumberFormat('ko-KR').format(amount);
   };
 
-  // 날짜 포맷팅
+  // 날짜 포맷팅 (한국 시간대 고려)
   const formatDate = (dateString) => {
     if (!dateString) return '미정';
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
+
+    try {
+      // YYYY-MM-DD 형식의 문자열인 경우 직접 파싱
+      if (
+        typeof dateString === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(dateString)
+      ) {
+        const [year, month, day] = dateString.split('-');
+        return `${year}.${month}.${day}`;
+      }
+
+      // ISO 문자열이나 다른 형식인 경우 한국 시간대로 변환
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '날짜 오류';
+
+      const koreaOffset = 9 * 60; // 한국은 UTC+9
+      const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+      const koreaDate = new Date(utc + koreaOffset * 60000);
+
+      return koreaDate.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } catch (error) {
+      console.error('날짜 포맷팅 오류:', error, dateString);
+      return '날짜 오류';
+    }
   };
 
-  // 날짜와 시간 포맷팅
+  // 날짜와 시간 포맷팅 (한국 시간대 고려)
   const formatDateTime = (dateString) => {
     if (!dateString) return '미정';
-    return new Date(dateString).toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '날짜 오류';
+
+      const koreaOffset = 9 * 60; // 한국은 UTC+9
+      const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+      const koreaDate = new Date(utc + koreaOffset * 60000);
+
+      return koreaDate.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      console.error('날짜 시간 포맷팅 오류:', error, dateString);
+      return '날짜 오류';
+    }
   };
 
   // 컴포넌트 마운트 시 데이터 로드
@@ -189,9 +252,32 @@ const SettlementDetail = ({ settlement, onBack }) => {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">총 결제 금액</span>
                 <span className="font-medium">
-                  ₩{formatAmount(settlement.totalAmount)}
+                  ₩
+                  {formatAmount(
+                    paymentDetails?.totalAmount || settlement.totalAmount
+                  )}
                 </span>
               </div>
+
+              {/* 환불 금액 표시 (환불이 있는 경우에만) */}
+              {paymentDetails?.totalRefundedAmount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">총 환불 금액</span>
+                  <span className="text-red-600">
+                    -₩{formatAmount(paymentDetails.totalRefundedAmount)}
+                  </span>
+                </div>
+              )}
+
+              {/* 실제 결제 금액 표시 */}
+              {paymentDetails?.totalNetAmount !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">실제 결제 금액</span>
+                  <span className="text-green-600 font-medium">
+                    ₩{formatAmount(paymentDetails.totalNetAmount)}
+                  </span>
+                </div>
+              )}
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">플랫폼 수수료 (20%)</span>
@@ -306,7 +392,7 @@ const SettlementDetail = ({ settlement, onBack }) => {
 
                       <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                         <div>
-                          <span className="text-gray-500">결제 금액</span>
+                          <span className="text-gray-500">원래 결제 금액</span>
                           <p className="font-medium text-gray-900">
                             ₩{formatAmount(payment.amount)}
                           </p>
@@ -318,6 +404,41 @@ const SettlementDetail = ({ settlement, onBack }) => {
                           </p>
                         </div>
                       </div>
+
+                      {/* 환불 금액이 있는 경우 표시 */}
+                      {payment.refundedAmount > 0 && (
+                        <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
+                          <div>
+                            <span className="text-gray-500">환불 금액</span>
+                            <p className="font-medium text-red-600">
+                              -₩{formatAmount(payment.refundedAmount)}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">
+                              실제 결제 금액
+                            </span>
+                            <p className="font-bold text-green-600">
+                              ₩
+                              {formatAmount(
+                                payment.netAmount ||
+                                  payment.amount - payment.refundedAmount
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 환불이 없는 경우 실제 결제 금액 표시 */}
+                      {(!payment.refundedAmount ||
+                        payment.refundedAmount === 0) && (
+                        <div className="mb-3 text-sm">
+                          <span className="text-gray-500">실제 결제 금액</span>
+                          <p className="font-bold text-green-600">
+                            ₩{formatAmount(payment.netAmount || payment.amount)}
+                          </p>
+                        </div>
+                      )}
 
                       <div className="text-sm">
                         <span className="text-gray-500">결제 일시: </span>
