@@ -84,7 +84,7 @@ const AdditionalProfilePage = () => {
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/oauth-additional-profile`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/signup/oauth/additional-profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
