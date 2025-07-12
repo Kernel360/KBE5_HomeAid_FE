@@ -40,6 +40,8 @@ const AdditionalProfilePage = () => {
   const [gender, setGender] = useState('MALE');
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [career, setCareer] = useState(''); // 매니저 전용
+  const [experience, setExperience] = useState(''); // 매니저 전용
 
   // 전화번호 입력 핸들러
   const handlePhoneChange = (e) => {
@@ -74,6 +76,7 @@ const AdditionalProfilePage = () => {
   // 제출 핸들러 (기존 로직 유지)
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('폼 제출됨', { phone, birth, gender, role, career, experience });
     setError('');
     // 간단한 유효성 검사
     const errors = {};
@@ -81,19 +84,29 @@ const AdditionalProfilePage = () => {
     if (!birth || !isValid(birth) || !isPast(birth)) errors.birth = '유효한 생년월일을 입력하세요.';
     if (!gender) errors.gender = '성별을 선택하세요.';
     if (!role) errors.role = '회원 유형을 선택하세요.';
+    if (role === 'MANAGER') {
+      if (!career) errors.career = '경력을 입력하세요.';
+      if (!experience) errors.experience = '경험을 입력하세요.';
+    }
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
     try {
+      const payload = {
+        oauthCode, // 쿼리스트링에서 받아온 값
+        role,
+        phone,
+        birth: birth ? birth.toISOString().slice(0, 10) : '',
+        gender,
+      };
+      if (role === 'MANAGER') {
+        payload.career = career;
+        payload.experience = experience;
+      }
+      console.log('fetch 요청 보냄', payload);
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/signup/oauth/additional-profile`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          role,
-          phone,
-          birth: birth ? birth.toISOString().slice(0, 10) : '',
-          gender,
-        }),
+        body: JSON.stringify(payload),
         credentials: 'include',
       });
       if (!res.ok) throw new Error('추가 정보 입력 실패');
@@ -229,6 +242,21 @@ const AdditionalProfilePage = () => {
               {fieldErrors.gender && <div style={{ color: '#dc2626', fontSize: '13px' }}>{fieldErrors.gender}</div>}
             </div>
           </div>
+          {/* 매니저 전용 필드 - 폼 마지막에 위치 */}
+          {role === 'MANAGER' && (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '15px', color: '#333', fontWeight: 'bold' }}>경력</label>
+                <input value={career} onChange={e => setCareer(e.target.value)} placeholder="경력" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '16px' }} />
+                {fieldErrors.career && <div style={{ color: '#dc2626', fontSize: '13px' }}>{fieldErrors.career}</div>}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '15px', color: '#333', fontWeight: 'bold' }}>경험</label>
+                <input value={experience} onChange={e => setExperience(e.target.value)} placeholder="경험" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '16px' }} />
+                {fieldErrors.experience && <div style={{ color: '#dc2626', fontSize: '13px' }}>{fieldErrors.experience}</div>}
+              </div>
+            </>
+          )}
           {error && <div style={{ color: '#dc2626', fontSize: '15px', marginTop: '4px' }}>{error}</div>}
           <button type="submit" style={{ width: '100%', background: '#247cff', color: '#fff', fontWeight: 'bold', fontSize: '18px', padding: '14px', border: 'none', borderRadius: '8px', marginTop: '8px', cursor: 'pointer', transition: 'background-color 0.3s ease' }}>
             제출
