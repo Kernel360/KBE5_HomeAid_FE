@@ -76,7 +76,6 @@ const AdditionalProfilePage = () => {
   // 제출 핸들러 (기존 로직 유지)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('폼 제출됨', { phone, birth, gender, role, career, experience });
     setError('');
     // 간단한 유효성 검사
     const errors = {};
@@ -102,7 +101,7 @@ const AdditionalProfilePage = () => {
         payload.career = career;
         payload.experience = experience;
       }
-      console.log('fetch 요청 보냄', payload);
+      // 1. 추가 프로필 제출
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/signup/oauth/additional-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,7 +109,11 @@ const AdditionalProfilePage = () => {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('추가 정보 입력 실패');
-      await fetchTokenAndLogin(oauthCode, navigate, setAccessToken, setUser, setRefreshToken);
+      // 2. 새 oauthCode를 응답에서 추출
+      const result = await res.json();
+      const newOauthCode = result.data; // 실제 응답 구조에 따라 조정 필요
+      // 3. 새 oauthCode로 토큰 발급 요청
+      await fetchTokenAndLogin(newOauthCode, navigate, setAccessToken, setUser, setRefreshToken);
     } catch (err) {
       setError('추가 정보 입력에 실패했습니다.');
     }

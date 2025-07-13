@@ -175,28 +175,72 @@ export const authService = {
 
   socialSignIn: async (oauthCode) => {
     try {
-      const response = await api.post('/auth/oauth/token', { oauthCode });
-      const { accessToken, refreshToken, userId, username, role } = response.data;
+      // 1. 모든 인스턴스의 Authorization 헤더 제거
+      if (api.defaults && api.defaults.headers.common.Authorization) {
+        delete api.defaults.headers.common.Authorization;
+      }
+      if (axios.defaults && axios.defaults.headers && axios.defaults.headers.common.Authorization) {
+        delete axios.defaults.headers.common.Authorization;
+      }
 
+      // 2. 로그인 요청
+      const response = await api.post('/auth/oauth/signin', { oauthCode });
+      console.log('소셜 로그인 응답:', response);
+      console.log('response.headers:', response.headers);
+      console.log('response.headers.authorization:', response.headers.authorization);
+
+      // 3. AT는 헤더에서 추출
+      const authHeader = response?.headers?.authorization;
+      if (!authHeader) {
+        const err = new Error('Authorization 헤더에서 Access Token을 찾을 수 없습니다.');
+        err.response = response;
+        throw err;
+      }
+      const accessToken = authHeader.replace('Bearer ', '');
+      console.log('accessToken:', accessToken);
+
+      // 4. user 정보는 body에서 추출 (최대한 안전하게)
+      const data = response && response.data ? response.data : {};
+      const { userId, username, role } = data;
+      console.log('userId:', userId, 'username:', username, 'role:', role);
+      if (!userId || !username || !role) {
+        const err = new Error('응답 데이터에 userId, username, role이 없습니다.');
+        err.response = response;
+        throw err;
+      }
+
+      // 5. 저장
       localStorage.setItem('accessToken', accessToken);
-
+      console.log('setAccessToken 호출 전');
       const { setAccessToken, setUser, setRefreshToken } = useAuthStore.getState();
       setAccessToken(accessToken);
-      setRefreshToken(refreshToken);
+      console.log('setUser 호출 전');
       setUser({ userId, username, role });
+      console.log('setRefreshToken 호출 전');
+      setRefreshToken(null);
 
+      // 6. 이후 요청에 Authorization 헤더 세팅
+      console.log('api.defaults.headers.common.Authorization 세팅 전');
       if (api.defaults) {
+        if (!api.defaults.headers) api.defaults.headers = {};
+        if (!api.defaults.headers.common) api.defaults.headers.common = {};
         api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
       }
+      console.log('api.defaults.headers.common.Authorization 세팅 후');
 
       return { userId, username, role };
     } catch (error) {
-      console.error('❌ 소셜 로그인 API 오류:', error);
-      if (error.response) {
-        console.error('🚨 응답 상태:', error.response.status);
-        console.error('🚨 응답 데이터:', error.response.data);
-      } else {
-        console.error('🚨 에러 메시지:', error.message);
+      try {
+        console.error('❌ 소셜 로그인 API 오류:', error);
+        console.error('error.message:', error?.message);
+        console.error('error.stack:', error?.stack);
+        if (error && error.response && error.response.headers) {
+          console.error('error.response.headers:', error.response.headers);
+        } else {
+          console.error('error.response or error.response.headers is undefined');
+        }
+      } catch (logError) {
+        console.error('❌ [catch 블록] 에러 로깅 중 또 에러 발생:', logError);
       }
       throw error;
     }
