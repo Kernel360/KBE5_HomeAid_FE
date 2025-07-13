@@ -176,14 +176,14 @@ export const authService = {
   socialSignIn: async (oauthCode) => {
     try {
       // 1. 모든 인스턴스의 Authorization 헤더 제거
-      if (api.defaults && api.defaults.headers.common.Authorization) {
+      if (api.defaults && api.defaults.headers && api.defaults.headers.common) {
         delete api.defaults.headers.common.Authorization;
       }
-      if (axios.defaults && axios.defaults.headers && axios.defaults.headers.common.Authorization) {
+      if (axios.defaults && axios.defaults.headers && axios.defaults.headers.common && axios.defaults.headers.common.Authorization) {
         delete axios.defaults.headers.common.Authorization;
       }
 
-      // 2. 로그인 요청
+      // 2. 로그인 요청 (Authorization 헤더 없이)
       const response = await api.post('/auth/oauth/signin', { oauthCode });
       console.log('소셜 로그인 응답:', response);
       console.log('response.headers:', response.headers);
