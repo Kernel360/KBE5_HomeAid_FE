@@ -402,15 +402,6 @@ const UserReservationDetail = () => {
       fullReservation: reservation, // 전체 예약 객체 로그
     });
 
-    // ⭐️ 사용자 디버깅 안내
-    console.log(`
-    🔧 결제 버튼 문제 디버깅 안내:
-    1. 브라우저 개발자 도구(F12)를 열어주세요
-    2. Console 탭에서 위의 로그를 확인하세요
-    3. 'backendData'와 'fullReservation' 객체에서 결제 관련 필드를 찾아보세요
-    4. 결제가 완료되었다면 paymentId, paidAt, paymentStatus 등의 필드가 있어야 합니다
-    `);
-
     // 0. 결제 상태 API 조회 결과 우선 확인 (비동기 처리)
     const currentReservationId = reservation?.id || reservationId;
 
