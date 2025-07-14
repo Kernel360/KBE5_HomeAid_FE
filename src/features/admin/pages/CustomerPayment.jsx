@@ -301,18 +301,15 @@ const CustomerPayment = () => {
   // 환불 내역 조회 함수
   const fetchRefunds = async () => {
     try {
-      console.log('🔍 환불 내역 조회 시작');
       const response = await api.get('/admin/refunds', {
         params: { page: 0, size: 1000 }, // 충분히 큰 사이즈로 모든 환불 내역 조회
       });
 
       if (response?.data?.data) {
         const refundsData = response.data.data.content || response.data.data;
-        console.log('✅ 환불 내역 조회 성공:', refundsData.length, '건');
         setAllRefunds(refundsData);
         return refundsData;
       } else {
-        console.log('ℹ️ 환불 내역 없음');
         setAllRefunds([]);
         return [];
       }

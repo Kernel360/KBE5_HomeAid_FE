@@ -80,9 +80,14 @@ const ManagerList = () => {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, searchType, isComposing]);
 
-  // 서버 사이드 검색을 사용하므로 클라이언트 사이드 필터링 제거
-  // 백엔드에서 검색된 결과를 직접 사용
-  const filteredManagers = managers;
+  // 백엔드에서 status 필터링이 작동하지 않으므로 클라이언트 사이드 필터링 추가
+  const filteredManagers = managers.filter((manager) => {
+    if (activeTab === '전체') return true;
+    if (activeTab === '승인대기') return manager.status === 'PENDING';
+    if (activeTab === '승인완료') return manager.status === 'ACTIVE';
+    if (activeTab === '반려') return manager.status === 'REJECTED';
+    return true;
+  });
 
   // 탭 이름과 API 상태값 매핑
   const getStatusForAPI = (tabName) => {
@@ -712,16 +717,15 @@ const ManagerList = () => {
               )}
 
               <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[1000px]">
+                <table className="w-full min-w-[900px]">
                   <colgroup>
-                    <col style={{ width: '180px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '120px' }} />
-                  </colgroup>
-                  <thead className="bg-gray-50">
+<col style={{ width: '180px' }} />
+<col style={{ width: '120px' }} />
+<col style={{ width: '100px' }} />
+<col style={{ width: '120px' }} />
+<col style={{ width: '120px' }} />
+</colgroup>
+<thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         매니저 정보
@@ -736,14 +740,11 @@ const ManagerList = () => {
                         상태
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        평점
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         상세보기
                       </th>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+</thead>
+<tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
                       // 로딩 상태
                       [...Array(5)].map((_, index) => (
@@ -764,16 +765,13 @@ const ManagerList = () => {
                             <div className="w-16 h-6 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-12 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="w-16 h-6 bg-gray-200 rounded animate-pulse mx-auto"></div>
                           </td>
                         </tr>
                       ))
                     ) : managers.length === 0 ? (
                       <tr>
-                        <td colSpan="6" className="px-4 py-12 text-center">
+                        <td colSpan="5" className="px-4 py-12 text-center">
                           <div className="flex flex-col items-center">
                             <svg
                               className="w-12 h-12 text-gray-400 mb-4"
@@ -827,9 +825,6 @@ const ManagerList = () => {
                               {getStatusText(manager.status)}
                             </span>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            {manager.rating || '⭐ 신규'}
-                          </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                             <button
                               onClick={() => fetchManagerDetails(manager.id)}
@@ -841,8 +836,8 @@ const ManagerList = () => {
                         </tr>
                       ))
                     )}
-                  </tbody>
-                </table>
+</tbody>
+</table>
               </div>
 
               {/* Pagination */}

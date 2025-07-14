@@ -536,16 +536,16 @@ const MatchingManagement = () => {
                 ) : (
                   <table className="w-full min-w-[1400px]">
                     <colgroup>
-                      <col style={{ width: '120px' }} />
-                      <col style={{ width: '200px' }} />
-                      <col style={{ width: '160px' }} />
-                      <col style={{ width: '250px' }} />
-                      <col style={{ width: '120px' }} />
-                      <col style={{ width: '120px' }} />
-                      <col style={{ width: '100px' }} />
-                      <col style={{ width: '120px' }} />
-                    </colgroup>
-                    <thead className="bg-gray-50">
+<col style={{ width: '120px' }} />
+<col style={{ width: '200px' }} />
+<col style={{ width: '160px' }} />
+<col style={{ width: '250px' }} />
+<col style={{ width: '120px' }} />
+<col style={{ width: '120px' }} />
+<col style={{ width: '100px' }} />
+<col style={{ width: '120px' }} />
+</colgroup>
+<thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           예약 ID
@@ -572,8 +572,8 @@ const MatchingManagement = () => {
                           상세보기
                         </th>
                       </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+</thead>
+<tbody className="bg-white divide-y divide-gray-200">
                       {getPaginatedData().map((item, index) => {
                         // 백엔드 ReservationResponseDto 필드 매핑
                         const reservationId =
@@ -707,8 +707,8 @@ const MatchingManagement = () => {
                           </tr>
                         );
                       })}
-                    </tbody>
-                  </table>
+</tbody>
+</table>
                 )}
               </div>
 
