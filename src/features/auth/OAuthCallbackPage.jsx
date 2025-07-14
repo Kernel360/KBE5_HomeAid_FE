@@ -13,13 +13,13 @@ const OAuthCallbackPage = () => {
     const params = new URLSearchParams(window.location.search);
     const oauthCode = params.get('oauthCode');
     const profileComplete = params.get('profileComplete');
-    const email = params.get('email');
+    const email = params.get('email'); // 신규 사용자만 존재
+    const name = params.get('name');   // 신규 사용자만 존재
 
     console.log('[OAuthCallbackPage] useEffect 실행');
-    console.log('[OAuthCallbackPage] params:', { oauthCode, profileComplete, email });
+    console.log('[OAuthCallbackPage] params:', { oauthCode, profileComplete, email, name });
 
     if (!oauthCode) {
-      console.log('[OAuthCallbackPage] 인증 코드 없음, /auth/signin으로 이동');
       alert('인증 코드가 없습니다.');
       navigate('/auth/signin');
       return;
@@ -30,9 +30,11 @@ const OAuthCallbackPage = () => {
       fetchTokenAndLogin(oauthCode, navigate, setAccessToken, setUser, setRefreshToken);
       return;
     }
-    console.log('profileComplete', profileComplete);
     // 그 외에는 무조건 추가 프로필 입력 페이지로 이동
-    navigate(`/auth/additional-profile?oauthCode=${oauthCode}&email=${email}`);
+    let additionalProfileUrl = `/auth/additional-profile?oauthCode=${oauthCode}`;
+    if (email) additionalProfileUrl += `&email=${email}`;
+    if (name) additionalProfileUrl += `&name=${name}`;
+    navigate(additionalProfileUrl);
   }, []);
 
   return <div>로그인 처리 중...</div>;

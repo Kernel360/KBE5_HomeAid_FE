@@ -20,24 +20,26 @@ let refreshPromise = null;
 // 요청 인터셉터 (토큰 자동 추가 등)
 apiClient.interceptors.request.use(
   (config) => {
-    // 1. localStorage에서 토큰 가져오기 (authService.js에서 저장)
     const localStorageToken = localStorage.getItem('accessToken');
-
-    // 2. authStore에서 토큰 가져오기
     const authStoreToken = useAuthStore.getState().accessToken;
 
-    // 3. 우선순위: localStorage > authStore
-    const token = localStorageToken || authStoreToken;
+    // 'undefined' 문자열, null, undefined, 빈 문자열 모두 무시
+    let token = null;
+    if (localStorageToken && localStorageToken !== 'undefined' && localStorageToken !== '') {
+      token = localStorageToken;
+    } else if (authStoreToken && authStoreToken !== 'undefined' && authStoreToken !== '') {
+      token = authStoreToken;
+    }
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      delete config.headers.Authorization;
     }
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // 응답 인터셉터 (에러 처리 등)
