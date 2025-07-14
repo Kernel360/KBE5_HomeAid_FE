@@ -100,11 +100,6 @@ const ChartSection = ({
                     style={{ height: `${height}px` }}
                   >
                     {/* Value label for today or high values */}
-                    {(isToday || value > maxValue * 0.8) && value > 0 && (
-                      <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-gray-700 bg-white px-1 rounded shadow">
-                        {value.toLocaleString()}
-                      </div>
-                    )}
                   </div>
 
                   {/* Day label */}
