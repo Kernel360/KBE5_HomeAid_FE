@@ -7,6 +7,7 @@ import { useCustomerReservation } from '../../reservation/hooks/useCustomerAPI.j
 import { format } from 'date-fns';
 import Header from '../../../components/Header.jsx';
 import Footer from '../../../components/Footer.jsx';
+import apiService from '@/api';
 
 const ReviewWritePage = () => {
   const navigate = useNavigate();
@@ -30,6 +31,31 @@ const ReviewWritePage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [reservationDetails, setReservationDetails] = useState(null);
+
+  const getReviewTarget = async (reservationId) => {
+    return await apiService.reservation.getReviewTarget(reservationId)
+      .then((response) => {
+        console.log('🔍 리뷰 대상자 정보:', response.data);
+        return response.data.data;
+      })
+      .catch((error) => {
+
+        console.error('리뷰 대상자 정보 조회 에러:', error);
+        throw new Error('리뷰 대상자 정보를 불러오는 데 실패했습니다.');
+      });
+  }
+
+  useEffect(() => {
+    getReviewTarget(reservationId)
+      .then((data) => {
+        setTargetId(data.targetId);
+      })
+      .catch((error) => {
+        console.error('리뷰 대상자 정보 설정 에러:', error)
+        setError('리뷰 대상자 정보를 불러오는 데 실패했습니다.')
+      })
+  }, [reservationId]);
+
 
   // UserReservationDetail과 동일한 서비스 이름 매핑 함수
   const getServiceName = (subOptionId, subOptionName, backendData) => {
@@ -98,10 +124,10 @@ const ReviewWritePage = () => {
       // 백엔드에서 실제 매니저 ID를 받아올 예정
       if (user?.role === 'ROLE_CUSTOMER') {
         // 고객이 매니저를 평가하는 경우 - 백엔드에서 받아올 때까지 임시값
-        setTargetId(13);
+        // setTargetId(13);
       } else if (user?.role === 'ROLE_MANAGER') {
         // 매니저가 고객을 평가하는 경우
-        setTargetId(initialTargetId ? Number(initialTargetId) : 1);
+        // setTargetId(initialTargetId ? Number(initialTargetId) : 1);
       }
 
       try {
@@ -148,7 +174,7 @@ const ReviewWritePage = () => {
               '✅ 실제 매니저 ID로 업데이트:',
               backendReservation.managerId
             );
-            setTargetId(backendReservation.managerId);
+            // setTargetId(backendReservation.managerId);
           } else if (
             user?.role === 'ROLE_MANAGER' &&
             backendReservation.customerId
@@ -158,7 +184,7 @@ const ReviewWritePage = () => {
               '✅ 실제 고객 ID로 업데이트:',
               backendReservation.customerId
             );
-            setTargetId(backendReservation.customerId);
+            // setTargetId(backendReservation.customerId);
           } else {
             console.warn('⚠️ targetId 업데이트 실패 - 데이터 부족:', {
               userRole: user?.role,
@@ -823,8 +849,8 @@ const ReviewWritePage = () => {
 
           {/* 예약 정보가 없고 심각한 에러가 있는 경우에만 UI 차단 */}
           {!reservationDetails &&
-          error &&
-          error.includes('예약 ID가 제공되지 않았습니다') ? (
+            error &&
+            error.includes('예약 ID가 제공되지 않았습니다') ? (
             <div
               style={{
                 textAlign: 'center',
@@ -843,18 +869,18 @@ const ReviewWritePage = () => {
               {(!user?.role ||
                 (user?.role !== 'ROLE_CUSTOMER' &&
                   user?.role !== 'ROLE_MANAGER')) && (
-                <div
-                  style={{
-                    textAlign: 'center',
-                    color: '#cc0000',
-                    padding: '30px',
-                    fontSize: '20px',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  리뷰 작성 권한이 없습니다.
-                </div>
-              )}
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      color: '#cc0000',
+                      padding: '30px',
+                      fontSize: '20px',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    리뷰 작성 권한이 없습니다.
+                  </div>
+                )}
             </>
           )}
         </div>
