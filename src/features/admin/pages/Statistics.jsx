@@ -78,7 +78,7 @@ const Statistics = () => {
     return {
       year: yesterday.getFullYear(),
       month: yesterday.getMonth() + 1, // 0-based index이므로 +1
-      day: null, // 기본적으로 일별 조회는 하지 않음 (월별 조회)
+      day: yesterday.getDate(), // 어제 날짜의 일자도 설정
     };
   };
 
@@ -284,7 +284,7 @@ const Statistics = () => {
       },
     });
 
-    // 어제보다 미래 날짜 체크
+    // 어제보다 미래 날짜 체크 (어제까지만 조회 가능)
     if (year > yesterdayYear) return false;
     if (year === yesterdayYear && month > yesterdayMonth) return false;
     if (
