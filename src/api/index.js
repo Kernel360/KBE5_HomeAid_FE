@@ -71,6 +71,7 @@ export const apiService = {
     create: (data) => api.post('/reviews', data),
     update: (id, data) => api.put(`/reviews/${id}`, data),
     delete: (id) => api.delete(`/reviews/${id}`),
+    getReviewTarget: (reservationId) => api.get(`/reviews/${reservationId}/review-target`),
   },
 
   board: {
@@ -96,7 +97,6 @@ export const apiService = {
     delete: (id) => api.delete(`/reservations/${id}`),
     cancel: (id) => api.post(`/reservations/${id}/cancel`),
     getAllForManager: () => api.get('/reservations/manager'),
-    getReviewTarget: (reservationId) => api.get(`/reservations/${reservationId}/review-target`),
   },
   matching: {
     acceptMatching: (matchingId, data) =>

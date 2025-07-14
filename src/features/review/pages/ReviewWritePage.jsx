@@ -33,7 +33,7 @@ const ReviewWritePage = () => {
   const [reservationDetails, setReservationDetails] = useState(null);
 
   const getReviewTarget = async (reservationId) => {
-    return await apiService.reservation.getReviewTarget(reservationId)
+    return await apiService.review.getReviewTarget(reservationId)
       .then((response) => {
         console.log('🔍 리뷰 대상자 정보:', response.data);
         return response.data.data;
