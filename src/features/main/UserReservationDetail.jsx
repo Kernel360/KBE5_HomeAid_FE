@@ -786,20 +786,42 @@ const UserReservationDetail = () => {
         throw new Error(errorData.message || '매칭 응답 처리에 실패했습니다.');
       }
 
-      if (data) {
+      // 매칭 수락 후 예약 데이터를 다시 조회하여 최신 상태 반영
+      console.log('🔄 매칭 수락 완료, 예약 데이터 재조회 시작');
+      const updatedReservation = await getReservationById(reservationId);
+      const updatedData = updatedReservation.data;
+
+      console.log('✅ 재조회된 예약 데이터:', updatedData);
+
+      if (updatedData) {
+        // 별도 결제 정보 조회 시도
+        let additionalPaymentInfo = null;
+        try {
+          additionalPaymentInfo = await checkPaymentStatus(reservationId);
+          console.log('💳 재조회 후 결제 정보:', additionalPaymentInfo);
+        } catch (error) {
+          console.log('⚠️ 재조회 후 결제 정보 조회 실패 (무시):', error);
+        }
+
         const transformedReservation = {
-          id: data.reservationId || data.id || reservationId,
-          type: data.serviceOptionName || getServiceName(1, '청소', data),
+          id: updatedData.reservationId || updatedData.id || reservationId,
+          reservationId:
+            updatedData.reservationId || updatedData.id || reservationId,
+          type:
+            updatedData.serviceOptionName ||
+            getServiceName(1, '청소', updatedData),
           icon: getServiceIcon(1),
-          status: data.status || 'REQUESTED',
-          date: data.requestedDate,
-          time: data.requestedTime,
-          price: data.totalPrice || getServicePrice(null, 1, '청소', data),
+          status: updatedData.status || 'REQUESTED',
+          startTime: updatedData.startTime,
+          price:
+            updatedData.totalPrice ||
+            getServicePrice(null, 1, '청소', updatedData),
 
           address: (() => {
-            const mainAddress = data.address || reservation?.address || '';
+            const mainAddress =
+              updatedData.address || reservation?.address || '';
             const detailAddress =
-              data.addressDetail || reservation?.addressDetail || '';
+              updatedData.addressDetail || reservation?.addressDetail || '';
             if (mainAddress && detailAddress)
               return `${mainAddress} ${detailAddress}`;
             if (mainAddress) return mainAddress;
@@ -808,13 +830,31 @@ const UserReservationDetail = () => {
           })(),
           addressDetail: '',
 
-          customerNote: data.customerMemo || '',
-          createdAt: data.startTime || new Date().toISOString(),
+          customerNote: updatedData.customerMemo || '',
+          createdAt: updatedData.startTime || new Date().toISOString(),
 
-          backendData: data,
+          // 별도 조회한 결제 정보도 포함
+          paymentInfo: additionalPaymentInfo,
+
+          // 백엔드 DTO의 모든 필드들을 보존하여 결제 상태 확인에 사용
+          backendData: {
+            data: updatedData,
+            additionalPaymentInfo: additionalPaymentInfo,
+          },
         };
 
+        console.log('🔄 예약 상태 업데이트:', {
+          이전상태: reservation?.status,
+          새로운상태: transformedReservation.status,
+          매칭상태: updatedData.matchingStatus,
+        });
+
         setReservation(transformedReservation);
+
+        // 상태 업데이트 후 PaymentButtonWrapper가 반응할 수 있도록 약간의 지연
+        setTimeout(() => {
+          console.log('🔄 PaymentButtonWrapper 상태 변경 감지 강제');
+        }, 100);
       }
 
       setShowRejectModal(false);
@@ -1080,6 +1120,7 @@ const UserReservationDetail = () => {
           </div>
 
           <PaymentButtonWrapper
+            key={`${reservationId}-${status}-${managerName}`}
             reservationId={reservationId}
             status={status}
             price={price}
@@ -1281,7 +1322,7 @@ const PaymentButtonWrapper = ({
     if (reservationId) {
       checkPayment();
     }
-  }, [reservationId, checkIfPaymentCompleted]);
+  }, [reservationId, checkIfPaymentCompleted, status]);
 
   if (isLoading) {
     return (
