@@ -7,6 +7,7 @@ const RefundRequestModal = ({
   isOpen,
   onClose,
   onRefundRequested,
+  reservationDate: externalReservationDate, // 외부에서 전달받은 예약날짜
 }) => {
   const [reason, setReason] = useState('');
   const [customerComment, setCustomerComment] = useState('');
@@ -15,7 +16,7 @@ const RefundRequestModal = ({
 
   // 환불 사유 옵션들 (사용자에게 간단한 UI 제공)
   const refundReasons = [
-    { value: 'RESERVATION_CANCEL', label: '예약 취소' },
+    //{ value: 'RESERVATION_CANCEL', label: '예약 취소' },
     { value: 'CUSTOMER_DISSATISFACTION', label: '고객 불만족' },
     { value: 'AFTER_COMPLETION', label: '서비스 완료 후 환불' },
   ];
@@ -29,7 +30,7 @@ const RefundRequestModal = ({
 
     const now = new Date();
     const reservation = new Date(reservationDate);
-    const diffInDays = Math.ceil((reservation - now) / (1000 * 60 * 60 * 24));
+    const diffInDays = Math.floor((reservation - now) / (1000 * 60 * 60 * 24));
 
     if (diffInDays >= 7) {
       return 'BEFORE_7_DAYS';
@@ -40,13 +41,73 @@ const RefundRequestModal = ({
     }
   };
 
-  // 예약 날짜 정보 확인
-  const hasReservationDate = payment?.reservationDate;
+  // 예약 날짜 정보 확인 - 외부에서 전달받은 예약날짜 우선 사용
+  const getReservationDate = () => {
+    // 0. 외부에서 전달받은 예약날짜 우선 사용
+    if (externalReservationDate) {
+      return externalReservationDate;
+    }
+
+    // 1. localStorage에서 예약날짜 확인 (UserPayment에서 저장한 날짜)
+    const storedReservationDate = localStorage.getItem(
+      'currentReservationDate'
+    );
+    if (storedReservationDate) {
+      return storedReservationDate;
+    }
+
+    // 2. payment.reservationDate 확인
+    if (payment?.reservationDate) {
+      return payment.reservationDate;
+    }
+
+    // 3. payment.startTime에서 날짜 추출 (ISO 8601 형식)
+    if (payment?.startTime) {
+      const startTime = payment.startTime;
+      if (startTime.includes('T')) {
+        return startTime.split('T')[0];
+      }
+    }
+
+    // 4. payment.requestedDate 확인
+    if (payment?.requestedDate) {
+      return payment.requestedDate;
+    }
+
+    // 5. payment.serviceDate 확인
+    if (payment?.serviceDate) {
+      return payment.serviceDate;
+    }
+
+    // 6. payment.date 확인
+    if (payment?.date) {
+      return payment.date;
+    }
+
+    // 7. payment.reservation?.requestedDate 확인
+    if (payment?.reservation?.requestedDate) {
+      return payment.reservation.requestedDate;
+    }
+
+    // 8. payment.reservation?.startTime에서 날짜 추출
+    if (payment?.reservation?.startTime) {
+      const startTime = payment.reservation.startTime;
+      if (startTime.includes('T')) {
+        return startTime.split('T')[0];
+      }
+    }
+
+    return null;
+  };
+
+  const reservationDate = getReservationDate();
+  const hasReservationDate = !!reservationDate;
+
   const getDaysUntilReservation = () => {
     if (!hasReservationDate) return null;
     const now = new Date();
-    const reservation = new Date(payment.reservationDate);
-    return Math.ceil((reservation - now) / (1000 * 60 * 60 * 24));
+    const reservation = new Date(reservationDate);
+    return Math.floor((reservation - now) / (1000 * 60 * 60 * 24));
   };
 
   // 환불 사유에 따른 환불 비율 안내
@@ -55,9 +116,7 @@ const RefundRequestModal = ({
 
     if (reason === 'RESERVATION_CANCEL') {
       // 예약 취소의 경우 예약 날짜 기반으로 안내 제공
-      const actualReason = determineReservationCancelReason(
-        payment?.reservationDate
-      );
+      const actualReason = determineReservationCancelReason(reservationDate);
       const daysUntilReservation = getDaysUntilReservation();
 
       if (!hasReservationDate) {
@@ -310,6 +369,19 @@ const RefundRequestModal = ({
                 <span className="font-medium text-sm">환불 비율 안내</span>
               </div>
               <div className="text-sm">
+                {/* 예약날짜 정보 표시 */}
+                {hasReservationDate && (
+                  <div className="mb-2 p-2 bg-white rounded border border-gray-200">
+                    <p className="text-xs text-gray-600">
+                      <strong>예약 날짜:</strong>{' '}
+                      {new Date(reservationDate).toLocaleDateString('ko-KR')}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      <strong>남은 일수:</strong> {getDaysUntilReservation()}일
+                    </p>
+                  </div>
+                )}
+
                 <p className="font-semibold mb-1">
                   예상 환불 비율:{' '}
                   <span

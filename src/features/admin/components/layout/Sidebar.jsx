@@ -287,7 +287,7 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 관리자
               </p>
               <p className="text-xs text-gray-500 truncate">
-                admin@homeaid.com
+                admin@example.com
               </p>
             </div>
           </div>

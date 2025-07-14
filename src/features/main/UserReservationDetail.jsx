@@ -119,54 +119,54 @@ const UserReservationDetail = () => {
       }
 
       // 가능한 결제 정보 조회 엔드포인트들을 시도
-  //     const possibleEndpoints = [
-  //       `/my/payments?reservationId=${reservationId}`,
-  //       `/customer/payments?reservationId=${reservationId}`,
-  //       `/payments?reservationId=${reservationId}`,
-  //       `/reservations/${reservationId}/payment`,
-  //       `/customer/reservations/${reservationId}/payment`,
-  //     ];
+      //     const possibleEndpoints = [
+      //       `/my/payments?reservationId=${reservationId}`,
+      //       `/customer/payments?reservationId=${reservationId}`,
+      //       `/payments?reservationId=${reservationId}`,
+      //       `/reservations/${reservationId}/payment`,
+      //       `/customer/reservations/${reservationId}/payment`,
+      //     ];
 
-  //     for (const endpoint of possibleEndpoints) {
-  //       try {
-  //         console.log(`🔍 결제 정보 조회 시도: ${endpoint}`);
+      //     for (const endpoint of possibleEndpoints) {
+      //       try {
+      //         console.log(`🔍 결제 정보 조회 시도: ${endpoint}`);
 
-  //         const response = await fetch(`${baseUrl}${endpoint}`, {
-  //           method: 'GET',
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //             'Content-Type': 'application/json',
-  //           },
-  //         });
+      //         const response = await fetch(`${baseUrl}${endpoint}`, {
+      //           method: 'GET',
+      //           headers: {
+      //             Authorization: `Bearer ${token}`,
+      //             'Content-Type': 'application/json',
+      //           },
+      //         });
 
-  //         if (response.ok) {
-  //           const paymentData = await response.json();
-  //           console.log('✅ 결제 정보 조회 성공:', { endpoint, paymentData });
+      //         if (response.ok) {
+      //           const paymentData = await response.json();
+      //           console.log('✅ 결제 정보 조회 성공:', { endpoint, paymentData });
 
-  //           // 결제 데이터가 있으면 반환
-  //           if (paymentData?.data) {
-  //             return paymentData.data;
-  //           } else if (paymentData && typeof paymentData === 'object') {
-  //             return paymentData;
-  //           }
-  //         } else if (response.status === 404) {
-  //           console.log(`ℹ️ ${endpoint}: 결제 정보 없음 (404)`);
-  //           continue;
-  //         } else if (response.status === 403) {
-  //           console.log(`⚠️ ${endpoint}: 권한 없음 (403)`);
-  //           continue;
-  //         } else {
-  //           console.log(`❌ ${endpoint}: 오류 (${response.status})`);
-  //           continue;
-  //         }
-  //       } catch (error) {
-  //         console.log(`❌ ${endpoint}: 네트워크 오류`, error);
-  //         continue;
-  //       }
-  //     }
+      //           // 결제 데이터가 있으면 반환
+      //           if (paymentData?.data) {
+      //             return paymentData.data;
+      //           } else if (paymentData && typeof paymentData === 'object') {
+      //             return paymentData;
+      //           }
+      //         } else if (response.status === 404) {
+      //           console.log(`ℹ️ ${endpoint}: 결제 정보 없음 (404)`);
+      //           continue;
+      //         } else if (response.status === 403) {
+      //           console.log(`⚠️ ${endpoint}: 권한 없음 (403)`);
+      //           continue;
+      //         } else {
+      //           console.log(`❌ ${endpoint}: 오류 (${response.status})`);
+      //           continue;
+      //         }
+      //       } catch (error) {
+      //         console.log(`❌ ${endpoint}: 네트워크 오류`, error);
+      //         continue;
+      //       }
+      //     }
 
-  //     console.log('ℹ️ 모든 엔드포인트에서 결제 정보를 찾을 수 없음');
-  //     return null;
+      //     console.log('ℹ️ 모든 엔드포인트에서 결제 정보를 찾을 수 없음');
+      //     return null;
     } catch (error) {
       console.error('❌ 결제 정보 조회 중 오류:', error);
       return null;

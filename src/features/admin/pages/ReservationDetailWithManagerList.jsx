@@ -23,8 +23,7 @@ const ReservationDetailWithManagerList = () => {
         const managerList = recRes.data?.data || [];
 
         setManagers(managerList);
-      } catch (error) {
-        console.error(error);
+      } catch {
         setError('데이터를 불러오는데 실패했습니다.');
       } finally {
         setLoading(false);
@@ -41,9 +40,8 @@ const ReservationDetailWithManagerList = () => {
       );
       alert('매칭이 성공적으로 생성되었습니다!');
       // 필요하다면 이동 또는 새로고침 등 추가
-    } catch (error) {
+    } catch {
       alert('매칭 생성에 실패했습니다.');
-      console.error(error);
     }
   };
 
