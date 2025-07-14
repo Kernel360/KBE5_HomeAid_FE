@@ -96,6 +96,7 @@ export const apiService = {
     delete: (id) => api.delete(`/reservations/${id}`),
     cancel: (id) => api.post(`/reservations/${id}/cancel`),
     getAllForManager: () => api.get('/reservations/manager'),
+    getReviewTarget: (reservationId) => api.get(`/reservations/${reservationId}/review-target`),
   },
   matching: {
     acceptMatching: (matchingId, data) =>
