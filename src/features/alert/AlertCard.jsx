@@ -67,6 +67,9 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
             case 'WORK_CHECKOUT':
                 navigate(`/customer/review/write?reservationId=${relatedEntityId}`);
                 break;
+            case 'MANAGER_REVIEW_RECEIVED':
+                navigate(`/manager/review/history`);
+                break;
 
             default:
                 console.log('알 수 없는 이벤트 타입:', eventType);
