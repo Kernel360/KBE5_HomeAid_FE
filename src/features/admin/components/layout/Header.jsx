@@ -107,7 +107,7 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         </div>
 
         {/* 중앙 - 알림 아이콘 */}
-        <div className="flex items-center">
+        <div className="flex items-center px-3">
           <button
             onClick={openAlert}
             className="bg-transparent border-none p-0 cursor-pointer"
