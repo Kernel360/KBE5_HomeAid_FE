@@ -132,7 +132,9 @@ export const apiService = {
     },
   },
   alert: {
-  updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
+    updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
+    getUnReadAlerts: () => api.get('/alerts'),
+    sseDisconnect: () => api.post('/alerts/disconnect'),
   }
 };
 export default apiService;

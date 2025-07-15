@@ -30,10 +30,10 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
             case 'RESERVATION_CREATED':     //고객이 예약 할 시
                 navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
                 break;
-            case 'MATCHING_CREATED':
+            case 'JOB_OFFER':
                 navigate('/matching/list');
                 break;
-            case 'MATCHING_ACCEPTED_BY_MANAGER':  //관리자가 맺어준 매칭 수락시
+            case 'MANAGER_MATCHING_ACCEPTED':  //관리자가 맺어준 매칭 수락시
                 if (userRole === 'ROLE_CUSTOMER') {
                     navigate(`/customer/reservations/${relatedEntityId}`);
                 } else if (userRole === 'ROLE_ADMIN') {
@@ -42,22 +42,30 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                     navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
                 }
                 break;
-            case 'MATCHING_REJECTED_BY_MANAGER':    //매니저가 매칭 거절
+            case 'MANAGER_MATCHING_REJECTED':    //매니저가 매칭 거절
                 navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
                 break;
-            case 'MATCHING_ACCEPTED_BY_CUSTOMER':  //고객 최종수락
+            case 'SUGGEST_MATCHING_TO_CUSTOMER':
+                navigate(`/customer/reservations/${relatedEntityId}`);
+                break;
+            case 'CUSTOMER_MATCHING_ACCEPTED':  //고객 최종수락
                 if (userRole === 'ROLE_MANAGER') {
                     navigate('/matching/list');
                 } else if (userRole === 'ROLE_ADMIN') {
                     navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
                 }
                 break;
-            case 'MATCHING_REJECTED_BY_CUSTOMER':   //고객이 매칭 거절
+            case 'CUSTOMER_MATCHING_REJECTED':   //고객이 매칭 거절
                 if (userRole === 'ROLE_MANAGER') {
                     navigate('/matching/list');
                 } else if (userRole === 'ROLE_ADMIN') {
                     navigate(`/admin/matches/reservations/${relatedEntityId}/detail`);
                 }
+                break;
+            case 'WORK_CHECKIN':
+                break;
+            case 'WORK_CHECKOUT':
+                navigate(`/customer/review/write?reservationId=${relatedEntityId}`);
                 break;
 
             default:
@@ -132,7 +140,7 @@ const AlertCard = memo(({ onClose, isVisible = false }) => {
                                         <div className="flex items-start gap-3" onClick={() =>
                                             handleNavigate(noti.alertId, noti.relatedEntityId, noti.relatedEntityType, noti.eventType)}>
                                             <div className="flex-1">
-                                                <p className="text-sm text-gray-600 mb-2">
+                                                <p className="text-sm text-gray-600 mb-2" style={{ whiteSpace: 'pre-line' }}>
                                                     {noti.message || '새로운 알림이 있습니다.'}
                                                 </p>
                                                 { noti.content &&
