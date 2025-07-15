@@ -777,20 +777,29 @@ const UserReservationDetail = () => {
         throw new Error(errorData.message || '매칭 응답 처리에 실패했습니다.');
       }
 
-      if (data) {
+      // ⭐️ 매칭 응답 후 예약 상태 즉시 갱신
+      const updatedReservation = await getReservationById(reservationId);
+      const updatedData = updatedReservation.data;
+
+      if (updatedData) {
         const transformedReservation = {
-          id: data.reservationId || data.id || reservationId,
-          type: data.serviceOptionName || getServiceName(1, '청소', data),
+          id: updatedData.reservationId || updatedData.id || reservationId,
+          type:
+            updatedData.serviceOptionName ||
+            getServiceName(1, '청소', updatedData),
           icon: getServiceIcon(1),
-          status: data.status || 'REQUESTED',
-          date: data.requestedDate,
-          time: data.requestedTime,
-          price: data.totalPrice || getServicePrice(null, 1, '청소', data),
+          status: updatedData.status || 'REQUESTED',
+          date: updatedData.requestedDate,
+          time: updatedData.requestedTime,
+          price:
+            updatedData.totalPrice ||
+            getServicePrice(null, 1, '청소', updatedData),
 
           address: (() => {
-            const mainAddress = data.address || reservation?.address || '';
+            const mainAddress =
+              updatedData.address || reservation?.address || '';
             const detailAddress =
-              data.addressDetail || reservation?.addressDetail || '';
+              updatedData.addressDetail || reservation?.addressDetail || '';
             if (mainAddress && detailAddress)
               return `${mainAddress} ${detailAddress}`;
             if (mainAddress) return mainAddress;
@@ -799,10 +808,10 @@ const UserReservationDetail = () => {
           })(),
           addressDetail: '',
 
-          customerNote: data.customerMemo || '',
-          createdAt: data.startTime || new Date().toISOString(),
+          customerNote: updatedData.customerMemo || '',
+          createdAt: updatedData.startTime || new Date().toISOString(),
 
-          backendData: data,
+          backendData: updatedData,
         };
 
         setReservation(transformedReservation);

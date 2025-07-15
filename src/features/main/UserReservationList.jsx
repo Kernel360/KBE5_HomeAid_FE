@@ -280,6 +280,9 @@ const UserReservationList = () => {
         throw new Error(errorData.message || '매칭 응답 처리에 실패했습니다.');
       }
 
+      // ⭐️ 매칭 응답 후 즉시 예약 목록 갱신
+      await refreshData();
+
       // ⭐️ 매칭 확인 시 즉시 로컬 상태 업데이트 (새로고침 없이 바로 반영)
       if (action === 'CONFIRM') {
         const currentReservations =
@@ -356,11 +359,6 @@ const UserReservationList = () => {
           }
         }
       }
-
-      // 성공 시 백그라운드에서 데이터 새로고침 (서버와 동기화)
-      setTimeout(async () => {
-        await refreshData();
-      }, 1000);
 
       setShowRejectModal(false);
       setRejectMemo('');

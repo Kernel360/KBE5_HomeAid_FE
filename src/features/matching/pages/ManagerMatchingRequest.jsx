@@ -63,7 +63,10 @@ const ManagerMatchingRequest = () => {
     const request = {
       action: 'ACCEPT',
     };
-    const response = await apiService.matching.acceptMatching(matchingId, request);
+    const response = await apiService.matching.acceptMatching(
+      matchingId,
+      request
+    );
     return response.data.success;
   };
 
@@ -75,6 +78,8 @@ const ManagerMatchingRequest = () => {
     try {
       const acceptResult = await fetchMatchAccept();
       if (acceptResult) {
+        // ⭐️ 수락 후 상태 즉시 갱신
+        await fetchMatching(matchingId);
         alert('해당 매칭에 수락하였습니다');
         navigate('/matching/list');
       }
@@ -95,8 +100,13 @@ const ManagerMatchingRequest = () => {
       memo: rejectReason,
     };
     try {
-      const response = await apiService.matching.acceptMatching(matchingId, data);
+      const response = await apiService.matching.acceptMatching(
+        matchingId,
+        data
+      );
       if (response.data.success) {
+        // ⭐️ 거절 후 상태 즉시 갱신
+        await fetchMatching(matchingId);
         alert('해당 매칭을 거절하였습니다.');
         handleBack();
       }
@@ -125,12 +135,18 @@ const ManagerMatchingRequest = () => {
   // 상태 표시 텍스트 변환
   const getStatusKorean = (status) => {
     switch (status) {
-      case 'REQUESTED': return '매니저 응답 대기';
-      case 'ACCEPTED': return '고객 응답 대기';
-      case 'CONFIRMED': return '매칭 완료';
-      case 'REJECTED': return '매칭 거절';
-      case 'WAITING': return '고객 대기';
-      default: return status || '-';
+      case 'REQUESTED':
+        return '매니저 응답 대기';
+      case 'ACCEPTED':
+        return '고객 응답 대기';
+      case 'CONFIRMED':
+        return '매칭 완료';
+      case 'REJECTED':
+        return '매칭 거절';
+      case 'WAITING':
+        return '고객 대기';
+      default:
+        return status || '-';
     }
   };
 
@@ -145,7 +161,9 @@ const ManagerMatchingRequest = () => {
           <div className="status-section">
             <div className="status-item">
               <span className="status-label">현재 상태</span>
-              <span className={`status-badge ${matching.status?.toLowerCase()}`}>
+              <span
+                className={`status-badge ${matching.status?.toLowerCase()}`}
+              >
                 {getStatusKorean(matching.status)}
               </span>
             </div>
@@ -165,13 +183,17 @@ const ManagerMatchingRequest = () => {
               {matching.reservedDate && (
                 <div className="info-item">
                   <span className="label">예약 날짜</span>
-                  <span className="value">{formatDate(matching.reservedDate)}</span>
+                  <span className="value">
+                    {formatDate(matching.reservedDate)}
+                  </span>
                 </div>
               )}
               {matching.reservedTime && (
                 <div className="info-item">
                   <span className="label">예약 시간</span>
-                  <span className="value">{formatTime(matching.reservedTime)}</span>
+                  <span className="value">
+                    {formatTime(matching.reservedTime)}
+                  </span>
                 </div>
               )}
               {matching.estimatedDuration && (
@@ -201,13 +223,17 @@ const ManagerMatchingRequest = () => {
               {matching.managerStatus && (
                 <div className="info-item">
                   <span className="label">매니저 상태</span>
-                  <span className="value">{getStatusKorean(matching.managerStatus)}</span>
+                  <span className="value">
+                    {getStatusKorean(matching.managerStatus)}
+                  </span>
                 </div>
               )}
               {matching.customerStatus && (
                 <div className="info-item">
                   <span className="label">고객 상태</span>
-                  <span className="value">{getStatusKorean(matching.customerStatus)}</span>
+                  <span className="value">
+                    {getStatusKorean(matching.customerStatus)}
+                  </span>
                 </div>
               )}
               {matching.reservationId && (
@@ -223,10 +249,7 @@ const ManagerMatchingRequest = () => {
           <div className="action-section">
             {matching.status === 'REQUESTED' && (
               <div className="button-group">
-                <button
-                  onClick={handleAccept}
-                  className="accept-button"
-                >
+                <button onClick={handleAccept} className="accept-button">
                   수락
                 </button>
                 <button
