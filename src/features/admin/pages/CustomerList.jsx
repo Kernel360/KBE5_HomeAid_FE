@@ -82,10 +82,6 @@ const CustomerDetailModal = ({
                             alt="프로필 이미지"
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              console.log(
-                                'Profile image load failed:',
-                                imageUrl
-                              );
                               e.target.style.display = 'none';
                               e.target.nextElementSibling.style.display =
                                 'flex';
@@ -190,35 +186,6 @@ const CustomerDetailModal = ({
                 등록된 주소가 없습니다.
               </div>
             )}
-          </div>
-
-          {/* 기타 정보 */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              기타 정보
-            </h3>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    매칭 수
-                  </label>
-                  <div className="text-gray-900">
-                    {customer.matchCount || 0}건
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    가입일
-                  </label>
-                  <div className="text-gray-900">
-                    {customer.createdAt
-                      ? new Date(customer.createdAt).toLocaleDateString('ko-KR')
-                      : '-'}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* 모달 푸터 */}
@@ -353,8 +320,6 @@ const CustomerList = () => {
       ) {
         const query = searchData.query.trim();
 
-        console.log('전체 검색 실행:', query);
-
         // 병렬로 각 필드 검색 실행
         const [nameResults, emailResults, phoneResults] = await Promise.all([
           fetchCustomersByField('name', query, 0),
@@ -368,13 +333,6 @@ const CustomerList = () => {
           (customer, index, arr) =>
             arr.findIndex((c) => c.id === customer.id) === index
         );
-
-        console.log('전체 검색 결과:', {
-          name: nameResults.length,
-          email: emailResults.length,
-          phone: phoneResults.length,
-          unique: uniqueResults.length,
-        });
 
         // 페이징 처리
         const pageSize = 10;
@@ -416,8 +374,6 @@ const CustomerList = () => {
             break;
         }
       }
-
-      console.log('개별 검색 실행:', Object.fromEntries(params));
 
       const response = await fetch(
         `${API_URL}/api/v1/admin/customers?${params}`,
@@ -488,7 +444,6 @@ const CustomerList = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Customer stats API response:', data);
 
         if (data.success && data.data) {
           const allCustomers = data.data.content || [];
@@ -516,7 +471,6 @@ const CustomerList = () => {
             }).length,
           };
           setCustomerStats(stats);
-          console.log('Customer stats updated:', stats);
         }
       }
     } catch (err) {
@@ -547,7 +501,6 @@ const CustomerList = () => {
 
   // 검색 실행
   const handleSearch = () => {
-    console.log('Search triggered:', { searchTerm, searchType });
     // 검색 시 첫 페이지로 이동
     setPagination((prev) => ({ ...prev, page: 0 }));
 
@@ -625,7 +578,6 @@ const CustomerList = () => {
       }
 
       const data = await response.json();
-      console.log('Customer detail API response:', data); // 디버깅용
 
       if (data.success && data.data) {
         setDetailModal((prev) => ({
@@ -849,16 +801,15 @@ const CustomerList = () => {
               )}
 
               <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[900px]">
+                <table className="w-full min-w-[800px]">
                   <colgroup>
-                    <col style={{ width: '120px' }} />
-                    <col style={{ width: '220px' }} />
-                    <col style={{ width: '160px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '100px' }} />
-                    <col style={{ width: '120px' }} />
-                  </colgroup>
-                  <thead className="bg-gray-50">
+<col style={{ width: '120px' }} />
+<col style={{ width: '220px' }} />
+<col style={{ width: '160px' }} />
+<col style={{ width: '100px' }} />
+<col style={{ width: '120px' }} />
+</colgroup>
+<thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         이름
@@ -873,14 +824,11 @@ const CustomerList = () => {
                         상태
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        매칭수
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         상세보기
                       </th>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+</thead>
+<tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
                       // 로딩 상태
                       [...Array(5)].map((_, index) => (
@@ -898,9 +846,6 @@ const CustomerList = () => {
                             <div className="w-12 h-6 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-8 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="w-16 h-6 bg-gray-200 rounded animate-pulse mx-auto"></div>
                           </td>
                         </tr>
@@ -908,7 +853,7 @@ const CustomerList = () => {
                     ) : customers.length === 0 ? (
                       // 데이터 없음
                       <tr>
-                        <td colSpan="6" className="px-4 py-12 text-center">
+                        <td colSpan="5" className="px-4 py-12 text-center">
                           <div className="flex flex-col items-center">
                             <svg
                               className="w-12 h-12 text-gray-400 mb-4"
@@ -961,9 +906,6 @@ const CustomerList = () => {
                               {getActivityStatus(customer)}
                             </span>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                            {customer.matchCount || '0'}건
-                          </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                             <button
                               onClick={() => handleDetailClick(customer)}
@@ -975,8 +917,8 @@ const CustomerList = () => {
                         </tr>
                       ))
                     )}
-                  </tbody>
-                </table>
+</tbody>
+</table>
               </div>
 
               {/* Pagination - 매니저 목록과 동일한 스타일 적용 */}
