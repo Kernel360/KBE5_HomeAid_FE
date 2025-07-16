@@ -66,6 +66,10 @@ const sseEmitter = {
             console.log('✅ 서버 요청에 따른 연결 종료 완료');
         });
 
+        eventSource.addEventListener('ping', (e) => {
+            // console.log('💬 서버로부터 ping 수신:', e.data);
+        });
+
         // 연결 인스턴스 저장
         sseEmitter.eventSource = eventSource;
         return eventSource;

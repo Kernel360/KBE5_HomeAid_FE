@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useAlertStore } from '../stores/alertStore';
 import { useState, useCallback, memo } from 'react';
-import sseEmitter from '../features/alert/sseEmitter.js'
 import AlertCard from '@/features/alert/AlertCard';
 import apiService from '@/api';
 
@@ -38,6 +37,7 @@ function Header({
   };
 
   const handleLogoutClick = async () => {
+    await apiService.alert.sseDisconnect();
     logout();
     navigate('/');
     window.location.reload(); // 상태 초기화를 위해 페이지 새로고침
