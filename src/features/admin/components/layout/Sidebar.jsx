@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../../../stores/authStore';
 import { authService } from '../../../../features/auth/services/authService';
+import apiService from '@/api';
 
 const menuItems = [
   {
@@ -192,8 +193,9 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     setShowLogoutModal(true);
   };
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     try {
+      await apiService.alert.sseDisconnect();
       // 1. Zustand 스토어 초기화
       logout();
 
