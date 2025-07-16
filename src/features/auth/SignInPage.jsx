@@ -5,7 +5,6 @@ import { Eye, EyeOff } from 'lucide-react'; // lucide-react 사용 예시
 import { useAuthStore } from '../../stores/authStore.js';
 import Header from '../../components/Header.jsx';
 import { authService } from './services/authService.js';
-import sseEmitter from '../alert/sseEmitter.js';
 
 const SignInPage = () => {
   const [phone, setPhone] = useState('');

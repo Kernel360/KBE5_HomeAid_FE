@@ -115,7 +115,6 @@ export const apiService = {
     getWorkLog: (matchingId) =>
       api.get(`/managers/work-logs/matchings/${matchingId}`),
   },
-
   settlement: {
     getManagerSettlements: (managerId, params = {}) => {
       const queryParams = new URLSearchParams(params);
@@ -136,6 +135,8 @@ export const apiService = {
   },
   alert: {
     updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
+    getUnReadAlerts: () => api.get('/alerts'),
+    sseDisconnect: () => api.post('/alerts/disconnect'),
   },
 };
 export default apiService;
