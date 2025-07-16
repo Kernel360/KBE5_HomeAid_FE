@@ -68,7 +68,7 @@ const ChartSection = ({
           )}
         </div>
 
-        <div className="w-full h-64 lg:h-80 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 relative overflow-hidden">
+        <div className="w-full h-64 lg:h-80 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 relative overflow-visible">
           {/* Grid Lines */}
           <div className="absolute inset-4 grid grid-rows-5 grid-cols-1 gap-0 opacity-20">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -100,11 +100,6 @@ const ChartSection = ({
                     style={{ height: `${height}px` }}
                   >
                     {/* Value label for today or high values */}
-                    {(isToday || value > maxValue * 0.8) && value > 0 && (
-                      <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-gray-700 bg-white px-1 rounded shadow">
-                        {value.toLocaleString()}
-                      </div>
-                    )}
                   </div>
 
                   {/* Day label */}

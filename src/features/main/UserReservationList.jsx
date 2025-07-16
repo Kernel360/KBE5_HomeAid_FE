@@ -280,6 +280,9 @@ const UserReservationList = () => {
         throw new Error(errorData.message || '매칭 응답 처리에 실패했습니다.');
       }
 
+      // ⭐️ 매칭 응답 후 즉시 예약 목록 갱신
+      await refreshData();
+
       // ⭐️ 매칭 확인 시 즉시 로컬 상태 업데이트 (새로고침 없이 바로 반영)
       if (action === 'CONFIRM') {
         const currentReservations =
@@ -357,11 +360,6 @@ const UserReservationList = () => {
         }
       }
 
-      // 성공 시 백그라운드에서 데이터 새로고침 (서버와 동기화)
-      setTimeout(async () => {
-        await refreshData();
-      }, 1000);
-
       setShowRejectModal(false);
       setRejectMemo('');
       setSelectedReservation(null);
@@ -390,15 +388,6 @@ const UserReservationList = () => {
       backendData: reservation?.backendData,
       fullReservation: reservation, // 전체 예약 객체 로그
     });
-
-    // ⭐️ 사용자 디버깅 안내
-    console.log(`
-    🔧 결제 버튼 문제 디버깅 안내 (예약 목록):
-    1. 브라우저 개발자 도구(F12)를 열어주세요
-    2. Console 탭에서 위의 로그를 확인하세요
-    3. 'backendData'와 'fullReservation' 객체에서 결제 관련 필드를 찾아보세요
-    4. 결제가 완료되었다면 paymentId, paidAt, paymentStatus 등의 필드가 있어야 합니다
-    `);
 
     const backendData =
       reservation?.backendData?.data || reservation?.backendData || {};

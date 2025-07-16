@@ -71,7 +71,8 @@ export const apiService = {
     create: (data) => api.post('/reviews', data),
     update: (id, data) => api.put(`/reviews/${id}`, data),
     delete: (id) => api.delete(`/reviews/${id}`),
-    getReviewTarget: (reservationId) => api.get(`/reviews/${reservationId}/review-target`),
+    getReviewTarget: (reservationId) =>
+      api.get(`/reviews/${reservationId}/review-target`),
   },
 
   board: {
@@ -107,12 +108,13 @@ export const apiService = {
       api.post('/admin/matchings', { reservationId, managerId }),
   },
   workLog: {
-    checkIn: (matchingId, data) => api.patch(`/managers/work-logs/matchings/${matchingId}/check-in`, data),
+    checkIn: (matchingId, data) =>
+      api.patch(`/managers/work-logs/matchings/${matchingId}/check-in`, data),
     checkOut: (matchingId, data) =>
       api.patch(`/managers/work-logs/matchings/${matchingId}/check-out`, data),
-    getWorkLog: (matchingId) => api.get(`/managers/work-logs/matchings/${matchingId}`),
+    getWorkLog: (matchingId) =>
+      api.get(`/managers/work-logs/matchings/${matchingId}`),
   },
-
   settlement: {
     getManagerSettlements: (managerId, params = {}) => {
       const queryParams = new URLSearchParams(params);
@@ -135,6 +137,6 @@ export const apiService = {
     updateReadStatus: (alertId) => api.patch(`/alerts/${alertId}`),
     getUnReadAlerts: () => api.get('/alerts'),
     sseDisconnect: () => api.post('/alerts/disconnect'),
-  }
+  },
 };
 export default apiService;

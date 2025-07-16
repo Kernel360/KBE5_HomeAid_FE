@@ -46,6 +46,7 @@ const PartialRefundModal = ({
     }
 
     let refundData = {
+      refundReason: 'ADMIN_MANUAL_REFUND',
       adminComment: adminComment.trim(),
     };
 
@@ -293,16 +294,40 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
     }
   };
 
-  // 환불 승인 처리 (관리자 코멘트만 입력)
+  // 환불 승인 처리 (RefundAdminDecisionRequestDto 스펙에 맞게 수정)
   const handleApproveRefund = async (refundId) => {
     const adminComment = prompt('승인 사유를 입력하세요:');
     if (!adminComment?.trim()) return;
 
+    // 환불 사유 선택 (간단한 prompt로 구현)
+    const refundReasonOptions = [
+      'CUSTOMER_DISSATISFACTION',
+      'BEFORE_7_DAYS',
+      'BETWEEN_3_AND_7_DAYS',
+      'LESS_THAN_3_DAYS',
+      'AFTER_COMPLETION',
+      'CUSTOMER_REQUEST',
+      'ADMIN_MANUAL_REFUND',
+    ];
+
+    const selectedReason = prompt(
+      `환불 사유를 선택하세요:\n1. CUSTOMER_DISSATISFACTION (고객 불만족)\n2. BEFORE_7_DAYS (예약 7일 전 이상 취소)\n3. BETWEEN_3_AND_7_DAYS (예약 3~7일 전 취소)\n4. LESS_THAN_3_DAYS (예약 72시간 미만 취소)\n5. AFTER_COMPLETION (서비스 완료 후 환불)\n6. CUSTOMER_REQUEST (고객이 환불을 요청했을 때)\n7. ADMIN_MANUAL_REFUND (관리자가 수동으로 환불했을 때)\n\n번호를 입력하세요 (1-7):`
+    );
+
+    const reasonIndex = parseInt(selectedReason) - 1;
+    if (reasonIndex < 0 || reasonIndex >= refundReasonOptions.length) {
+      alert('올바른 번호를 선택해주세요.');
+      return;
+    }
+
+    const refundReason = refundReasonOptions[reasonIndex];
+
     try {
       setLoading(true);
-      console.log('환불 승인:', refundId, adminComment);
+      console.log('환불 승인:', refundId, adminComment, refundReason);
 
       const decisionRequest = {
+        refundReason: refundReason,
         adminComment: adminComment.trim(),
       };
 
@@ -339,16 +364,40 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
     }
   };
 
-  // 환불 거절 처리 (관리자 코멘트만 입력)
+  // 환불 거절 처리 (RefundAdminDecisionRequestDto 스펙에 맞게 수정)
   const handleRejectRefund = async (refundId) => {
     const adminComment = prompt('거절 사유를 입력하세요:');
     if (!adminComment?.trim()) return;
 
+    // 환불 사유 선택 (간단한 prompt로 구현)
+    const refundReasonOptions = [
+      'CUSTOMER_DISSATISFACTION',
+      'BEFORE_7_DAYS',
+      'BETWEEN_3_AND_7_DAYS',
+      'LESS_THAN_3_DAYS',
+      'AFTER_COMPLETION',
+      'CUSTOMER_REQUEST',
+      'ADMIN_MANUAL_REFUND',
+    ];
+
+    const selectedReason = prompt(
+      `환불 사유를 선택하세요:\n1. CUSTOMER_DISSATISFACTION (고객 불만족)\n2. BEFORE_7_DAYS (예약 7일 전 이상 취소)\n3. BETWEEN_3_AND_7_DAYS (예약 3~7일 전 취소)\n4. LESS_THAN_3_DAYS (예약 72시간 미만 취소)\n5. AFTER_COMPLETION (서비스 완료 후 환불)\n6. CUSTOMER_REQUEST (고객이 환불을 요청했을 때)\n7. ADMIN_MANUAL_REFUND (관리자가 수동으로 환불했을 때)\n\n번호를 입력하세요 (1-7):`
+    );
+
+    const reasonIndex = parseInt(selectedReason) - 1;
+    if (reasonIndex < 0 || reasonIndex >= refundReasonOptions.length) {
+      alert('올바른 번호를 선택해주세요.');
+      return;
+    }
+
+    const refundReason = refundReasonOptions[reasonIndex];
+
     try {
       setLoading(true);
-      console.log('환불 거절:', refundId, adminComment);
+      console.log('환불 거절:', refundId, adminComment, refundReason);
 
       const decisionRequest = {
+        refundReason: refundReason,
         adminComment: adminComment.trim(),
       };
 
@@ -439,6 +488,7 @@ const AdminPaymentDetail = ({ payment, isOpen, onClose, onRefresh }) => {
       console.log('전액 환불 처리:', paymentDetail.id);
 
       const decisionRequest = {
+        refundReason: 'ADMIN_MANUAL_REFUND',
         adminComment: '관리자 전액 환불 처리',
       };
 

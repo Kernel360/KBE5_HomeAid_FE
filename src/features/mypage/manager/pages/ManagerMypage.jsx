@@ -27,9 +27,6 @@ function MatchingInfoView({ onBack }) {
         >
           <div className="mb-6">
             <h3 className="text-xl font-bold text-gray-900">근무 정보 입력</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              여기에 매칭 정보 입력 폼/컴포넌트가 들어갑니다.
-            </p>
           </div>
           <ServiceRegistration />
         </main>

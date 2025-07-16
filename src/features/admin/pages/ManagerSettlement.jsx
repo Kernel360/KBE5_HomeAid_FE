@@ -1060,7 +1060,7 @@ const ManagerSettlement = () => {
                         : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                     }`}
                   >
-                    전체 보기
+                    월별 보기
                   </button>
                   <button
                     onClick={handleToggleMonthlyView}
@@ -1070,7 +1070,7 @@ const ManagerSettlement = () => {
                         : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                     }`}
                   >
-                    월별 보기
+                    전체 보기
                   </button>
                 </div>
 
@@ -1249,14 +1249,14 @@ const ManagerSettlement = () => {
                   <table className="w-full min-w-[1500px]">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           <input
                             type="checkbox"
                             checked={isAllSelected}
                             onChange={handleSelectAll}
                             className="rounded border-gray-300"
                           />
-                        </th>
+                        </th> */}
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           매니저ID
                         </th>
@@ -1340,7 +1340,7 @@ const ManagerSettlement = () => {
 
                           return (
                             <tr key={settlementId} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap">
+                              {/* <td className="px-6 py-4 whitespace-nowrap">
                                 <input
                                   type="checkbox"
                                   checked={selectedSettlements.includes(
@@ -1351,7 +1351,7 @@ const ManagerSettlement = () => {
                                   }
                                   className="rounded border-gray-300"
                                 />
-                              </td>
+                              </td> */}
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm font-medium text-gray-900">
                                   {settlement.managerId}

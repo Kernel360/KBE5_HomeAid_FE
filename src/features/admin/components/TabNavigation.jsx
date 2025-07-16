@@ -13,23 +13,26 @@ const TabNavigation = ({ activeTab, onTabChange, loading }) => {
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="flex overflow-x-auto bg-white">
-        {CONSTANTS.MAIN_TABS.map((tab) => {
+        {CONSTANTS.MAIN_TABS.map((tab, idx) => {
           const tabKey = tab.split(' ')[0];
           const enabled = isTabEnabled(tabKey);
           const isActive = activeTab === tabKey;
-
           return (
             <button
               key={tab}
               onClick={() => enabled && onTabChange(tabKey)}
-              className={`px-4 sm:px-6 py-4 text-sm font-medium transition-all duration-200 whitespace-nowrap relative ${
-                isActive
-                  ? 'text-blue-600 border-b-2 border-blue-500 bg-white'
+              className={
+                `px-4 sm:px-6 py-4 text-sm font-medium transition-all duration-200 whitespace-nowrap relative bg-white ` +
+                (isActive
+                  ? 'text-blue-600 border-2 border-blue-500 z-10 '
                   : enabled
-                    ? 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 border-transparent bg-white'
-                    : 'text-gray-400 border-b-2 border-transparent bg-white cursor-not-allowed'
-              }`}
+                    ? 'text-gray-500 hover:text-gray-700 border-2 border-transparent '
+                    : 'text-gray-400 border-2 border-transparent cursor-not-allowed ') +
+                (idx === 0 ? 'rounded-l-2xl ' : '') +
+                (idx === CONSTANTS.MAIN_TABS.length - 1 ? 'rounded-r-2xl ' : '')
+              }
               disabled={loading || !enabled}
+              style={isActive ? { position: 'relative', zIndex: 10 } : {}}
             >
               {tab}
               {!enabled && (
@@ -39,7 +42,6 @@ const TabNavigation = ({ activeTab, onTabChange, loading }) => {
           );
         })}
       </div>
-
       <div className="border-b border-gray-200 bg-white"></div>
     </div>
   );

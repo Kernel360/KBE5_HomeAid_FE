@@ -402,15 +402,6 @@ const UserReservationDetail = () => {
       fullReservation: reservation, // 전체 예약 객체 로그
     });
 
-    // ⭐️ 사용자 디버깅 안내
-    console.log(`
-    🔧 결제 버튼 문제 디버깅 안내:
-    1. 브라우저 개발자 도구(F12)를 열어주세요
-    2. Console 탭에서 위의 로그를 확인하세요
-    3. 'backendData'와 'fullReservation' 객체에서 결제 관련 필드를 찾아보세요
-    4. 결제가 완료되었다면 paymentId, paidAt, paymentStatus 등의 필드가 있어야 합니다
-    `);
-
     // 0. 결제 상태 API 조회 결과 우선 확인 (비동기 처리)
     const currentReservationId = reservation?.id || reservationId;
 
@@ -786,20 +777,29 @@ const UserReservationDetail = () => {
         throw new Error(errorData.message || '매칭 응답 처리에 실패했습니다.');
       }
 
-      if (data) {
+      // ⭐️ 매칭 응답 후 예약 상태 즉시 갱신
+      const updatedReservation = await getReservationById(reservationId);
+      const updatedData = updatedReservation.data;
+
+      if (updatedData) {
         const transformedReservation = {
-          id: data.reservationId || data.id || reservationId,
-          type: data.serviceOptionName || getServiceName(1, '청소', data),
+          id: updatedData.reservationId || updatedData.id || reservationId,
+          type:
+            updatedData.serviceOptionName ||
+            getServiceName(1, '청소', updatedData),
           icon: getServiceIcon(1),
-          status: data.status || 'REQUESTED',
-          date: data.requestedDate,
-          time: data.requestedTime,
-          price: data.totalPrice || getServicePrice(null, 1, '청소', data),
+          status: updatedData.status || 'REQUESTED',
+          date: updatedData.requestedDate,
+          time: updatedData.requestedTime,
+          price:
+            updatedData.totalPrice ||
+            getServicePrice(null, 1, '청소', updatedData),
 
           address: (() => {
-            const mainAddress = data.address || reservation?.address || '';
+            const mainAddress =
+              updatedData.address || reservation?.address || '';
             const detailAddress =
-              data.addressDetail || reservation?.addressDetail || '';
+              updatedData.addressDetail || reservation?.addressDetail || '';
             if (mainAddress && detailAddress)
               return `${mainAddress} ${detailAddress}`;
             if (mainAddress) return mainAddress;
@@ -808,10 +808,10 @@ const UserReservationDetail = () => {
           })(),
           addressDetail: '',
 
-          customerNote: data.customerMemo || '',
-          createdAt: data.startTime || new Date().toISOString(),
+          customerNote: updatedData.customerMemo || '',
+          createdAt: updatedData.startTime || new Date().toISOString(),
 
-          backendData: data,
+          backendData: updatedData,
         };
 
         setReservation(transformedReservation);
