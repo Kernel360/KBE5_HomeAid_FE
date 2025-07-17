@@ -447,11 +447,13 @@ const Dashboard = () => {
                       >
                         <stop
                           offset="0%"
-                          style={{ stopColor: '#1E40AF', stopOpacity: 0.6 }}
+                          stopColor="#1E40AF"
+                          stopOpacity="0.6"
                         />
                         <stop
                           offset="100%"
-                          style={{ stopColor: '#1E40AF', stopOpacity: 0.1 }}
+                          stopColor="#1E40AF"
+                          stopOpacity="0.1"
                         />
                       </linearGradient>
                       <linearGradient
@@ -463,11 +465,13 @@ const Dashboard = () => {
                       >
                         <stop
                           offset="0%"
-                          style={{ stopColor: '#EA580C', stopOpacity: 0.6 }}
+                          stopColor="#EA580C"
+                          stopOpacity="0.6"
                         />
                         <stop
                           offset="100%"
-                          style={{ stopColor: '#EA580C', stopOpacity: 0.1 }}
+                          stopColor="#EA580C"
+                          stopOpacity="0.1"
                         />
                       </linearGradient>
                     </defs>
@@ -628,270 +632,184 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* 환불 추이 차트 */}
+            {/* 관리자 수익 섹션 */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  환불 현황 (최근 7일)
+                  관리자 수익 현황
                 </h2>
-                <div className="flex items-center space-x-4 text-base">
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-                    <span className="text-gray-600">환불 금액</span>
-                  </div>
-                </div>
+                <p className="text-base text-gray-600 mt-1">
+                  플랫폼 수수료 및 순수익 분석
+                </p>
               </div>
 
-              <div className="w-full h-80 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg flex items-center justify-center relative">
-                {dashboardStats.dailyStats &&
-                dashboardStats.dailyStats.length > 0 ? (
-                  <svg
-                    viewBox="0 0 800 320"
-                    className="w-full h-full max-w-full"
-                  >
-                    <defs>
-                      <linearGradient
-                        id="refundGradient"
-                        x1="0%"
-                        y1="0%"
-                        x2="0%"
-                        y2="100%"
-                      >
-                        <stop
-                          offset="0%"
-                          style={{ stopColor: '#EF4444', stopOpacity: 0.6 }}
-                        />
-                        <stop
-                          offset="100%"
-                          style={{ stopColor: '#EF4444', stopOpacity: 0.1 }}
-                        />
-                      </linearGradient>
-                    </defs>
-
-                    {(() => {
-                      const maxRefund = Math.max(
-                        ...dashboardStats.dailyStats.map((d) => d.refundAmount)
-                      );
-                      const chartHeight = 240;
-                      const chartTop = 30;
-
-                      // 7개 데이터 포인트를 균등하게 배치
-                      const chartWidth = 600; // 차트 영역 너비
-                      const chartStartX = 100; // 시작 X 좌표
-                      const dataCount = dashboardStats.dailyStats.length;
-                      const spacing =
-                        dataCount > 1 ? chartWidth / (dataCount - 1) : 0;
-
-                      if (maxRefund === 0) {
-                        return (
-                          <text
-                            x="400"
-                            y="100"
-                            textAnchor="middle"
-                            className="text-sm fill-gray-500"
-                          >
-                            환불 데이터가 없습니다
-                          </text>
-                        );
-                      }
-
-                      return (
-                        <>
-                          {/* 환불 금액 바 차트 */}
-                          {dashboardStats.dailyStats.map((data, i) => {
-                            const x = chartStartX + i * spacing;
-                            const height =
-                              maxRefund > 0
-                                ? (data.refundAmount / maxRefund) * chartHeight
-                                : 0;
-                            const y = chartTop + chartHeight - height;
-
-                            return (
-                              <rect
-                                key={i}
-                                x={x - 25}
-                                y={y}
-                                width="50"
-                                height={height}
-                                fill="url(#refundGradient)"
-                                rx="6"
-                              />
-                            );
-                          })}
-
-                          {/* 날짜 라벨 */}
-                          {dashboardStats.dailyStats.map((data, i) => {
-                            const x = chartStartX + i * spacing;
-                            const date = new Date(data.date);
-                            const dateLabel = `${date.getMonth() + 1}/${date.getDate()}`;
-
-                            return (
-                              <text
-                                key={i}
-                                x={x}
-                                y="305"
-                                textAnchor="middle"
-                                className="text-sm fill-gray-600"
-                                fontSize="16"
-                              >
-                                {dateLabel}
-                              </text>
-                            );
-                          })}
-                        </>
-                      );
-                    })()}
-                  </svg>
-                ) : (
-                  <div className="text-gray-500">데이터가 없습니다</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 수익률 분석 섹션 */}
-          <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                수익률 분석
-              </h2>
-              <p className="text-base text-gray-600 mt-1">
-                플랫폼 수수료와 매니저 정산 비율 현황
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* 수익 분배 도넛 차트 */}
-              <div className="flex flex-col items-center">
-                <div className="relative w-48 h-48">
-                  <svg
-                    viewBox="0 0 200 200"
-                    className="w-full h-full transform -rotate-90"
-                  >
-                    {(() => {
-                      const circumference = 2 * Math.PI * 80; // 503
-                      const platformRate = loading
-                        ? 20
-                        : dashboardStats.profitRate;
-                      const managerRate = 100 - platformRate;
-
-                      const platformArc = (platformRate / 100) * circumference;
-                      const managerArc = (managerRate / 100) * circumference;
-
-                      return (
-                        <>
-                          {/* 매니저 정산 */}
-                          <circle
-                            cx="100"
-                            cy="100"
-                            r="80"
-                            fill="none"
-                            stroke="#10B981"
-                            strokeWidth="20"
-                            strokeDasharray={`${managerArc} ${circumference}`}
-                            strokeDashoffset="0"
-                          />
-                          {/* 플랫폼 수익 */}
-                          <circle
-                            cx="100"
-                            cy="100"
-                            r="80"
-                            fill="none"
-                            stroke="#6366F1"
-                            strokeWidth="20"
-                            strokeDasharray={`${platformArc} ${circumference}`}
-                            strokeDashoffset={`-${managerArc}`}
-                          />
-                        </>
-                      );
-                    })()}
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-gray-900">
-                        {loading
-                          ? '...'
-                          : `${dashboardStats.profitRate.toFixed(1)}%`}
-                      </div>
-                      <div className="text-base text-gray-600">수익률</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center">
-                    <div className="w-5 h-5 bg-emerald-500 rounded mr-3"></div>
-                    <span className="text-base text-gray-700">
-                      매니저 정산 (
-                      {loading
-                        ? '80'
-                        : (100 - dashboardStats.profitRate).toFixed(1)}
-                      %)
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-5 h-5 bg-indigo-500 rounded mr-3"></div>
-                    <span className="text-base text-gray-700">
-                      관리자 수익 (
-                      {loading ? '20' : dashboardStats.profitRate.toFixed(1)}%)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 수익률 상세 정보 */}
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-base font-medium text-green-700">
-                      매니저 총 정산액
-                    </span>
-                    <span className="text-xl font-bold text-green-900">
+                {/* 수익 요약 카드들 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* 총 매출 */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-blue-700">
+                        총 매출
+                      </span>
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-600 text-lg">₩</span>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-900">
                       ₩
                       {loading
                         ? '...'
-                        : dashboardStats.managerSettlementAmount.toLocaleString()}
-                    </span>
+                        : dashboardStats.totalPayments.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-blue-600 mt-1">
+                      전체 결제 금액
+                    </div>
                   </div>
-                  <div className="text-sm text-green-600">
-                    전체 매출의{' '}
-                    {loading
-                      ? '80'
-                      : (100 - dashboardStats.profitRate).toFixed(1)}
-                    %
-                  </div>
-                </div>
 
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-base font-medium text-indigo-700">
-                      플랫폼 수익
-                    </span>
-                    <span className="text-xl font-bold text-indigo-900">
+                  {/* 플랫폼 수익 */}
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-purple-700">
+                        플랫폼 수익
+                      </span>
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <span className="text-purple-600 text-lg">%</span>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-purple-900">
                       ₩
                       {loading
                         ? '...'
                         : dashboardStats.platformProfit.toLocaleString()}
-                    </span>
+                    </div>
+                    <div className="text-xs text-purple-600 mt-1">
+                      수익률{' '}
+                      {loading ? '...' : dashboardStats.profitRate.toFixed(1)}%
+                    </div>
                   </div>
-                  <div className="text-sm text-indigo-600">
-                    전체 매출의{' '}
-                    {loading ? '20' : dashboardStats.profitRate.toFixed(1)}%
+
+                  {/* 순수익 */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-green-700">
+                        순수익
+                      </span>
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <span className="text-green-600 text-lg">₩</span>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-green-900">
+                      ₩
+                      {loading
+                        ? '...'
+                        : dashboardStats.netRevenue.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-green-600 mt-1">
+                      환불 제외 순수익
+                    </div>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-base font-medium text-gray-700">
-                      순수익률
-                    </span>
-                    <span className="text-xl font-bold text-gray-900">
+                {/* 수익 분배 도넛 차트 */}
+                <div className="flex items-center justify-center">
+                  <div className="relative w-48 h-48">
+                    <svg
+                      viewBox="0 0 200 200"
+                      className="w-full h-full transform -rotate-90"
+                    >
+                      {(() => {
+                        const circumference = 2 * Math.PI * 80;
+                        const platformRate = loading
+                          ? 20
+                          : dashboardStats.profitRate;
+                        const managerRate = 100 - platformRate;
+
+                        const platformArc =
+                          (platformRate / 100) * circumference;
+                        const managerArc = (managerRate / 100) * circumference;
+
+                        return (
+                          <>
+                            {/* 매니저 정산 */}
+                            <circle
+                              cx="100"
+                              cy="100"
+                              r="80"
+                              fill="none"
+                              stroke="#10B981"
+                              strokeWidth="20"
+                              strokeDasharray={`${managerArc} ${circumference}`}
+                              strokeDashoffset="0"
+                            />
+                            {/* 플랫폼 수익 */}
+                            <circle
+                              cx="100"
+                              cy="100"
+                              r="80"
+                              fill="none"
+                              stroke="#6366F1"
+                              strokeWidth="20"
+                              strokeDasharray={`${platformArc} ${circumference}`}
+                              strokeDashoffset={`-${managerArc}`}
+                            />
+                          </>
+                        );
+                      })()}
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-gray-900">
+                          {loading
+                            ? '...'
+                            : `${dashboardStats.profitRate.toFixed(1)}%`}
+                        </div>
+                        <div className="text-base text-gray-600">수익률</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 수익 분배 상세 정보 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-lg border border-emerald-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-base font-medium text-emerald-700">
+                        매니저 정산액
+                      </span>
+                      <span className="text-xl font-bold text-emerald-900">
+                        ₩
+                        {loading
+                          ? '...'
+                          : dashboardStats.managerSettlementAmount.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-sm text-emerald-600">
+                      전체 매출의{' '}
                       {loading
                         ? '...'
-                        : `${dashboardStats.profitRate.toFixed(1)}%`}
-                    </span>
+                        : (100 - dashboardStats.profitRate).toFixed(1)}
+                      %
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">환불 제외 기준</div>
+
+                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-base font-medium text-indigo-700">
+                        플랫폼 수익
+                      </span>
+                      <span className="text-xl font-bold text-indigo-900">
+                        ₩
+                        {loading
+                          ? '...'
+                          : dashboardStats.platformProfit.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-sm text-indigo-600">
+                      전체 매출의{' '}
+                      {loading ? '...' : dashboardStats.profitRate.toFixed(1)}%
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

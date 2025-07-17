@@ -202,12 +202,12 @@ const ManagerMatchingRequest = () => {
                   <span className="value">{`${matching.estimatedDuration}시간`}</span>
                 </div>
               )}
-              {matching.latitude !== null && matching.longitude !== null && (
+              {/* {matching.latitude !== null && matching.longitude !== null && (
                 <div className="info-item">
                   <span className="label">위치</span>
                   <span className="value">{`${matching.latitude}, ${matching.longitude}`}</span>
                 </div>
-              )}
+              )} */}
               {matching.fullAddress && (
                 <div className="info-item">
                   <span className="label">주소</span>

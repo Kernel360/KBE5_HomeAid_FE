@@ -33,6 +33,12 @@ const ReservationDetailWithManagerList = () => {
   }, [reservationId]);
 
   const handleSelectManager = async (managerId) => {
+    // 서비스 완료 상태인 경우 매니저 선택을 차단
+    if (reservation?.status === 'COMPLETED') {
+      alert('서비스가 완료된 예약은 매니저를 변경할 수 없습니다.');
+      return;
+    }
+
     try {
       await apiService.matching.createMatching(
         Number(reservationId),
@@ -54,7 +60,38 @@ const ReservationDetailWithManagerList = () => {
     <div className="flex flex-col md:flex-row gap-8 p-8 bg-gray-50 min-h-screen">
       {/* 예약 상세 정보 */}
       <div className="bg-white rounded-xl shadow-sm p-6 w-full md:w-1/3 min-w-[320px]">
-        <h2 className="text-lg font-bold mb-4">예약 상세정보</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold">예약 상세정보</h2>
+          {reservation?.status && (
+            <span
+              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                reservation.status === 'COMPLETED'
+                  ? 'bg-green-100 text-green-800'
+                  : reservation.status === 'MATCHED'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : reservation.status === 'MATCHING'
+                      ? 'bg-purple-100 text-purple-800'
+                      : reservation.status === 'REQUESTED'
+                        ? 'bg-blue-100 text-blue-800'
+                        : reservation.status === 'CANCELLED'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+              }`}
+            >
+              {reservation.status === 'COMPLETED'
+                ? '서비스 완료'
+                : reservation.status === 'MATCHED'
+                  ? '매칭 완료'
+                  : reservation.status === 'MATCHING'
+                    ? '매칭 중'
+                    : reservation.status === 'REQUESTED'
+                      ? '매칭 필요'
+                      : reservation.status === 'CANCELLED'
+                        ? '취소됨'
+                        : reservation.status || '상태 미확인'}
+            </span>
+          )}
+        </div>
         <div className="mb-6">
           <div className="text-xs text-gray-400 mb-1">수요자 정보</div>
           <div className="mb-2 flex justify-between">
@@ -163,10 +200,15 @@ const ReservationDetailWithManagerList = () => {
                     프로필
                   </button>
                   <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                    className={`px-4 py-2 rounded-lg font-medium ${
+                      reservation?.status === 'COMPLETED'
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
                     onClick={() => handleSelectManager(m.managerId)}
+                    disabled={reservation?.status === 'COMPLETED'}
                   >
-                    선택
+                    {reservation?.status === 'COMPLETED' ? '선택 불가' : '선택'}
                   </button>
                 </div>
               </div>
