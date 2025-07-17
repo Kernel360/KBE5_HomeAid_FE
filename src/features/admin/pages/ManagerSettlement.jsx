@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import SettlementDetailModal from '../components/SettlementDetailModal';
 import { apiService } from '../../../api/index.js';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+
 const StatCard = ({ title, value, subValue, icon, iconBg }) => (
   <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow min-h-[140px] flex flex-col">
     <div className="flex items-start justify-between mb-3 min-h-0">
@@ -276,7 +279,7 @@ const ManagerSettlement = () => {
         size: pagination.size.toString(),
       });
 
-      const response = await fetch(`/api/v1/admin/settlements?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/settlements?${params}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -567,7 +570,7 @@ const ManagerSettlement = () => {
       }
 
       const response = await fetch(
-        `/api/v1/admin/settlements/${settlementId}/confirm`,
+        `${API_BASE_URL}/api/v1/admin/settlements/${settlementId}/confirm`,
         {
           method: 'POST',
           headers: {
@@ -606,7 +609,7 @@ const ManagerSettlement = () => {
       }
 
       const response = await fetch(
-        `/api/v1/admin/settlements/${settlementId}/pay`,
+        `${API_BASE_URL}/api/v1/admin/settlements/${settlementId}/pay`,
         {
           method: 'POST',
           headers: {
@@ -642,7 +645,7 @@ const ManagerSettlement = () => {
       }
 
       const response = await fetch(
-        `/api/v1/admin/settlements/${settlementId}/manager-detail`,
+        `${API_BASE_URL}/api/v1/admin/settlements/${settlementId}/manager-detail`,
         {
           method: 'GET',
           headers: {
@@ -794,7 +797,7 @@ const ManagerSettlement = () => {
       });
 
       const response = await fetch(
-        `/api/v1/admin/settlements/manager?${params}`,
+        `${API_BASE_URL}/api/v1/admin/settlements/manager?${params}`,
         {
           method: 'POST',
           headers: {
@@ -1508,7 +1511,7 @@ const WeeklySettlementModal = ({ isOpen, onClose, onSubmit }) => {
   const fetchManagers = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('/api/v1/admin/managers?page=0&size=100', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/managers?page=0&size=100`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -1538,7 +1541,7 @@ const WeeklySettlementModal = ({ isOpen, onClose, onSubmit }) => {
       for (const manager of managers) {
         try {
           const response = await fetch(
-            `/api/v1/admin/settlements/managers/${manager.id}?page=0&size=50`,
+            `${API_BASE_URL}/api/v1/admin/settlements/managers/${manager.id}?page=0&size=50`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
