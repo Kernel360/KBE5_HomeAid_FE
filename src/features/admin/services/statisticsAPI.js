@@ -6,10 +6,13 @@
  * @param {number|null} day - 일 (optional)
  * @returns {Promise<Object>} API 응답 데이터
  */
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 const fetchStatistics = async (endpoint, year, month, day) => {
   try {
     const token = localStorage.getItem('accessToken');
-    let url = `/api/v1/admin/statistics/${endpoint}?year=${year}`;
+    let url = `${API_BASE_URL}/api/v1/admin/statistics/${endpoint}?year=${year}`;
 
     if (month) {
       url += `&month=${month}`;

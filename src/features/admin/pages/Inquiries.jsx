@@ -230,6 +230,13 @@ const Inquiries = () => {
     manager: 0,
   });
 
+  // 전체 통계 상태 (탭에 관계없이 항상 전체 통계 유지)
+  const [overallStats, setOverallStats] = useState({
+    total: 0,
+    unanswered: 0,
+    answered: 0,
+  });
+
   // 권한 확인
   const { user } = useAuthStore();
 
@@ -272,11 +279,7 @@ const Inquiries = () => {
     switch (type) {
       case '전체':
         return stats.total;
-      case '수요자문의':
-        return stats.customer;
-      case '매니저문의':
-        return stats.manager;
-      case '미답변':
+      case '답변대기':
         return stats.unanswered;
       default:
         return 0;
@@ -286,21 +289,53 @@ const Inquiries = () => {
   const tabs = [
     { key: '전체', label: `전체 (${getTabCount('전체')})`, filter: null },
     {
-      key: '수요자문의',
-      label: `수요자문의 (${getTabCount('수요자문의')})`,
-      filter: 'CUSTOMER',
-    },
-    {
-      key: '매니저문의',
-      label: `매니저문의 (${getTabCount('매니저문의')})`,
-      filter: 'MANAGER',
-    },
-    {
-      key: '미답변',
-      label: `미답변 (${getTabCount('미답변')})`,
+      key: '답변대기',
+      label: `답변대기 (${getTabCount('답변대기')})`,
       filter: 'UNANSWERED',
     },
   ];
+
+  // 전체 통계 조회
+  const fetchOverallStats = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
+      }
+
+      const response = await api.get('/admin/inquiries/boards', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: 0,
+          size: 1000, // 전체 데이터를 가져오기 위해 큰 값 설정
+        },
+      });
+
+      if (response.data?.success) {
+        const allInquiries = response.data.data.content;
+        
+        // 전체 통계 계산
+        const totalCount = allInquiries.length;
+        const answeredCount = allInquiries.filter(inquiry => 
+          inquiry.isAnswered === true ||
+          inquiry.answered === true ||
+          Boolean(inquiry.replyId) ||
+          Boolean(inquiry.replyContent)
+        ).length;
+        const unansweredCount = totalCount - answeredCount;
+
+        setOverallStats({
+          total: totalCount,
+          answered: answeredCount,
+          unanswered: unansweredCount,
+        });
+      }
+    } catch (err) {
+      console.error('전체 통계 조회 오류:', err);
+    }
+  };
 
   // 문의글 목록 조회
   const fetchInquiries = async (page = pagination.page) => {
@@ -322,13 +357,9 @@ const Inquiries = () => {
           page: pageIndex,
           size: pagination.size,
           type:
-            activeTab === '수요자문의'
-              ? 'CUSTOMER'
-              : activeTab === '매니저문의'
-                ? 'MANAGER'
-                : activeTab === '미답변'
-                  ? 'UNANSWERED'
-                  : undefined,
+            activeTab === '답변대기'
+              ? 'UNANSWERED'
+              : undefined,
           keyword: searchTerm.trim() || undefined,
         },
       });
@@ -398,16 +429,9 @@ const Inquiries = () => {
             userRole = inquiry.user.role.toUpperCase();
           }
 
-          // 여전히 userRole이 없으면 현재 탭 기반으로 추측
+          // 여전히 userRole이 없으면 기본값으로 CUSTOMER 설정 (더 안전한 선택)
           if (!userRole) {
-            if (activeTab === '수요자문의') {
-              userRole = 'CUSTOMER';
-            } else if (activeTab === '매니저문의') {
-              userRole = 'MANAGER';
-            } else {
-              // 전체 탭인 경우 기본값으로 CUSTOMER 설정 (더 안전한 선택)
-              userRole = 'CUSTOMER';
-            }
+            userRole = 'CUSTOMER';
           }
 
           // 개발 환경에서 각 문의글의 답변 상태 로깅
@@ -432,37 +456,41 @@ const Inquiries = () => {
           };
         });
 
+        // 클라이언트사이드 필터링 추가 - 답변대기 탭에서는 답변되지 않은 문의만 표시
+        const filteredInquiries = activeTab === '답변대기' 
+          ? processedInquiries.filter(inquiry => !inquiry.isAnswered)
+          : processedInquiries;
+
         // 개발 환경에서 처리된 데이터 로깅
         if (import.meta.env.DEV) {
           console.log('Processed inquiries:', processedInquiries);
+          console.log('Filtered inquiries:', filteredInquiries);
+          console.log('Active tab:', activeTab);
         }
 
-        setInquiries(processedInquiries);
+        setInquiries(filteredInquiries);
         setPagination((prev) => ({
           ...prev,
           page:
             response.data.data.currentPage || response.data.data.number || page,
-          totalElements: totalElements,
-          totalPages: Math.ceil(totalElements / prev.size),
+          totalElements: activeTab === '답변대기' ? filteredInquiries.length : totalElements,
+          totalPages: Math.ceil((activeTab === '답변대기' ? filteredInquiries.length : totalElements) / prev.size),
         }));
 
-        // 현재 페이지 데이터로 통계 업데이트 (서버사이드 필터링 사용 중이므로)
+        // 현재 페이지 데이터로 통계 업데이트
         const answeredCount = processedInquiries.filter(
           (inquiry) => inquiry.isAnswered
         ).length;
+        const unansweredCount = processedInquiries.filter(
+          (inquiry) => !inquiry.isAnswered
+        ).length;
 
-        // 전체 통계는 API에서 totalElements를 사용
+        // 전체 통계는 API에서 totalElements를 사용하되, 답변대기 탭에서는 필터링된 결과 사용
         setStats((prevStats) => ({
           ...prevStats,
-          total: totalElements,
-          // 현재 탭에 따라 통계 업데이트
-          ...(activeTab === '전체' && {
-            answered: answeredCount,
-            unanswered: totalElements - answeredCount,
-          }),
-          ...(activeTab === '수요자문의' && { customer: totalElements }),
-          ...(activeTab === '매니저문의' && { manager: totalElements }),
-          ...(activeTab === '미답변' && { unanswered: totalElements }),
+          total: activeTab === '답변대기' ? filteredInquiries.length : totalElements,
+          answered: answeredCount,
+          unanswered: unansweredCount,
         }));
       }
     } catch (err) {
@@ -484,6 +512,7 @@ const Inquiries = () => {
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchInquiries();
+    fetchOverallStats(); // 전체 통계도 함께 가져오기
   }, [activeTab, searchTerm, pagination.page]); // pagination.page 추가하여 페이지 변경 시에도 다시 로드
 
   // 페이지 변경 핸들러 - 매칭 관리와 동일한 방식
@@ -512,8 +541,8 @@ const Inquiries = () => {
   const statCards = [
     {
       title: '전체 문의',
-      value: `${stats.total}건`,
-      subValue: `답변완료: ${stats.answered}건\n미답변: ${stats.unanswered}건`,
+      value: `${overallStats.total}건`,
+      subValue: `답변완료: ${overallStats.answered}건\n답변대기: ${overallStats.unanswered}건`,
       icon: (
         <svg
           className="w-5 h-5 text-blue-600"
@@ -530,9 +559,11 @@ const Inquiries = () => {
       iconBg: 'bg-blue-100',
     },
     {
-      title: '미답변',
-      value: `${stats.unanswered}건`,
-      subValue: `처리 대기 중인 문의`,
+      title: '답변대기',
+      value: activeTab === '답변대기' ? `${inquiries.length}건` : `${overallStats.unanswered}건`,
+      subValue: activeTab === '답변대기' 
+        ? `현재 탭: 답변대기 문의`
+        : `처리 대기 중인 문의`,
       icon: (
         <svg
           className="w-5 h-5 text-yellow-600"
@@ -546,12 +577,16 @@ const Inquiries = () => {
           />
         </svg>
       ),
-      iconBg: 'bg-yellow-100',
+      iconBg: activeTab === '답변대기' ? 'bg-yellow-200' : 'bg-yellow-100',
     },
     {
       title: '답변완료',
-      value: `${stats.answered}건`,
-      subValue: `처리 완료된 문의`,
+      value: activeTab === '답변대기' ? '0건' : `${overallStats.answered}건`,
+      subValue: activeTab === '전체' 
+        ? `처리 완료된 문의`
+        : activeTab === '답변대기'
+        ? `현재 탭: 답변대기 문의`
+        : `처리 완료된 문의`,
       icon: (
         <svg
           className="w-5 h-5 text-green-600"
@@ -565,12 +600,12 @@ const Inquiries = () => {
           />
         </svg>
       ),
-      iconBg: 'bg-green-100',
+      iconBg: activeTab === '답변대기' ? 'bg-green-50' : 'bg-green-100',
     },
     {
       title: '답변률',
-      value: `${stats.total > 0 ? Math.round((stats.answered / stats.total) * 100) : 0}%`,
-      subValue: `수요자: ${stats.customer}건\n매니저: ${stats.manager}건`,
+      value: `${overallStats.total > 0 ? Math.round((overallStats.answered / overallStats.total) * 100) : 0}%`,
+      subValue: `전체 문의 대비 답변률`,
       icon: (
         <svg
           className="w-5 h-5 text-purple-600"
@@ -866,9 +901,6 @@ const Inquiries = () => {
                         번호
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        유형
-                      </th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         제목/내용
                       </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -891,9 +923,6 @@ const Inquiries = () => {
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="w-8 h-4 bg-gray-200 rounded animate-pulse mx-auto"></div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <div className="w-16 h-6 bg-gray-200 rounded-full animate-pulse mx-auto"></div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="space-y-2">
@@ -919,7 +948,7 @@ const Inquiries = () => {
                       ))
                     ) : inquiries.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="px-4 py-12 text-center">
+                        <td colSpan="6" className="px-4 py-12 text-center">
                           <div className="flex flex-col items-center">
                             <svg
                               className="w-12 h-12 text-gray-400 mb-4"
@@ -966,25 +995,8 @@ const Inquiries = () => {
                                 {index + 1}
                               </div>
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-center">
-                              <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  inquiry.userRole === 'CUSTOMER'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : inquiry.userRole === 'MANAGER'
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-gray-100 text-gray-800'
-                                }`}
-                              >
-                                {inquiry.userRole === 'CUSTOMER'
-                                  ? '수요자'
-                                  : inquiry.userRole === 'MANAGER'
-                                    ? '매니저'
-                                    : `역할: ${inquiry?.userRole || 'null'}`}
-                              </span>
-                            </td>
                             <td className="px-4 py-4 text-center">
-                              <div>
+                              <div className="flex flex-col items-center space-y-1">
                                 <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
                                   {inquiry.title || '제목 없음'}
                                 </div>
