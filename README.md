@@ -110,59 +110,6 @@
 - **ESLint**: 코드 품질 관리
 - **Prettier 3.5.3**: 코드 포맷팅
 
-## 📁 프로젝트 구조
-
-```
-src/
-├── api/                    # API 설정 및 클라이언트
-│   ├── config/
-│   │   └── api.js         # API 기본 설정
-│   └── index.js           # API 인스턴스
-├── app/                    # 앱 레벨 컴포넌트
-├── assets/                 # 정적 자산
-│   ├── db/                # 데이터베이스 파일
-│   └── images/            # 이미지 파일
-├── components/             # 공통 컴포넌트
-│   ├── Button.jsx         # 버튼 컴포넌트
-│   ├── Footer.jsx         # 푸터 컴포넌트
-│   ├── Header.jsx         # 헤더 컴포넌트
-│   ├── Modal.jsx          # 모달 컴포넌트
-│   └── ThemeToggle.jsx    # 테마 토글
-├── features/              # 기능별 모듈
-│   ├── admin/             # 관리자 기능
-│   │   ├── components/    # 관리자 컴포넌트
-│   │   ├── pages/         # 관리자 페이지
-│   │   ├── services/      # 관리자 API 서비스
-│   │   └── utils/         # 관리자 유틸리티
-│   ├── auth/              # 인증 기능
-│   │   ├── components/    # 인증 컴포넌트
-│   │   ├── pages/         # 인증 페이지
-│   │   ├── routes/        # 인증 라우트
-│   │   └── services/      # 인증 서비스
-│   ├── board/             # 게시판 기능
-│   ├── main/              # 메인 페이지
-│   ├── matching/          # 매칭 기능
-│   ├── mypage/            # 마이페이지
-│   ├── payment/           # 결제 기능
-│   ├── reservation/       # 예약 기능
-│   ├── review/            # 리뷰 기능
-│   └── manager/           # 매니저 기능
-├── routes/                # 라우팅 설정
-│   ├── AppRoutes.jsx      # 메인 라우트
-│   ├── ProtectedRoute.jsx # 보호된 라우트
-│   └── protectedAppRoutes.jsx # 권한별 라우트
-├── shared/                # 공유 유틸리티
-│   ├── constants/         # 상수 정의
-│   ├── hooks/             # 커스텀 훅
-│   └── utils/             # 유틸리티 함수
-├── stores/                # 상태 관리
-│   ├── authStore.js       # 인증 상태
-│   ├── themeStore.js      # 테마 상태
-│   └── ...                # 기타 상태 스토어
-├── App.jsx                # 메인 앱 컴포넌트
-└── main.jsx               # 앱 진입점
-```
-
 ## 🚀 설치 및 실행
 
 ### 필수 요구사항
@@ -414,6 +361,12 @@ VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 - **코드 스플리팅**: 라우트별 청크 분리
 - **이미지 최적화**: WebP 포맷 사용
 - **번들 분석**: 빌드 크기 최적화
+
+## 👥 팀원 (Team Member)
+
+| 상우진 (팀장) | 김숙현 | 안지현 | 강희진 |
+|--------------|--------|--------|--------|
+| [@SangWJDev](https://github.com/SangWJDev) | [@soohoioa](https://github.com/soohoioa) | [@jhroom](https://github.com/jhroom) | [@heeejinin](https://github.com/heeejinin) |
 
 ## 📞 문의
 
